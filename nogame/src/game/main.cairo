@@ -8,8 +8,10 @@ mod NoGame {
         number_of_planets: u32,
         planet_spent_resources: u32,
         // Tokens.
+        erc721_address: ContractAddress,
         steel_address: ContractAddress,
         quarz_address: ContractAddress,
+        librium_address: ContractAddress,
         // Ifrastructures.
         steel_mine_level: LegacyMap::<u256, u32>,
         quarz_mine_level: LegacyMap::<u256, u32>,
@@ -48,15 +50,26 @@ mod NoGame {
 
     #[event]
     fn EnergyMine(planet_id: u256) {}
-// #[event]
-// fn DockyardUpgrade(planet_id: u256) {}
+    // #[event]
+    // fn DockyardUpgrade(planet_id: u256) {}
 
-// #[event]
-// fn LabUpgrade(planet_id: u256) {}
+    // #[event]
+    // fn LabUpgrade(planet_id: u256) {}
 
-// #[event]
-// fn MicroTechUpgrade(planet_id: u256) {}
-// // Constructor
-// #[constructor]
-// fn constructor()
+    // #[event]
+    // fn MicroTechUpgrade(planet_id: u256) {}
+    // // Constructor
+
+    #[constructor]
+    fn constructor(
+        erc721: ContractAddress,
+        steel: ContractAddress,
+        quarz: ContractAddress,
+        librium: ContractAddress
+    ) {
+        erc721_address::write(erc721);
+        steel_address::write(steel);
+        quarz_address::write(quarz);
+        librium_address::write(librium);
+    }
 }
