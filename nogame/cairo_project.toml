@@ -1,2 +1,4 @@
 [crate_roots]
 nogame = "src"
+mine_tests = "src/mines/tests"
+
