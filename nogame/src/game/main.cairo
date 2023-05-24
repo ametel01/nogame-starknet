@@ -12,11 +12,11 @@ mod NoGame {
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
         quarz_address: ContractAddress,
-        librium_address: ContractAddress,
+        tritim_address: ContractAddress,
         // Ifrastructures.
         steel_mine_level: LegacyMap::<u256, u32>,
         quarz_mine_level: LegacyMap::<u256, u32>,
-        librium_mine_level: LegacyMap::<u256, u32>,
+        tritium_mine_level: LegacyMap::<u256, u32>,
         energy_mine_level: LegacyMap::<u256, u32>,
     // dockyard_level: LegacyMap::<u256, u32>,
     // lab_level: LegacyMap::<u256, u32>,
@@ -47,7 +47,7 @@ mod NoGame {
     fn QuarzMineUpgrade(planet_id: u256) {}
 
     #[event]
-    fn LibriumMineUpgrade(planet_id: u256) {}
+    fn TritiumMineUpgrade(planet_id: u256) {}
 
     #[event]
     fn EnergyMine(planet_id: u256) {}
@@ -66,12 +66,12 @@ mod NoGame {
         erc721: ContractAddress,
         steel: ContractAddress,
         quarz: ContractAddress,
-        librium: ContractAddress
+        tritium: ContractAddress
     ) {
         erc721_address::write(erc721);
         steel_address::write(steel);
         quarz_address::write(quarz);
-        librium_address::write(librium);
+        tritium_address::write(librium);
     }
 
     // View functions.
@@ -83,7 +83,7 @@ mod NoGame {
             erc721_address::read(),
             steel_address::read(),
             quarz_address::read(),
-            librium_address::read()
+            tritium_address::read()
         )
     }
 
@@ -102,7 +102,7 @@ mod NoGame {
         (
             steel_mine_level::read(planet_id),
             quarz_mine_level::read(planet_id),
-            librium_mine_level::read(planet_id),
+            tritium_mine_level::read(planet_id),
             energy_mine_level::read(planet_id)
         )
     }
