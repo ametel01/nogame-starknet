@@ -27,6 +27,18 @@ fn quarz_mine_cost(current_level: u128) -> (u256, u256) {
     }
 }
 
+fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
+    let base_steel = 225;
+    let base_quarz = 75;
+    if current_level == 0 {
+        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+    } else {
+        let steel = U128Div::div(base_steel * (pow(15, current_level)), pow(10, current_level));
+        let quarz = U128Div::div(base_quarz * (pow(15, current_level)), pow(10, current_level));
+        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+    }
+}
+
 fn pow(mut base: u128, mut power: u128) -> u128 {
     // Return invalid input error
     if base == 0 {
@@ -90,8 +102,29 @@ fn quarz_mine_cost_test() {
     assert(steel.low == 314 & quarz.low == 157, 'wrong formula');
     let (steel, quarz) = quarz_mine_cost(10);
     assert(steel.low == 5277 & quarz.low == 2638, 'wrong formula');
-    let (steel, quarz) = quarz_mine_cost(15);
     // Currently the max level before overflow.
     // TODO: add scaling for levels > 16
+    let (steel, quarz) = quarz_mine_cost(15);
     assert(steel.low == 55340 & quarz.low == 27670, 'wrong formula');
+}
+
+#[test]
+#[available_gas(1000000000)]
+fn tritium_mine_cost_test() {
+    let (steel, quarz) = tritium_mine_cost(0);
+    assert(steel.low == 225 & quarz.low == 75, 'wrong formula');
+    let (steel, quarz) = tritium_mine_cost(1);
+    assert(steel.low == 337 & quarz.low == 112, 'wrong formula');
+    let (steel, quarz) = tritium_mine_cost(4);
+    assert(steel.low == 1139 & quarz.low == 379, 'wrong formula');
+    let (steel, quarz) = tritium_mine_cost(10);
+    assert(steel.low == 12974 & quarz.low == 4324, 'wrong formula');
+    let (steel, quarz) = tritium_mine_cost(15);
+    assert(steel.low == 98526 & quarz.low == 32842, 'wrong formula');
+    let (steel, quarz) = tritium_mine_cost(20);
+    assert(steel.low == 748182 & quarz.low == 249394, 'wrong formula');
+    // Currently the max level before overflow.
+    // TODO: add scaling for levels > 31
+    let (steel, quarz) = tritium_mine_cost(30);
+    assert(steel.low == 43143988 & quarz.low == 14381329, 'wrong formula');
 }
