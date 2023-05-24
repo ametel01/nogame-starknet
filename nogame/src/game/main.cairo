@@ -12,7 +12,7 @@ mod NoGame {
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
         quarz_address: ContractAddress,
-        tritim_address: ContractAddress,
+        tritium_address: ContractAddress,
         // Ifrastructures.
         steel_mine_level: LegacyMap::<u256, u32>,
         quarz_mine_level: LegacyMap::<u256, u32>,
@@ -71,7 +71,7 @@ mod NoGame {
         erc721_address::write(erc721);
         steel_address::write(steel);
         quarz_address::write(quarz);
-        tritium_address::write(librium);
+        tritium_address::write(tritium);
     }
 
     // View functions.
