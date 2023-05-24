@@ -15,6 +15,18 @@ fn steel_mine_cost(current_level: u128) -> (u256, u256) {
     }
 }
 
+fn quarz_mine_cost(current_level: u128) -> (u256, u256) {
+    let base_steel = 48;
+    let base_quarz = 24;
+    if current_level == 0 {
+        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+    } else {
+        let steel = U128Div::div(base_steel * (pow(16, current_level)), pow(10, current_level));
+        let quarz = U128Div::div(base_quarz * (pow(16, current_level)), pow(10, current_level));
+        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+    }
+}
+
 fn pow(mut base: u128, mut power: u128) -> u128 {
     // Return invalid input error
     if base == 0 {
@@ -48,27 +60,38 @@ fn fast_power_test() {
 
 #[test]
 #[available_gas(1000000000)]
-fn steel_cost_test() {
+fn steel_mine_cost_test() {
     let (steel, quarz) = steel_mine_cost(0);
     assert(steel.low == 60 & quarz.low == 15, 'wrong formula');
-
     let (steel, quarz) = steel_mine_cost(1);
     assert(steel.low == 90 & quarz.low == 22, 'wrong formula');
-
     let (steel, quarz) = steel_mine_cost(4);
     assert(steel.low == 303 & quarz.low == 75, 'wrong formula');
-
     let (steel, quarz) = steel_mine_cost(10);
     assert(steel.low == 3459 & quarz.low == 864, 'wrong formula');
-
     let (steel, quarz) = steel_mine_cost(20);
     assert(steel.low == 199515 & quarz.low == 49878, 'wrong formula');
-
     let (steel, quarz) = steel_mine_cost(30);
     assert(steel.low == 11505063 & quarz.low == 2876265, 'wrong formula');
-
     // Currently the max level before overflow.
-    // TODO: add scaling for levels > 31
+    // TODO: add scaling for levels > 32
     let (steel, quarz) = steel_mine_cost(31);
-    assert(steel.low == 663439939 & quarz.low == 165859984, 'wrong formula');
+    assert(steel.low == 17257595 & quarz.low == 4314398, 'wrong formula');
+}
+
+#[test]
+#[available_gas(1000000000)]
+fn quarz_mine_cost_test() {
+    let (steel, quarz) = quarz_mine_cost(0);
+    assert(steel.low == 48 & quarz.low == 24, 'wrong formula');
+    let (steel, quarz) = quarz_mine_cost(1);
+    assert(steel.low == 76 & quarz.low == 38, 'wrong formula');
+    let (steel, quarz) = quarz_mine_cost(4);
+    assert(steel.low == 314 & quarz.low == 157, 'wrong formula');
+    let (steel, quarz) = quarz_mine_cost(10);
+    assert(steel.low == 5277 & quarz.low == 2638, 'wrong formula');
+    let (steel, quarz) = quarz_mine_cost(15);
+    // Currently the max level before overflow.
+    // TODO: add scaling for levels > 16
+    assert(steel.low == 55340 & quarz.low == 27670, 'wrong formula');
 }
