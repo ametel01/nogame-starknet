@@ -7,7 +7,7 @@ mod NoGame {
         // General.
         number_of_planets: u32,
         planet_spent_resources: u32,
-        planet_points: u128,
+        planet_points: LegacyMap::<u256, u128>,
         // Tokens.
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
@@ -79,12 +79,12 @@ mod NoGame {
     fn get_tokens_addresses() -> (
         ContractAddress, ContractAddress, ContractAddress, ContractAddress
     ) {
-        let erc721: ContractAddress = erc721_address::read();
-        let steel: ContractAddress = steel_address::read();
-        let quarz: ContractAddress = quarz_address::read();
-        let librium: ContractAddress = librium_address::read();
-
-        (erc721, steel, quarz, librium)
+        (
+            erc721_address::read(),
+            steel_address::read(),
+            quarz_address::read(),
+            librium_address::read()
+        )
     }
 
     #[view]
@@ -99,11 +99,11 @@ mod NoGame {
 
     #[view]
     fn get_mines_levels(planet_id: u256) -> (u32, u32, u32, u32) {
-        steel = steel_mine_level::read();
-        quarz = quarz_mine_level::read();
-        librium = librium_mine_level::read();
-        energy = energy_mine_level::read();
-
-        (steel, quarz, librium, energy)
+        (
+            steel_mine_level::read(planet_id),
+            quarz_mine_level::read(planet_id),
+            librium_mine_level::read(planet_id),
+            energy_mine_level::read(planet_id)
+        )
     }
 }
