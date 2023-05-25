@@ -97,6 +97,48 @@ fn tritium_production(current_level: u128) -> u256 {
     }
 }
 
+fn solar_plant_production(current_level: u128) -> u256 {
+    if current_level == 0 {
+        u256 { low: 0, high: 0 }
+    } else if current_level <= 31 {
+        let production = U128Div::div(
+            20 * current_level * pow(11, current_level), pow(10, current_level)
+        );
+        u256 { low: production, high: 0 }
+    } else {
+        let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
+        u256 { low: production, high: 0 }
+    }
+}
+
+fn base_mine_consumption(current_level: u128) -> u256 {
+    if current_level == 0 {
+        u256 { low: 0, high: 0 }
+    } else if current_level <= 31 {
+        let consumption = U128Div::div(
+            10 * current_level * pow(11, current_level), pow(10, current_level)
+        );
+        u256 { low: consumption, high: 0 }
+    } else {
+        let consumption = MAX_TRITIUM_OVERFLOW * (current_level - 31);
+        u256 { low: consumption, high: 0 }
+    }
+}
+
+fn quarz_mine_consumption(current_level: u128) -> u256 {
+    if current_level == 0 {
+        u256 { low: 0, high: 0 }
+    } else if current_level <= 31 {
+        let consumption = U128Div::div(
+            20 * current_level * pow(11, current_level), pow(10, current_level)
+        );
+        u256 { low: consumption, high: 0 }
+    } else {
+        let consumption = MAX_QUARZ_OVERFLOW * (current_level - 31);
+        u256 { low: consumption, high: 0 }
+    }
+}
+
 fn pow(mut base: u128, mut power: u128) -> u128 {
     // Return invalid input error
     if base == 0 {
