@@ -7,137 +7,141 @@ const MAX_STEEL_OVERFLOW: u128 = 17850;
 const MAX_QUARZ_OVERFLOW: u128 = 11900;
 const MAX_TRITIUM_OVERFLOW: u128 = 5950;
 
-fn steel_mine_cost(current_level: u128) -> (u256, u256) {
-    let base_steel = 60;
-    let base_quarz = 15;
-    if current_level == 0 {
-        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
-    } else {
-        let steel = base_steel * (pow(2, current_level));
-        let quarz = base_quarz * (pow(2, current_level));
-        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+trait MinesTrait {
+    fn steel_mine_cost(current_level: u128) -> (u256, u256);
+    fn quarz_mine_cost(current_level: u128) -> (u256, u256);
+    fn tritium_mine_cost(current_level: u128) -> (u256, u256);
+    fn solar_plant_cost(current_level: u128) -> (u256, u256);
+    fn steel_production(current_level: u128) -> u256;
+    fn quarz_production(current_level: u128) -> u256;
+    fn tritium_production(current_level: u128) -> u256;
+    fn solar_plant_production(current_level: u128) -> u128;
+    fn base_mine_consumption(current_level: u128) -> u128;
+    fn quarz_mine_consumption(current_level: u128) -> u128;
+}
+
+impl Mines of MinesTrait {
+    fn steel_mine_cost(current_level: u128) -> (u256, u256) {
+        let base_steel = 60;
+        let base_quarz = 15;
+        if current_level == 0 {
+            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+        } else {
+            let steel = base_steel * (pow(2, current_level));
+            let quarz = base_quarz * (pow(2, current_level));
+            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+        }
+    }
+
+    fn quarz_mine_cost(current_level: u128) -> (u256, u256) {
+        let base_steel = 48;
+        let base_quarz = 24;
+        if current_level == 0 {
+            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+        } else {
+            let steel = base_steel * (pow(2, current_level));
+            let quarz = base_quarz * (pow(2, current_level));
+            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+        }
+    }
+
+    fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
+        let base_steel = 225;
+        let base_quarz = 75;
+        if current_level == 0 {
+            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+        } else {
+            let steel = base_steel * (pow(2, current_level));
+            let quarz = base_quarz * (pow(2, current_level));
+            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+        }
+    }
+
+    fn solar_plant_cost(current_level: u128) -> (u256, u256) {
+        let base_steel = 75;
+        let base_quarz = 30;
+        if current_level == 0 {
+            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+        } else {
+            let steel = base_steel * (pow(2, current_level));
+            let quarz = base_quarz * (pow(2, current_level));
+            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+        }
+    }
+
+    fn steel_production(current_level: u128) -> u256 {
+        if current_level == 0 {
+            u256 { low: 30, high: 0 }
+        } else if current_level <= 31 {
+            let production = U128Div::div(
+                30 * current_level * pow(11, current_level), pow(10, current_level)
+            );
+            u256 { low: production, high: 0 }
+        } else {
+            let production = MAX_STEEL_OVERFLOW * (current_level - 31);
+            u256 { low: production, high: 0 }
+        }
+    }
+
+    fn quarz_production(current_level: u128) -> u256 {
+        if current_level == 0 {
+            u256 { low: 22, high: 0 }
+        } else if current_level <= 31 {
+            let production = U128Div::div(
+                20 * current_level * pow(11, current_level), pow(10, current_level)
+            );
+            u256 { low: production, high: 0 }
+        } else {
+            let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
+            u256 { low: production, high: 0 }
+        }
+    }
+
+    fn tritium_production(current_level: u128) -> u256 {
+        if current_level == 0 {
+            u256 { low: 0, high: 0 }
+        } else if current_level <= 31 {
+            let production = U128Div::div(
+                10 * current_level * pow(11, current_level), pow(10, current_level)
+            );
+            u256 { low: production, high: 0 }
+        } else {
+            let production = MAX_TRITIUM_OVERFLOW * (current_level - 31);
+            u256 { low: production, high: 0 }
+        }
+    }
+
+    fn solar_plant_production(current_level: u128) -> u128 {
+        if current_level == 0 {
+            0
+        } else if current_level <= 31 {
+            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
+        } else {
+            MAX_QUARZ_OVERFLOW * (current_level - 31)
+        }
+    }
+
+    fn base_mine_consumption(current_level: u128) -> u128 {
+        if current_level == 0 {
+            0
+        } else if current_level <= 31 {
+            U128Div::div(10 * current_level * pow(11, current_level), pow(10, current_level))
+        } else {
+            MAX_TRITIUM_OVERFLOW * (current_level - 31)
+        }
+    }
+
+    fn quarz_mine_consumption(current_level: u128) -> u128 {
+        if current_level == 0 {
+            0
+        } else if current_level <= 31 {
+            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
+        } else {
+            MAX_QUARZ_OVERFLOW * (current_level - 31)
+        }
     }
 }
 
-fn quarz_mine_cost(current_level: u128) -> (u256, u256) {
-    let base_steel = 48;
-    let base_quarz = 24;
-    if current_level == 0 {
-        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
-    } else {
-        let steel = base_steel * (pow(2, current_level));
-        let quarz = base_quarz * (pow(2, current_level));
-        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
-    }
-}
-
-fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
-    let base_steel = 225;
-    let base_quarz = 75;
-    if current_level == 0 {
-        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
-    } else {
-        let steel = base_steel * (pow(2, current_level));
-        let quarz = base_quarz * (pow(2, current_level));
-        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
-    }
-}
-
-fn solar_plant_cost(current_level: u128) -> (u256, u256) {
-    let base_steel = 75;
-    let base_quarz = 30;
-    if current_level == 0 {
-        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
-    } else {
-        let steel = base_steel * (pow(2, current_level));
-        let quarz = base_quarz * (pow(2, current_level));
-        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
-    }
-}
-
-fn steel_production(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 30, high: 0 }
-    } else if current_level <= 31 {
-        let production = U128Div::div(
-            30 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: production, high: 0 }
-    } else {
-        let production = MAX_STEEL_OVERFLOW * (current_level - 31);
-        u256 { low: production, high: 0 }
-    }
-}
-
-fn quarz_production(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 22, high: 0 }
-    } else if current_level <= 31 {
-        let production = U128Div::div(
-            20 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: production, high: 0 }
-    } else {
-        let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
-        u256 { low: production, high: 0 }
-    }
-}
-
-fn tritium_production(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 0, high: 0 }
-    } else if current_level <= 31 {
-        let production = U128Div::div(
-            10 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: production, high: 0 }
-    } else {
-        let production = MAX_TRITIUM_OVERFLOW * (current_level - 31);
-        u256 { low: production, high: 0 }
-    }
-}
-
-fn solar_plant_production(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 0, high: 0 }
-    } else if current_level <= 31 {
-        let production = U128Div::div(
-            20 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: production, high: 0 }
-    } else {
-        let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
-        u256 { low: production, high: 0 }
-    }
-}
-
-fn base_mine_consumption(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 0, high: 0 }
-    } else if current_level <= 31 {
-        let consumption = U128Div::div(
-            10 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: consumption, high: 0 }
-    } else {
-        let consumption = MAX_TRITIUM_OVERFLOW * (current_level - 31);
-        u256 { low: consumption, high: 0 }
-    }
-}
-
-fn quarz_mine_consumption(current_level: u128) -> u256 {
-    if current_level == 0 {
-        u256 { low: 0, high: 0 }
-    } else if current_level <= 31 {
-        let consumption = U128Div::div(
-            20 * current_level * pow(11, current_level), pow(10, current_level)
-        );
-        u256 { low: consumption, high: 0 }
-    } else {
-        let consumption = MAX_QUARZ_OVERFLOW * (current_level - 31);
-        u256 { low: consumption, high: 0 }
-    }
-}
 
 fn pow(mut base: u128, mut power: u128) -> u128 {
     // Return invalid input error
