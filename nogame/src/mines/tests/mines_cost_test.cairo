@@ -72,8 +72,6 @@ mod MineCostTest {
         assert(steel.low == 241591910400 & quarz.low == 80530636800, 'wrong formula');
         // Max level before overflow.
         let (steel, quarz) = tritium_mine_cost(63);
-        steel.low.print();
-        quarz.low.print();
         assert(
             steel.low == 2075258708292324556800 & quarz.low == 691752902764108185600,
             'wrong formula'
