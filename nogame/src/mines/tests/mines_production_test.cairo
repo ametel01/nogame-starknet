@@ -2,7 +2,7 @@
 mod MineProductionTest {
     use debug::PrintTrait;
     use traits::Into;
-    use nogame::mines::library::steel_production;
+    use nogame::mines::library::{steel_production, quarz_production};
 
     #[test]
     #[available_gas(1000000000)]
@@ -17,10 +17,30 @@ mod MineProductionTest {
         assert(production == 778.into(), 'wrong result');
         let production = steel_production(20);
         assert(production == 4036.into(), 'wrong result');
+        // Max level at which overflow occures with regular formula.
         let production = steel_production(31);
         assert(production == 17850.into(), 'wrong result');
         let production = steel_production(61);
-        production.low.print();
         assert(production == 535500.into(), 'wrong result');
+    }
+
+    #[test]
+    #[available_gas(1000000000)]
+    fn quarz_production_test() {
+        let production = quarz_production(0);
+        assert(production == 22.into(), 'wrong result');
+        let production = quarz_production(1);
+        assert(production == 22.into(), 'wrong result');
+        let production = quarz_production(5);
+        assert(production == 161.into(), 'wrong result');
+        let production = quarz_production(10);
+        assert(production == 518.into(), 'wrong result');
+        let production = quarz_production(20);
+        assert(production == 2690.into(), 'wrong result');
+        // Max level at which overflow occures with regular formula.
+        let production = quarz_production(31);
+        assert(production == 11900.into(), 'wrong result');
+        let production = quarz_production(61);
+        assert(production == 357000.into(), 'wrong result');
     }
 }
