@@ -43,6 +43,18 @@ fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
     }
 }
 
+fn solar_plant_cost(current_level: u128) -> (u256, u256) {
+    let base_steel = 75;
+    let base_quarz = 30;
+    if current_level == 0 {
+        (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+    } else {
+        let steel = base_steel * (pow(2, current_level));
+        let quarz = base_quarz * (pow(2, current_level));
+        (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+    }
+}
+
 fn steel_production(current_level: u128) -> u256 {
     if current_level == 0 {
         u256 { low: 30, high: 0 }
