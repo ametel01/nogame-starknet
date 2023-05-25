@@ -3,6 +3,8 @@ use traits::{Into, TryInto};
 use option::OptionTrait;
 use integer::U128Div;
 
+const MAX_STEEL_OVERFLOW: u128 = 17850;
+
 fn steel_mine_cost(current_level: u128) -> (u256, u256) {
     let base_steel = 60;
     let base_quarz = 15;
@@ -36,6 +38,20 @@ fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
         let steel = base_steel * (pow(2, current_level));
         let quarz = base_quarz * (pow(2, current_level));
         (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+    }
+}
+
+fn steel_production(current_level: u128) -> u256 {
+    if current_level == 0 {
+        u256 { low: 30, high: 0 }
+    } else if current_level <= 31 {
+        let production = U128Div::div(
+            30 * current_level * pow(11, current_level), pow(10, current_level)
+        );
+        u256 { low: production, high: 0 }
+    } else {
+        let production = MAX_STEEL_OVERFLOW * (current_level - 31);
+        u256 { low: production, high: 0 }
     }
 }
 
