@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 
 struct Tokens {
     titanium: u256,
-    quarz: u256,
+    quartz: u256,
     librium: u256,
 }
 

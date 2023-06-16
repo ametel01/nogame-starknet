@@ -13,11 +13,11 @@ mod NoGame {
         // Tokens.
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
-        quarz_address: ContractAddress,
+        quartz_address: ContractAddress,
         tritium_address: ContractAddress,
         // Ifrastructures.
         steel_mine_level: LegacyMap::<u256, u32>,
-        quarz_mine_level: LegacyMap::<u256, u32>,
+        quartz_mine_level: LegacyMap::<u256, u32>,
         tritium_mine_level: LegacyMap::<u256, u32>,
         energy_mine_level: LegacyMap::<u256, u32>,
     // dockyard_level: LegacyMap::<u256, u32>,
@@ -48,7 +48,7 @@ mod NoGame {
     fn SteelMineUpgrade(planet_id: u256) {}
 
     #[derive(Drop, starknet::Event)]
-    fn QuarzMineUpgrade(planet_id: u256) {}
+    fn quartzMineUpgrade(planet_id: u256) {}
 
     #[derive(Drop, starknet::Event)]
     fn TritiumMineUpgrade(planet_id: u256) {}
@@ -70,12 +70,12 @@ mod NoGame {
         ref self: ContractState,
         erc721: ContractAddress,
         steel: ContractAddress,
-        quarz: ContractAddress,
+        quartz: ContractAddress,
         tritium: ContractAddress
     ) {
         self.erc721_address.write(erc721);
         self.steel_address.write(steel);
-        self.quarz_address.write(quarz);
+        self.quartz_address.write(quartz);
         self.tritium_address.write(tritium);
     }
 
@@ -86,7 +86,7 @@ mod NoGame {
         (
             self.erc721_address.read(),
             self.steel_address.read(),
-            self.quarz_address.read(),
+            self.quartz_address.read(),
             self.tritium_address.read()
         )
     }
@@ -104,7 +104,7 @@ mod NoGame {
     fn get_mines_levels(self: @ContractState, planet_id: u256) -> (u32, u32, u32, u32) {
         (
             self.steel_mine_level.read(planet_id),
-            self.quarz_mine_level.read(planet_id),
+            self.quartz_mine_level.read(planet_id),
             self.tritium_mine_level.read(planet_id),
             self.energy_mine_level.read(planet_id)
         )
