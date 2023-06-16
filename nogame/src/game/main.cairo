@@ -80,7 +80,6 @@ mod NoGame {
     }
 
     // View functions.
-    #[view]
     fn get_tokens_addresses(
         self: @ContractState
     ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
@@ -92,17 +91,16 @@ mod NoGame {
         )
     }
 
-    #[view]
     fn get_number_of_planets(self: @ContractState) -> u32 {
         self.number_of_planets.read()
     }
 
-    #[view]
+
     fn get_planet_points(self: @ContractState, planet_id: u256) -> u128 {
         self.planet_points.read(planet_id)
     }
 
-    #[view]
+
     fn get_mines_levels(self: @ContractState, planet_id: u256) -> (u32, u32, u32, u32) {
         (
             self.steel_mine_level.read(planet_id),
