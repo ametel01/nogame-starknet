@@ -1,9 +1,16 @@
 use starknet::ContractAddress;
 
+#[derive(Drop, Serde)]
+struct Cost {
+    steel: u256,
+    quartz: u256
+}
+
+#[derive(Drop, Serde)]
 struct Tokens {
-    titanium: u256,
-    quartz: u256,
-    librium: u256,
+    steel: Cost,
+    quartz: Cost,
+    tritium: Cost,
 }
 
 struct Mines {}
