@@ -1,9 +1,23 @@
+use starknet::ContractAddress;
+use nogame::game::library::{Tokens};
+
+#[starknet::interface]
+trait INoGame<TContractState> {
+    fn get_tokens_addresses(
+        self: @TContractState
+    ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress);
+    fn get_number_of_planets(self: @TContractState) -> u32;
+    fn get_planet_points(self: @TContractState, planet_id: u256) -> u128;
+    fn get_mines_levels(self: @TContractState, planet_id: u256) -> (u32, u32, u32, u32);
+    fn get_mines_upgrade_cost(self: @TContractState, planet_id: u256) -> Tokens;
+}
+
 #[starknet::contract]
 mod NoGame {
     use starknet::{ContractAddress, get_caller_address};
-    use nogame::game::library;
+    use nogame::game::library::{Tokens, Cost};
+    use nogame::mines::library::Mines;
 
-    #[Derive(starknet::StorageAccess)]
     #[storage]
     struct Storage {
         // General.
@@ -36,14 +50,13 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     fn EconomySpent(planet_id: u256, spent: u256) {}
 
-    #[event]
     // fn TechSpent(planet_id: u256, spent: u256) {}
 
     // #[event]
     // fn DefenceSpent(planet_id: u256, spent: u256) {}
 
     // Structures upgrade events.
-    #[event]
+
     #[derive(Drop, starknet::Event)]
     fn SteelMineUpgrade(planet_id: u256) {}
 
@@ -54,7 +67,7 @@ mod NoGame {
     fn TritiumMineUpgrade(planet_id: u256) {}
 
     #[derive(Drop, starknet::Event)]
-    fn EnergyMine(planet_id: u256) {}
+    fn EnergyPlantUpgrade(planet_id: u256) {}
     // #[event]
     // fn DockyardUpgrade(planet_id: u256) {}
 
@@ -79,34 +92,43 @@ mod NoGame {
         self.tritium_address.write(tritium);
     }
 
-    // View functions.
-    fn get_tokens_addresses(
-        self: @ContractState
-    ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
-        (
-            self.erc721_address.read(),
-            self.steel_address.read(),
-            self.quartz_address.read(),
-            self.tritium_address.read()
-        )
-    }
+    #[external(v0)]
+    impl NoGame of super::INoGame<ContractState> {
+        fn get_tokens_addresses(
+            self: @ContractState
+        ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
+            (
+                self.erc721_address.read(),
+                self.steel_address.read(),
+                self.quartz_address.read(),
+                self.tritium_address.read()
+            )
+        }
 
-    fn get_number_of_planets(self: @ContractState) -> u32 {
-        self.number_of_planets.read()
-    }
-
-
-    fn get_planet_points(self: @ContractState, planet_id: u256) -> u128 {
-        self.planet_points.read(planet_id)
-    }
+        fn get_number_of_planets(self: @ContractState) -> u32 {
+            self.number_of_planets.read()
+        }
 
 
-    fn get_mines_levels(self: @ContractState, planet_id: u256) -> (u32, u32, u32, u32) {
-        (
-            self.steel_mine_level.read(planet_id),
-            self.quartz_mine_level.read(planet_id),
-            self.tritium_mine_level.read(planet_id),
-            self.energy_mine_level.read(planet_id)
-        )
+        fn get_planet_points(self: @ContractState, planet_id: u256) -> u128 {
+            self.planet_points.read(planet_id)
+        }
+
+
+        fn get_mines_levels(self: @ContractState, planet_id: u256) -> (u32, u32, u32, u32) {
+            (
+                self.steel_mine_level.read(planet_id),
+                self.quartz_mine_level.read(planet_id),
+                self.tritium_mine_level.read(planet_id),
+                self.energy_mine_level.read(planet_id)
+            )
+        }
+
+        fn get_mines_upgrade_cost(self: @ContractState, planet_id: u256) -> Tokens {
+            let _steel: Cost = Mines::steel_mine_cost(planet_id.low);
+            let _quartz: Cost = Mines::quartz_mine_cost(planet_id.low);
+            let _tritium: Cost = Mines::tritium_mine_cost(planet_id.low);
+            Tokens { steel: _steel, quartz: _quartz, tritium: _tritium }
+        }
     }
 }
