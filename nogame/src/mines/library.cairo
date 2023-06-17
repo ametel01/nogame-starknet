@@ -2,16 +2,17 @@ use debug::PrintTrait;
 use traits::{Into, TryInto};
 use option::OptionTrait;
 use integer::U128Div;
+use nogame::game::library::Cost;
 
 const MAX_STEEL_OVERFLOW: u128 = 17850;
 const MAX_QUARZ_OVERFLOW: u128 = 11900;
 const MAX_TRITIUM_OVERFLOW: u128 = 5950;
 
 trait MinesTrait {
-    fn steel_mine_cost(current_level: u128) -> (u256, u256);
-    fn quarz_mine_cost(current_level: u128) -> (u256, u256);
-    fn tritium_mine_cost(current_level: u128) -> (u256, u256);
-    fn solar_plant_cost(current_level: u128) -> (u256, u256);
+    fn steel_mine_cost(current_level: u128) -> Cost;
+    fn quartz_mine_cost(current_level: u128) -> Cost;
+    fn tritium_mine_cost(current_level: u128) -> Cost;
+    fn solar_plant_cost(current_level: u128) -> Cost;
     fn steel_production(current_level: u128) -> u256;
     fn quarz_production(current_level: u128) -> u256;
     fn tritium_production(current_level: u128) -> u256;
@@ -21,51 +22,75 @@ trait MinesTrait {
 }
 
 impl Mines of MinesTrait {
-    fn steel_mine_cost(current_level: u128) -> (u256, u256) {
+    fn steel_mine_cost(current_level: u128) -> Cost {
         let base_steel = 60;
         let base_quarz = 15;
         if current_level == 0 {
-            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quarz = base_quarz * (pow(2, current_level));
-            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         }
     }
 
-    fn quarz_mine_cost(current_level: u128) -> (u256, u256) {
+    fn quartz_mine_cost(current_level: u128) -> Cost {
         let base_steel = 48;
         let base_quarz = 24;
         if current_level == 0 {
-            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quarz = base_quarz * (pow(2, current_level));
-            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         }
     }
 
-    fn tritium_mine_cost(current_level: u128) -> (u256, u256) {
+    fn tritium_mine_cost(current_level: u128) -> Cost {
         let base_steel = 225;
         let base_quarz = 75;
         if current_level == 0 {
-            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quarz = base_quarz * (pow(2, current_level));
-            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         }
     }
 
-    fn solar_plant_cost(current_level: u128) -> (u256, u256) {
+    fn solar_plant_cost(current_level: u128) -> Cost {
         let base_steel = 75;
         let base_quarz = 30;
         if current_level == 0 {
-            (u256 { low: base_steel, high: 0 }, u256 { low: base_quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quarz = base_quarz * (pow(2, current_level));
-            (u256 { low: steel, high: 0 }, u256 { low: quarz, high: 0 })
+            Cost {
+                steel: (u256 { low: base_steel, high: 0 }),
+                quartz: (u256 { low: base_quarz, high: 0 })
+            }
         }
     }
 

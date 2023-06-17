@@ -13,7 +13,13 @@ struct Tokens {
     tritium: Cost,
 }
 
-struct Mines {}
+#[derive(Drop, Serde)]
+struct MinesCost {
+    steel: Cost,
+    quartz: Cost,
+    tritium: Cost,
+    solar: Cost,
+}
 
 struct Compounds {}
 

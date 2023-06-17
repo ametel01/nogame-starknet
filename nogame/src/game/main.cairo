@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use nogame::game::library::{Tokens};
+use nogame::game::library::{MinesCost};
 
 #[starknet::interface]
 trait INoGame<TContractState> {
@@ -9,13 +9,13 @@ trait INoGame<TContractState> {
     fn get_number_of_planets(self: @TContractState) -> u32;
     fn get_planet_points(self: @TContractState, planet_id: u256) -> u128;
     fn get_mines_levels(self: @TContractState, planet_id: u256) -> (u32, u32, u32, u32);
-    fn get_mines_upgrade_cost(self: @TContractState, planet_id: u256) -> Tokens;
+    fn get_mines_upgrade_cost(self: @TContractState, planet_id: u256) -> MinesCost;
 }
 
 #[starknet::contract]
 mod NoGame {
     use starknet::{ContractAddress, get_caller_address};
-    use nogame::game::library::{Tokens, Cost};
+    use nogame::game::library::{Tokens, Cost, MinesCost};
     use nogame::mines::library::Mines;
 
     #[storage]
@@ -124,11 +124,12 @@ mod NoGame {
             )
         }
 
-        fn get_mines_upgrade_cost(self: @ContractState, planet_id: u256) -> Tokens {
+        fn get_mines_upgrade_cost(self: @ContractState, planet_id: u256) -> MinesCost {
             let _steel: Cost = Mines::steel_mine_cost(planet_id.low);
             let _quartz: Cost = Mines::quartz_mine_cost(planet_id.low);
             let _tritium: Cost = Mines::tritium_mine_cost(planet_id.low);
-            Tokens { steel: _steel, quartz: _quartz, tritium: _tritium }
+            let _solar: Cost = Mines::solar_plant_cost(planet_id.low);
+            MinesCost { steel: _steel, quartz: _quartz, tritium: _tritium, solar: _solar }
         }
     }
 }
