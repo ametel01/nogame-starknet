@@ -1,3 +1,5 @@
+use core::traits::Into;
+use nogame::token::erc20::IERC20;
 use starknet::ContractAddress;
 
 #[starknet::interface]
@@ -7,11 +9,11 @@ trait IERC20<TContractState> {
     fn total_supply(self: @TContractState) -> u256;
     fn decimals(self: @TContractState) -> u8;
     fn balances(self: @TContractState, account: ContractAddress) -> u256;
-    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn allowances(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn owner(self: @TContractState) -> ContractAddress;
-    fn trasfer(ref self: TContractState, recepient: ContractAddress, amount: u256) -> bool;
-    fn trasfer_from(
-        ref self: TContractState, sender: ContractAddress, recepient: ContractAddress, amount: u256
+    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transfer_from(
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
     fn increase_allowance(
@@ -28,17 +30,21 @@ trait IERC20<TContractState> {
 
 #[starknet::contract]
 mod ERC20 {
-    use starknet::ContractAddress;
+    use core::zeroable::Zeroable;
+    use integer::BoundedInt;
+    use option::OptionTrait;
+    use starknet::{ContractAddress, get_caller_address};
+    use traits::TryInto;
 
     #[storage]
     struct Storage {
-        name: felt252,
-        symbol: felt252,
-        decimals: u8,
-        owner: ContractAddress,
-        total_supply: u256,
-        balances: LegacyMap::<ContractAddress, u256>,
-        allowances: LegacyMap::<ContractAddress, u256>
+        _name: felt252,
+        _symbol: felt252,
+        _decimals: u8,
+        _owner: ContractAddress,
+        _total_supply: u256,
+        _balances: LegacyMap::<ContractAddress, u256>,
+        _allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>
     }
 
     #[event]
@@ -70,36 +76,74 @@ mod ERC20 {
         _decimals: u8,
         _owner: ContractAddress
     ) {
-        self.name.write(_name);
-        self.symbol.write(_symbol);
-        self.decimals.write(_decimals);
-        self.owner.write(_owner);
+        self._name.write(_name);
+        self._symbol.write(_symbol);
+        self._decimals.write(_decimals);
+        self._owner.write(_owner);
     }
 
     #[external(v0)]
     impl ERC20 of super::IERC20<ContractState> {
         fn name(self: @ContractState) -> felt252 {
-            self.name.read()
+            self._name.read()
         }
 
         fn symbol(self: @ContractState) -> felt252 {
-            self.symbol.read()
+            self._symbol.read()
         }
 
         fn decimals(self: @ContractState) -> u8 {
-            self.decimals.read()
+            self._decimals.read()
         }
 
         fn total_supply(self: @ContractState) -> u256 {
-            self.total_supply.read()
+            self._total_supply.read()
         }
 
         fn balances(self: @ContractState, account: ContractAddress) -> u256 {
-            self.balances.read(account)
+            self._balances.read(account)
         }
 
-        fn allowances(self: @ContractState, account: ContractAddress) -> u256 {
-            self.balances.read(account)
+        fn allowances(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
+            self._allowances.read((owner, spender))
+        }
+
+        fn owner(self: @ContractState) -> ContractAddress {
+            self._owner.read()
+        }
+
+        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            let sender = get_caller_address();
+            assert(!sender.is_zero(), 'ERC20: transfer from 0');
+            assert(!recipient.is_zero(), 'ERC20: transfer to 0');
+            self._balances.write(sender, self._balances.read(sender) - amount);
+            self._balances.write(recipient, self._balances.read(recipient) + amount);
+            self.emit(Event::Transfer(Transfer { from: sender, to: recipient, value: amount }));
+            true
+        }
+
+        fn transfer_from(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) -> bool {
+            let sender = get_caller_address();
+            let current_allowance = self._allowances.read((sender, recipient));
+            if current_allowance != BoundedInt::max() {
+                assert(!sender.is_zero(), 'ERC20: approve from 0');
+                assert(!recipient.is_zero(), 'ERC20: approve to 0');
+                self._allowances.write((sender, recipient), amount);
+                self
+                    .emit(
+                        Event::Approval(
+                            Approval { owner: sender, spender: recipient, value: amount }
+                        )
+                    );
+            }
+            true
         }
     }
 }
