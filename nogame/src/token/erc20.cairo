@@ -2,10 +2,10 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IERC20<TContractState> {
-    fn name(self: @TContractState) -> felt;
-    fn symbol(self: @TContractState) -> felt;
+    fn name(self: @TContractState) -> felt252;
+    fn symbol(self: @TContractState) -> felt252;
     fn total_supply(self: @TContractState) -> u256;
-    fn name(self: @TContractState) -> u8;
+    fn decimals(self: @TContractState) -> u8;
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn owner(self: @TContractState) -> ContractAddress;
@@ -22,16 +22,20 @@ trait IERC20<TContractState> {
     ) -> bool;
     fn mint(ref self: TContractState, to: ContractAddress, amount: u256);
     fn burn(ref self: TContractState, to: ContractAddress, amount: u256);
-    fn transferOwnership(ref self: TContractState, new_owner: ContractAddress);
-    fn transferOwnership(ref self: TContractState);
+    fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress);
+    fn renounce_ownership(ref self: TContractState);
 }
 
 #[starknet::contract]
 mod ERC20 {
+    use starknet::ContractAddress;
+
+    #[storage]
     struct Storage {
-        name: felt,
-        symbol: felt,
+        name: felt252,
+        symbol: felt252,
         decimals: u8,
+        owner: ContractAddress,
         total_supply: u256,
         balances: LegacyMap::<ContractAddress, u256>,
         allowances: LegacyMap::<ContractAddress, u256>
@@ -56,5 +60,26 @@ mod ERC20 {
         owner: ContractAddress,
         spender: ContractAddress,
         value: u256,
+    }
+
+    #[constructor]
+    fn init(
+        ref self: ContractState,
+        _name: felt252,
+        _symbol: felt252,
+        _decimals: u8,
+        _owner: ContractAddress
+    ) {
+        self.name.write(_name);
+        self.symbol.write(_symbol);
+        self.decimals.write(_decimals);
+        self.owner.write(_owner);
+    }
+
+    #[external(v0)]
+    impl ERC20 of super::IERC20<ContractState> {
+        fn name(self: @ContractState) -> felt252 {
+            self.name.read()
+        }
     }
 }
