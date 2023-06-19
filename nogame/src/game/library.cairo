@@ -7,6 +7,13 @@ struct Cost {
 }
 
 #[derive(Drop, Serde)]
+struct CostExtended {
+    steel: u256,
+    quartz: u256,
+    tritium: u256,
+}
+
+#[derive(Drop, Serde)]
 struct Tokens {
     steel: Cost,
     quartz: Cost,
