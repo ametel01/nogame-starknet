@@ -26,21 +26,21 @@ mod MineProductionTest {
 
     #[test]
     #[available_gas(1000000000)]
-    fn quarz_production_test() {
-        let production = Mines::quarz_production(0);
+    fn quartz_production_test() {
+        let production = Mines::quartz_production(0);
         assert(production == 22.into(), 'wrong result');
-        let production = Mines::quarz_production(1);
+        let production = Mines::quartz_production(1);
         assert(production == 22.into(), 'wrong result');
-        let production = Mines::quarz_production(5);
+        let production = Mines::quartz_production(5);
         assert(production == 161.into(), 'wrong result');
-        let production = Mines::quarz_production(10);
+        let production = Mines::quartz_production(10);
         assert(production == 518.into(), 'wrong result');
-        let production = Mines::quarz_production(20);
+        let production = Mines::quartz_production(20);
         assert(production == 2690.into(), 'wrong result');
         // Max level at which overflow occures with regular formula.
-        let production = Mines::quarz_production(31);
+        let production = Mines::quartz_production(31);
         assert(production == 11900.into(), 'wrong result');
-        let production = Mines::quarz_production(61);
+        let production = Mines::quartz_production(61);
         assert(production == 357000.into(), 'wrong result');
     }
 
