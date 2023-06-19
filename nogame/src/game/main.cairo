@@ -41,41 +41,84 @@ mod NoGame {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    fn PlanetGenerated(planet_id: u256) {}
+    enum Event {
+        PlanetGenerated: PlanetGenerated,
+        TotalResourcesSpent: TotalResourcesSpent,
+        EconomySpent: EconomySpent,
+        TechSpent: TechSpent,
+        DefenceSpent: DefenceSpent,
+        SteelMineUpgrade: SteelMineUpgrade,
+        QuartzMineUpgrade: QuartzMineUpgrade,
+        TritiumMineUpgrade: TritiumMineUpgrade,
+        EnergyPlantUpgrade: EnergyPlantUpgrade
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct PlanetGenerated {
+        planet_id: u256
+    }
 
     // Resources spending events.
     #[derive(Drop, starknet::Event)]
-    fn TotalResourcesSpent(planet_id: u256, spent: u256) {}
+    struct TotalResourcesSpent {
+        planet_id: u256,
+        spent: u256
+    }
 
     #[derive(Drop, starknet::Event)]
-    fn EconomySpent(planet_id: u256, spent: u256) {}
+    struct EconomySpent {
+        planet_id: u256,
+        spent: u256
+    }
 
-    // fn TechSpent(planet_id: u256, spent: u256) {}
+    #[derive(Drop, starknet::Event)]
+    struct TechSpent {
+        planet_id: u256,
+        spent: u256
+    }
 
-    // #[event]
-    // fn DefenceSpent(planet_id: u256, spent: u256) {}
+    #[derive(Drop, starknet::Event)]
+    struct DefenceSpent {
+        planet_id: u256,
+        spent: u256
+    }
 
     // Structures upgrade events.
 
     #[derive(Drop, starknet::Event)]
-    fn SteelMineUpgrade(planet_id: u256) {}
+    struct SteelMineUpgrade {
+        planet_id: u256
+    }
 
     #[derive(Drop, starknet::Event)]
-    fn quartzMineUpgrade(planet_id: u256) {}
+    struct QuartzMineUpgrade {
+        planet_id: u256
+    }
 
     #[derive(Drop, starknet::Event)]
-    fn TritiumMineUpgrade(planet_id: u256) {}
+    struct TritiumMineUpgrade {
+        planet_id: u256
+    }
 
     #[derive(Drop, starknet::Event)]
-    fn EnergyPlantUpgrade(planet_id: u256) {}
-    // #[event]
-    // fn DockyardUpgrade(planet_id: u256) {}
+    struct EnergyPlantUpgrade {
+        planet_id: u256
+    }
 
-    // #[event]
-    // fn LabUpgrade(planet_id: u256) {}
+    #[derive(Drop, starknet::Event)]
+    struct DockyardUpgrade {
+        planet_id: u256
+    }
 
-    // #[event]
-    // fn MicroTechUpgrade(planet_id: u256) {}
+    #[derive(Drop, starknet::Event)]
+    struct LabUpgrade {
+        planet_id: u256
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct MicroTechUpgrade {
+        planet_id: u256
+    }
 
     // Constructor
     #[constructor]
