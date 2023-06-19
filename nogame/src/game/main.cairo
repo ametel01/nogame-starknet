@@ -122,7 +122,7 @@ mod NoGame {
 
     // Constructor
     #[constructor]
-    fn constructor(
+    fn init(
         ref self: ContractState,
         erc721: ContractAddress,
         steel: ContractAddress,
