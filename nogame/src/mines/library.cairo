@@ -14,11 +14,11 @@ trait MinesTrait {
     fn tritium_mine_cost(current_level: u128) -> Cost;
     fn solar_plant_cost(current_level: u128) -> Cost;
     fn steel_production(current_level: u128) -> u256;
-    fn quarz_production(current_level: u128) -> u256;
+    fn quartz_production(current_level: u128) -> u256;
     fn tritium_production(current_level: u128) -> u256;
     fn solar_plant_production(current_level: u128) -> u128;
     fn base_mine_consumption(current_level: u128) -> u128;
-    fn quarz_mine_consumption(current_level: u128) -> u128;
+    fn quartz_mine_consumption(current_level: u128) -> u128;
 }
 
 impl Mines of MinesTrait {
@@ -108,7 +108,7 @@ impl Mines of MinesTrait {
         }
     }
 
-    fn quarz_production(current_level: u128) -> u256 {
+    fn quartz_production(current_level: u128) -> u256 {
         if current_level == 0 {
             u256 { low: 22, high: 0 }
         } else if current_level <= 31 {
@@ -156,7 +156,7 @@ impl Mines of MinesTrait {
         }
     }
 
-    fn quarz_mine_consumption(current_level: u128) -> u128 {
+    fn quartz_mine_consumption(current_level: u128) -> u128 {
         if current_level == 0 {
             0
         } else if current_level <= 31 {
