@@ -26,3 +26,35 @@ trait IERC20<TContractState> {
     fn transferOwnership(ref self: TContractState);
 }
 
+#[starknet::contract]
+mod ERC20 {
+    struct Storage {
+        name: felt,
+        symbol: felt,
+        decimals: u8,
+        total_supply: u256,
+        balances: LegacyMap::<ContractAddress, u256>,
+        allowances: LegacyMap::<ContractAddress, u256>
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Transfer: Transfer,
+        Approval: Approval,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct Transfer {
+        from: ContractAddress,
+        to: ContractAddress,
+        value: u256,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct Approval {
+        owner: ContractAddress,
+        spender: ContractAddress,
+        value: u256,
+    }
+}
