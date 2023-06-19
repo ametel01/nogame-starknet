@@ -1,8 +1,18 @@
 [package]
 name = "nogame"
 version = "0.1.0"
+cairo-version = ">=2.0.0-rc0"
+authors = ["ametel01"]
+license = "MIT"
 
 [[target.starknet-contract]]
 
 [dependencies]
 starknet = ">=2.0.0-rc0"
+
+[scripts]
+test = "cairo-test ."
+
+[lib]
+sierra = true  # Enable Sierra codegen.
+casm = true   # Enable CASM codegen.
