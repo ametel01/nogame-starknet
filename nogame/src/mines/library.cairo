@@ -19,7 +19,7 @@ trait MinesTrait {
     fn tritium_production(current_level: u128) -> u256;
     fn solar_plant_production(current_level: u128) -> u128;
     fn base_mine_consumption(current_level: u128) -> u128;
-    fn quartz_mine_consumption(current_level: u128) -> u128;
+    fn tritium_mine_consumption(current_level: u128) -> u128;
 }
 
 impl Mines of MinesTrait {
@@ -105,7 +105,7 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_STEEL_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            u256 { low: production / 3600, high: 0 }
         }
     }
 
@@ -119,7 +119,7 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            u256 { low: production / 3600, high: 0 }
         }
     }
 
@@ -133,7 +133,7 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_TRITIUM_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            u256 { low: production / 3600, high: 0 }
         }
     }
 
@@ -157,7 +157,7 @@ impl Mines of MinesTrait {
         }
     }
 
-    fn quartz_mine_consumption(current_level: u128) -> u128 {
+    fn tritium_mine_consumption(current_level: u128) -> u128 {
         if current_level == 0 {
             0
         } else if current_level <= 31 {
