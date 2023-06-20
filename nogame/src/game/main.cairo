@@ -10,7 +10,8 @@ trait INoGame<TContractState> {
     fn get_planet_points(self: @TContractState, planet_id: u256) -> u128;
     fn get_mines_levels(self: @TContractState, planet_id: u256) -> MinesLevels;
     fn get_mines_upgrade_cost(self: @TContractState, planet_id: u256) -> MinesCost;
-    fn resources_available(self: @TContractState, caller: ContractAddress) -> Resources;
+    fn total_resources_available(self: @TContractState, caller: ContractAddress) -> Resources;
+    fn generate_planet(ref self: TContractState);
 }
 
 #[starknet::contract]
@@ -18,7 +19,7 @@ mod NoGame {
     use core::option::OptionTrait;
     use core::traits::Into;
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::library::{Tokens, Cost, MinesCost, MinesLevels, Resources};
     use nogame::mines::library::Mines;
     use nogame::token::erc20::IERC20DispatcherTrait;
@@ -30,6 +31,7 @@ mod NoGame {
     struct Storage {
         // General.
         number_of_planets: u32,
+        planet_generated: LegacyMap::<u256, bool>,
         planet_spent_resources: u32,
         planet_points: LegacyMap::<u256, u128>,
         // Tokens.
@@ -146,6 +148,9 @@ mod NoGame {
 
     #[external(v0)]
     impl NoGame of super::INoGame<ContractState> {
+        //#########################################################################################
+        //                                      VIEW FUNCTIONS                                    #
+        //#########################################################################################
         fn get_tokens_addresses(
             self: @ContractState
         ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
@@ -184,7 +189,7 @@ mod NoGame {
             MinesCost { steel: _steel, quartz: _quartz, tritium: _tritium, solar: _solar }
         }
 
-        fn resources_available(self: @ContractState, caller: ContractAddress) -> Resources {
+        fn total_resources_available(self: @ContractState, caller: ContractAddress) -> Resources {
             let planet_id = PrivateFunctions::get_planet_id_from_address(self, caller);
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
@@ -217,13 +222,31 @@ mod NoGame {
                 energy: energy_available
             }
         }
+        //#########################################################################################
+        //                                      EXTERNAL FUNCTIONS                                #
+        //#########################################################################################
+        fn generate_planet(ref self: ContractState) {
+            let game_address = get_contract_address();
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            if self.planet_generated.read(planet_id) == false {
+                self.planet_generated.write(planet_id, true);
+                IERC721Dispatcher {
+                    contract_address: self.erc721_address.read()
+                }.transfer(from: game_address, to: caller, token_id: planet_id);
+            }
+        }
     }
+
+    //#########################################################################################
+    //                                      PRIVATE FUNCTIONS                                 #
+    //#########################################################################################
 
     #[generate_trait]
     impl PrivateFunctions of PrivateTrait {
         fn get_planet_id_from_address(self: @ContractState, caller: ContractAddress) -> u256 {
             let erc721 = self.erc721_address.read();
-            let planet_id = IERC721Dispatcher { contract_address: erc721 }.token_to_owner(caller);
+            let planet_id = IERC721Dispatcher { contract_address: erc721 }.owner_of(caller);
             planet_id
         }
 
