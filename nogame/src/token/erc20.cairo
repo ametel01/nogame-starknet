@@ -1,5 +1,4 @@
 use core::traits::Into;
-use nogame::token::erc20::IERC20;
 use starknet::ContractAddress;
 
 #[starknet::interface]
@@ -20,20 +19,20 @@ trait IERC20<TContractState> {
         ref self: TContractState, spender: ContractAddress, added_value: u256
     ) -> bool;
     fn decrease_allowance(
-        ref self: TContractState, spender: ContractAddress, added_value: u256
+        ref self: TContractState, spender: ContractAddress, substracted_value: u256
     ) -> bool;
-    fn mint(ref self: TContractState, to: ContractAddress, amount: u256);
-    fn burn(ref self: TContractState, to: ContractAddress, amount: u256);
-    fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress);
-    fn renounce_ownership(ref self: TContractState);
+    fn mint(ref self: TContractState, recipient: ContractAddress, amount: u256);
+    fn burn(ref self: TContractState, account: ContractAddress, amount: u256);
 }
 
 #[starknet::contract]
 mod ERC20 {
+    use core::integer::{U256Add, U256Sub};
     use core::zeroable::Zeroable;
     use integer::BoundedInt;
     use option::OptionTrait;
     use starknet::{ContractAddress, get_caller_address};
+    use starknet::contract_address::ContractAddressZeroable;
     use traits::TryInto;
 
     #[storage]
@@ -144,6 +143,74 @@ mod ERC20 {
                     );
             }
             true
+        }
+
+        fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
+            let caller = get_caller_address();
+            assert(!caller.is_zero(), 'ERC20: approve from 0');
+            assert(!caller.is_zero(), 'ERC20: approve to 0');
+            self._allowances.write((caller, spender), amount);
+            true
+        }
+
+        fn increase_allowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
+        ) -> bool {
+            let caller = get_caller_address();
+            let current_allowance = self._allowances.read((caller, spender));
+            let new_allowance = U256Add::add(current_allowance, added_value);
+            assert(!caller.is_zero(), 'ERC20: approve from 0');
+            assert(!caller.is_zero(), 'ERC20: approve to 0');
+            self._allowances.write((caller, spender), new_allowance);
+            true
+        }
+
+        fn decrease_allowance(
+            ref self: ContractState, spender: ContractAddress, substracted_value: u256
+        ) -> bool {
+            let caller = get_caller_address();
+            let current_allowance = self._allowances.read((caller, spender));
+            let new_allowance = U256Sub::sub(current_allowance, substracted_value);
+            assert(!caller.is_zero(), 'ERC20: approve from 0');
+            assert(!caller.is_zero(), 'ERC20: approve to 0');
+            self._allowances.write((caller, spender), new_allowance);
+            true
+        }
+
+        fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+            let caller = get_caller_address();
+            assert(caller == self._owner.read(), 'ERC20: caller not owner');
+            assert(!recipient.is_zero(), 'ERC20: mint to 0');
+            let new_supply = U256Add::add(self._total_supply.read(), amount);
+            self._total_supply.write(new_supply);
+            let new_balance = U256Add::add(self._balances.read(recipient), amount);
+            self._balances.write(recipient, new_balance);
+            self
+                .emit(
+                    Event::Transfer(
+                        Transfer {
+                            from: ContractAddressZeroable::zero(), to: recipient, value: amount
+                        }
+                    )
+                );
+        }
+
+        fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
+            let caller = get_caller_address();
+            assert(caller == self._owner.read(), 'ERC20: caller not owner');
+            assert(!account.is_zero(), 'ERC20: mint to 0');
+            let new_supply = U256Sub::sub(self._total_supply.read(), amount);
+            self._total_supply.write(new_supply);
+            let new_balance = U256Sub::sub(self._balances.read(account), amount);
+            self._balances.write(account, new_balance);
+            self
+                .emit(
+                    Event::Transfer(
+                        Transfer {
+                            from: account, to: ContractAddressZeroable::zero(), value: amount
+                        }
+                    )
+                );
         }
     }
 }
