@@ -12,6 +12,7 @@ trait INoGame<TContractState> {
     fn get_mines_upgrade_cost(self: @TContractState, planet_id: u256) -> MinesCost;
     fn total_resources_available(self: @TContractState, caller: ContractAddress) -> Resources;
     fn generate_planet(ref self: TContractState);
+    fn collect_resources(ref self: TContractState);
 }
 
 #[starknet::contract]
@@ -190,11 +191,80 @@ mod NoGame {
         }
 
         fn total_resources_available(self: @ContractState, caller: ContractAddress) -> Resources {
+            let production: Resources = PrivateFunctions::calculate_production(self, caller);
+            let erc20_available = PrivateFunctions::get_erc20s_available(self, caller);
+            Resources {
+                steel: production.steel + erc20_available.steel,
+                quartz: production.quartz + erc20_available.quartz,
+                tritium: production.tritium + erc20_available.tritium,
+                energy: production.energy
+            }
+        }
+        //#########################################################################################
+        //                                      EXTERNAL FUNCTIONS                                #
+        //#########################################################################################
+        fn generate_planet(ref self: ContractState) {
+            let game_address = get_contract_address();
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            if self.planet_generated.read(planet_id) == false {
+                self.planet_generated.write(planet_id, true);
+                IERC721Dispatcher {
+                    contract_address: self.erc721_address.read()
+                }.transfer(from: game_address, to: caller, token_id: planet_id);
+            }
+        }
+
+        fn collect_resources(ref self: ContractState) {
+            let caller = get_caller_address();
+        }
+    }
+
+    //#########################################################################################
+    //                                      PRIVATE FUNCTIONS                                 #
+    //#########################################################################################
+
+    #[generate_trait]
+    impl PrivateFunctions of PrivateTrait {
+        fn get_planet_id_from_address(self: @ContractState, caller: ContractAddress) -> u256 {
+            let erc721 = self.erc721_address.read();
+            let planet_id = IERC721Dispatcher { contract_address: erc721 }.owner_of(caller);
+            planet_id
+        }
+
+        fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> Resources {
+            let planet_id = PrivateFunctions::get_planet_id_from_address(self, caller);
+            // let time_now = get_block_timestamp();
+            // let previous_time = self.resources_timer.read(planet_id);
+            // let time_elapsed = time_now - previous_time;
+
+            let steel_level = self.steel_mine_level.read(planet_id);
+            let quartz_level = self.quartz_mine_level.read(planet_id);
+            let tritium_level = self.tritium_mine_level.read(planet_id);
+
+            let _steel = IERC20Dispatcher {
+                contract_address: self.steel_address.read()
+            }.balances(caller);
+            // let steel_total = Mines::steel_production(steel_level) + steel_available;
+
+            let _quartz = IERC20Dispatcher {
+                contract_address: self.quartz_address.read()
+            }.balances(caller);
+            // let quartz_total = Mines::quartz_production(quartz_level) + quartz_available;
+
+            let _tritium = IERC20Dispatcher {
+                contract_address: self.tritium_address.read()
+            }.balances(caller);
+            // let steel_produced = Mines::steel_production(steel_level) + steel_available;
+            let _energy = PrivateFunctions::calculate_net_energy(self, planet_id);
+            Resources { steel: _steel, quartz: _quartz, tritium: _tritium, energy: _energy }
+        }
+
+        fn calculate_production(self: @ContractState, caller: ContractAddress) -> Resources {
             let planet_id = PrivateFunctions::get_planet_id_from_address(self, caller);
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
-
             let steel_available: u256 = u256 {
                 low: Mines::steel_production(self.steel_mine_level.read(planet_id)).low
                     * time_elapsed.into(),
@@ -222,64 +292,6 @@ mod NoGame {
                 energy: energy_available
             }
         }
-        //#########################################################################################
-        //                                      EXTERNAL FUNCTIONS                                #
-        //#########################################################################################
-        fn generate_planet(ref self: ContractState) {
-            let game_address = get_contract_address();
-            let caller = get_caller_address();
-            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
-            if self.planet_generated.read(planet_id) == false {
-                self.planet_generated.write(planet_id, true);
-                IERC721Dispatcher {
-                    contract_address: self.erc721_address.read()
-                }.transfer(from: game_address, to: caller, token_id: planet_id);
-            }
-        }
-    }
-
-    //#########################################################################################
-    //                                      PRIVATE FUNCTIONS                                 #
-    //#########################################################################################
-
-    #[generate_trait]
-    impl PrivateFunctions of PrivateTrait {
-        fn get_planet_id_from_address(self: @ContractState, caller: ContractAddress) -> u256 {
-            let erc721 = self.erc721_address.read();
-            let planet_id = IERC721Dispatcher { contract_address: erc721 }.owner_of(caller);
-            planet_id
-        }
-
-        fn get_resources_available(self: @ContractState, caller: ContractAddress) -> Resources {
-            let planet_id = PrivateFunctions::get_planet_id_from_address(self, caller);
-            // let time_now = get_block_timestamp();
-            // let previous_time = self.resources_timer.read(planet_id);
-            // let time_elapsed = time_now - previous_time;
-
-            let steel_level = self.steel_mine_level.read(planet_id);
-            let quartz_level = self.quartz_mine_level.read(planet_id);
-            let tritium_level = self.tritium_mine_level.read(planet_id);
-
-            let _steel = IERC20Dispatcher {
-                contract_address: self.steel_address.read()
-            }.balances(caller);
-            // let steel_total = Mines::steel_production(steel_level) + steel_available;
-
-            let _quartz = IERC20Dispatcher {
-                contract_address: self.quartz_address.read()
-            }.balances(caller);
-            // let quartz_total = Mines::quartz_production(quartz_level) + quartz_available;
-
-            let _tritium = IERC20Dispatcher {
-                contract_address: self.tritium_address.read()
-            }.balances(caller);
-            // let steel_produced = Mines::steel_production(steel_level) + steel_available;
-            let _energy = PrivateFunctions::calculate_net_energy(self, planet_id);
-            Resources { steel: _steel, quartz: _quartz, tritium: _tritium, energy: _energy }
-        }
-        // fn calculate_production(self: ContractState, caller: ContractAddress) -> Resources {
-
-        // }
 
         fn calculate_net_energy(self: @ContractState, planet_id: u256) -> u128 {
             let energy = Mines::solar_plant_production(self.energy_mine_level.read(planet_id));
