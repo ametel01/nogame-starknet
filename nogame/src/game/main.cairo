@@ -217,6 +217,10 @@ mod NoGame {
 
         fn collect_resources(ref self: ContractState) {
             let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let production = PrivateFunctions::calculate_production(@self, caller);
+            PrivateFunctions::send_resources_erc20(@self, caller, production);
+            self.resources_timer.write(planet_id, get_block_timestamp());
         }
     }
 
@@ -303,6 +307,15 @@ mod NoGame {
             } else {
                 energy - energy_needed
             }
+        }
+
+        fn send_resources_erc20(self: @ContractState, to: ContractAddress, amounts: Resources) {
+            let steel_address = self.steel_address.read();
+            let quartz_address = self.quartz_address.read();
+            let tritium_address = self.tritium_address.read();
+            IERC20Dispatcher { contract_address: steel_address }.mint(to, amounts.steel);
+            IERC20Dispatcher { contract_address: quartz_address }.mint(to, amounts.quartz);
+            IERC20Dispatcher { contract_address: tritium_address }.mint(to, amounts.tritium)
         }
     }
 }
