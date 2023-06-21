@@ -39,7 +39,6 @@ trait INoGame<TContractState> {
 }
 
 #[starknet::contract]
-#[generate_trait]
 mod NoGame {
     use core::option::OptionTrait;
     use core::traits::Into;
