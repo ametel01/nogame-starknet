@@ -15,9 +15,9 @@ struct CostExtended {
 
 #[derive(Drop, Serde)]
 struct Tokens {
-    steel: Cost,
-    quartz: Cost,
-    tritium: Cost,
+    steel: ContractAddress,
+    quartz: ContractAddress,
+    tritium: ContractAddress,
 }
 
 #[derive(Drop, Serde)]
