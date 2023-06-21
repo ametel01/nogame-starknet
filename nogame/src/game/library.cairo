@@ -40,7 +40,8 @@ struct MinesLevels {
 }
 
 struct Compounds {}
-#[derive(Drop)]
+
+#[derive(Copy, Drop)]
 struct Techs {
     energy_innovation: u128,
     digital_system: u128,
@@ -56,6 +57,7 @@ struct Techs {
     thrust_propulsion: u128,
     warp_drive: u128,
 }
+
 
 struct Fleet {}
 
