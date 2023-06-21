@@ -40,8 +40,22 @@ struct MinesLevels {
 }
 
 struct Compounds {}
-
-struct Techs {}
+#[derive(Drop)]
+struct Techs {
+    energy_innovation: u128,
+    digital_system: u128,
+    beam_technology: u128,
+    armour_innovation: u128,
+    ion_systems: u128,
+    plasma_engineering: u128,
+    stellar_physics: u128,
+    arms_development: u128,
+    shield_tech: u128,
+    spacetime_warp: u128,
+    combustive_engine: u128,
+    thrust_propulsion: u128,
+    warp_drive: u128,
+}
 
 struct Fleet {}
 
