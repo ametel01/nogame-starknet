@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 
-#[derive(Drop, Serde)]
+#[derive(Copy, Drop, Serde)]
 struct CostExtended {
     steel: u256,
     quartz: u256,
@@ -36,7 +36,7 @@ struct MinesLevels {
     steel: u128,
     quartz: u128,
     tritium: u128,
-    solar: u128
+    energy: u128
 }
 
 struct Compounds {}
