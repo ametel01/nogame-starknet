@@ -4,14 +4,16 @@ use nogame::game::library::{CostExtended, Techs};
 
 #[generate_trait]
 impl Lab of LabTrait {
-    fn get_tech_cost(current_level: u128, base_cost: CostExtended) -> CostExtended {
+    fn get_tech_cost(
+        current_level: u128, steel: u128, quartz: u128, tritium: u128
+    ) -> CostExtended {
         if current_level == 0 {
-            base_cost
+            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: tritium.into() }
         } else {
             CostExtended {
-                steel: base_cost.steel * pow(2, current_level).into(),
-                quartz: base_cost.quartz * pow(2, current_level).into(),
-                tritium: base_cost.tritium * pow(2, current_level).into()
+                steel: (steel * pow(2, current_level)).into(),
+                quartz: (quartz * pow(2, current_level)).into(),
+                tritium: (tritium * pow(2, current_level)).into()
             }
         }
     }
