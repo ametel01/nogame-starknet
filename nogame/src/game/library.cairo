@@ -44,7 +44,7 @@ struct Compounds {}
 #[derive(Copy, Drop)]
 struct Techs {
     energy_innovation: u128,
-    digital_system: u128,
+    digital_systems: u128,
     beam_technology: u128,
     armour_innovation: u128,
     ion_systems: u128,
