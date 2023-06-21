@@ -13,6 +13,7 @@ trait INoGame<TContractState> {
     fn total_resources_available(self: @TContractState, caller: ContractAddress) -> Resources;
     fn generate_planet(ref self: TContractState);
     fn collect_resources(ref self: TContractState);
+    fn steel_mine_upgrade(ref self: TContractState);
 }
 
 #[starknet::contract]
@@ -222,6 +223,12 @@ mod NoGame {
             PrivateFunctions::send_resources_erc20(@self, caller, production);
             self.resources_timer.write(planet_id, get_block_timestamp());
         }
+        //#########################################################################################
+        //                               MINES UPGRADE FUNCTIONS                                  #
+        //#########################################################################################
+        fn steel_mine_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+        }
     }
 
     //#########################################################################################
@@ -238,10 +245,6 @@ mod NoGame {
 
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> Resources {
             let planet_id = PrivateFunctions::get_planet_id_from_address(self, caller);
-            // let time_now = get_block_timestamp();
-            // let previous_time = self.resources_timer.read(planet_id);
-            // let time_elapsed = time_now - previous_time;
-
             let steel_level = self.steel_mine_level.read(planet_id);
             let quartz_level = self.quartz_mine_level.read(planet_id);
             let tritium_level = self.tritium_mine_level.read(planet_id);
@@ -316,6 +319,15 @@ mod NoGame {
             IERC20Dispatcher { contract_address: steel_address }.mint(to, amounts.steel);
             IERC20Dispatcher { contract_address: quartz_address }.mint(to, amounts.quartz);
             IERC20Dispatcher { contract_address: tritium_address }.mint(to, amounts.tritium)
+        }
+
+        fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: Resources) {
+            let steel_address = self.steel_address.read();
+            let quartz_address = self.quartz_address.read();
+            let tritium_address = self.tritium_address.read();
+            IERC20Dispatcher { contract_address: steel_address }.burn(account, amounts.steel);
+            IERC20Dispatcher { contract_address: quartz_address }.burn(account, amounts.quartz);
+            IERC20Dispatcher { contract_address: tritium_address }.burn(account, amounts.tritium)
         }
     }
 }
