@@ -17,6 +17,8 @@ trait INoGame<TContractState> {
     fn quartz_mine_upgrade(ref self: TContractState);
     fn tritium_mine_upgrade(ref self: TContractState);
     fn energy_plant_upgrade(ref self: TContractState);
+    fn dockyard_upgrade(ref self: TContractState);
+    fn lab_upgrade(ref self: TContractState);
 }
 
 #[starknet::contract]
@@ -27,6 +29,7 @@ mod NoGame {
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::library::{Tokens, CostExtended, MinesCost, MinesLevels, Resources};
+    use nogame::compounds::library::Compounds;
     use nogame::mines::library::Mines;
     use nogame::token::erc20::IERC20DispatcherTrait;
     use nogame::token::erc20::IERC20Dispatcher;
@@ -44,14 +47,13 @@ mod NoGame {
         steel_address: ContractAddress,
         quartz_address: ContractAddress,
         tritium_address: ContractAddress,
-        // Ifrastructures.
+        // Infrastructures.
         steel_mine_level: LegacyMap::<u256, u128>,
         quartz_mine_level: LegacyMap::<u256, u128>,
         tritium_mine_level: LegacyMap::<u256, u128>,
         energy_plant_level: LegacyMap::<u256, u128>,
-        // dockyard_level: LegacyMap::<u256, u32>,
-        // lab_level: LegacyMap::<u256, u32>,
-        // microtech_level: LegacyMap::<u256, u32>,
+        dockyard_level: LegacyMap::<u256, u128>,
+        lab_level: LegacyMap::<u256, u128>,
         resources_timer: LegacyMap::<u256, u64>,
     }
 
@@ -254,6 +256,42 @@ mod NoGame {
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
+        }
+        //#########################################################################################
+        //                               COMPOUNDS UPGRADE FUNCTIONS                              #
+        //#########################################################################################
+        fn dockyard_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.dockyard_level.read(planet_id);
+            let cost: CostExtended = Compounds::dockyard_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.dockyard_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
+        }
+
+        fn lab_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.lab_level.read(planet_id);
+            let cost: CostExtended = Compounds::lab_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.lab_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self
                 .emit(
