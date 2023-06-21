@@ -14,15 +14,19 @@ trait INoGame<TContractState> {
     fn generate_planet(ref self: TContractState);
     fn collect_resources(ref self: TContractState);
     fn steel_mine_upgrade(ref self: TContractState);
+    fn quartz_mine_upgrade(ref self: TContractState);
+    fn tritium_mine_upgrade(ref self: TContractState);
+    fn energy_plant_upgrade(ref self: TContractState);
 }
 
 #[starknet::contract]
+#[generate_trait]
 mod NoGame {
     use core::option::OptionTrait;
     use core::traits::Into;
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
-    use nogame::game::library::{Tokens, Cost, CostExtended, MinesCost, MinesLevels, Resources};
+    use nogame::game::library::{Tokens, CostExtended, MinesCost, MinesLevels, Resources};
     use nogame::mines::library::Mines;
     use nogame::token::erc20::IERC20DispatcherTrait;
     use nogame::token::erc20::IERC20Dispatcher;
@@ -34,7 +38,6 @@ mod NoGame {
         // General.
         number_of_planets: u32,
         planet_generated: LegacyMap::<u256, bool>,
-        planet_spent_resources: u32,
         planet_points: LegacyMap::<u256, u128>,
         // Tokens.
         erc721_address: ContractAddress,
@@ -45,7 +48,7 @@ mod NoGame {
         steel_mine_level: LegacyMap::<u256, u128>,
         quartz_mine_level: LegacyMap::<u256, u128>,
         tritium_mine_level: LegacyMap::<u256, u128>,
-        energy_mine_level: LegacyMap::<u256, u128>,
+        energy_plant_level: LegacyMap::<u256, u128>,
         // dockyard_level: LegacyMap::<u256, u32>,
         // lab_level: LegacyMap::<u256, u32>,
         // microtech_level: LegacyMap::<u256, u32>,
@@ -60,10 +63,6 @@ mod NoGame {
         EconomySpent: EconomySpent,
         TechSpent: TechSpent,
         DefenceSpent: DefenceSpent,
-        SteelMineUpgrade: SteelMineUpgrade,
-        QuartzMineUpgrade: QuartzMineUpgrade,
-        TritiumMineUpgrade: TritiumMineUpgrade,
-        EnergyPlantUpgrade: EnergyPlantUpgrade
     }
 
     #[derive(Drop, starknet::Event)]
@@ -75,7 +74,7 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct TotalResourcesSpent {
         planet_id: u256,
-        spent: u256
+        spent: CostExtended
     }
 
     #[derive(Drop, starknet::Event)]
@@ -97,41 +96,6 @@ mod NoGame {
     }
 
     // Structures upgrade events.
-
-    #[derive(Drop, starknet::Event)]
-    struct SteelMineUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct QuartzMineUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct TritiumMineUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct EnergyPlantUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct DockyardUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct LabUpgrade {
-        planet_id: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct MicroTechUpgrade {
-        planet_id: u256
-    }
 
     // Constructor
     #[constructor]
@@ -179,15 +143,15 @@ mod NoGame {
                 steel: self.steel_mine_level.read(planet_id),
                 quartz: self.quartz_mine_level.read(planet_id),
                 tritium: self.tritium_mine_level.read(planet_id),
-                solar: self.energy_mine_level.read(planet_id)
+                energy: self.energy_plant_level.read(planet_id)
             })
         }
 
         fn get_mines_upgrade_cost(self: @ContractState, planet_id: u256) -> MinesCost {
-            let _steel: Cost = Mines::steel_mine_cost(planet_id.low);
-            let _quartz: Cost = Mines::quartz_mine_cost(planet_id.low);
-            let _tritium: Cost = Mines::tritium_mine_cost(planet_id.low);
-            let _solar: Cost = Mines::solar_plant_cost(planet_id.low);
+            let _steel: CostExtended = Mines::steel_mine_cost(planet_id.low);
+            let _quartz: CostExtended = Mines::quartz_mine_cost(planet_id.low);
+            let _tritium: CostExtended = Mines::tritium_mine_cost(planet_id.low);
+            let _solar: CostExtended = Mines::energy_plant_cost(planet_id.low);
             MinesCost { steel: _steel, quartz: _quartz, tritium: _tritium, solar: _solar }
         }
 
@@ -214,6 +178,9 @@ mod NoGame {
                     contract_address: self.erc721_address.read()
                 }.transfer(from: game_address, to: caller, token_id: planet_id);
             }
+            let number_of_planets = self.number_of_planets.read();
+            self.number_of_planets.write(number_of_planets + 1);
+            self.emit(Event::PlanetGenerated(PlanetGenerated { planet_id: planet_id }))
         }
 
         fn collect_resources(ref self: ContractState) {
@@ -228,6 +195,70 @@ mod NoGame {
         //#########################################################################################
         fn steel_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.steel_mine_level.read(planet_id);
+            let cost: CostExtended = Mines::steel_mine_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.steel_mine_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
+        }
+
+        fn quartz_mine_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.quartz_mine_level.read(planet_id);
+            let cost: CostExtended = Mines::quartz_mine_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.quartz_mine_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
+        }
+
+        fn tritium_mine_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.steel_mine_level.read(planet_id);
+            let cost: CostExtended = Mines::tritium_mine_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.tritium_mine_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
+        }
+
+        fn energy_plant_upgrade(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let current_level = self.energy_plant_level.read(planet_id);
+            let cost: CostExtended = Mines::energy_plant_cost(current_level);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            self.energy_plant_level.write(planet_id, current_level + 1);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .emit(
+                    Event::TotalResourcesSpent(
+                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
+                    )
+                )
         }
     }
 
@@ -301,7 +332,7 @@ mod NoGame {
         }
 
         fn calculate_net_energy(self: @ContractState, planet_id: u256) -> u128 {
-            let energy = Mines::solar_plant_production(self.energy_mine_level.read(planet_id));
+            let energy = Mines::solar_plant_production(self.energy_plant_level.read(planet_id));
             let energy_needed = Mines::base_mine_consumption(self.steel_mine_level.read(planet_id))
                 + Mines::base_mine_consumption(self.quartz_mine_level.read(planet_id))
                 + Mines::tritium_mine_consumption(self.tritium_mine_level.read(planet_id));
@@ -319,7 +350,9 @@ mod NoGame {
             IERC20Dispatcher { contract_address: tokens.tritium }.mint(to, amounts.tritium)
         }
 
-        fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: Resources) {
+        fn pay_resources_erc20(
+            self: @ContractState, account: ContractAddress, amounts: CostExtended
+        ) {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher { contract_address: tokens.steel }.burn(account, amounts.steel);
             IERC20Dispatcher { contract_address: tokens.quartz }.burn(account, amounts.quartz);
@@ -341,6 +374,12 @@ mod NoGame {
                 quartz: self.quartz_address.read(),
                 tritium: self.tritium_address.read()
             }
+        }
+
+        fn update_planet_points(ref self: ContractState, planet_id: u256, spent: CostExtended) {
+            let current_points = self.planet_points.read(planet_id);
+            let acquired_points = (spent.steel.low + spent.quartz.low) / 1000;
+            self.planet_points.write(planet_id, current_points + acquired_points);
         }
     }
 }
