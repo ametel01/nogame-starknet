@@ -22,7 +22,7 @@ mod NoGame {
     use core::traits::Into;
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
-    use nogame::game::library::{Tokens, Cost, MinesCost, MinesLevels, Resources};
+    use nogame::game::library::{Tokens, Cost, CostExtended, MinesCost, MinesLevels, Resources};
     use nogame::mines::library::Mines;
     use nogame::token::erc20::IERC20DispatcherTrait;
     use nogame::token::erc20::IERC20Dispatcher;
@@ -313,21 +313,34 @@ mod NoGame {
         }
 
         fn send_resources_erc20(self: @ContractState, to: ContractAddress, amounts: Resources) {
-            let steel_address = self.steel_address.read();
-            let quartz_address = self.quartz_address.read();
-            let tritium_address = self.tritium_address.read();
-            IERC20Dispatcher { contract_address: steel_address }.mint(to, amounts.steel);
-            IERC20Dispatcher { contract_address: quartz_address }.mint(to, amounts.quartz);
-            IERC20Dispatcher { contract_address: tritium_address }.mint(to, amounts.tritium)
+            let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
+            IERC20Dispatcher { contract_address: tokens.steel }.mint(to, amounts.steel);
+            IERC20Dispatcher { contract_address: tokens.quartz }.mint(to, amounts.quartz);
+            IERC20Dispatcher { contract_address: tokens.tritium }.mint(to, amounts.tritium)
         }
 
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: Resources) {
-            let steel_address = self.steel_address.read();
-            let quartz_address = self.quartz_address.read();
-            let tritium_address = self.tritium_address.read();
-            IERC20Dispatcher { contract_address: steel_address }.burn(account, amounts.steel);
-            IERC20Dispatcher { contract_address: quartz_address }.burn(account, amounts.quartz);
-            IERC20Dispatcher { contract_address: tritium_address }.burn(account, amounts.tritium)
+            let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
+            IERC20Dispatcher { contract_address: tokens.steel }.burn(account, amounts.steel);
+            IERC20Dispatcher { contract_address: tokens.quartz }.burn(account, amounts.quartz);
+            IERC20Dispatcher { contract_address: tokens.tritium }.burn(account, amounts.tritium)
+        }
+
+        fn check_enough_resources(
+            self: @ContractState, caller: ContractAddress, amounts: CostExtended
+        ) {
+            let available: Resources = PrivateFunctions::get_erc20s_available(self, caller);
+            assert(amounts.steel <= available.steel, 'Not enough steel');
+            assert(amounts.quartz <= available.quartz, 'Not enough quartz');
+            assert(amounts.tritium <= available.tritium, 'Not enough tritium');
+        }
+
+        fn get_tokens_addresses(self: @ContractState) -> Tokens {
+            Tokens {
+                steel: self.steel_address.read(),
+                quartz: self.quartz_address.read(),
+                tritium: self.tritium_address.read()
+            }
         }
     }
 }
