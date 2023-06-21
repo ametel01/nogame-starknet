@@ -180,8 +180,10 @@ mod NoGame {
             }
             let number_of_planets = self.number_of_planets.read();
             self.number_of_planets.write(number_of_planets + 1);
+            PrivateFunctions::mint_initial_liquidity(@self, caller);
             self.emit(Event::PlanetGenerated(PlanetGenerated { planet_id: planet_id }))
         }
+
 
         fn collect_resources(ref self: ContractState) {
             let caller = get_caller_address();
@@ -357,6 +359,19 @@ mod NoGame {
             IERC20Dispatcher { contract_address: tokens.steel }.burn(account, amounts.steel);
             IERC20Dispatcher { contract_address: tokens.quartz }.burn(account, amounts.quartz);
             IERC20Dispatcher { contract_address: tokens.tritium }.burn(account, amounts.tritium)
+        }
+
+        fn mint_initial_liquidity(self: @ContractState, account: ContractAddress) {
+            let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
+            IERC20Dispatcher {
+                contract_address: tokens.steel
+            }.mint(recipient: account, amount: u256 { low: 500, high: 0 });
+            IERC20Dispatcher {
+                contract_address: tokens.quartz
+            }.mint(recipient: account, amount: u256 { low: 300, high: 0 });
+            IERC20Dispatcher {
+                contract_address: tokens.tritium
+            }.mint(recipient: account, amount: u256 { low: 100, high: 0 });
         }
 
         fn check_enough_resources(
