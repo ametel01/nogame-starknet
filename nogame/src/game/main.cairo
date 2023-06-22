@@ -654,7 +654,7 @@ mod NoGame {
         }
 
         fn calculate_net_energy(self: @ContractState, planet_id: u256) -> u128 {
-            let energy = Mines::solar_plant_production(self.energy_plant_level.read(planet_id));
+            let energy = Mines::energy_plant_production(self.energy_plant_level.read(planet_id));
             let energy_needed = Mines::base_mine_consumption(self.steel_mine_level.read(planet_id))
                 + Mines::base_mine_consumption(self.quartz_mine_level.read(planet_id))
                 + Mines::tritium_mine_consumption(self.tritium_mine_level.read(planet_id));
