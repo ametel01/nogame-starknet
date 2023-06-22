@@ -79,7 +79,7 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_STEEL_OVERFLOW * (current_level - 31);
-            u256 { low: production / 3600, high: 0 }
+            u256 { low: production, high: 0 }
         }
     }
 
@@ -93,7 +93,7 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
-            u256 { low: production / 3600, high: 0 }
+            u256 { low: production, high: 0 }
         }
     }
 
@@ -107,15 +107,15 @@ impl Mines of MinesTrait {
             u256 { low: production, high: 0 }
         } else {
             let production = MAX_TRITIUM_OVERFLOW * (current_level - 31);
-            u256 { low: production / 3600, high: 0 }
+            u256 { low: production, high: 0 }
         }
     }
 
-    fn solar_plant_production(current_level: u128) -> u128 {
+    fn energy_plant_production(current_level: u128) -> u128 {
         if current_level == 0 {
-            0
+            30
         } else if current_level <= 31 {
-            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
+            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level)) + 30
         } else {
             MAX_QUARZ_OVERFLOW * (current_level - 31)
         }
