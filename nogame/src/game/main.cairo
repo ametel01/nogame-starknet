@@ -627,19 +627,19 @@ mod NoGame {
             let time_elapsed = time_now - last_collection_time;
             let steel_available: u256 = u256 {
                 low: Mines::steel_production(self.steel_mine_level.read(planet_id)).low
-                    * time_elapsed.into(),
+                    * (time_elapsed / 3600).into(),
                 high: 0
             };
 
             let quartz_available: u256 = u256 {
                 low: Mines::quartz_production(self.quartz_mine_level.read(planet_id)).low
-                    * time_elapsed.into(),
+                    * (time_elapsed / 3600).into(),
                 high: 0
             };
 
             let tritium_available: u256 = u256 {
                 low: Mines::tritium_production(self.tritium_mine_level.read(planet_id)).low
-                    * time_elapsed.into(),
+                    * (time_elapsed / 3600).into(),
                 high: 0
             };
 
