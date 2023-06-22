@@ -6,5 +6,4 @@ mod research;
 mod defences;
 mod token;
 mod math;
-mod tests;
 
