@@ -59,7 +59,14 @@ struct Techs {
 }
 
 
-struct Fleet {}
+struct Ships {
+    carrier: u128,
+    scraper: u128,
+    celestia: u128,
+    sparrow: u128,
+    frigate: u128,
+    armade: u128,
+}
 
 struct Defences {}
 
