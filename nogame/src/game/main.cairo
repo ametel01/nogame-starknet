@@ -36,6 +36,13 @@ trait INoGame<TContractState> {
     fn combustive_engine_upgrade(ref self: TContractState);
     fn thrust_propulsion_upgrade(ref self: TContractState);
     fn warp_drive_upgrade(ref self: TContractState);
+    // Dockyard functions
+    fn carrier_build(ref self: TContractState, quantity: u128);
+    fn scraper_build(ref self: TContractState, quantity: u128);
+    fn celestia_build(ref self: TContractState, quantity: u128);
+    fn sparrow_build(ref self: TContractState, quantity: u128);
+    fn frigate_build(ref self: TContractState, quantity: u128);
+    fn armade_build(ref self: TContractState, quantity: u128);
 }
 
 #[starknet::contract]
@@ -46,6 +53,7 @@ mod NoGame {
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::library::{Tokens, CostExtended, MinesCost, MinesLevels, Resources, Techs};
     use nogame::compounds::library::Compounds;
+    use nogame::dockyard::library::Dockyard;
     use nogame::mines::library::Mines;
     use nogame::research::library::Lab;
     use nogame::token::erc20::IERC20DispatcherTrait;
@@ -86,13 +94,20 @@ mod NoGame {
         combustive_engine_level: LegacyMap::<u256, u128>,
         thrust_propulsion_level: LegacyMap::<u256, u128>,
         warp_drive_level: LegacyMap::<u256, u128>,
+        // Ships
+        carrier_available: LegacyMap::<u256, u128>,
+        scraper_available: LegacyMap::<u256, u128>,
+        celestia_available: LegacyMap::<u256, u128>,
+        sparrow_available: LegacyMap::<u256, u128>,
+        frigate_available: LegacyMap::<u256, u128>,
+        armade_available: LegacyMap::<u256, u128>,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         PlanetGenerated: PlanetGenerated,
-        TotalResourcesSpent: TotalResourcesSpent,
+        ResourcesSpent: ResourcesSpent,
         EconomySpent: EconomySpent,
         TechSpent: TechSpent,
         DefenceSpent: DefenceSpent,
@@ -105,7 +120,7 @@ mod NoGame {
 
     // Resources spending events.
     #[derive(Drop, starknet::Event)]
-    struct TotalResourcesSpent {
+    struct ResourcesSpent {
         planet_id: u256,
         spent: CostExtended
     }
@@ -237,12 +252,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn quartz_mine_upgrade(ref self: ContractState) {
@@ -254,12 +264,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn tritium_mine_upgrade(ref self: ContractState) {
@@ -271,12 +276,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn energy_plant_upgrade(ref self: ContractState) {
@@ -288,12 +288,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         //#########################################################################################
         //                               COMPOUNDS UPGRADE FUNCTIONS                              #
@@ -307,12 +302,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn lab_upgrade(ref self: ContractState) {
@@ -324,12 +314,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         //#########################################################################################
@@ -346,12 +331,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.energy_innovation_level.write(planet_id, techs.energy_innovation + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn digital_systems_upgrade(ref self: ContractState) {
@@ -365,12 +345,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.digital_systems_level.write(planet_id, techs.digital_systems + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn beam_technology_upgrade(ref self: ContractState) {
@@ -384,12 +359,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.beam_technology_level.write(planet_id, techs.beam_technology + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn armour_innovation_upgrade(ref self: ContractState) {
@@ -403,12 +373,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.digital_systems_level.write(planet_id, techs.armour_innovation + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn ion_systems_upgrade(ref self: ContractState) {
@@ -422,12 +387,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.ion_systems_level.write(planet_id, techs.ion_systems + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn plasma_engineering_upgrade(ref self: ContractState) {
@@ -441,12 +401,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.plasma_engineering_level.write(planet_id, techs.plasma_engineering + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn stellar_physics_upgrade(ref self: ContractState) {
@@ -460,12 +415,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.stellar_physics_level.write(planet_id, techs.stellar_physics + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn arms_development_upgrade(ref self: ContractState) {
@@ -479,12 +429,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.arms_development_level.write(planet_id, techs.arms_development + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn shield_tech_upgrade(ref self: ContractState) {
@@ -498,12 +443,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.shield_tech_level.write(planet_id, techs.shield_tech + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn spacetime_warp_upgrade(ref self: ContractState) {
@@ -517,12 +457,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.spacetime_warp_level.write(planet_id, techs.spacetime_warp + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn combustive_engine_upgrade(ref self: ContractState) {
@@ -536,12 +471,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.combustive_engine_level.write(planet_id, techs.combustive_engine + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn thrust_propulsion_upgrade(ref self: ContractState) {
@@ -555,12 +485,7 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.thrust_propulsion_level.write(planet_id, techs.thrust_propulsion + 1);
-            self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn warp_drive_upgrade(ref self: ContractState) {
@@ -574,12 +499,105 @@ mod NoGame {
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self.warp_drive_level.write(planet_id, techs.warp_drive + 1);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+        //#########################################################################################
+        //                                      DOCKYARD FUNCTIONS                                #
+        //#########################################################################################
+        fn carrier_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::carrier_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 2000, 2000, 0);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
             self
-                .emit(
-                    Event::TotalResourcesSpent(
-                        TotalResourcesSpent { planet_id: planet_id, spent: cost }
-                    )
-                )
+                .carrier_available
+                .write(planet_id, self.carrier_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn scraper_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::scraper_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 10000, 6000, 2000);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .scraper_available
+                .write(planet_id, self.scraper_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn celestia_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::celestia_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 0, 2000, 500);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .celestia_available
+                .write(planet_id, self.celestia_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn sparrow_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::sparrow_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 3000, 1000, 0);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .sparrow_available
+                .write(planet_id, self.sparrow_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn frigate_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::frigate_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 20000, 7000, 2000);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .frigate_available
+                .write(planet_id, self.frigate_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn armade_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Dockyard::armade_requirements_check(dockyard_level, techs);
+            let cost = Dockyard::get_ships_cost(quantity, 10000, 6000, 2000);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .armade_available
+                .write(planet_id, self.armade_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
     }
 
