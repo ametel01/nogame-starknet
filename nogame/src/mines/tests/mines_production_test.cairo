@@ -23,7 +23,6 @@ mod MineProductionTest {
         let production = Mines::steel_production(61);
         assert(production == 535500.into(), 'wrong result');
     }
-
     #[test]
     #[available_gas(1000000000)]
     fn quartz_production_test() {
@@ -43,7 +42,6 @@ mod MineProductionTest {
         let production = Mines::quartz_production(61);
         assert(production == 357000.into(), 'wrong result');
     }
-
     #[test]
     #[available_gas(1000000000)]
     fn tritium_production_test() {
@@ -63,24 +61,23 @@ mod MineProductionTest {
         let production = Mines::tritium_production(61);
         assert(production == 178500.into(), 'wrong result');
     }
-
     #[test]
     #[available_gas(1000000000)]
-    fn solar_plant_production_test() {
-        let production = Mines::solar_plant_production(0);
-        assert(production == 0, 'wrong result');
-        let production = Mines::solar_plant_production(1);
-        assert(production == 22, 'wrong result');
-        let production = Mines::solar_plant_production(5);
-        assert(production == 161, 'wrong result');
-        let production = Mines::solar_plant_production(10);
-        assert(production == 518, 'wrong result');
-        let production = Mines::solar_plant_production(20);
-        assert(production == 2690, 'wrong result');
+    fn energy_plant_production_test() {
+        let production = Mines::energy_plant_production(0);
+        assert(production == 30, 'wrong result');
+        let production = Mines::energy_plant_production(1);
+        assert(production == 52, 'wrong result');
+        let production = Mines::energy_plant_production(5);
+        assert(production == 191, 'wrong result');
+        let production = Mines::energy_plant_production(10);
+        assert(production == 548, 'wrong result');
+        let production = Mines::energy_plant_production(20);
+        assert(production == 2720, 'wrong result');
         // Max level at which overflow occures with regular formula.
-        let production = Mines::solar_plant_production(31);
-        assert(production == 11900, 'wrong result');
-        let production = Mines::solar_plant_production(61);
+        let production = Mines::energy_plant_production(31);
+        assert(production == 11930, 'wrong result');
+        let production = Mines::energy_plant_production(61);
         assert(production == 357000, 'wrong result');
     }
 }
