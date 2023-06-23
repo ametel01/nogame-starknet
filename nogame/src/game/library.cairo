@@ -68,5 +68,10 @@ struct Ships {
     armade: u128,
 }
 
-struct Defences {}
+struct Defences {
+    blaster: u128,
+    beam: u128,
+    astral_launcher: u128,
+    plasma_beam: u128
+}
 
