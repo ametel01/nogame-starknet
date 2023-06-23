@@ -43,6 +43,11 @@ trait INoGame<TContractState> {
     fn sparrow_build(ref self: TContractState, quantity: u128);
     fn frigate_build(ref self: TContractState, quantity: u128);
     fn armade_build(ref self: TContractState, quantity: u128);
+    // Defences functions
+    fn blaster_build(ref self: TContractState, quantity: u128);
+    fn beam_build(ref self: TContractState, quantity: u128);
+    fn astral_launcher_build(ref self: TContractState, quantity: u128);
+    fn plasma_beam_build(ref self: TContractState, quantity: u128);
 }
 
 #[starknet::contract]
@@ -53,6 +58,7 @@ mod NoGame {
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::library::{Tokens, CostExtended, MinesCost, MinesLevels, Resources, Techs};
     use nogame::compounds::library::Compounds;
+    use nogame::defences::library::Defences;
     use nogame::dockyard::library::Dockyard;
     use nogame::mines::library::Mines;
     use nogame::research::library::Lab;
@@ -101,6 +107,11 @@ mod NoGame {
         sparrow_available: LegacyMap::<u256, u128>,
         frigate_available: LegacyMap::<u256, u128>,
         armade_available: LegacyMap::<u256, u128>,
+        // Defences
+        blaster_available: LegacyMap::<u256, u128>,
+        beam_available: LegacyMap::<u256, u128>,
+        astral_launcher_available: LegacyMap::<u256, u128>,
+        plasma_beam_available: LegacyMap::<u256, u128>,
     }
 
     #[event]
@@ -597,6 +608,71 @@ mod NoGame {
             self
                 .armade_available
                 .write(planet_id, self.armade_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        //#########################################################################################
+        //                                      DEFENCES FUNCTIONS                                #
+        //#########################################################################################
+        fn blaster_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Defences::blaster_requirements_check(dockyard_level, techs);
+            let cost = Defences::get_defences_cost(quantity, 2000, 0, 0);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .blaster_available
+                .write(planet_id, self.blaster_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn beam_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Defences::beam_requirements_check(dockyard_level, techs);
+            let cost = Defences::get_defences_cost(quantity, 6000, 2000, 0);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self.beam_available.write(planet_id, self.beam_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn astral_launcher_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Defences::astral_launcher_requirements_check(dockyard_level, techs);
+            let cost = Defences::get_defences_cost(quantity, 20000, 15000, 2000);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .astral_launcher_available
+                .write(planet_id, self.astral_launcher_available.read(planet_id) + quantity);
+            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+        }
+
+        fn plasma_beam_build(ref self: ContractState, quantity: u128) {
+            let caller = get_caller_address();
+            let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
+            let dockyard_level = self.dockyard_level.read(planet_id);
+            let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
+            Defences::plasma_beam_requirements_check(dockyard_level, techs);
+            let cost = Defences::get_defences_cost(quantity, 6000, 2000, 0);
+            PrivateFunctions::check_enough_resources(@self, caller, cost);
+            PrivateFunctions::pay_resources_erc20(@self, caller, cost);
+            PrivateFunctions::update_planet_points(ref self, planet_id, cost);
+            self
+                .plasma_beam_available
+                .write(planet_id, self.plasma_beam_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
     }
