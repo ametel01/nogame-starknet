@@ -13,18 +13,18 @@ impl Dockyard of DockyardTrait {
 
     fn carrier_requirements_check(dockyard_level: u128, techs: Techs) {
         assert(dockyard_level >= 2, 'Dockyard 2 required');
-        assert(techs.combustive_engine >= 2, 'Combustive engine 2 required');
+        assert(techs.combustive_engine >= 2, 'Combustive Engine 2 required');
     }
 
     fn scraper_requirements_check(dockyard_level: u128, techs: Techs) {
         assert(dockyard_level >= 4, 'Dockyard 4 required');
-        assert(techs.combustive_engine >= 6, 'Combustive engine 6 required');
-        assert(techs.shield_tech >= 2, 'Shield tech 2 required');
+        assert(techs.combustive_engine >= 6, 'Combustive Engine 6 required');
+        assert(techs.shield_tech >= 2, 'Shield Tech 2 required');
     }
 
     fn celestia_requirements_check(dockyard_level: u128, techs: Techs) {
         assert(dockyard_level >= 1, 'Dockyard 1 required');
-        assert(techs.combustive_engine >= 1, 'Combustive engine 1 required');
+        assert(techs.combustive_engine >= 1, 'Combustive Engine 1 required');
     }
 
     fn sparrow_requirements_check(dockyard_level: u128, techs: Techs) {
