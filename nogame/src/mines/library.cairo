@@ -13,6 +13,7 @@ const MAX_TRITIUM_OVERFLOW: u128 = 5950;
 
 #[generate_trait]
 impl Mines of MinesTrait {
+    #[inline(always)]
     fn steel_mine_cost(current_level: u128) -> CostExtended {
         let base_steel = 60;
         let base_quarz = 15;
@@ -27,6 +28,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn quartz_mine_cost(current_level: u128) -> CostExtended {
         let base_steel = 48;
         let base_quarz = 24;
@@ -41,6 +43,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn tritium_mine_cost(current_level: u128) -> CostExtended {
         let base_steel = 225;
         let base_quarz = 75;
@@ -55,6 +58,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn energy_plant_cost(current_level: u128) -> CostExtended {
         let base_steel = 75;
         let base_quarz = 30;
@@ -69,6 +73,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn steel_production(current_level: u128) -> u256 {
         if current_level == 0 {
             u256 { low: 30, high: 0 }
@@ -83,6 +88,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn quartz_production(current_level: u128) -> u256 {
         if current_level == 0 {
             u256 { low: 22, high: 0 }
@@ -97,6 +103,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn tritium_production(current_level: u128) -> u256 {
         if current_level == 0 {
             u256 { low: 0, high: 0 }
@@ -111,6 +118,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn energy_plant_production(current_level: u128) -> u128 {
         if current_level == 0 {
             30
@@ -121,6 +129,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn base_mine_consumption(current_level: u128) -> u128 {
         if current_level == 0 {
             0
@@ -131,6 +140,7 @@ impl Mines of MinesTrait {
         }
     }
 
+    #[inline(always)]
     fn tritium_mine_consumption(current_level: u128) -> u128 {
         if current_level == 0 {
             0

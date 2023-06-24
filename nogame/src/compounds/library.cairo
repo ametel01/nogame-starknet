@@ -6,6 +6,7 @@ use nogame::math::library::pow;
 
 #[generate_trait]
 impl Compounds of CompoundsTrait {
+    #[inline(always)]
     fn dockyard_cost(current_level: u128) -> CostExtended {
         let base_steel = 400;
         let base_quartz = 200;
@@ -21,6 +22,7 @@ impl Compounds of CompoundsTrait {
         }
     }
 
+    #[inline(always)]
     fn lab_cost(current_level: u128) -> CostExtended {
         let base_steel = 200;
         let base_quartz = 400;
