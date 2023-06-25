@@ -27,7 +27,7 @@ impl PrintFleet of PrintTrait<Fleet> {
     }
 }
 
-#[derive(Drop, Copy)] //, storage_access::StoragAccess)]
+#[derive(Drop, Copy)] 
 struct ShipsList {
     carrier: Ship,
     scraper: Ship,
@@ -48,7 +48,7 @@ struct Fleet {
     armade: u128,
 }
 
-#[derive(Drop, Copy, Debug, PartialEq)] //, Debug, storage_access::StoragAccess)]
+#[derive(Drop, Copy, Debug, PartialEq)] 
 struct Ship {
     integrity: u128,
     shield: u128,
