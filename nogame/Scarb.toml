@@ -14,5 +14,5 @@ starknet = ">=2.0.0-rc0"
 test = "cairo-test ."
 
 [lib]
-sierra = true  # Enable Sierra codegen.
-casm = false   # Enable CASM codegen.
+sierra = true  
+casm = false   
