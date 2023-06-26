@@ -3,7 +3,6 @@ use core::debug::PrintTrait;
 use core::array::ArrayTrait;
 use option::OptionTrait;
 
-
 impl PrintShip of PrintTrait<Ship> {
     fn print(self: Ship) {
         self.integrity.print();
@@ -27,7 +26,18 @@ impl PrintFleet of PrintTrait<Fleet> {
     }
 }
 
-#[derive(Drop, Copy)] 
+impl PrintArray of PrintTrait<Array<Ship>> {
+    fn print(mut self: Array<Ship>) {
+        loop {
+            if self.len() == 0 {
+                break;
+            }
+            self.pop_front().unwrap().print();
+        }
+    }
+}
+
+#[derive(Drop, Copy)]
 struct ShipsList {
     carrier: Ship,
     scraper: Ship,
@@ -48,7 +58,7 @@ struct Fleet {
     armade: u128,
 }
 
-#[derive(Drop, Copy, Debug, PartialEq)] 
+#[derive(Drop, Copy, Debug, PartialEq)]
 struct Ship {
     integrity: u128,
     shield: u128,
@@ -56,6 +66,12 @@ struct Ship {
     cargo: u128,
     speed: u128,
     consumption: u128
+}
+
+#[derive(Drop)]
+struct Debris {
+    steel: u256,
+    quartz: u256
 }
 
 
@@ -69,8 +85,20 @@ impl FleetImpl of FleetTrait {
         let (a3, b3) = battle_round(a2, b2);
         let (a4, b4) = battle_round(a3, b3);
         let (a5, b5) = battle_round(a4, b4);
+        // let (a6, b6) = battle_round(a5, b5);
+        // let (a7, b7) = battle_round(a6, b6);
+        // let (a8, b8) = battle_round(a7, b7);
+        // let (a9, b9) = battle_round(a8, b8);
+        // let (a10, b10) = battle_round(a9, b9);
+        // let (a11, b11) = battle_round(a10, b10);
+        // let (a12, b12) = battle_round(a11, b11);
+        // let (a13, b13) = battle_round(a12, b12);
+        // let (a14, b14) = battle_round(a13, b13);
+        // let (a15, b15) = battle_round(a14, b14);
+        // let (a16, b16) = battle_round(a15, b15);
 
         let a_struct = build_ships_struct(a5);
+
         let b_struct = build_ships_struct(b5);
         (a_struct, b_struct)
     }
@@ -84,7 +112,7 @@ fn battle_round(mut a: Array<Ship>, mut b: Array<Ship>) -> (Array<Ship>, Array<S
         len = b.len();
     }
     loop {
-        if len == 0 {
+        if a.len() == 0 || b.len() == 0 {
             break;
         }
         let a_ship = a.pop_front().unwrap();
@@ -96,7 +124,7 @@ fn battle_round(mut a: Array<Ship>, mut b: Array<Ship>) -> (Array<Ship>, Array<S
         if new_b.integrity != 0 {
             b.append(new_b);
         }
-        len -= 1;
+        len = len;
     };
     (a, b)
 }
@@ -287,7 +315,25 @@ fn build_ships_array(mut fleet: Fleet) -> Array<Ship> {
 }
 
 fn unit_combat(mut a: Ship, mut b: Ship) -> (Ship, Ship) {
-    if a.weapon > b.integrity + b.shield {
+    if a.weapon > b.integrity + b.shield && b.weapon > a.integrity + a.shield {
+        return (
+            Ship {
+                integrity: 0,
+                shield: 0,
+                weapon: a.weapon,
+                cargo: a.cargo,
+                speed: a.speed,
+                consumption: a.consumption
+                }, Ship {
+                integrity: 0,
+                shield: 0,
+                weapon: b.weapon,
+                cargo: b.cargo,
+                speed: b.speed,
+                consumption: b.consumption
+            }
+        );
+    } else if a.weapon > b.integrity + b.shield {
         return (
             a, Ship {
                 integrity: 0,
@@ -312,34 +358,54 @@ fn unit_combat(mut a: Ship, mut b: Ship) -> (Ship, Ship) {
     }
     let mut final_b = b;
     let mut final_a = a;
-    if b
-        .shield > a
-        .weapon {} else {
-            a.weapon -= b.shield;
-            let updated_integrity = b.integrity - a.weapon;
-            final_b = Ship {
-                integrity: updated_integrity,
-                shield: 0,
-                weapon: b.weapon,
-                cargo: b.cargo,
-                speed: b.speed,
-                consumption: b.consumption
-            };
-        }
-    if a
-        .shield > b
-        .weapon {} else {
-            b.weapon -= a.shield;
-            let updated_integrity = a.integrity - b.weapon;
-            final_a = Ship {
-                integrity: updated_integrity,
-                shield: 0,
-                weapon: a.weapon,
-                cargo: a.cargo,
-                speed: a.speed,
-                consumption: a.consumption
-            };
-        }
+    if b.shield > a.weapon
+        && a
+            .shield > b
+            .weapon {} else {
+                let a_weapon = a.weapon - b.shield;
+                let b_weapon = b.weapon - b.shield;
+                final_b = Ship {
+                    integrity: b.integrity - a.weapon,
+                    shield: 0,
+                    weapon: b.weapon,
+                    cargo: b.cargo,
+                    speed: b.speed,
+                    consumption: b.consumption
+                };
+                final_a = Ship {
+                    integrity: a.integrity - b.weapon,
+                    shield: 0,
+                    weapon: b.weapon,
+                    cargo: b.cargo,
+                    speed: b.speed,
+                    consumption: b.consumption
+                };
+            }
 
     (final_a, final_b)
+}
+
+fn calculate_debris(before: Fleet, after: Fleet) -> Debris {
+    let _armade = before.armade - after.armade;
+    let _carrier = before.carrier - after.carrier;
+    let _celestia = before.celestia - after.celestia;
+    let _frigate = before.frigate - after.frigate;
+    let _scraper = before.scraper - after.scraper;
+    let _sparrow = before.sparrow - after.sparrow;
+    let total_steel: u256 = ((45000 * _armade
+        + 2000 * _carrier
+        + 20000 * _frigate
+        + 10000 * _scraper
+        + 3000 * _sparrow)
+        / 3)
+        .into();
+    let total_quartz: u256 = ((15000 * _armade
+        + 2000 * _carrier
+        + 7000 * _frigate
+        + 6000 * _scraper
+        + 1000 * _sparrow
+        + 2000 * _celestia)
+        / 3)
+        .into();
+    Debris { steel: total_steel, quartz: total_quartz }
 }
