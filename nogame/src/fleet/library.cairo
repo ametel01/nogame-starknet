@@ -112,9 +112,10 @@ fn battle_round(mut a: Array<Ship>, mut b: Array<Ship>) -> (Array<Ship>, Array<S
         len = b.len();
     }
     loop {
-        if a.len() == 0 || b.len() == 0 {
+        if len == 0  {
             break;
         }
+         
         let a_ship = a.pop_front().unwrap();
         let b_ship = b.pop_front().unwrap();
         let (new_a, new_b) = unit_combat(a_ship, b_ship);
@@ -124,7 +125,7 @@ fn battle_round(mut a: Array<Ship>, mut b: Array<Ship>) -> (Array<Ship>, Array<S
         if new_b.integrity != 0 {
             b.append(new_b);
         }
-        len = len;
+        len -= 1;
     };
     (a, b)
 }
@@ -178,8 +179,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if ship.consumption == 300 {
+            };
+            len -= 1;
+        } 
+        if ship.consumption == 300 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
                 carrier: fleet.carrier,
@@ -188,8 +191,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if ship.consumption == 1 {
+            };
+            len -= 1;
+        }
+        if ship.consumption == 1 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
                 carrier: fleet.carrier,
@@ -198,8 +203,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if ship.consumption == 20 {
+            };
+            len -= 1;
+        } 
+        if ship.consumption == 20 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
                 carrier: fleet.carrier,
@@ -208,8 +215,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow + 1,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if ship.consumption == 350 {
+            };
+            len -= 1;
+        } 
+        if ship.consumption == 350 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
                 carrier: fleet.carrier,
@@ -218,8 +227,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate + 1,
                 armade: fleet.armade,
-            }
-        } else {
+            };
+            len -= 1;
+        } 
+        if ship.consumption == 500 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
                 carrier: fleet.carrier,
@@ -228,9 +239,10 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade + 1,
-            }
+            };
+            len -= 1;
         }
-        len -= 1;
+        len = len;
     };
     fleet
 }
@@ -245,71 +257,76 @@ fn build_ships_array(mut fleet: Fleet) -> Array<Ship> {
         if fleet.armade > 0 {
             array.append(ships.armade);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier,
                 scraper: fleet.scraper,
                 celestia: fleet.celestia,
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade - 1,
-            }
-        } else if fleet.frigate > 0 {
+            };
+        }
+        if fleet.frigate > 0 {
             array.append(ships.frigate);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier,
                 scraper: fleet.scraper,
                 celestia: fleet.celestia,
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate - 1,
                 armade: fleet.armade,
-            }
-        } else if fleet.sparrow > 0 {
+            };
+        }
+        if fleet.sparrow > 0 {
             array.append(ships.sparrow);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier,
                 scraper: fleet.scraper,
                 celestia: fleet.celestia,
                 sparrow: fleet.sparrow - 1,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if fleet.scraper > 0 {
+            };
+        }
+        if fleet.scraper > 0 {
             array.append(ships.scraper);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier,
                 scraper: fleet.scraper - 1,
                 celestia: fleet.celestia,
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if fleet.carrier > 0 {
+            };
+        }
+        if fleet.carrier > 0 {
             array.append(ships.carrier);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier - 1,
                 scraper: fleet.scraper,
                 celestia: fleet.celestia,
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
-        } else if fleet.celestia > 0 {
+            };
+        }
+        if fleet.celestia > 0 {
             array.append(ships.celestia);
             fleet = Fleet {
-                n_ships: fleet.n_ships,
+                n_ships: fleet.n_ships - 1,
                 carrier: fleet.carrier,
                 scraper: fleet.scraper,
                 celestia: fleet.celestia - 1,
                 sparrow: fleet.sparrow,
                 frigate: fleet.frigate,
                 armade: fleet.armade,
-            }
+            };
         }
-        fleet.n_ships -= 1;
+        let a = 0;
     };
     array
 }
@@ -358,30 +375,40 @@ fn unit_combat(mut a: Ship, mut b: Ship) -> (Ship, Ship) {
     }
     let mut final_b = b;
     let mut final_a = a;
-    if b.shield > a.weapon
-        && a
-            .shield > b
-            .weapon {} else {
-                let a_weapon = a.weapon - b.shield;
-                let b_weapon = b.weapon - b.shield;
-                final_b = Ship {
-                    integrity: b.integrity - a.weapon,
-                    shield: 0,
-                    weapon: b.weapon,
-                    cargo: b.cargo,
-                    speed: b.speed,
-                    consumption: b.consumption
-                };
-                final_a = Ship {
-                    integrity: a.integrity - b.weapon,
-                    shield: 0,
-                    weapon: b.weapon,
-                    cargo: b.cargo,
-                    speed: b.speed,
-                    consumption: b.consumption
-                };
-            }
-
+    let mut a_weapon = a.weapon;
+    let mut b_weapon = b.weapon;
+    let mut a_shield = a.shield;
+    let mut b_shield = b.shield;
+    if b.shield > a.weapon {
+        a_weapon = 0;
+    }
+    if a.shield > b.weapon {
+        b_weapon = 0;
+    }
+    if a.weapon > b.shield {
+        a_weapon = a.weapon - b.shield;
+        b_shield = 0;
+    }
+    if b.weapon > a.shield {
+        b_weapon = b.weapon - a.shield;
+        a_shield = 0;
+    }
+    final_a = Ship {
+        integrity: a.integrity - b_weapon,
+        shield: a_shield,
+        weapon: a.weapon,
+        cargo: a.cargo,
+        speed: a.speed,
+        consumption: a.consumption
+    };
+    final_b = Ship {
+        integrity: b.integrity - a_weapon,
+        shield: b_shield,
+        weapon: b.weapon,
+        cargo: b.cargo,
+        speed: b.speed,
+        consumption: b.consumption
+    };
     (final_a, final_b)
 }
 
