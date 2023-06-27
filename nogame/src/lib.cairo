@@ -7,4 +7,5 @@ mod defences;
 mod token;
 mod math;
 mod fleet;
+mod tests;
 

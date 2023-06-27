@@ -601,7 +601,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
             Dockyard::armade_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, 10000, 6000, 2000);
+            let cost = Dockyard::get_ships_cost(quantity, 45000, 15000, 0);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
@@ -666,7 +666,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = PrivateFunctions::get_tech_levels(@self, planet_id);
             Defences::plasma_beam_requirements_check(dockyard_level, techs);
-            let cost = Defences::get_defences_cost(quantity, 6000, 2000, 0);
+            let cost = Defences::get_defences_cost(quantity, 50000, 50000, 30000);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             PrivateFunctions::update_planet_points(ref self, planet_id, cost);
