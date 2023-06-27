@@ -10,8 +10,8 @@ starknet = ">=2.0.0-rc0"
 
 [[target.starknet-contract]]
 
-[scripts]
-test = "cairo-test ."
+# [scripts]
+# test = "cairo-test ."
 
 [lib]
 sierra = true  
