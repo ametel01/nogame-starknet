@@ -6,7 +6,7 @@ use core::integer::Felt252IntoU256;
 use option::OptionTrait;
 use integer::U128Div;
 use nogame::game::library::CostExtended;
-use nogame::math::library::pow;
+use nogame::libraries::math::pow;
 
 const MAX_STEEL_OVERFLOW: u128 = 17850;
 const MAX_QUARZ_OVERFLOW: u128 = 11900;

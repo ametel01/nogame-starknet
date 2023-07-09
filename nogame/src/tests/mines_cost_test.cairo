@@ -2,7 +2,7 @@
 mod MineCostTest {
     use core::traits::Into;
     use debug::PrintTrait;
-    use nogame::mines::library::Mines;
+    use nogame::libraries::mines::Mines;
     use nogame::game::library::CostExtended;
 
     #[test]

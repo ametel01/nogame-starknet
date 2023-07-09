@@ -2,7 +2,7 @@
 mod CompoundsTest {
     use core::traits::Into;
     use debug::PrintTrait;
-    use nogame::compounds::library::Compounds;
+    use nogame::libraries::compounds::Compounds;
     use nogame::game::library::CostExtended;
 
     impl Print of PrintTrait<CostExtended> {

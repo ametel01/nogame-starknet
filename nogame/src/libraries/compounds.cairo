@@ -2,7 +2,8 @@ use core::integer::U256Mul;
 use core::traits::Into;
 
 use nogame::game::library::CostExtended;
-use nogame::math::library::pow;
+use nogame::libraries::math::pow;
+
 
 #[generate_trait]
 impl Compounds of CompoundsTrait {

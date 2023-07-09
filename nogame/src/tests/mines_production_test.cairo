@@ -2,7 +2,7 @@
 mod MineProductionTest {
     use debug::PrintTrait;
     use traits::Into;
-    use nogame::mines::library::Mines;
+    use nogame::libraries::mines::Mines;
 
     #[test]
     #[available_gas(1000000000)]
