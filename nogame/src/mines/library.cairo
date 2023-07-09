@@ -1,6 +1,8 @@
 use core::traits::AddEq;
+use traits::Into;
 use debug::PrintTrait;
-use traits::{Into, TryInto};
+// use traits::{Into, TryInto};
+use core::integer::Felt252IntoU256;
 use option::OptionTrait;
 use integer::U128Div;
 use nogame::game::library::CostExtended;
