@@ -1,12 +1,12 @@
 [package]
 name = "nogame"
 version = "0.1.0"
-cairo-version = ">=2.0.0-rc0"
+cairo-version = ">=2.0.0"
 authors = ["ametel01"]
 license = "MIT"
 
 [dependencies]
-starknet = ">=2.0.0-rc0"
+starknet = ">=2.0.0"
 
 [[target.starknet-contract]]
 
@@ -14,5 +14,5 @@ starknet = ">=2.0.0-rc0"
 # test = "cairo-test ."
 
 [lib]
-sierra = true  
-casm = false   
+sierra = true
+casm = false
