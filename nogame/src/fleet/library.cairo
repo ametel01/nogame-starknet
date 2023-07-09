@@ -112,10 +112,10 @@ fn battle_round(mut a: Array<Ship>, mut b: Array<Ship>) -> (Array<Ship>, Array<S
         len = b.len();
     }
     loop {
-        if len == 0  {
+        if len == 0 {
             break;
         }
-         
+
         let a_ship = a.pop_front().unwrap();
         let b_ship = b.pop_front().unwrap();
         let (new_a, new_b) = unit_combat(a_ship, b_ship);
@@ -181,7 +181,7 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 armade: fleet.armade,
             };
             len -= 1;
-        } 
+        }
         if ship.consumption == 300 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
@@ -205,7 +205,7 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 armade: fleet.armade,
             };
             len -= 1;
-        } 
+        }
         if ship.consumption == 20 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
@@ -217,7 +217,7 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 armade: fleet.armade,
             };
             len -= 1;
-        } 
+        }
         if ship.consumption == 350 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
@@ -229,7 +229,7 @@ fn build_ships_struct(mut a: Array<Ship>) -> Fleet {
                 armade: fleet.armade,
             };
             len -= 1;
-        } 
+        }
         if ship.consumption == 500 {
             fleet = Fleet {
                 n_ships: fleet.n_ships,
