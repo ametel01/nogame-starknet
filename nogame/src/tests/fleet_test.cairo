@@ -12,10 +12,22 @@ mod FleetTests {
     #[available_gas(1000000000)]
     fn run_battle_test() {
         let a = Fleet {
-            n_ships: 100, carrier: 10, scraper: 20, celestia: 30, sparrow: 20, frigate: 10, armade: 10, 
+            n_ships: 100,
+            carrier: 10,
+            scraper: 20,
+            celestia: 30,
+            sparrow: 20,
+            frigate: 10,
+            armade: 10,
         };
         let b = Fleet {
-            n_ships: 220, carrier: 100, scraper: 0, celestia: 10, sparrow: 0, frigate: 60, armade: 50, 
+            n_ships: 220,
+            carrier: 100,
+            scraper: 0,
+            celestia: 10,
+            sparrow: 0,
+            frigate: 60,
+            armade: 50,
         };
         let (new_a, new_b) = FleetImpl::run_battle(a, b);
         let debris_a = calculate_debris(a, new_a);
@@ -68,7 +80,13 @@ mod FleetTests {
     #[available_gas(1000000000)]
     fn battle_round_test() {
         let fleet_a = Fleet {
-            n_ships: 1049, carrier: 1025, scraper: 1, celestia: 2, sparrow: 1, frigate: 10, armade: 10, 
+            n_ships: 1049,
+            carrier: 1025,
+            scraper: 1,
+            celestia: 2,
+            sparrow: 1,
+            frigate: 10,
+            armade: 10,
         };
         let fleet_b = Fleet {
             n_ships: 501, carrier: 500, scraper: 0, celestia: 1, sparrow: 0, frigate: 0, armade: 0, 
