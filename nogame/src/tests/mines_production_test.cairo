@@ -8,7 +8,7 @@ mod MineProductionTest {
     #[available_gas(1000000000)]
     fn steel_production_test() {
         let production = Mines::steel_production(0);
-        assert(production == 30.into(), 'wrong result');
+        assert(production == 0.into(), 'wrong result');
         let production = Mines::steel_production(1);
         assert(production == 33.into(), 'wrong result');
         let production = Mines::steel_production(5);
@@ -27,7 +27,7 @@ mod MineProductionTest {
     #[available_gas(1000000000)]
     fn quartz_production_test() {
         let production = Mines::quartz_production(0);
-        assert(production == 22.into(), 'wrong result');
+        assert(production == 0.into(), 'wrong result');
         let production = Mines::quartz_production(1);
         assert(production == 22.into(), 'wrong result');
         let production = Mines::quartz_production(5);
@@ -79,5 +79,17 @@ mod MineProductionTest {
         assert(production == 11930, 'wrong result');
         let production = Mines::energy_plant_production(61);
         assert(production == 357000, 'wrong result');
+    }
+    #[test]
+    #[available_gas(1000000000)]
+    fn production_scaler_test() {
+        let scaled = Mines::production_scaler(52.into(), 100, 50);
+        assert(scaled == 52, '');
+        let scaled = Mines::production_scaler(52.into(), 80, 100);
+        assert(scaled == 41, '');
+        let scaled = Mines::production_scaler(52.into(), 60, 100);
+        assert(scaled == 31, '');
+        let scaled = Mines::production_scaler(52.into(), 20, 100);
+        assert(scaled == 10, '');
     }
 }
