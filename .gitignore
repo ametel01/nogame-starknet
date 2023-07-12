@@ -3,4 +3,5 @@ Scarb
 #######
 
 target
-.wallet_address.txt
+.deployed_contracts.txt
+metadata_gen
