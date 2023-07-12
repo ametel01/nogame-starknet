@@ -3,5 +3,5 @@ Scarb
 #######
 
 target
-.deployed_contracts.txt
+nogame/deployed_contracts.txt
 metadata_gen
