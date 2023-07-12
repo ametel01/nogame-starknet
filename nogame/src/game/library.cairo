@@ -1,5 +1,6 @@
 use starknet::ContractAddress;
 
+const E18: u128 = 1000000000000000000;
 
 #[derive(Copy, Drop, Serde)]
 struct CostExtended {
@@ -21,6 +22,13 @@ struct Resources {
     quartz: u256,
     tritium: u256,
     energy: u128
+}
+
+#[derive(Drop, Serde)]
+struct ERC20s {
+    steel: u256,
+    quartz: u256,
+    tritium: u256,
 }
 
 #[derive(Drop, Serde)]
