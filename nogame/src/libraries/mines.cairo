@@ -78,45 +78,36 @@ impl Mines of MinesTrait {
     #[inline(always)]
     fn steel_production(current_level: u128) -> u256 {
         if current_level == 0 {
-            u256 { low: 30, high: 0 }
+            return 0.into();
         } else if current_level <= 31 {
-            let production = U128Div::div(
-                30 * current_level * pow(11, current_level), pow(10, current_level)
-            );
-            u256 { low: production, high: 0 }
+            return U128Div::div(30 * current_level * pow(11, current_level), pow(10, current_level))
+                .into();
         } else {
-            let production = MAX_STEEL_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            return (MAX_STEEL_OVERFLOW * (current_level - 31)).into();
         }
     }
 
     #[inline(always)]
     fn quartz_production(current_level: u128) -> u256 {
         if current_level == 0 {
-            u256 { low: 22, high: 0 }
+            return 0.into();
         } else if current_level <= 31 {
-            let production = U128Div::div(
-                20 * current_level * pow(11, current_level), pow(10, current_level)
-            );
-            u256 { low: production, high: 0 }
+            return U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
+                .into();
         } else {
-            let production = MAX_QUARZ_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            return (MAX_QUARZ_OVERFLOW * (current_level - 31)).into();
         }
     }
 
     #[inline(always)]
     fn tritium_production(current_level: u128) -> u256 {
         if current_level == 0 {
-            u256 { low: 0, high: 0 }
+            return 0.into();
         } else if current_level <= 31 {
-            let production = U128Div::div(
-                10 * current_level * pow(11, current_level), pow(10, current_level)
-            );
-            u256 { low: production, high: 0 }
+            return U128Div::div(10 * current_level * pow(11, current_level), pow(10, current_level))
+                .into();
         } else {
-            let production = MAX_TRITIUM_OVERFLOW * (current_level - 31);
-            u256 { low: production, high: 0 }
+            return (MAX_TRITIUM_OVERFLOW * (current_level - 31)).into();
         }
     }
 
@@ -150,6 +141,15 @@ impl Mines of MinesTrait {
             U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
         } else {
             MAX_QUARZ_OVERFLOW * (current_level - 31)
+        }
+    }
+
+    #[inline(always)]
+    fn production_scaler(production: u256, available: u128, required: u128) -> u256 {
+        if available > required {
+            return production;
+        } else {
+            return ((((available * 100) / required) * production.low) / 100).into();
         }
     }
 }
