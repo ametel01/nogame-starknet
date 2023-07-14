@@ -1,13 +1,11 @@
 use core::traits::Into;
-use nogame::game::library::{CostExtended, Techs};
+use nogame::game::library::{Cost, Techs};
 
 #[generate_trait]
 impl Dockyard of DockyardTrait {
-    fn get_ships_cost(quantity: u128, _steel: u128, _quartz: u128, _tritium: u128) -> CostExtended {
-        CostExtended {
-            steel: (_steel * quantity).into(),
-            quartz: (_quartz * quantity).into(),
-            tritium: (_tritium * quantity).into()
+    fn get_ships_cost(quantity: u128, _steel: u128, _quartz: u128, _tritium: u128) -> Cost {
+        Cost {
+            steel: (_steel * quantity), quartz: (_quartz * quantity), tritium: (_tritium * quantity)
         }
     }
 

@@ -1,5 +1,5 @@
 #! /bin/bash
-ADMIN='0x041cee10524412d87d1c9e539419b5ed70bcd28fd2a4834a66ef32ec53cdef38'
+ADMIN=$1
 
 
 deploy() {
@@ -35,10 +35,16 @@ deploy() {
     sleep 5
 
     echo 'deploying NoGame...'
-    stdout=$(starknet deploy --class_hash 0x4fc21e24f926099169cb6296c1f52efd8fb4b3bd4f184e58dc77797c77a2784 --account v0.12 --inputs $nft $steel $quartz $tritium 2>&1) 
+    stdout=$(starknet deploy --class_hash 0x1ca1ebb44d88610a730593f45878cf2fbd31e168d264ae770a1ae44f5ef5220 --account v0.12 --inputs $nft $steel $quartz $tritium 2>&1) 
     nogame=$(echo ${stdout}  | grep -o -P '(?<=Contract address: ).*(?= Transaction hash:)')
     echo 'NOGAME::'${nogame}
     echo 'NOGAME::'${nogame} >> deployed_contracts.txt
+    printf '\n🚀 all contracts are deployed! 🚀\n'
+
+    # sleep 30
+
+    # echo 'setting minter address on tokens'
+    # starknet invoke 
 
 
 }

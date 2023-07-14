@@ -1,11 +1,9 @@
 use starknet::ContractAddress;
-use nogame::game::library::{MinesCost, MinesLevels, Resources};
+use nogame::game::library::{MinesCost, MinesLevels, Resources, Tokens};
 
 #[starknet::interface]
 trait INoGame<T> {
-    fn get_tokens_addresses(
-        self: @T
-    ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress);
+    fn get_tokens_addresses(self: @T) -> Tokens;
     // View functions
     fn get_number_of_planets(self: @T) -> u32;
     fn get_planet_points(self: @T, planet_id: u256) -> u128;
@@ -54,11 +52,10 @@ trait INoGame<T> {
 #[starknet::contract]
 mod NoGame {
     use core::option::OptionTrait;
-    use core::traits::Into;
-    use core::traits::TryInto;
+    use core::traits::{Into, TryInto};
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::library::{
-        Tokens, CostExtended, MinesCost, MinesLevels, Resources, Techs, E18, ERC20s
+        Tokens, Cost, MinesCost, MinesLevels, Resources, Techs, E18, ERC20s
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -76,8 +73,7 @@ mod NoGame {
         // General.
         number_of_planets: u32,
         planet_generated: LegacyMap::<u256, bool>,
-        planet_points: LegacyMap::<u256, u128>,
-        eth_address: ContractAddress,
+        resources_spent: LegacyMap::<u256, u128>,
         // Tokens.
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
@@ -138,7 +134,7 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct ResourcesSpent {
         planet_id: u256,
-        spent: CostExtended
+        spent: Cost
     }
 
     #[derive(Drop, starknet::Event)]
@@ -180,21 +176,14 @@ mod NoGame {
     //#######################################################################################
     #[external(v0)]
     impl NoGame of super::INoGame<ContractState> {
-        fn get_tokens_addresses(
-            self: @ContractState
-        ) -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
-            (
-                self.erc721_address.read(),
-                self.steel_address.read(),
-                self.quartz_address.read(),
-                self.tritium_address.read(),
-            )
+        fn get_tokens_addresses(self: @ContractState) -> Tokens {
+            PrivateFunctions::get_tokens_addresses(self)
         }
         fn get_number_of_planets(self: @ContractState) -> u32 {
             self.number_of_planets.read()
         }
         fn get_planet_points(self: @ContractState, planet_id: u256) -> u128 {
-            self.planet_points.read(planet_id)
+            self.resources_spent.read(planet_id) / 1000
         }
         fn get_mines_levels(self: @ContractState, planet_id: u256) -> MinesLevels {
             (MinesLevels {
@@ -206,10 +195,10 @@ mod NoGame {
         }
         fn get_mines_upgrade_cost(self: @ContractState, planet_id: u256) -> MinesCost {
             let mines_levels = NoGame::get_mines_levels(self, planet_id);
-            let _steel: CostExtended = Mines::steel_mine_cost(mines_levels.steel);
-            let _quartz: CostExtended = Mines::quartz_mine_cost(mines_levels.quartz);
-            let _tritium: CostExtended = Mines::tritium_mine_cost(mines_levels.tritium);
-            let _solar: CostExtended = Mines::energy_plant_cost(mines_levels.energy);
+            let _steel: Cost = Mines::steel_mine_cost(mines_levels.steel);
+            let _quartz: Cost = Mines::quartz_mine_cost(mines_levels.quartz);
+            let _tritium: Cost = Mines::tritium_mine_cost(mines_levels.tritium);
+            let _solar: Cost = Mines::energy_plant_cost(mines_levels.energy);
             MinesCost { steel: _steel, quartz: _quartz, tritium: _tritium, solar: _solar }
         }
         fn total_resources_available(self: @ContractState, planet_id: u256) -> Resources {
@@ -228,7 +217,6 @@ mod NoGame {
         //                                      EXTERNAL FUNCTIONS                                #
         //########################################################################################
         fn generate_planet(ref self: ContractState) {
-            let game_address = get_contract_address();
             let caller = get_caller_address();
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let number_of_planets = self.number_of_planets.read();
@@ -255,7 +243,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: CostExtended = Mines::steel_mine_cost(current_level);
+            let cost: Cost = Mines::steel_mine_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
@@ -267,7 +255,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.quartz_mine_level.read(planet_id);
-            let cost: CostExtended = Mines::quartz_mine_cost(current_level);
+            let cost: Cost = Mines::quartz_mine_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
@@ -279,7 +267,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: CostExtended = Mines::tritium_mine_cost(current_level);
+            let cost: Cost = Mines::tritium_mine_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
@@ -291,7 +279,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.energy_plant_level.read(planet_id);
-            let cost: CostExtended = Mines::energy_plant_cost(current_level);
+            let cost: Cost = Mines::energy_plant_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
@@ -306,7 +294,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.dockyard_level.read(planet_id);
-            let cost: CostExtended = Compounds::dockyard_cost(current_level);
+            let cost: Cost = Compounds::dockyard_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
@@ -318,7 +306,7 @@ mod NoGame {
             PrivateFunctions::collect_resources(ref self, caller);
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let current_level = self.lab_level.read(planet_id);
-            let cost: CostExtended = Compounds::lab_cost(current_level);
+            let cost: Cost = Compounds::lab_cost(current_level);
             PrivateFunctions::check_enough_resources(@self, caller, cost);
             PrivateFunctions::pay_resources_erc20(@self, caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
@@ -714,7 +702,11 @@ mod NoGame {
                 contract_address: self.tritium_address.read()
             }.balances(caller);
             // let steel_produced = Mines::steel_production(steel_level) + steel_available;
-            ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium }
+            ERC20s {
+                steel: _steel.try_into().unwrap(),
+                quartz: _quartz.try_into().unwrap(),
+                tritium: _tritium.try_into().unwrap()
+            }
         }
 
         fn calculate_production(self: @ContractState, planet_id: u256) -> Resources {
@@ -722,39 +714,27 @@ mod NoGame {
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
             let mines_levels = NoGame::get_mines_levels(self, planet_id);
-            let steel_available: u256 = (Mines::steel_production(mines_levels.steel).low
-                * (time_elapsed.into() / 3600))
-                .into();
+            let steel_available = (Mines::steel_production(mines_levels.steel)
+                * (time_elapsed.into() / 3600));
 
-            let quartz_available: u256 = (Mines::quartz_production(mines_levels.quartz).low
-                * (time_elapsed.into() / 3600))
-                .into();
+            let quartz_available = (Mines::quartz_production(mines_levels.quartz)
+                * (time_elapsed.into() / 3600));
 
-            let tritium_available: u256 = (Mines::tritium_production(mines_levels.tritium).low
-                * (time_elapsed.into() / 3600))
-                .into();
+            let tritium_available = (Mines::tritium_production(mines_levels.tritium)
+                * (time_elapsed.into() / 3600));
             let energy_available = Mines::energy_plant_production(mines_levels.energy);
             let energy_required = Mines::base_mine_consumption(mines_levels.steel)
                 + Mines::base_mine_consumption(mines_levels.quartz)
                 + Mines::tritium_mine_consumption(mines_levels.tritium);
-            let _steel = (Mines::production_scaler(
+            let _steel = Mines::production_scaler(
                 steel_available, energy_available, energy_required
-            )
-                .low
-                * E18)
-                .into();
-            let _quartz = (Mines::production_scaler(
+            );
+            let _quartz = Mines::production_scaler(
                 quartz_available, energy_available, energy_required
-            )
-                .low
-                * E18)
-                .into();
-            let _tritium = (Mines::production_scaler(
+            );
+            let _tritium = Mines::production_scaler(
                 tritium_available, energy_available, energy_required
-            )
-                .low
-                * E18)
-                .into();
+            );
 
             Resources {
                 steel: _steel,
@@ -780,28 +760,26 @@ mod NoGame {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher {
                 contract_address: tokens.steel
-            }.mint(to, (amounts.steel.low * E18).into());
+            }.mint(to, (amounts.steel * E18).into());
             IERC20Dispatcher {
                 contract_address: tokens.quartz
-            }.mint(to, (amounts.quartz.low * E18).into());
+            }.mint(to, (amounts.quartz * E18).into());
             IERC20Dispatcher {
                 contract_address: tokens.tritium
-            }.mint(to, (amounts.tritium.low * E18).into())
+            }.mint(to, (amounts.tritium * E18).into())
         }
 
-        fn pay_resources_erc20(
-            self: @ContractState, account: ContractAddress, amounts: CostExtended
-        ) {
+        fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: Cost) {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher {
                 contract_address: tokens.steel
-            }.burn(account, (amounts.steel.low * E18).into());
+            }.burn(account, (amounts.steel * E18).into());
             IERC20Dispatcher {
                 contract_address: tokens.quartz
-            }.burn(account, (amounts.quartz.low * E18).into());
+            }.burn(account, (amounts.quartz * E18).into());
             IERC20Dispatcher {
                 contract_address: tokens.tritium
-            }.burn(account, (amounts.tritium.low * E18).into())
+            }.burn(account, (amounts.tritium * E18).into())
         }
 
         fn mint_initial_liquidity(self: @ContractState, account: ContractAddress) {
@@ -817,9 +795,7 @@ mod NoGame {
             }.mint(recipient: account, amount: (100 * E18).into());
         }
 
-        fn check_enough_resources(
-            self: @ContractState, caller: ContractAddress, amounts: CostExtended
-        ) {
+        fn check_enough_resources(self: @ContractState, caller: ContractAddress, amounts: Cost) {
             let available: ERC20s = PrivateFunctions::get_erc20s_available(self, caller);
             assert(amounts.steel <= available.steel, 'Not enough steel');
             assert(amounts.quartz <= available.quartz, 'Not enough quartz');
@@ -834,10 +810,12 @@ mod NoGame {
             }
         }
 
-        fn update_planet_points(ref self: ContractState, planet_id: u256, spent: CostExtended) {
-            let current_points = self.planet_points.read(planet_id);
-            let acquired_points = (spent.steel.low + spent.quartz.low) / 1000;
-            self.planet_points.write(planet_id, current_points + acquired_points);
+        fn update_planet_points(ref self: ContractState, planet_id: u256, spent: Cost) {
+            self
+                .resources_spent
+                .write(
+                    planet_id, self.resources_spent.read(planet_id) + spent.steel + spent.quartz
+                );
         }
         // ##################################################################################
         //                                TECH FUNCTIONS                   #

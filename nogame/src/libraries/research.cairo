@@ -1,19 +1,16 @@
-use core::traits::Into;
 use nogame::libraries::math::pow;
-use nogame::game::library::{CostExtended, Techs};
+use nogame::game::library::{Cost, Techs};
 
 #[generate_trait]
 impl Lab of LabTrait {
-    fn get_tech_cost(
-        current_level: u128, steel: u128, quartz: u128, tritium: u128
-    ) -> CostExtended {
+    fn get_tech_cost(current_level: u128, steel: u128, quartz: u128, tritium: u128) -> Cost {
         if current_level == 0 {
-            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: tritium.into() }
+            Cost { steel: steel, quartz: quartz, tritium: tritium }
         } else {
-            CostExtended {
-                steel: (steel * pow(2, current_level)).into(),
-                quartz: (quartz * pow(2, current_level)).into(),
-                tritium: (tritium * pow(2, current_level)).into()
+            Cost {
+                steel: (steel * pow(2, current_level)),
+                quartz: (quartz * pow(2, current_level)),
+                tritium: (tritium * pow(2, current_level))
             }
         }
     }

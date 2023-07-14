@@ -1,12 +1,10 @@
 use core::traits::Into;
-use nogame::game::library::{CostExtended, Techs};
+use nogame::game::library::{Cost, Techs};
 
 #[generate_trait]
 impl Defences of DefencesTrait {
-    fn get_defences_cost(
-        quantity: u128, _steel: u128, _quartz: u128, _tritium: u128
-    ) -> CostExtended {
-        CostExtended {
+    fn get_defences_cost(quantity: u128, _steel: u128, _quartz: u128, _tritium: u128) -> Cost {
+        Cost {
             steel: (_steel * quantity).into(),
             quartz: (_quartz * quantity).into(),
             tritium: (_tritium * quantity).into()
@@ -20,7 +18,7 @@ impl Defences of DefencesTrait {
 
     #[inline(always)]
     fn beam_requirements_check(dockyard_level: u128, techs: Techs) {
-        assert(dockyard_level >= 2, 'Dockyard 1 required');
+        assert(dockyard_level >= 2, 'Dockyard 2 required');
         assert(techs.energy_innovation >= 2, 'Energy Innovation 2 required');
         assert(techs.beam_technology >= 3, 'Beam Technology 3 required');
     }

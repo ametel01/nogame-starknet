@@ -2,10 +2,9 @@ use core::traits::AddEq;
 use traits::Into;
 use debug::PrintTrait;
 // use traits::{Into, TryInto};
-use core::integer::Felt252IntoU256;
 use option::OptionTrait;
 use integer::U128Div;
-use nogame::game::library::CostExtended;
+use nogame::game::library::Cost;
 use nogame::libraries::math::pow;
 
 const MAX_STEEL_OVERFLOW: u128 = 17850;
@@ -16,105 +15,100 @@ const MAX_TRITIUM_OVERFLOW: u128 = 5950;
 #[generate_trait]
 impl Mines of MinesTrait {
     #[inline(always)]
-    fn steel_mine_cost(current_level: u128) -> CostExtended {
+    fn steel_mine_cost(current_level: u128) -> Cost {
         let base_steel = 60;
         let base_quarz = 15;
         if current_level == 0 {
-            CostExtended {
-                steel: base_steel.into(), quartz: base_quarz.into(), tritium: 0.into(), 
-            }
+            Cost { steel: base_steel, quartz: base_quarz, tritium: 0,  }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quartz = base_quarz * (pow(2, current_level));
-            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: 0.into() }
+            Cost { steel: steel, quartz: quartz, tritium: 0 }
         }
     }
 
     #[inline(always)]
-    fn quartz_mine_cost(current_level: u128) -> CostExtended {
+    fn quartz_mine_cost(current_level: u128) -> Cost {
         let base_steel = 48;
         let base_quarz = 24;
         if current_level == 0 {
-            CostExtended {
-                steel: base_steel.into(), quartz: base_quarz.into(), tritium: 0.into(), 
-            }
+            Cost { steel: base_steel, quartz: base_quarz, tritium: 0,  }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quartz = base_quarz * (pow(2, current_level));
-            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: 0.into(),  }
+            Cost { steel: steel, quartz: quartz, tritium: 0,  }
         }
     }
 
     #[inline(always)]
-    fn tritium_mine_cost(current_level: u128) -> CostExtended {
+    fn tritium_mine_cost(current_level: u128) -> Cost {
         let base_steel = 225;
         let base_quarz = 75;
         if current_level == 0 {
-            CostExtended {
-                steel: base_steel.into(), quartz: base_quarz.into(), tritium: 0.into(), 
-            }
+            Cost { steel: base_steel, quartz: base_quarz, tritium: 0,  }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quartz = base_quarz * (pow(2, current_level));
-            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: 0.into(),  }
+            Cost { steel: steel, quartz: quartz, tritium: 0,  }
         }
     }
 
     #[inline(always)]
-    fn energy_plant_cost(current_level: u128) -> CostExtended {
+    fn energy_plant_cost(current_level: u128) -> Cost {
         let base_steel = 75;
         let base_quarz = 30;
         if current_level == 0 {
-            CostExtended {
-                steel: base_steel.into(), quartz: base_quarz.into(), tritium: 0.into(), 
-            }
+            Cost { steel: base_steel, quartz: base_quarz, tritium: 0,  }
         } else {
             let steel = base_steel * (pow(2, current_level));
             let quartz = base_quarz * (pow(2, current_level));
-            CostExtended { steel: steel.into(), quartz: quartz.into(), tritium: 0.into(),  }
+            Cost { steel: steel, quartz: quartz, tritium: 0,  }
         }
     }
 
     #[inline(always)]
-    fn steel_production(current_level: u128) -> u256 {
+    fn steel_production(current_level: u128) -> u128 {
         if current_level == 0 {
-            return 0.into();
+            return 0;
         } else if current_level <= 31 {
-            return U128Div::div(30 * current_level * pow(11, current_level), pow(10, current_level))
-                .into();
+            return U128Div::div(
+                30 * current_level * pow(11, current_level), pow(10, current_level)
+            );
         } else {
-            return (MAX_STEEL_OVERFLOW * (current_level - 31)).into();
+            return (MAX_STEEL_OVERFLOW * (current_level - 31));
         }
     }
 
     #[inline(always)]
-    fn quartz_production(current_level: u128) -> u256 {
+    fn quartz_production(current_level: u128) -> u128 {
         if current_level == 0 {
-            return 0.into();
+            return 0;
         } else if current_level <= 31 {
-            return U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
-                .into();
+            return U128Div::div(
+                20 * current_level * pow(11, current_level), pow(10, current_level)
+            );
         } else {
-            return (MAX_QUARZ_OVERFLOW * (current_level - 31)).into();
+            return (MAX_QUARZ_OVERFLOW * (current_level - 31));
         }
     }
 
     #[inline(always)]
-    fn tritium_production(current_level: u128) -> u256 {
+    fn tritium_production(current_level: felt252) -> felt252 {
         if current_level == 0 {
-            return 0.into();
-        } else if current_level <= 31 {
-            return U128Div::div(10 * current_level * pow(11, current_level), pow(10, current_level))
-                .into();
+            return 0;
+        } else if current_level <= 31.into() {
+            return U128Div::div(
+                10 * current_level * pow(11, current_level), pow(10, current_level)
+            );
         } else {
-            return (MAX_TRITIUM_OVERFLOW * (current_level - 31)).into();
+            return (MAX_TRITIUM_OVERFLOW * (current_level - 31));
         }
     }
 
     #[inline(always)]
     fn energy_plant_production(current_level: u128) -> u128 {
         if current_level == 0 {
-            30
+            0
         } else if current_level <= 31 {
             U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level)) + 30
         } else {
@@ -145,11 +139,11 @@ impl Mines of MinesTrait {
     }
 
     #[inline(always)]
-    fn production_scaler(production: u256, available: u128, required: u128) -> u256 {
+    fn production_scaler(production: u128, available: u128, required: u128) -> u128 {
         if available > required {
             return production;
         } else {
-            return ((((available * 100) / required) * production.low) / 100).into();
+            return ((((available * 100) / required) * production) / 100);
         }
     }
 }
