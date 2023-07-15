@@ -18,10 +18,10 @@ mod MineProductionTest {
         let production = Mines::steel_production(20);
         assert(production == 4036, 'wrong result');
         // Max level at which overflow occures with regular formula.
-        let production = Mines::steel_production(31);
-        assert(production == 17850, 'wrong result');
-        let production = Mines::steel_production(61);
-        assert(production == 535500, 'wrong result');
+        let production = Mines::steel_production(30);
+        assert(production == 15704, 'wrong result');
+        let production = Mines::steel_production(40);
+        assert(production == 54923, 'wrong result');
     }
     #[test]
     #[available_gas(1000000000)]
@@ -39,8 +39,8 @@ mod MineProductionTest {
         // Max level at which overflow occures with regular formula.
         let production = Mines::quartz_production(31);
         assert(production == 11900, 'wrong result');
-        let production = Mines::quartz_production(61);
-        assert(production == 357000, 'wrong result');
+        let production = Mines::quartz_production(32);
+        assert(production == 13443, 'wrong result');
     }
     #[test]
     #[available_gas(1000000000)]
@@ -58,8 +58,8 @@ mod MineProductionTest {
         // Max level at which overflow occures with regular formula.
         let production = Mines::tritium_production(31);
         assert(production == 5950, 'wrong result');
-        let production = Mines::tritium_production(61);
-        assert(production == 178500, 'wrong result');
+        let production = Mines::tritium_production(50);
+        assert(production == 51978, 'wrong result');
     }
     #[test]
     #[available_gas(1000000000)]
@@ -67,18 +67,18 @@ mod MineProductionTest {
         let production = Mines::energy_plant_production(0);
         assert(production == 0, 'wrong result');
         let production = Mines::energy_plant_production(1);
-        assert(production == 52, 'wrong result');
+        assert(production == 22, 'wrong result');
         let production = Mines::energy_plant_production(5);
-        assert(production == 191, 'wrong result');
+        assert(production == 161, 'wrong result');
         let production = Mines::energy_plant_production(10);
-        assert(production == 548, 'wrong result');
+        assert(production == 518, 'wrong result');
         let production = Mines::energy_plant_production(20);
-        assert(production == 2720, 'wrong result');
+        assert(production == 2690, 'wrong result');
         // Max level at which overflow occures with regular formula.
         let production = Mines::energy_plant_production(31);
-        assert(production == 11930, 'wrong result');
-        let production = Mines::energy_plant_production(61);
-        assert(production == 357000, 'wrong result');
+        assert(production == 11900, 'wrong result');
+        let production = Mines::energy_plant_production(50);
+        assert(production == 116228, 'wrong result');
     }
     #[test]
     #[available_gas(1000000000)]

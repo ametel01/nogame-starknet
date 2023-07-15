@@ -5,7 +5,7 @@ use debug::PrintTrait;
 use option::OptionTrait;
 use integer::U128Div;
 use nogame::game::library::Cost;
-use nogame::libraries::math::pow;
+use nogame::libraries::math::{pow, power};
 
 const MAX_STEEL_OVERFLOW: u128 = 17850;
 const MAX_QUARZ_OVERFLOW: u128 = 11900;
@@ -75,7 +75,7 @@ impl Mines of MinesTrait {
                 30 * current_level * pow(11, current_level), pow(10, current_level)
             );
         } else {
-            return (MAX_STEEL_OVERFLOW * (current_level - 31));
+            return power(70, current_level);
         }
     }
 
@@ -88,20 +88,20 @@ impl Mines of MinesTrait {
                 20 * current_level * pow(11, current_level), pow(10, current_level)
             );
         } else {
-            return (MAX_QUARZ_OVERFLOW * (current_level - 31));
+            return power(49, current_level);
         }
     }
 
     #[inline(always)]
-    fn tritium_production(current_level: felt252) -> felt252 {
+    fn tritium_production(current_level: u128) -> u128 {
         if current_level == 0 {
             return 0;
-        } else if current_level <= 31.into() {
+        } else if current_level <= 31 {
             return U128Div::div(
                 10 * current_level * pow(11, current_level), pow(10, current_level)
             );
         } else {
-            return (MAX_TRITIUM_OVERFLOW * (current_level - 31));
+            return power(24, current_level);
         }
     }
 
@@ -110,9 +110,9 @@ impl Mines of MinesTrait {
         if current_level == 0 {
             0
         } else if current_level <= 31 {
-            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level)) + 30
+            U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
         } else {
-            MAX_QUARZ_OVERFLOW * (current_level - 31)
+            return power(49, current_level);
         }
     }
 
@@ -123,7 +123,7 @@ impl Mines of MinesTrait {
         } else if current_level <= 31 {
             U128Div::div(10 * current_level * pow(11, current_level), pow(10, current_level))
         } else {
-            MAX_TRITIUM_OVERFLOW * (current_level - 31)
+            return power(49, current_level) / 2;
         }
     }
 
@@ -134,7 +134,7 @@ impl Mines of MinesTrait {
         } else if current_level <= 31 {
             U128Div::div(20 * current_level * pow(11, current_level), pow(10, current_level))
         } else {
-            MAX_QUARZ_OVERFLOW * (current_level - 31)
+            return power(49, current_level);
         }
     }
 
