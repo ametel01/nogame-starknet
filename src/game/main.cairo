@@ -54,8 +54,11 @@ mod NoGame {
     use core::option::OptionTrait;
     use core::traits::{Into, TryInto};
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
+    // use nogame::game::library::{
+    //     Tokens, Cost, MinesCost, MinesLevels, Resources, Techs, E18, ERC20s
+    // };
     use nogame::game::library::{
-        Tokens, Cost, MinesCost, MinesLevels, Resources, Techs, E18, ERC20s
+        Cost, E18, ERC20s, MinesCost, MinesLevels, Resources, Techs, Tokens
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -158,7 +161,7 @@ mod NoGame {
     // Structures upgrade events.
 
     // Constructor
-    #[constructor]
+    // #[constructor]
     fn constructor(
         ref self: ContractState,
         erc721: ContractAddress,
@@ -220,11 +223,12 @@ mod NoGame {
             let caller = get_caller_address();
             let planet_id = PrivateFunctions::get_planet_id_from_address(@self, caller);
             let number_of_planets = self.number_of_planets.read();
+            let token_id: u256 = (number_of_planets + 1).into();
             if self.planet_generated.read(planet_id) == false {
                 self.planet_generated.write(planet_id, true);
                 IERC721Dispatcher {
                     contract_address: self.erc721_address.read()
-                }.mint(_to: caller, token_id: (number_of_planets + 1).into());
+                }.mint(_to: caller, token_id: token_id);
             }
             self.number_of_planets.write(number_of_planets + 1);
             PrivateFunctions::mint_initial_liquidity(@self, caller);
@@ -712,16 +716,19 @@ mod NoGame {
         fn calculate_production(self: @ContractState, planet_id: u256) -> Resources {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
-            let time_elapsed = time_now - last_collection_time;
+            let time_elapsed: u128 = (time_now - last_collection_time).into();
             let mines_levels = NoGame::get_mines_levels(self, planet_id);
             let steel_available = (Mines::steel_production(mines_levels.steel)
-                * (time_elapsed.into() / 3600));
+                * time_elapsed
+                / 3600);
 
             let quartz_available = (Mines::quartz_production(mines_levels.quartz)
-                * (time_elapsed.into() / 3600));
+                * time_elapsed
+                / 3600);
 
             let tritium_available = (Mines::tritium_production(mines_levels.tritium)
-                * (time_elapsed.into() / 3600));
+                * time_elapsed
+                / 3600);
             let energy_available = Mines::energy_plant_production(mines_levels.energy);
             let energy_required = Mines::base_mine_consumption(mines_levels.steel)
                 + Mines::base_mine_consumption(mines_levels.quartz)

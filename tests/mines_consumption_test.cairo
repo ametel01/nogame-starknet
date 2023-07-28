@@ -21,7 +21,6 @@ mod MinesConsumptionTest {
         let consumption = Mines::base_mine_consumption(31);
         assert(consumption == 5950, 'wrong result');
         let consumption = Mines::base_mine_consumption(61);
-        consumption.print();
         assert(consumption == 202155, 'wrong result');
     }
 
@@ -42,7 +41,6 @@ mod MinesConsumptionTest {
         let consumption = Mines::tritium_mine_consumption(31);
         assert(consumption == 11900, 'wrong result');
         let consumption = Mines::tritium_mine_consumption(61);
-        consumption.print();
         assert(consumption == 404311, 'wrong result');
     }
 }

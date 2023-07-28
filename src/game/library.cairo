@@ -2,6 +2,12 @@ use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
 
+// #[derive(Copy, Drop, Serde)]
+// struct Cost {
+//     steel: u128,
+//     quartz: u128,
+//     tritium: u128,
+// }
 #[derive(Copy, Drop, Serde)]
 struct Cost {
     steel: u128,
