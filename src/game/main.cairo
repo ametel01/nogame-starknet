@@ -3,14 +3,15 @@ mod NoGame {
     use traits::DivRem;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::interface::INoGame;
-    use nogame::{
+    use nogame::libraries::types::{
         E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
-        ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris
+        ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris,
+        Mission
     };
-    use nogame::compounds::Compounds;
-    use nogame::defences::Defences;
-    use nogame::dockyard::Dockyard;
-    use nogame::research::Lab;
+    use nogame::libraries::compounds::Compounds;
+    use nogame::libraries::defences::Defences;
+    use nogame::libraries::dockyard::Dockyard;
+    use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
 
@@ -67,6 +68,8 @@ mod NoGame {
         beam_available: LegacyMap::<u16, u32>,
         astral_launcher_available: LegacyMap::<u16, u32>,
         plasma_projector_available: LegacyMap::<u16, u32>,
+        // Fleet
+        active_missions: LegacyMap::<u16, Mission>
     }
 
     #[event]
@@ -679,7 +682,6 @@ mod NoGame {
         fn get_ships_levels(self: @ContractState, planet_id: u16) -> ShipsLevels {
             ShipsLevels {
                 carrier: self.carrier_available.read(planet_id),
-                celestia: self.celestia_available.read(planet_id),
                 scraper: self.scraper_available.read(planet_id),
                 sparrow: self.sparrow_available.read(planet_id),
                 frigate: self.frigate_available.read(planet_id),

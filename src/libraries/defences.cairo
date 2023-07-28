@@ -1,4 +1,4 @@
-use nogame::{ERC20s, TechLevels};
+use nogame::libraries::types::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Defences of DefencesTrait {
