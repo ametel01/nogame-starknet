@@ -69,8 +69,8 @@ mod NoGame {
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::IERC20DispatcherTrait;
     use nogame::token::erc20::IERC20Dispatcher;
-    use nogame::token::erc721::IERC721DispatcherTrait;
-    use nogame::token::erc721::IERC721Dispatcher;
+    use nogame::token::erc721::INGERC721DispatcherTrait;
+    use nogame::token::erc721::INGERC721Dispatcher;
 
 
     #[storage]
@@ -183,9 +183,9 @@ mod NoGame {
             let caller = get_caller_address();
             let number_of_planets = self.number_of_planets.read();
             let token_id: u256 = (number_of_planets + 1).into();
-            IERC721Dispatcher {
+            INGERC721Dispatcher {
                 contract_address: self.erc721_address.read()
-            }.mint(_to: caller, token_id: token_id);
+            }.mint(to: caller, token_id: token_id);
             self.number_of_planets.write(number_of_planets + 1);
             PrivateFunctions::mint_initial_liquidity(@self, caller);
             self.resources_timer.write(token_id, get_block_timestamp());
@@ -755,7 +755,7 @@ mod NoGame {
     impl PrivateFunctions of PrivateTrait {
         fn get_token_owner(self: @ContractState, caller: ContractAddress) -> u256 {
             let erc721 = self.erc721_address.read();
-            let planet_id = IERC721Dispatcher { contract_address: erc721 }.token_of(caller);
+            let planet_id = INGERC721Dispatcher { contract_address: erc721 }.token_of(caller);
             planet_id
         }
 
