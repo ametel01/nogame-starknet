@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod CompoundsTest {
-    use debug::PrintTrait;
+    // use debug::PrintTrait;
     use nogame::libraries::compounds::Compounds;
     use nogame::game::library::Cost;
+    use forge_print::PrintTrait;
 
     impl Print of PrintTrait<Cost> {
         fn print(self: Cost) {
@@ -13,7 +14,7 @@ mod CompoundsTest {
     }
 
     #[test]
-    #[available_gas(1000000000)]
+    #[available_gas(100000000)]
     fn dockyard_cost_test() {
         let cost = Compounds::dockyard_cost(0);
         assert(cost.steel == 400, 'wrong formula');
@@ -40,7 +41,6 @@ mod CompoundsTest {
         assert(cost.quartz == 230584300921369395200, 'wrong formula');
         assert(cost.tritium == 115292150460684697600, 'wrong formula');
     }
-
     #[test]
     #[available_gas(1000000000)]
     fn lab_cost_test() {

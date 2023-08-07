@@ -1,4 +1,4 @@
-use nogame::libraries::math::pow;
+use nogame::libraries::math::power;
 use nogame::game::library::{Cost, Techs};
 
 #[generate_trait]
@@ -8,9 +8,9 @@ impl Lab of LabTrait {
             Cost { steel: steel, quartz: quartz, tritium: tritium }
         } else {
             Cost {
-                steel: (steel * pow(2, current_level)),
-                quartz: (quartz * pow(2, current_level)),
-                tritium: (tritium * pow(2, current_level))
+                steel: (steel * power(2, current_level)),
+                quartz: (quartz * power(2, current_level)),
+                tritium: (tritium * power(2, current_level))
             }
         }
     }
