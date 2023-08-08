@@ -1,18 +1,23 @@
 [package]
 name = "nogame"
 version = "0.1.0"
-cairo-version = "^2.1.0-rc4"
+cairo-version = "2.1.0-rc4"
 authors = ["ametel01"]
 license = "MIT"
 
 [dependencies]
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", branch = "cairo-2" }
 
-starknet = "^2.1.0-rc4"
+starknet = "2.1.0-rc4"
 
 [[target.starknet-contract]]
+build-external-contracts = ["openzeppelin::account::account::Account"]
 sierra = true
 casm = true
+
+# [lib]
+# sierra = true  # Enable Sierra codegen.
+# casm = true   # Enable CASM codegen.
 # [scripts]
 # test = "cairo-test ."
 

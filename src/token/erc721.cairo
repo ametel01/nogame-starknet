@@ -2,6 +2,19 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait INGERC721<T> {
+    fn name(self: @T) -> felt252;
+    fn symbol(self: @T) -> felt252;
+    fn token_uri(self: @T, token_id: u256) -> felt252;
+    fn balance_of(self: @T, account: ContractAddress) -> u256;
+    fn owner_of(self: @T, token_id: u256) -> ContractAddress;
+    fn transfer_from(ref self: T, from: ContractAddress, to: ContractAddress, token_id: u256);
+    fn safe_transfer_from(
+        ref self: T, from: ContractAddress, to: ContractAddress, token_id: u256, data: Span<felt252>
+    );
+    fn approve(ref self: T, to: ContractAddress, token_id: u256);
+    fn set_approval_for_all(ref self: T, operator: ContractAddress, approved: bool);
+    fn get_approved(self: @T, token_id: u256) -> ContractAddress;
+    fn is_approved_for_all(self: @T, owner: ContractAddress, operator: ContractAddress) -> bool;
     fn token_of(self: @T, address: ContractAddress) -> u256;
     fn base_uri(self: @T) -> felt252;
     fn set_minter(ref self: T, address: ContractAddress);
@@ -85,9 +98,8 @@ mod NGERC721 {
             src5::SRC5::SRC5Impl::supports_interface(@unsafe_state, interface_id)
         }
     }
-
     #[external(v0)]
-    impl ERC721MetadataImpl of interface::IERC721Metadata<ContractState> {
+    impl NGERC721Impl of super::INGERC721<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self._name.read()
         }
@@ -100,11 +112,8 @@ mod NGERC721 {
             assert(self._exists(token_id), 'ERC721: invalid token ID');
             self._token_uri.read(token_id)
         }
-    }
 
 
-    #[external(v0)]
-    impl ERC721Impl of interface::IERC721<ContractState> {
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
             assert(!account.is_zero(), 'ERC721: invalid account');
             self._balances.read(account)
@@ -130,7 +139,7 @@ mod NGERC721 {
 
             let caller = get_caller_address();
             assert(
-                owner == caller || ERC721Impl::is_approved_for_all(@self, owner, caller),
+                owner == caller || NGERC721Impl::is_approved_for_all(@self, owner, caller),
                 'ERC721: unauthorized caller'
             );
             self._approve(to, token_id);
@@ -165,9 +174,8 @@ mod NGERC721 {
             );
             self._safe_transfer(from, to, token_id, data);
         }
-    }
 
-    impl NGERC721Impl of super::INGERC721<ContractState> {
+
         fn token_of(self: @ContractState, address: ContractAddress) -> u256 {
             self._tokens.read(address)
         }
@@ -186,6 +194,7 @@ mod NGERC721 {
         fn mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
             assert(get_caller_address() == self._minter.read(), 'Caller not minter');
             InternalImpl::_mint(ref self, to, token_id);
+            self._tokens.write(to, token_id);
         }
     }
 
@@ -222,10 +231,10 @@ mod NGERC721 {
             self: @ContractState, spender: ContractAddress, token_id: u256
         ) -> bool {
             let owner = self._owner_of(token_id);
-            let is_approved_for_all = ERC721Impl::is_approved_for_all(self, owner, spender);
+            let is_approved_for_all = NGERC721Impl::is_approved_for_all(self, owner, spender);
             owner == spender
                 || is_approved_for_all
-                || spender == ERC721Impl::get_approved(self, token_id)
+                || spender == NGERC721Impl::get_approved(self, token_id)
         }
 
         fn _approve(ref self: ContractState, to: ContractAddress, token_id: u256) {
@@ -250,7 +259,7 @@ mod NGERC721 {
         fn _mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
             assert(!to.is_zero(), 'ERC721: invalid receiver');
             assert(!self._exists(token_id), 'ERC721: token already minted');
-
+            InternalImpl::_assert_balance_is_zero(@self, to);
             self._balances.write(to, self._balances.read(to) + 1);
             self._owners.write(token_id, to);
 
@@ -263,7 +272,7 @@ mod NGERC721 {
             assert(!to.is_zero(), 'ERC721: invalid receiver');
             let owner = self._owner_of(token_id);
             assert(from == owner, 'ERC721: wrong sender');
-
+            InternalImpl::_assert_balance_is_zero(@self, to);
             // Implicit clear approvals, no need to emit an event
             self._token_approvals.write(token_id, Zeroable::zero());
 
@@ -312,6 +321,10 @@ mod NGERC721 {
         fn _set_token_uri(ref self: ContractState, token_id: u256, token_uri: felt252) {
             assert(self._exists(token_id), 'ERC721: invalid token ID');
             self._token_uri.write(token_id, token_uri)
+        }
+
+        fn _assert_balance_is_zero(self: @ContractState, address: ContractAddress) {
+            assert(self._balances.read(address) == 0, 'Max token balance reached');
         }
     }
 
