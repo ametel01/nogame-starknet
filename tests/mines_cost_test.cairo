@@ -2,10 +2,10 @@
 mod MineCostTest {
     use forge_print::PrintTrait;
     use nogame::libraries::compounds::Compounds;
-    use nogame::game::library::Cost;
+    use nogame::game::library::ERC20s;
 
-    impl CostPrint of PrintTrait<Cost> {
-        fn print(self: Cost) {
+    impl CostPrint of PrintTrait<ERC20s> {
+        fn print(self: ERC20s) {
             self.steel.print();
             self.quartz.print();
             self.tritium.print();

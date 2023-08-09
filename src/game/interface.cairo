@@ -6,7 +6,6 @@ use nogame::game::library::{
 
 #[starknet::interface]
 trait INoGame<T> {
-    fn get_tokens_addresses(self: @T) -> Tokens;
     fn _initializer(
         ref self: T,
         erc721: ContractAddress,
@@ -29,8 +28,8 @@ trait INoGame<T> {
     fn get_techs_upgrade_cost(self: @T, planet_id: u128) -> TechsCost;
     fn get_ships_levels(self: @T, planet_id: u128) -> ShipsLevels;
     fn get_ships_cost(self: @T) -> ShipsCost;
-    fn get_defences_levels(self: @T, planet_id: u128) -> DefencesLevels;
-    fn get_defences_cost(self: @T, planet_id: u128) -> DefencesCost;
+    // fn get_defences_levels(self: @T, planet_id: u128) -> DefencesLevels;
+    // fn get_defences_cost(self: @T, planet_id: u128) -> DefencesCost;
     // Write functions
     fn generate_planet(ref self: T);
     fn collect_resources(ref self: T);

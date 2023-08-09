@@ -41,7 +41,7 @@ mod NoGame {
         energy_plant_level: LegacyMap::<u128, u128>,
         dockyard_level: LegacyMap::<u128, u128>,
         lab_level: LegacyMap::<u128, u128>,
-        resources_timer: LegacyMap::<u120, u64>,
+        resources_timer: LegacyMap::<u128, u64>,
         // Technologies
         energy_innovation_level: LegacyMap::<u128, u128>,
         digital_systems_level: LegacyMap::<u128, u128>,
@@ -636,7 +636,7 @@ mod NoGame {
         //                                      VIEW FUNCTIONS                                #
         //########################################################################################
 
-        fn get_tokens_addresses(self: @ContractState) -> Tokens {
+        fn get_token_addresses(self: @ContractState) -> Tokens {
             PrivateFunctions::get_tokens_addresses(self)
         }
 
@@ -795,6 +795,25 @@ mod NoGame {
             planet_id.low
         }
 
+        /// Collects resources for a given contract and caller.
+        ///
+        /// This function is responsible for gathering resources based on the caller's ownership
+        /// of a specific planet token. The production is calculated based on the token's associated planet,
+        /// and resources are received using an ERC20 token standard.
+        ///
+        /// # Parameters
+        ///
+        /// - `ref self`: Reference to the current contract state.
+        /// - `caller`: Address of the caller.
+        ///
+        /// # Behavior
+        ///
+        /// - Retrieves the caller's address using the `get_caller_address` function.
+        /// - Gets the planet ID that is owned by the caller using `PrivateFunctions::get_token_owner`.
+        /// - Calculates the production for the planet using `PrivateFunctions::calculate_production`.
+        /// - Receives the resources using `PrivateFunctions::receive_resources_erc20`.
+        /// - Writes the current block timestamp to the `resources_timer` for the planet.
+        ///
         fn collect_resources(ref self: ContractState, caller: ContractAddress) {
             let caller = get_caller_address();
             let planet_id = PrivateFunctions::get_token_owner(@self, caller);
@@ -803,6 +822,20 @@ mod NoGame {
             self.resources_timer.write(planet_id, get_block_timestamp());
         }
 
+        /// Returns the available ERC20 tokens for a specific caller's address.
+        ///
+        /// This function retrieves the balances of three different tokens: steel, quartz, and tritium,
+        /// for the given caller's address.
+        ///
+        /// # Parameters
+        ///
+        /// * `self`: The state of the contract, containing the addresses of the ERC20 tokens.
+        /// * `caller`: The address of the contract making the call.
+        ///
+        /// # Returns
+        ///
+        /// An instance of `ERC20s` struct containing the available balances for steel, quartz, and tritium tokens.
+        ///
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> ERC20s {
             let _steel = IERC20Dispatcher {
                 contract_address: self.steel_address.read()
@@ -825,6 +858,25 @@ mod NoGame {
             }
         }
 
+        /// Calculates the production of resources on a given planet based on the current
+        /// state of the contract and the current time.
+        ///
+        /// # Parameters
+        ///
+        /// * `self`: A reference to the current state of the contract.
+        /// * `planet_id`: The unique identifier for the planet for which to calculate the production.
+        ///
+        /// # Returns
+        ///
+        /// Returns a `Resources` structure containing the amounts of steel, quartz, tritium,
+        /// and energy produced on the planet since the last collection time.
+        ///
+        /// # Notes
+        ///
+        /// This function takes into account various factors like the levels of mines,
+        /// available energy, and the time elapsed since the last collection. The production
+        /// is then scaled based on available and required energy, and the result is returned
+        /// as a `Resources` structure.
         fn calculate_production(self: @ContractState, planet_id: u128) -> Resources {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
@@ -869,22 +921,17 @@ mod NoGame {
                 + Compounds::tritium_mine_consumption(compounds.tritium)
         }
 
-        fn calculate_net_energy(self: @ContractState, planet_id: u128) -> u128 {
-            let energy = Compounds::energy_plant_production(
-                self.energy_plant_level.read(planet_id)
-            );
-            let energy_needed = Compounds::base_mine_consumption(
-                self.steel_mine_level.read(planet_id)
-            )
-                + Compounds::base_mine_consumption(self.quartz_mine_level.read(planet_id))
-                + Compounds::tritium_mine_consumption(self.tritium_mine_level.read(planet_id));
-            if energy < energy_needed {
-                return 0;
-            } else {
-                energy - energy_needed
-            }
-        }
-
+        /// Receives resources in ERC20 token format and mints the corresponding amounts to a contract address.
+        ///
+        /// This function takes in a contract state, a contract address to send the tokens to, and the resources amounts for three different materials: steel, quartz, and tritium.
+        /// It retrieves the token addresses for these materials from the contract state and then mints the corresponding amounts in ERC20 tokens.
+        ///
+        /// # Arguments
+        ///
+        /// * `self`: The current contract state, must implement the `ContractState` trait.
+        /// * `to`: The `ContractAddress` where the ERC20 tokens will be minted.
+        /// * `amounts`: A `Resources` struct containing the amounts of steel, quartz, and tritium to mint.
+        ///
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: Resources) {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher {
@@ -898,6 +945,24 @@ mod NoGame {
             }.mint(to, (amounts.tritium * E18).into())
         }
 
+        /// Burns the specified amount of ERC20 tokens from the given account.
+        ///
+        /// This function takes the specified amounts of steel, quartz, and tritium tokens,
+        /// multiplies each amount by 10^18 (represented by `E18`), and burns them from the
+        /// account's balance.
+        ///
+        /// # Arguments
+        ///
+        /// * `self`: A reference to the contract state.
+        /// * `account`: The address of the contract containing the ERC20 tokens to be burned.
+        /// * `amounts`: An `ERC20s` struct containing the amounts of steel, quartz, and tritium tokens to be burned.
+        ///
+        /// # Note
+        ///
+        /// This function internally calls `PrivateFunctions::get_tokens_addresses` to obtain the
+        /// addresses for the corresponding tokens and leverages the `IERC20Dispatcher` for
+        /// the burn operation.
+        ///
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher {
@@ -911,6 +976,26 @@ mod NoGame {
             }.burn(account, (amounts.tritium * E18).into())
         }
 
+        /// Mints initial liquidity to the given account.
+        ///
+        /// This function is responsible for minting an initial set of tokens to the specified account. 
+        /// The tokens minted include Steel, Quartz, and Tritium, with specific quantities of each.
+        ///
+        /// # Arguments
+        ///
+        /// * `self: @ContractState` - The current state of the contract.
+        /// * `account: ContractAddress` - The contract address to which the initial liquidity will be minted.
+        ///
+        /// # Tokens Minted
+        ///
+        /// * Steel: 500 * 10^18
+        /// * Quartz: 300 * 10^18
+        /// * Tritium: 100 * 10^18
+        ///
+        /// # Note
+        ///
+        /// This function should only be called at the appropriate stage in the contract lifecycle, such as during initialization or under specific conditions set forth in the contract.
+        ///
         fn mint_initial_liquidity(self: @ContractState, account: ContractAddress) {
             let tokens: Tokens = PrivateFunctions::get_tokens_addresses(self);
             IERC20Dispatcher {
@@ -924,13 +1009,43 @@ mod NoGame {
             }.mint(recipient: account, amount: (100 * E18).into());
         }
 
+        /// Checks if the caller has enough resources based on the provided amounts of ERC20 tokens.
+        ///
+        /// This function compares the required amounts of steel, quartz, and tritium with the available
+        /// amounts for the given caller. The available amounts are scaled down by a factor of E18 (10^18) before
+        /// comparison.
+        ///
+        /// # Arguments
+        ///
+        /// * `self` - A reference to the contract's current state.
+        /// * `caller` - The address of the calling contract.
+        /// * `amounts` - A struct containing the amounts of steel, quartz, and tritium that are required.
+        ///
+        /// # Panics
+        ///
+        /// The function will panic if:
+        /// * The amount of steel required is greater than the available steel scaled down by E18.
+        /// * The amount of quartz required is greater than the available quartz scaled down by E18.
+        /// * The amount of tritium required is greater than the available tritium scaled down by E18.
+        ///
         fn check_enough_resources(self: @ContractState, caller: ContractAddress, amounts: ERC20s) {
             let available: ERC20s = PrivateFunctions::get_erc20s_available(self, caller);
-            assert(amounts.steel <= available.steel, 'Not enough steel');
-            assert(amounts.quartz <= available.quartz, 'Not enough quartz');
-            assert(amounts.tritium <= available.tritium, 'Not enough tritium');
+            assert(amounts.steel <= available.steel / E18, 'Not enough steel');
+            assert(amounts.quartz <= available.quartz / E18, 'Not enough quartz');
+            assert(amounts.tritium <= available.tritium / E18, 'Not enough tritium');
         }
 
+        /// Returns the addresses for various tokens stored within the contract's state.
+        ///
+        /// This function reads the current addresses for the steel, quartz, and tritium tokens
+        /// from the contract's state and returns them encapsulated in a `Tokens` struct.
+        ///
+        /// # Returns
+        /// A `Tokens` struct containing the addresses for the following tokens:
+        /// - `steel`: The address of the steel token.
+        /// - `quartz`: The address of the quartz token.
+        /// - `tritium`: The address of the tritium token.
+        ///
         fn get_tokens_addresses(self: @ContractState) -> Tokens {
             Tokens {
                 steel: self.steel_address.read(),
@@ -939,6 +1054,17 @@ mod NoGame {
             }
         }
 
+        /// Updates the resource points for a specified planet within a contract state.
+        ///
+        /// This function adds the total of `spent.steel` and `spent.quartz` to the current resources
+        /// spent for the specified `planet_id` in the contract state's resources.
+        ///
+        /// # Arguments
+        ///
+        /// * `self`: A mutable reference to the current contract state.
+        /// * `planet_id`: The unique identifier of the planet for which the resources are being updated.
+        /// * `spent`: A value of type `ERC20s` representing the resources spent, including steel and quartz.
+        ///
         fn update_planet_points(ref self: ContractState, planet_id: u128, spent: ERC20s) {
             self
                 .resources_spent
@@ -947,21 +1073,65 @@ mod NoGame {
                 );
         }
 
+        /// Updates the total resources spent for a specific planet within a contract.
+        ///
+        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
+        /// with the sum of the current spent, steel cost, and quartz cost.
+        ///
+        /// # Arguments
+        ///
+        /// * `ref self` - A reference to the contract's state.
+        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
+        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
+        ///
         fn update_resources_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
             let current_spent = self.resources_spent.read(planet_id);
             self.resources_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
         }
 
+        /// Updates the tech spent for a specific planet within a contract.
+        ///
+        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
+        /// with the sum of the current spent, steel cost, and quartz cost.
+        ///
+        /// # Arguments
+        ///
+        /// * `ref self` - A reference to the contract's state.
+        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
+        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
+        ///
         fn update_tech_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
             let current_spent = self.tech_spent.read(planet_id);
             self.tech_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
         }
 
+        /// Updates the fleet spent for a specific.
+        ///
+        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
+        /// with the sum of the current spent, steel cost, and quartz cost.
+        ///
+        /// # Arguments
+        ///
+        /// * `ref self` - A reference to the contract's state.
+        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
+        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
+        ///
         fn update_fleet_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
             let current_spent = self.fleet_spent.read(planet_id);
             self.tech_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
         }
 
+        /// Updates the leaderboard of the contract state based on the resources, tech, and fleet spent.
+        ///
+        /// The function compares the resources, tech, and fleet spent on a given planet with the
+        /// current leaders in each category. If the given planet has spent more in any of these
+        /// categories, it becomes the new leader.
+        ///
+        /// # Arguments
+        ///
+        /// * `ref self`: Reference to the contract state that contains the current leaders and the amount spent.
+        /// * `planet_id`: The unique identifier of the planet for which the leaderboard is to be updated.
+        ///
         fn update_leaderboard(ref self: ContractState, planet_id: u128) {
             if self
                 .resources_spent
@@ -978,12 +1148,24 @@ mod NoGame {
             }
         }
 
+
+        /// Returns the time elapsed since the last collection for a specified planet.
+        ///
+        /// This function calculates the time that has passed since the last resource collection
+        /// on a given planet, identified by its `planet_id`.
+        ///
+        /// # Arguments
+        ///
+        /// * `self`: A reference to the contract's state.
+        /// * `planet_id`: The unique identifier for the planet.
+        ///
+        /// # Returns
+        ///
+        /// Returns a 64-bit unsigned integer representing the time in seconds 
+        ///
         fn time_since_last_collection(self: @ContractState, planet_id: u128) -> u64 {
             get_block_timestamp() - self.resources_timer.read(planet_id)
         }
-        // ##################################################################################
-        //                                TECH FUNCTIONS                   #
-        //###################################################################################
 
         fn get_tech_levels(self: @ContractState, planet_id: u128) -> TechLevels {
             TechLevels {
