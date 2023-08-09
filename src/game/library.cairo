@@ -102,7 +102,7 @@ struct DefencesLevels {
     blaster: u128,
     beam: u128,
     astral_launcher: u128,
-    plasma_beam: u128
+    plasma_projector: u128
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -110,7 +110,7 @@ struct DefencesCost {
     blaster: ERC20s,
     beam: ERC20s,
     astral_launcher: ERC20s,
-    plasma_beam: ERC20s,
+    plasma_projector: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]

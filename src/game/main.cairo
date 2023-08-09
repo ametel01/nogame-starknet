@@ -67,7 +67,7 @@ mod NoGame {
         blaster_available: LegacyMap::<u128, u128>,
         beam_available: LegacyMap::<u128, u128>,
         astral_launcher_available: LegacyMap::<u128, u128>,
-        plasma_beam_available: LegacyMap::<u128, u128>,
+        plasma_projector_available: LegacyMap::<u128, u128>,
     }
 
     #[event]
@@ -627,8 +627,8 @@ mod NoGame {
             PrivateFunctions::update_fleet_spent(ref self, planet_id, cost);
             PrivateFunctions::update_leaderboard(ref self, planet_id);
             self
-                .plasma_beam_available
-                .write(planet_id, self.plasma_beam_available.read(planet_id) + quantity);
+                .plasma_projector_available
+                .write(planet_id, self.plasma_projector_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -778,6 +778,29 @@ mod NoGame {
                     }, armade: ERC20s {
                     steel: 45000, quartz: 15000, tritium: 0
                 }
+            }
+        }
+
+        fn get_defences_levels(self: @ContractState, planet_id: u128) -> DefencesLevels {
+            DefencesLevels {
+                blaster: self.blaster_available.read(planet_id),
+                beam: self.beam_available.read(planet_id),
+                astral_launcher: self.astral_launcher_available.read(planet_id),
+                plasma_projector: self.plasma_projector_available.read(planet_id),
+            }
+        }
+
+        fn get_defences_cost(self: @ContractState, planet_id: u128) -> DefencesCost {
+            DefencesCost {
+                blaster: ERC20s {
+                    steel: 2000, quartz: 0, tritium: 0
+                    }, beam: ERC20s {
+                    steel: 6000, quartz: 2000, tritium: 0
+                    }, astral_launcher: ERC20s {
+                    steel: 20000, quartz: 15000, tritium: 2000
+                    }, plasma_projector: ERC20s {
+                    steel: 50000, quartz: 50000, tritium: 30000
+                },
             }
         }
     }
