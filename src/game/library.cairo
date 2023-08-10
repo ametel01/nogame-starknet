@@ -26,6 +26,16 @@ struct ERC20s {
 }
 
 #[derive(Copy, Drop, Serde)]
+struct CompoundsLevelsPacked {
+    steel: u8,
+    quartz: u8,
+    tritium: u8,
+    energy: u8,
+    lab: u8,
+    dockyard: u8,
+}
+
+#[derive(Copy, Drop, Serde)]
 struct CompoundsLevels {
     steel: u128,
     quartz: u128,
