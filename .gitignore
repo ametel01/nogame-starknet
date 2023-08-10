@@ -5,3 +5,6 @@ Scarb
 target
 nogame/deployed_contracts.txt
 metadata_gen
+.account
+
+.keystore
