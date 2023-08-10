@@ -108,7 +108,6 @@ mod MineCostTest {
         assert(cost.steel == 21571994, 'wrong formula');
         assert(cost.quartz == 8628797, 'wrong formula');
         let cost = Compounds::energy_plant_cost(63);
-        cost.print();
         assert(cost.steel == 9307018643973, 'wrong formula');
         assert(cost.quartz == 3722807457589, 'wrong formula');
     }
