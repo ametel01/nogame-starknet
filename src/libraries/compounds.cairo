@@ -111,6 +111,9 @@ impl Compounds of CompoundsTrait {
 
     #[inline(always)]
     fn steel_production(current_level: u128) -> u128 {
+        if current_level == 0 {
+            return 10;
+        }
         let base: u256 = 30;
         (base
             * current_level.into()
@@ -121,6 +124,9 @@ impl Compounds of CompoundsTrait {
 
     #[inline(always)]
     fn quartz_production(current_level: u128) -> u128 {
+        if current_level == 0 {
+            return 10;
+        }
         let base: u256 = 20;
         (base
             * current_level.into()

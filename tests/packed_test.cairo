@@ -10,12 +10,6 @@ fn pack_test() {
     };
     let packed = PackPackable::pack(comp);
     let unpacked = PackPackable::unpack(packed);
-    unpacked.steel.print();
-    unpacked.quartz.print();
-    unpacked.tritium.print();
-    unpacked.energy.print();
-    unpacked.lab.print();
-    unpacked.dockyard.print();
     assert(unpacked.steel == comp.steel, '');
 }
 

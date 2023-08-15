@@ -8,7 +8,7 @@ mod MineProductionTest {
     #[available_gas(1000000000)]
     fn steel_production_test() {
         let production = Compounds::steel_production(0);
-        assert(production == 0, 'wrong result');
+        assert(production == 10, 'wrong result');
         let production = Compounds::steel_production(1);
         assert(production == 33, 'wrong result');
         let production = Compounds::steel_production(5);
@@ -26,7 +26,7 @@ mod MineProductionTest {
     #[available_gas(1000000000)]
     fn quartz_production_test() {
         let production = Compounds::quartz_production(0);
-        assert(production == 0, 'wrong result');
+        assert(production == 10, 'wrong result');
         let production = Compounds::quartz_production(1);
         assert(production == 22, 'wrong result');
         let production = Compounds::quartz_production(5);

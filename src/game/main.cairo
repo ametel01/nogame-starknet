@@ -17,6 +17,8 @@ mod NoGame {
     use nogame::token::erc721::INGERC721DispatcherTrait;
     use nogame::token::erc721::INGERC721Dispatcher;
 
+    use debug::PrintTrait;
+
     #[storage]
     struct Storage {
         // General.
@@ -136,15 +138,14 @@ mod NoGame {
         }
 
         fn collect_resources(ref self: ContractState) {
-            let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(get_caller_address());
         }
         //#########################################################################################
         //                               COMPOUNDS UPGRADE FUNCTIONS                                  #
         //########################################################################################
         fn steel_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.steel_mine_level.read(planet_id);
             let cost: ERC20s = Compounds::steel_mine_cost(current_level);
@@ -158,7 +159,7 @@ mod NoGame {
         }
         fn quartz_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.quartz_mine_level.read(planet_id);
             let cost: ERC20s = Compounds::quartz_mine_cost(current_level);
@@ -172,7 +173,7 @@ mod NoGame {
         }
         fn tritium_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.steel_mine_level.read(planet_id);
             let cost: ERC20s = Compounds::tritium_mine_cost(current_level);
@@ -186,7 +187,7 @@ mod NoGame {
         }
         fn energy_plant_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.energy_plant_level.read(planet_id);
             let cost: ERC20s = Compounds::energy_plant_cost(current_level);
@@ -201,7 +202,7 @@ mod NoGame {
 
         fn dockyard_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.dockyard_level.read(planet_id);
             let cost: ERC20s = Compounds::dockyard_cost(current_level);
@@ -215,7 +216,7 @@ mod NoGame {
         }
         fn lab_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let current_level = self.lab_level.read(planet_id);
             let cost: ERC20s = Compounds::lab_cost(current_level);
@@ -233,7 +234,7 @@ mod NoGame {
         //########################################################################################
         fn energy_innovation_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -250,7 +251,7 @@ mod NoGame {
         }
         fn digital_systems_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -267,7 +268,7 @@ mod NoGame {
         }
         fn beam_technology_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -284,7 +285,7 @@ mod NoGame {
         }
         fn armour_innovation_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -301,7 +302,7 @@ mod NoGame {
         }
         fn ion_systems_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -318,7 +319,7 @@ mod NoGame {
         }
         fn plasma_engineering_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -336,7 +337,7 @@ mod NoGame {
 
         fn arms_development_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -353,7 +354,7 @@ mod NoGame {
         }
         fn shield_tech_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -370,7 +371,7 @@ mod NoGame {
         }
         fn spacetime_warp_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -387,7 +388,7 @@ mod NoGame {
         }
         fn combustive_engine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -404,7 +405,7 @@ mod NoGame {
         }
         fn thrust_propulsion_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -421,7 +422,7 @@ mod NoGame {
         }
         fn warp_drive_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -441,7 +442,7 @@ mod NoGame {
         //########################################################################################
         fn carrier_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -460,7 +461,7 @@ mod NoGame {
         }
         fn scraper_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -479,7 +480,7 @@ mod NoGame {
         }
         fn celestia_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -498,7 +499,7 @@ mod NoGame {
         }
         fn sparrow_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -517,7 +518,7 @@ mod NoGame {
         }
         fn frigate_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -536,7 +537,7 @@ mod NoGame {
         }
         fn armade_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -559,7 +560,7 @@ mod NoGame {
         //########################################################################################
         fn blaster_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -578,7 +579,7 @@ mod NoGame {
         }
         fn beam_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -595,7 +596,7 @@ mod NoGame {
         }
         fn astral_launcher_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -614,7 +615,7 @@ mod NoGame {
         }
         fn plasma_beam_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
-            NoGame::collect_resources(ref self);
+            self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
@@ -765,11 +766,11 @@ mod NoGame {
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
             ShipsCost {
                 carrier: ERC20s {
-                    steel: 4000, quartz: 4000, tritium: 0
+                    steel: 2000, quartz: 2000, tritium: 0
                     }, celestia: ERC20s {
                     steel: 0, quartz: 2000, tritium: 500
                     }, scraper: ERC20s {
-                    steel: 1000, quartz: 6000, tritium: 2000
+                    steel: 10000, quartz: 6000, tritium: 2000
                     }, sparrow: ERC20s {
                     steel: 3000, quartz: 1000, tritium: 0
                     }, frigate: ERC20s {
@@ -784,20 +785,20 @@ mod NoGame {
             DefencesLevels {
                 blaster: self.blaster_available.read(planet_id),
                 beam: self.beam_available.read(planet_id),
-                astral_launcher: self.astral_launcher_available.read(planet_id),
-                plasma_projector: self.plasma_projector_available.read(planet_id),
+                astral: self.astral_launcher_available.read(planet_id),
+                plasma: self.plasma_projector_available.read(planet_id),
             }
         }
 
-        fn get_defences_cost(self: @ContractState, planet_id: u128) -> DefencesCost {
+        fn get_defences_cost(self: @ContractState) -> DefencesCost {
             DefencesCost {
                 blaster: ERC20s {
                     steel: 2000, quartz: 0, tritium: 0
                     }, beam: ERC20s {
                     steel: 6000, quartz: 2000, tritium: 0
-                    }, astral_launcher: ERC20s {
+                    }, astral: ERC20s {
                     steel: 20000, quartz: 15000, tritium: 2000
-                    }, plasma_projector: ERC20s {
+                    }, plasma: ERC20s {
                     steel: 50000, quartz: 50000, tritium: 30000
                 },
             }
@@ -831,7 +832,7 @@ mod NoGame {
         /// - Receives the resources using `self.receive_resources_erc20`.
         /// - Writes the current block timestamp to the `resources_timer` for the planet.
         ///
-        fn collect_resources(ref self: ContractState, caller: ContractAddress) {
+        fn _collect_resources(ref self: ContractState, caller: ContractAddress) {
             let caller = get_caller_address();
             let planet_id = self.get_token_owner(caller);
             let production = self.calculate_production(planet_id);
@@ -914,20 +915,29 @@ mod NoGame {
             let energy_required = Compounds::base_mine_consumption(mines_levels.steel)
                 + Compounds::base_mine_consumption(mines_levels.quartz)
                 + Compounds::tritium_mine_consumption(mines_levels.tritium);
-            let _steel = Compounds::production_scaler(
-                steel_available, energy_available, energy_required
-            );
-            let _quartz = Compounds::production_scaler(
-                quartz_available, energy_available, energy_required
-            );
-            let _tritium = Compounds::production_scaler(
-                tritium_available, energy_available, energy_required
-            );
+            if energy_available < energy_required {
+                let _steel = Compounds::production_scaler(
+                    steel_available, energy_available, energy_required
+                );
+                let _quartz = Compounds::production_scaler(
+                    quartz_available, energy_available, energy_required
+                );
+                let _tritium = Compounds::production_scaler(
+                    tritium_available, energy_available, energy_required
+                );
+
+                return Resources {
+                    steel: _steel,
+                    quartz: _quartz,
+                    tritium: _tritium,
+                    energy: energy_available - energy_required
+                };
+            }
 
             Resources {
-                steel: _steel,
-                quartz: _quartz,
-                tritium: _tritium,
+                steel: steel_available,
+                quartz: quartz_available,
+                tritium: tritium_available,
                 energy: energy_available - energy_required
             }
         }
@@ -1065,6 +1075,7 @@ mod NoGame {
         ///
         fn get_tokens_addresses(self: @ContractState) -> Tokens {
             Tokens {
+                erc721: self.erc721_address.read(),
                 steel: self.steel_address.read(),
                 quartz: self.quartz_address.read(),
                 tritium: self.tritium_address.read()

@@ -5,6 +5,7 @@ const E18: u128 = 1000000000000000000;
 
 #[derive(Copy, Drop, Serde)]
 struct Tokens {
+    erc721: ContractAddress,
     steel: ContractAddress,
     quartz: ContractAddress,
     tritium: ContractAddress,
@@ -111,16 +112,16 @@ struct ShipsCost {
 struct DefencesLevels {
     blaster: u128,
     beam: u128,
-    astral_launcher: u128,
-    plasma_projector: u128
+    astral: u128,
+    plasma: u128
 }
 
 #[derive(Copy, Drop, Serde)]
 struct DefencesCost {
     blaster: ERC20s,
     beam: ERC20s,
-    astral_launcher: ERC20s,
-    plasma_projector: ERC20s,
+    astral: ERC20s,
+    plasma: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]

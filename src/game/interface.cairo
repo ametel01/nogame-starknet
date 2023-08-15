@@ -29,7 +29,7 @@ trait INoGame<T> {
     fn get_ships_levels(self: @T, planet_id: u128) -> ShipsLevels;
     fn get_ships_cost(self: @T) -> ShipsCost;
     fn get_defences_levels(self: @T, planet_id: u128) -> DefencesLevels;
-    fn get_defences_cost(self: @T, planet_id: u128) -> DefencesCost;
+    fn get_defences_cost(self: @T) -> DefencesCost;
     // Write functions
     fn generate_planet(ref self: T);
     fn collect_resources(ref self: T);
