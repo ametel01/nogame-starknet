@@ -239,14 +239,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::energy_innovation_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.energy_innovation, 0, 800, 400);
+            let cost = self.techs_cost(techs).energy;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.energy_innovation_level.write(planet_id, techs.energy_innovation + 1);
+            self.energy_innovation_level.write(planet_id, techs.energy + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn digital_systems_upgrade(ref self: ContractState) {
@@ -256,14 +256,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::digital_systems_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.digital_systems, 0, 400, 600);
+            let cost = self.techs_cost(techs).digital;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.digital_systems_level.write(planet_id, techs.digital_systems + 1);
+            self.digital_systems_level.write(planet_id, techs.digital + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn beam_technology_upgrade(ref self: ContractState) {
@@ -273,14 +273,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::beam_technology_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.beam_technology, 200, 100, 0);
+            let cost = self.techs_cost(techs).beam;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.beam_technology_level.write(planet_id, techs.beam_technology + 1);
+            self.beam_technology_level.write(planet_id, techs.beam + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn armour_innovation_upgrade(ref self: ContractState) {
@@ -290,14 +290,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::armour_innovation_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.digital_systems, 0, 800, 400);
+            let cost = self.techs_cost(techs).armour;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.digital_systems_level.write(planet_id, techs.armour_innovation + 1);
+            self.armour_innovation_level.write(planet_id, techs.armour + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn ion_systems_upgrade(ref self: ContractState) {
@@ -307,14 +307,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::ion_systems_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.ion_systems, 1000, 300, 1000);
+            let cost = self.techs_cost(techs).ion;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.ion_systems_level.write(planet_id, techs.ion_systems + 1);
+            self.ion_systems_level.write(planet_id, techs.ion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn plasma_engineering_upgrade(ref self: ContractState) {
@@ -324,32 +324,32 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::plasma_engineering_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.plasma_engineering, 2000, 4000, 1000);
+            let cost = self.techs_cost(techs).plasma;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.plasma_engineering_level.write(planet_id, techs.plasma_engineering + 1);
+            self.plasma_engineering_level.write(planet_id, techs.plasma + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
-        fn arms_development_upgrade(ref self: ContractState) {
+        fn weapons_development_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
-            Lab::arms_development_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.weapons_development, 800, 200, 0);
+            Lab::weapons_development_requirements_check(lab_level, techs);
+            let cost = self.techs_cost(techs).weapons;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.weapons_development_level.write(planet_id, techs.weapons_development + 1);
+            self.weapons_development_level.write(planet_id, techs.weapons + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn shield_tech_upgrade(ref self: ContractState) {
@@ -359,14 +359,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::shield_tech_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.shield_tech, 200, 600, 0);
+            let cost = self.techs_cost(techs).shield;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.shield_tech_level.write(planet_id, techs.shield_tech + 1);
+            self.shield_tech_level.write(planet_id, techs.shield + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn spacetime_warp_upgrade(ref self: ContractState) {
@@ -376,14 +376,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::spacetime_warp_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.spacetime_warp, 0, 4000, 2000);
+            let cost = self.techs_cost(techs).spacetime;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.spacetime_warp_level.write(planet_id, techs.spacetime_warp + 1);
+            self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn combustive_engine_upgrade(ref self: ContractState) {
@@ -393,14 +393,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::combustive_engine_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.combustion_drive, 400, 0, 600);
+            let cost = Lab::get_tech_cost(techs.combustion, 400, 0, 600);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.combustive_engine_level.write(planet_id, techs.combustion_drive + 1);
+            self.combustive_engine_level.write(planet_id, techs.combustion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn thrust_propulsion_upgrade(ref self: ContractState) {
@@ -410,14 +410,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::thrust_propulsion_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.thrust_propulsion, 2000, 4000, 600);
+            let cost = self.techs_cost(techs).thrust;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.thrust_propulsion_level.write(planet_id, techs.thrust_propulsion + 1);
+            self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn warp_drive_upgrade(ref self: ContractState) {
@@ -427,14 +427,14 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::warp_drive_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.thrust_propulsion, 10000, 20000, 6000);
+            let cost = self.techs_cost(techs).warp;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.update_resources_spent(planet_id, cost);
             self.update_tech_spent(planet_id, cost);
             self.update_leaderboard(planet_id);
-            self.warp_drive_level.write(planet_id, techs.warp_drive + 1);
+            self.warp_drive_level.write(planet_id, techs.warp + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         //#########################################################################################
@@ -613,7 +613,7 @@ mod NoGame {
                 .write(planet_id, self.astral_launcher_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
-        fn plasma_beam_build(ref self: ContractState, quantity: u128) {
+        fn plasma_projector_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_token_owner(caller);
@@ -1197,48 +1197,48 @@ mod NoGame {
 
         fn get_tech_levels(self: @ContractState, planet_id: u128) -> TechLevels {
             TechLevels {
-                energy_innovation: self.energy_innovation_level.read(planet_id),
-                digital_systems: self.digital_systems_level.read(planet_id),
-                beam_technology: self.beam_technology_level.read(planet_id),
-                armour_innovation: self.armour_innovation_level.read(planet_id),
-                ion_systems: self.ion_systems_level.read(planet_id),
-                plasma_engineering: self.plasma_engineering_level.read(planet_id),
-                weapons_development: self.weapons_development_level.read(planet_id),
-                shield_tech: self.shield_tech_level.read(planet_id),
-                spacetime_warp: self.spacetime_warp_level.read(planet_id),
-                combustion_drive: self.combustive_engine_level.read(planet_id),
-                thrust_propulsion: self.thrust_propulsion_level.read(planet_id),
-                warp_drive: self.warp_drive_level.read(planet_id)
+                energy: self.energy_innovation_level.read(planet_id),
+                digital: self.digital_systems_level.read(planet_id),
+                beam: self.beam_technology_level.read(planet_id),
+                armour: self.armour_innovation_level.read(planet_id),
+                ion: self.ion_systems_level.read(planet_id),
+                plasma: self.plasma_engineering_level.read(planet_id),
+                weapons: self.weapons_development_level.read(planet_id),
+                shield: self.shield_tech_level.read(planet_id),
+                spacetime: self.spacetime_warp_level.read(planet_id),
+                combustion: self.combustive_engine_level.read(planet_id),
+                thrust: self.thrust_propulsion_level.read(planet_id),
+                warp: self.warp_drive_level.read(planet_id)
             }
         }
 
         fn techs_cost(self: @ContractState, techs: TechLevels) -> TechsCost {
-            let energy = Lab::get_tech_cost(techs.energy_innovation, 0, 800, 400);
-            let digital = Lab::get_tech_cost(techs.digital_systems, 0, 400, 600);
-            let beam = Lab::get_tech_cost(techs.beam_technology, 0, 800, 400);
-            let ion = Lab::get_tech_cost(techs.ion_systems, 1000, 300, 1000);
-            let plasma = Lab::get_tech_cost(techs.plasma_engineering, 2000, 4000, 1000);
-            let spacetime = Lab::get_tech_cost(techs.spacetime_warp, 0, 4000, 2000);
-            let combustion = Lab::get_tech_cost(techs.combustion_drive, 400, 0, 600);
-            let thrust = Lab::get_tech_cost(techs.thrust_propulsion, 2000, 4000, 600);
-            let warp = Lab::get_tech_cost(techs.warp_drive, 10000, 2000, 6000);
-            let armour = Lab::get_tech_cost(techs.armour_innovation, 1000, 0, 0);
-            let weapons = Lab::get_tech_cost(techs.weapons_development, 800, 200, 0);
-            let shield = Lab::get_tech_cost(techs.shield_tech, 200, 600, 0);
+            let energy = Lab::get_tech_cost(techs.energy, 0, 800, 400);
+            let digital = Lab::get_tech_cost(techs.digital, 0, 400, 600);
+            let beam = Lab::get_tech_cost(techs.beam, 0, 800, 400);
+            let ion = Lab::get_tech_cost(techs.ion, 1000, 300, 1000);
+            let plasma = Lab::get_tech_cost(techs.plasma, 2000, 4000, 1000);
+            let spacetime = Lab::get_tech_cost(techs.spacetime, 0, 4000, 2000);
+            let combustion = Lab::get_tech_cost(techs.combustion, 400, 0, 600);
+            let thrust = Lab::get_tech_cost(techs.thrust, 2000, 4000, 600);
+            let warp = Lab::get_tech_cost(techs.warp, 10000, 2000, 6000);
+            let armour = Lab::get_tech_cost(techs.armour, 1000, 0, 0);
+            let weapons = Lab::get_tech_cost(techs.weapons, 800, 200, 0);
+            let shield = Lab::get_tech_cost(techs.shield, 200, 600, 0);
 
             TechsCost {
-                energy_innovation: energy,
-                digital_systems: digital,
-                beam_technology: beam,
-                ion_systems: ion,
-                plasma_engineering: plasma,
-                spacetime_warp: spacetime,
-                combustion_drive: combustion,
-                thrust_propulsion: thrust,
-                warp_drive: warp,
-                armour_innovation: armour,
-                weapons_development: weapons,
-                shield_tech: shield
+                energy: energy,
+                digital: digital,
+                beam: beam,
+                ion: ion,
+                plasma: plasma,
+                spacetime: spacetime,
+                combustion: combustion,
+                thrust: thrust,
+                warp: warp,
+                armour: armour,
+                weapons: weapons,
+                shield: shield
             }
         }
     }

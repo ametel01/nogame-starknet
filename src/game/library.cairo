@@ -58,34 +58,34 @@ struct CompoundsCost {
 
 #[derive(Copy, Drop, Serde)]
 struct TechLevels {
-    energy_innovation: u128,
-    digital_systems: u128,
-    beam_technology: u128,
-    armour_innovation: u128,
-    ion_systems: u128,
-    plasma_engineering: u128,
-    weapons_development: u128,
-    shield_tech: u128,
-    spacetime_warp: u128,
-    combustion_drive: u128,
-    thrust_propulsion: u128,
-    warp_drive: u128,
+    energy: u128,
+    digital: u128,
+    beam: u128,
+    armour: u128,
+    ion: u128,
+    plasma: u128,
+    weapons: u128,
+    shield: u128,
+    spacetime: u128,
+    combustion: u128,
+    thrust: u128,
+    warp: u128,
 }
 
 #[derive(Copy, Drop, Serde)]
 struct TechsCost {
-    energy_innovation: ERC20s,
-    digital_systems: ERC20s,
-    beam_technology: ERC20s,
-    armour_innovation: ERC20s,
-    ion_systems: ERC20s,
-    plasma_engineering: ERC20s,
-    weapons_development: ERC20s,
-    shield_tech: ERC20s,
-    spacetime_warp: ERC20s,
-    combustion_drive: ERC20s,
-    thrust_propulsion: ERC20s,
-    warp_drive: ERC20s,
+    energy: ERC20s,
+    digital: ERC20s,
+    beam: ERC20s,
+    armour: ERC20s,
+    ion: ERC20s,
+    plasma: ERC20s,
+    weapons: ERC20s,
+    shield: ERC20s,
+    spacetime: ERC20s,
+    combustion: ERC20s,
+    thrust: ERC20s,
+    warp: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]

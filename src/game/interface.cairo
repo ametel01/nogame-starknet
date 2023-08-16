@@ -45,7 +45,7 @@ trait INoGame<T> {
     fn armour_innovation_upgrade(ref self: T);
     fn ion_systems_upgrade(ref self: T);
     fn plasma_engineering_upgrade(ref self: T);
-    fn arms_development_upgrade(ref self: T);
+    fn weapons_development_upgrade(ref self: T);
     fn shield_tech_upgrade(ref self: T);
     fn spacetime_warp_upgrade(ref self: T);
     fn combustive_engine_upgrade(ref self: T);
@@ -62,5 +62,5 @@ trait INoGame<T> {
     fn blaster_build(ref self: T, quantity: u128);
     fn beam_build(ref self: T, quantity: u128);
     fn astral_launcher_build(ref self: T, quantity: u128);
-    fn plasma_beam_build(ref self: T, quantity: u128);
+    fn plasma_projector_build(ref self: T, quantity: u128);
 }
