@@ -129,9 +129,8 @@ mod NoGame {
             let caller = get_caller_address();
             let number_of_planets = self.number_of_planets.read();
             let token_id: u128 = (number_of_planets + 1).into();
-            INGERC721Dispatcher {
-                contract_address: self.erc721_address.read()
-            }.mint(to: caller, token_id: token_id.into());
+            INGERC721Dispatcher { contract_address: self.erc721_address.read() }
+                .mint(to: caller, token_id: token_id.into());
             self.number_of_planets.write(number_of_planets + 1);
             self.mint_initial_liquidity(caller);
             self.resources_timer.write(token_id, get_block_timestamp());
@@ -657,18 +656,20 @@ mod NoGame {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u128) -> ERC20s {
-            let planet_owner = INGERC721Dispatcher {
-                contract_address: self.erc721_address.read()
-            }.owner_of(planet_id.into());
-            let steel: u128 = INGERC20Dispatcher {
-                contract_address: self.steel_address.read()
-            }.balance_of(planet_owner).try_into().unwrap();
-            let quartz: u128 = INGERC20Dispatcher {
-                contract_address: self.quartz_address.read()
-            }.balance_of(planet_owner).try_into().unwrap();
-            let tritium: u128 = INGERC20Dispatcher {
-                contract_address: self.tritium_address.read()
-            }.balance_of(planet_owner).try_into().unwrap();
+            let planet_owner = INGERC721Dispatcher { contract_address: self.erc721_address.read() }
+                .owner_of(planet_id.into());
+            let steel: u128 = INGERC20Dispatcher { contract_address: self.steel_address.read() }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap();
+            let quartz: u128 = INGERC20Dispatcher { contract_address: self.quartz_address.read() }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap();
+            let tritium: u128 = INGERC20Dispatcher { contract_address: self.tritium_address.read() }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap();
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -765,19 +766,12 @@ mod NoGame {
 
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
             ShipsCost {
-                carrier: ERC20s {
-                    steel: 2000, quartz: 2000, tritium: 0
-                    }, celestia: ERC20s {
-                    steel: 0, quartz: 2000, tritium: 500
-                    }, scraper: ERC20s {
-                    steel: 10000, quartz: 6000, tritium: 2000
-                    }, sparrow: ERC20s {
-                    steel: 3000, quartz: 1000, tritium: 0
-                    }, frigate: ERC20s {
-                    steel: 20000, quartz: 7000, tritium: 2000
-                    }, armade: ERC20s {
-                    steel: 45000, quartz: 15000, tritium: 0
-                }
+                carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
+                celestia: ERC20s { steel: 0, quartz: 2000, tritium: 500 },
+                scraper: ERC20s { steel: 10000, quartz: 6000, tritium: 2000 },
+                sparrow: ERC20s { steel: 3000, quartz: 1000, tritium: 0 },
+                frigate: ERC20s { steel: 20000, quartz: 7000, tritium: 2000 },
+                armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 }
             }
         }
 
@@ -792,15 +786,10 @@ mod NoGame {
 
         fn get_defences_cost(self: @ContractState) -> DefencesCost {
             DefencesCost {
-                blaster: ERC20s {
-                    steel: 2000, quartz: 0, tritium: 0
-                    }, beam: ERC20s {
-                    steel: 6000, quartz: 2000, tritium: 0
-                    }, astral: ERC20s {
-                    steel: 20000, quartz: 15000, tritium: 2000
-                    }, plasma: ERC20s {
-                    steel: 50000, quartz: 50000, tritium: 30000
-                },
+                blaster: ERC20s { steel: 2000, quartz: 0, tritium: 0 },
+                beam: ERC20s { steel: 6000, quartz: 2000, tritium: 0 },
+                astral: ERC20s { steel: 20000, quartz: 15000, tritium: 2000 },
+                plasma: ERC20s { steel: 50000, quartz: 50000, tritium: 30000 },
             }
         }
     }
@@ -855,19 +844,16 @@ mod NoGame {
         /// An instance of `ERC20s` struct containing the available balances for steel, quartz, and tritium tokens.
         ///
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> ERC20s {
-            let _steel = INGERC20Dispatcher {
-                contract_address: self.steel_address.read()
-            }.balance_of(caller);
+            let _steel = INGERC20Dispatcher { contract_address: self.steel_address.read() }
+                .balance_of(caller);
             // let steel_total = Mines::steel_production(steel_level) + steel_available;
 
-            let _quartz = INGERC20Dispatcher {
-                contract_address: self.quartz_address.read()
-            }.balance_of(caller);
+            let _quartz = INGERC20Dispatcher { contract_address: self.quartz_address.read() }
+                .balance_of(caller);
             // let quartz_total = Mines::quartz_production(quartz_level) + quartz_available;
 
-            let _tritium = INGERC20Dispatcher {
-                contract_address: self.tritium_address.read()
-            }.balance_of(caller);
+            let _tritium = INGERC20Dispatcher { contract_address: self.tritium_address.read() }
+                .balance_of(caller);
             // let steel_produced = Mines::steel_production(steel_level) + steel_available;
             ERC20s {
                 steel: _steel.try_into().unwrap(),
@@ -961,15 +947,12 @@ mod NoGame {
         ///
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: Resources) {
             let tokens: Tokens = self.get_tokens_addresses();
-            INGERC20Dispatcher {
-                contract_address: tokens.steel
-            }.mint(to, (amounts.steel * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.quartz
-            }.mint(to, (amounts.quartz * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.tritium
-            }.mint(to, (amounts.tritium * E18).into())
+            INGERC20Dispatcher { contract_address: tokens.steel }
+                .mint(to, (amounts.steel * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.quartz }
+                .mint(to, (amounts.quartz * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.tritium }
+                .mint(to, (amounts.tritium * E18).into())
         }
 
         /// Burns the specified amount of ERC20 tokens from the given account.
@@ -992,15 +975,12 @@ mod NoGame {
         ///
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
             let tokens: Tokens = self.get_tokens_addresses();
-            INGERC20Dispatcher {
-                contract_address: tokens.steel
-            }.burn(account, (amounts.steel * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.quartz
-            }.burn(account, (amounts.quartz * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.tritium
-            }.burn(account, (amounts.tritium * E18).into())
+            INGERC20Dispatcher { contract_address: tokens.steel }
+                .burn(account, (amounts.steel * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.quartz }
+                .burn(account, (amounts.quartz * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.tritium }
+                .burn(account, (amounts.tritium * E18).into())
         }
 
         /// Mints initial liquidity to the given account.
@@ -1025,15 +1005,12 @@ mod NoGame {
         ///
         fn mint_initial_liquidity(self: @ContractState, account: ContractAddress) {
             let tokens: Tokens = self.get_tokens_addresses();
-            INGERC20Dispatcher {
-                contract_address: tokens.steel
-            }.mint(recipient: account, amount: (500 * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.quartz
-            }.mint(recipient: account, amount: (300 * E18).into());
-            INGERC20Dispatcher {
-                contract_address: tokens.tritium
-            }.mint(recipient: account, amount: (100 * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.steel }
+                .mint(recipient: account, amount: (500 * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.quartz }
+                .mint(recipient: account, amount: (300 * E18).into());
+            INGERC20Dispatcher { contract_address: tokens.tritium }
+                .mint(recipient: account, amount: (100 * E18).into());
         }
 
         /// Checks if the caller has enough resources based on the provided amounts of ERC20 tokens.
