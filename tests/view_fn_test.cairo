@@ -63,7 +63,7 @@ fn test_get_spendable_resources() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let spendable = dsp.game.get_spendable_resources(1);
+    let spendable = dsp.game.get_spendable_resources(104);
     assert(spendable.steel == 500 * E18, 'wrong spendable');
     assert(spendable.quartz == 300 * E18, 'wrong spendable ');
     assert(spendable.tritium == 100 * E18, 'wrong spendable ');
@@ -77,7 +77,7 @@ fn test_get_collectible_resources() {
     dsp.game.generate_planet();
 
     start_warp(dsp.game.contract_address, HOUR * 3);
-    let collectible = dsp.game.get_collectible_resources(1);
+    let collectible = dsp.game.get_collectible_resources(104);
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');
@@ -90,7 +90,7 @@ fn test_energy_available() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    assert(dsp.game.get_energy_available(1) == 0, 'wrong energy');
+    assert(dsp.game.get_energy_available(104) == 0, 'wrong energy');
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn test_get_compounds_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.steel == 0, 'wrong steel lev');
     assert(compounds.quartz == 0, 'wrong quartz lev');
     assert(compounds.tritium == 0, 'wrong quartz lev');
@@ -116,7 +116,7 @@ fn test_get_compounds_upgrade_cost() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let costs = dsp.game.get_compounds_upgrade_cost(1);
+    let costs = dsp.game.get_compounds_upgrade_cost(104);
     assert(costs.steel.steel == 60 && costs.steel.quartz == 15, 'wrong steel cost');
     assert(costs.quartz.steel == 48 && costs.quartz.quartz == 24, 'wrong quartz cost');
     assert(costs.tritium.steel == 225 && costs.tritium.quartz == 75, 'wrong tritium cost');
@@ -140,7 +140,7 @@ fn test_get_energy_for_upgrade() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let costs = dsp.game.get_energy_for_upgrade(1);
+    let costs = dsp.game.get_energy_for_upgrade(104);
     assert(costs.steel == 11, 'wrong steel energy');
     assert(costs.quartz == 11, 'wrong quartz energy');
     assert(costs.tritium == 22, 'wrong tritium energy');
@@ -153,7 +153,7 @@ fn test_get_tech_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.energy == 0, 'wrong level');
     assert(techs.digital == 0, 'wrong level');
     assert(techs.beam == 0, 'wrong level');
@@ -175,7 +175,7 @@ fn test_get_tech_upgrade_cost() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let techs = dsp.game.get_techs_upgrade_cost(1);
+    let techs = dsp.game.get_techs_upgrade_cost(104);
     assert(techs.energy.quartz == 800 && techs.energy.tritium == 400, 'wrong cost');
     assert(techs.digital.quartz == 400 && techs.digital.tritium == 600, 'wrong cost');
     assert(techs.beam.quartz == 800 && techs.beam.tritium == 400, 'wrong cost');
@@ -209,7 +209,7 @@ fn test_get_ships_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.carrier == 0, 'wrong carrier`');
     assert(ships.celestia == 0, 'wrong celestia');
     assert(ships.scraper == 0, 'wrong scraper');
@@ -251,7 +251,7 @@ fn test_get_defences_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(104);
     assert(def.blaster == 0, 'wrong blaster');
     assert(def.beam == 0, 'wrong beam');
     assert(def.astral == 0, 'wrong astral');

@@ -60,7 +60,7 @@ fn test_steel_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.steel_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.steel == 1, 'wrong steel level');
 }
 
@@ -73,7 +73,7 @@ fn test_quartz_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.quartz_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.quartz == 1, 'wrong quartz level');
 }
 
@@ -86,7 +86,7 @@ fn test_tritium_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.tritium_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.tritium == 1, 'wrong tritium level');
 }
 
@@ -99,7 +99,7 @@ fn test_energy_plant_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.energy_plant_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.energy == 1, 'wrong plant level');
 }
 
@@ -112,7 +112,7 @@ fn test_dockyard_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.dockyard_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.dockyard == 1, 'wrong dockyard level');
 }
 
@@ -128,7 +128,7 @@ fn test_lab_upgrade() {
     dsp.game.tritium_mine_upgrade();
     start_warp(dsp.game.contract_address, HOUR * 240);
     dsp.game.lab_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(104);
     assert(compounds.lab == 1, 'wrong lab level');
 }
 
@@ -146,7 +146,7 @@ fn test_energy_upgrade() {
     dsp.game.lab_upgrade();
 
     dsp.game.energy_innovation_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.energy == 1, 'wrong energy level');
 }
 
@@ -164,7 +164,7 @@ fn test_digital_upgrade() {
     dsp.game.lab_upgrade();
 
     dsp.game.digital_systems_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.digital == 1, 'wrong digital level');
 }
 
@@ -184,7 +184,7 @@ fn test_beam_upgrade() {
     dsp.game.energy_innovation_upgrade();
 
     dsp.game.beam_technology_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.beam == 1, 'wrong beam level');
 }
 
@@ -203,7 +203,7 @@ fn test_armour_upgrade() {
     dsp.game.lab_upgrade();
 
     dsp.game.armour_innovation_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.armour == 1, 'wrong armour level');
 }
 
@@ -224,7 +224,7 @@ fn test_weapons_upgrade() {
     dsp.game.lab_upgrade();
 
     dsp.game.weapons_development_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.weapons == 1, 'wrong weapons level');
 }
 
@@ -243,7 +243,7 @@ fn test_combustion_upgrade() {
     dsp.game.energy_innovation_upgrade();
 
     dsp.game.combustive_engine_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.combustion == 1, 'wrong combustion level');
 }
 
@@ -263,7 +263,7 @@ fn test_thrust_upgrade() {
     dsp.game.energy_innovation_upgrade();
 
     dsp.game.thrust_propulsion_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.thrust == 1, 'wrong thrust level');
 }
 
@@ -300,7 +300,7 @@ fn test_warp_upgrade() {
     dsp.game.spacetime_warp_upgrade();
 
     dsp.game.warp_drive_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.warp == 1, 'wrong warp level');
 }
 
@@ -326,7 +326,7 @@ fn test_shield_upgrade() {
     dsp.game.energy_innovation_upgrade();
 
     dsp.game.shield_tech_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.shield == 1, 'wrong shield level');
 }
 
@@ -360,7 +360,7 @@ fn test_spacetime_upgrade() {
     dsp.game.shield_tech_upgrade();
 
     dsp.game.spacetime_warp_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.spacetime == 1, 'wrong spacetime level');
 }
 
@@ -391,7 +391,7 @@ fn test_ion_upgrade() {
     dsp.game.beam_technology_upgrade();
 
     dsp.game.ion_systems_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.ion == 1, 'wrong ion level');
 }
 
@@ -435,7 +435,7 @@ fn test_plasma_upgrade() {
     dsp.game.ion_systems_upgrade();
 
     dsp.game.plasma_engineering_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(104);
     assert(techs.plasma == 1, 'wrong plasma level');
 }
 
@@ -458,7 +458,7 @@ fn test_carrier_build() {
     dsp.game.combustive_engine_upgrade();
 
     dsp.game.carrier_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.carrier == 10, 'wrong carrier level');
 }
 
@@ -479,7 +479,7 @@ fn test_celestia_build() {
     dsp.game.combustive_engine_upgrade();
 
     dsp.game.celestia_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.celestia == 10, 'wrong celestia level');
 }
 
@@ -500,7 +500,7 @@ fn test_sparrow_build() {
     dsp.game.combustive_engine_upgrade();
 
     dsp.game.sparrow_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.sparrow == 10, 'wrong sparrow level');
 }
 
@@ -538,7 +538,7 @@ fn test_scraper_build() {
     dsp.game.shield_tech_upgrade();
 
     dsp.game.scraper_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.scraper == 10, 'wrong scraper level');
 }
 
@@ -579,7 +579,7 @@ fn test_frigate_build() {
     dsp.game.thrust_propulsion_upgrade();
 
     dsp.game.frigate_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.frigate == 10, 'wrong frigate level');
 }
 
@@ -627,7 +627,7 @@ fn test_armade_build() {
     dsp.game.warp_drive_upgrade();
 
     dsp.game.armade_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.game.get_ships_levels(104);
     assert(ships.armade == 10, 'wrong armade level');
 }
 
@@ -645,7 +645,7 @@ fn test_blaster_build() {
     dsp.game.dockyard_upgrade();
 
     dsp.game.blaster_build(10);
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(104);
     assert(def.blaster == 10, 'wrong blaster level');
 }
 
@@ -670,7 +670,7 @@ fn test_beam_build() {
     dsp.game.beam_technology_upgrade();
 
     dsp.game.beam_build(10);
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(104);
     assert(def.beam == 10, 'wrong beam level');
 }
 
@@ -711,7 +711,7 @@ fn test_astral_build() {
     dsp.game.shield_tech_upgrade();
 
     dsp.game.astral_launcher_build(10);
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(104);
     assert(def.astral == 10, 'wrong astral level');
 }
 
@@ -769,7 +769,7 @@ fn test_plasma_build() {
     dsp.game.plasma_engineering_upgrade();
 
     dsp.game.plasma_projector_build(10);
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(104);
     assert(def.plasma == 10, 'wrong plasma level');
 }
 

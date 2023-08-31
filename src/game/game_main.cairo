@@ -122,13 +122,10 @@ mod NoGame {
             self.tritium_address.write(tritium);
         }
 
-        //#########################################################################################
-        //                                      EXTERNAL FUNCTIONS                                #
-        //########################################################################################
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
             let number_of_planets = self.number_of_planets.read();
-            let token_id: u128 = (number_of_planets + 1).into();
+            let token_id: u128 = self.calculate_token_id(number_of_planets);
             INGERC721Dispatcher { contract_address: self.erc721_address.read() }
                 .mint(to: caller, token_id: token_id.into());
             self.number_of_planets.write(number_of_planets + 1);
@@ -139,9 +136,7 @@ mod NoGame {
         fn collect_resources(ref self: ContractState) {
             self._collect_resources(get_caller_address());
         }
-        //#########################################################################################
-        //                               COMPOUNDS UPGRADE FUNCTIONS                                  #
-        //########################################################################################
+
         fn steel_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
             self._collect_resources(caller);
@@ -796,6 +791,14 @@ mod NoGame {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn calculate_token_id(ref self: ContractState, n: u32) -> u128 {
+            if n % 2 == 0 {
+                return 100 * (n.into() / 2 + 1) + 4;
+            } else {
+                return 100 * ((n.into() + 1) / 2) + 8;
+            }
+        }
+
         fn get_token_owner(self: @ContractState, caller: ContractAddress) -> u128 {
             let erc721 = self.erc721_address.read();
             let planet_id = INGERC721Dispatcher { contract_address: erc721 }.token_of(caller);

@@ -1,6 +1,8 @@
 use option::OptionTrait;
 use traits::Into;
 
+use debug::PrintTrait;
+
 /// Raise a number to a power.
 /// * `base` - The number to raise.
 /// * `exp` - The exponent.
@@ -88,3 +90,4 @@ fn power(x: u128, y: u128) -> u128 {
     };
     result * ((100 / 19) * y) / 10 + (700 / 190)
 }
+
