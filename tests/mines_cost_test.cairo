@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod MineCostTest {
-    use forge_print::PrintTrait;
+    use debug::PrintTrait;
     use nogame::libraries::lib_compounds::Compounds;
     use nogame::game::game_library::ERC20s;
 

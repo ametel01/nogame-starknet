@@ -8,8 +8,7 @@ use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 
-// use forge_print::PrintTrait;
-use cheatcodes::start_prank;
+use snforge_std::{start_prank, start_warp};
 
 use nogame::game::game_interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::game::game_library::{
@@ -18,9 +17,7 @@ use nogame::game::game_library::{
 };
 use nogame::token::token_erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::token_erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
-// use nogame::test::test_utils::{set_up, init_game, ACCOUNT1, ACCOUNT2, Dispatchers, Contracts, E18, HOUR};
-const E18: u128 = 1000000000000000000;
-const HOUR: u64 = 3600;
+use nogame::test::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
 fn test_get_token_addresses() {
@@ -279,72 +276,5 @@ fn test_get_defences_cost() {
         def.plasma.steel == 50000 && def.plasma.quartz == 50000 && def.plasma.tritium == 30000,
         'wrong plasma'
     );
-}
-
-fn ACCOUNT1() -> ContractAddress {
-    contract_address_const::<1>()
-}
-fn ACCOUNT2() -> ContractAddress {
-    contract_address_const::<2>()
-}
-
-#[derive(Copy, Drop, Serde)]
-struct Dispatchers {
-    erc721: INGERC721Dispatcher,
-    steel: INGERC20Dispatcher,
-    quartz: INGERC20Dispatcher,
-    tritium: INGERC20Dispatcher,
-    game: INoGameDispatcher,
-}
-
-fn set_up() -> Dispatchers {
-    let class_hash = declare('NoGame');
-    let prepared = PreparedContract {
-        class_hash: class_hash, constructor_calldata: @ArrayTrait::new()
-    };
-    let _game = deploy(prepared).unwrap();
-
-    let class_hash = declare('NGERC721');
-    let mut call_data = array!['nogame-planet', 'NGPL', _game.into()];
-    let prepared = PreparedContract { class_hash: class_hash, constructor_calldata: @call_data };
-    let _erc721 = deploy(prepared).unwrap();
-
-    let class_hash = declare('NGERC20');
-    let mut call_data = array!['Nogame Steel', 'NGST', _game.into()];
-    let prepared = PreparedContract { class_hash: class_hash, constructor_calldata: @call_data };
-    let _steel = deploy(prepared).unwrap();
-
-    let mut call_data = array!['Nogame Quartz', 'NGQZ', _game.into()];
-    let prepared = PreparedContract { class_hash: class_hash, constructor_calldata: @call_data };
-    let _quartz = deploy(prepared).unwrap();
-
-    let mut call_data = array!['Nogame Tritium', 'NGTR', _game.into()];
-    let prepared = PreparedContract { class_hash: class_hash, constructor_calldata: @call_data };
-    let _tritium = deploy(prepared).unwrap();
-
-    Dispatchers {
-        erc721: INGERC721Dispatcher {
-            contract_address: _erc721
-            }, steel: INGERC20Dispatcher {
-            contract_address: _steel
-            }, quartz: INGERC20Dispatcher {
-            contract_address: _quartz
-            }, tritium: INGERC20Dispatcher {
-            contract_address: _tritium
-            }, game: INoGameDispatcher {
-            contract_address: _game
-        }
-    }
-}
-
-fn init_game(dsp: Dispatchers) {
-    dsp
-        .game
-        ._initializer(
-            dsp.erc721.contract_address,
-            dsp.steel.contract_address,
-            dsp.quartz.contract_address,
-            dsp.tritium.contract_address
-        )
 }
 

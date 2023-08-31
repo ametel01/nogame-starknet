@@ -3,7 +3,7 @@ mod CompoundsTest {
     // use debug::PrintTrait;
     use nogame::libraries::lib_compounds::Compounds;
     use nogame::game::game_library::ERC20s;
-    use forge_print::PrintTrait;
+    use debug::PrintTrait;
 
     impl Print of PrintTrait<ERC20s> {
         fn print(self: ERC20s) {
