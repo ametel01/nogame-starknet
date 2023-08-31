@@ -3,19 +3,19 @@ mod NoGame {
     use core::option::OptionTrait;
     use core::traits::{Into, TryInto};
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
-    use nogame::game::interface::INoGame;
-    use nogame::game::library::{
+    use nogame::game::game_interface::INoGame;
+    use nogame::game::game_library::{
         E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
         Resources, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, LeaderBoard
     };
-    use nogame::libraries::compounds::Compounds;
-    use nogame::libraries::defences::Defences;
-    use nogame::libraries::dockyard::Dockyard;
-    use nogame::libraries::research::Lab;
-    use nogame::token::erc20::INGERC20DispatcherTrait;
-    use nogame::token::erc20::INGERC20Dispatcher;
-    use nogame::token::erc721::INGERC721DispatcherTrait;
-    use nogame::token::erc721::INGERC721Dispatcher;
+    use nogame::libraries::lib_compounds::Compounds;
+    use nogame::libraries::lib_defences::Defences;
+    use nogame::libraries::lib_dockyard::Dockyard;
+    use nogame::libraries::lib_research::Lab;
+    use nogame::token::token_erc20::INGERC20DispatcherTrait;
+    use nogame::token::token_erc20::INGERC20Dispatcher;
+    use nogame::token::token_erc721::INGERC721DispatcherTrait;
+    use nogame::token::token_erc721::INGERC721Dispatcher;
 
     use debug::PrintTrait;
 

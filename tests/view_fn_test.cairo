@@ -11,13 +11,13 @@ use starknet::{ContractAddress, contract_address_const};
 // use forge_print::PrintTrait;
 use cheatcodes::start_prank;
 
-use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::game::library::{
+use nogame::game::game_interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::game::game_library::{
     ERC20s, EnergyCost, TechLevels, TechsCost, LeaderBoard, ShipsLevels, ShipsCost, DefencesLevels,
     DefencesCost
 };
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
-use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
+use nogame::token::token_erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::token_erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 // use nogame::test::test_utils::{set_up, init_game, ACCOUNT1, ACCOUNT2, Dispatchers, Contracts, E18, HOUR};
 const E18: u128 = 1000000000000000000;
 const HOUR: u64 = 3600;

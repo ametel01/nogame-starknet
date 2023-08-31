@@ -1,5 +1,5 @@
 use core::traits::Into;
-use nogame::game::library::{ERC20s, TechLevels};
+use nogame::game::game_library::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Defences of DefencesTrait {
