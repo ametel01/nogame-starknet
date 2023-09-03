@@ -4,8 +4,7 @@ use integer::{
     u16_as_non_zero, U16IntoFelt252, u32_as_non_zero, u64_as_non_zero, U32IntoFelt252,
     Felt252TryIntoU8
 };
-use traits::{Into, TryInto, DivRem};
-use option::OptionTrait;
+use traits::DivRem;
 
 use nogame::game::game_library::{CompoundsLevelsPacked};
 

@@ -3,14 +3,14 @@ use nogame::game::game_library::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Lab of LabTrait {
-    fn get_tech_cost(current_level: u128, steel: u128, quartz: u128, tritium: u128) -> ERC20s {
+    fn get_tech_cost(current_level: u64, steel: u128, quartz: u128, tritium: u128) -> ERC20s {
         if current_level == 0 {
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         } else {
             ERC20s {
-                steel: (steel * power(2, current_level)),
-                quartz: (quartz * power(2, current_level)),
-                tritium: (tritium * power(2, current_level))
+                steel: (steel * power(2, current_level.into())),
+                quartz: (quartz * power(2, current_level.into())),
+                tritium: (tritium * power(2, current_level.into()))
             }
         }
     }

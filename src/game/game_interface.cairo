@@ -11,12 +11,12 @@ trait INoGame<T> {
         erc721: ContractAddress,
         steel: ContractAddress,
         quartz: ContractAddress,
-        tritium: ContractAddress
+        tritium: ContractAddress,
+        rand: ContractAddress,
     );
     // View functions
     fn get_token_addresses(self: @T) -> Tokens;
     fn get_number_of_planets(self: @T) -> u32;
-    fn get_leaderboard(self: @T) -> LeaderBoard;
     fn get_spendable_resources(self: @T, planet_id: u128) -> ERC20s;
     fn get_collectible_resources(self: @T, planet_id: u128) -> ERC20s;
     fn get_energy_available(self: @T, planet_id: u128) -> u128;

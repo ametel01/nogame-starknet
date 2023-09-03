@@ -58,18 +58,18 @@ struct CompoundsCost {
 
 #[derive(Copy, Drop, Serde)]
 struct TechLevels {
-    energy: u128,
-    digital: u128,
-    beam: u128,
-    armour: u128,
-    ion: u128,
-    plasma: u128,
-    weapons: u128,
-    shield: u128,
-    spacetime: u128,
-    combustion: u128,
-    thrust: u128,
-    warp: u128,
+    energy: u64,
+    digital: u64,
+    beam: u64,
+    armour: u64,
+    ion: u64,
+    plasma: u64,
+    weapons: u64,
+    shield: u64,
+    spacetime: u64,
+    combustion: u64,
+    thrust: u64,
+    warp: u64,
 }
 
 #[derive(Copy, Drop, Serde)]

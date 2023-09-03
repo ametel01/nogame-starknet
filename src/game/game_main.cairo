@@ -1,7 +1,6 @@
 #[starknet::contract]
 mod NoGame {
-    use core::option::OptionTrait;
-    use core::traits::{Into, TryInto};
+    use traits::DivRem;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::game_interface::INoGame;
     use nogame::game::game_library::{
@@ -17,25 +16,25 @@ mod NoGame {
     use nogame::token::token_erc721::INGERC721DispatcherTrait;
     use nogame::token::token_erc721::INGERC721Dispatcher;
 
+    use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
+
     use debug::PrintTrait;
 
     #[storage]
     struct Storage {
         // General.
         number_of_planets: u32,
+        planet_position: LegacyMap::<u128, u64>,
+        position_to_planet_id: LegacyMap::<u64, u128>,
+        debris_field: LegacyMap::<u64, (u128, u128)>,
         universe_start_time: u64,
-        planet_generated: LegacyMap::<u128, bool>,
         resources_spent: LegacyMap::<u128, u128>,
-        tech_spent: LegacyMap::<u128, u128>,
-        fleet_spent: LegacyMap::<u128, u128>,
-        point_leader: u128,
-        tech_leader: u128,
-        fleet_leader: u128,
         // Tokens.
         erc721_address: ContractAddress,
         steel_address: ContractAddress,
         quartz_address: ContractAddress,
         tritium_address: ContractAddress,
+        rand_address: ContractAddress,
         // Infrastructures.
         steel_mine_level: LegacyMap::<u128, u128>,
         quartz_mine_level: LegacyMap::<u128, u128>,
@@ -45,19 +44,19 @@ mod NoGame {
         lab_level: LegacyMap::<u128, u128>,
         resources_timer: LegacyMap::<u128, u64>,
         // Technologies
-        energy_innovation_level: LegacyMap::<u128, u128>,
-        digital_systems_level: LegacyMap::<u128, u128>,
-        beam_technology_level: LegacyMap::<u128, u128>,
-        armour_innovation_level: LegacyMap::<u128, u128>,
-        ion_systems_level: LegacyMap::<u128, u128>,
-        plasma_engineering_level: LegacyMap::<u128, u128>,
-        stellar_physics_level: LegacyMap::<u128, u128>,
-        weapons_development_level: LegacyMap::<u128, u128>,
-        shield_tech_level: LegacyMap::<u128, u128>,
-        spacetime_warp_level: LegacyMap::<u128, u128>,
-        combustive_engine_level: LegacyMap::<u128, u128>,
-        thrust_propulsion_level: LegacyMap::<u128, u128>,
-        warp_drive_level: LegacyMap::<u128, u128>,
+        energy_innovation_level: LegacyMap::<u128, u64>,
+        digital_systems_level: LegacyMap::<u128, u64>,
+        beam_technology_level: LegacyMap::<u128, u64>,
+        armour_innovation_level: LegacyMap::<u128, u64>,
+        ion_systems_level: LegacyMap::<u128, u64>,
+        plasma_engineering_level: LegacyMap::<u128, u64>,
+        stellar_physics_level: LegacyMap::<u128, u64>,
+        weapons_development_level: LegacyMap::<u128, u64>,
+        shield_tech_level: LegacyMap::<u128, u64>,
+        spacetime_warp_level: LegacyMap::<u128, u64>,
+        combustive_engine_level: LegacyMap::<u128, u64>,
+        thrust_propulsion_level: LegacyMap::<u128, u64>,
+        warp_drive_level: LegacyMap::<u128, u64>,
         // Ships
         carrier_available: LegacyMap::<u128, u128>,
         scraper_available: LegacyMap::<u128, u128>,
@@ -80,7 +79,6 @@ mod NoGame {
         FleetSpent: FleetSpent,
     }
 
-    // Resources spending events.
     #[derive(Drop, starknet::Event)]
     struct ResourcesSpent {
         planet_id: u128,
@@ -99,10 +97,6 @@ mod NoGame {
         spent: u128,
     }
 
-    // Structures upgrade events.
-
-    // Constructor
-    // #[constructor]
     fn constructor(ref self: ContractState) {
         self.universe_start_time.write(get_block_timestamp());
     }
@@ -114,12 +108,14 @@ mod NoGame {
             erc721: ContractAddress,
             steel: ContractAddress,
             quartz: ContractAddress,
-            tritium: ContractAddress
+            tritium: ContractAddress,
+            rand: ContractAddress,
         ) {
             self.erc721_address.write(erc721);
             self.steel_address.write(steel);
             self.quartz_address.write(quartz);
             self.tritium_address.write(tritium);
+            self.rand_address.write(rand);
         }
 
         fn generate_planet(ref self: ContractState) {
@@ -128,6 +124,9 @@ mod NoGame {
             let token_id: u128 = self.calculate_token_id(number_of_planets);
             INGERC721Dispatcher { contract_address: self.erc721_address.read() }
                 .mint(to: caller, token_id: token_id.into());
+            let position = self.calculate_planet_position(token_id);
+            self.planet_position.write(token_id, position);
+            self.position_to_planet_id.write(position, token_id);
             self.number_of_planets.write(number_of_planets + 1);
             self.mint_initial_liquidity(caller);
             self.resources_timer.write(token_id, get_block_timestamp());
@@ -147,8 +146,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn quartz_mine_upgrade(ref self: ContractState) {
@@ -161,8 +158,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn tritium_mine_upgrade(ref self: ContractState) {
@@ -175,8 +170,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn energy_plant_upgrade(ref self: ContractState) {
@@ -189,8 +182,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -204,8 +195,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn lab_upgrade(ref self: ContractState) {
@@ -218,8 +207,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -237,9 +224,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.energy_innovation_level.write(planet_id, techs.energy + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -254,9 +238,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.digital_systems_level.write(planet_id, techs.digital + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -271,9 +252,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.beam_technology_level.write(planet_id, techs.beam + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -288,9 +266,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.armour_innovation_level.write(planet_id, techs.armour + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -305,9 +280,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.ion_systems_level.write(planet_id, techs.ion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -322,9 +294,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.plasma_engineering_level.write(planet_id, techs.plasma + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -340,9 +309,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.weapons_development_level.write(planet_id, techs.weapons + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -357,9 +323,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.shield_tech_level.write(planet_id, techs.shield + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -374,9 +337,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -391,9 +351,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.combustive_engine_level.write(planet_id, techs.combustion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -408,9 +365,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -425,15 +379,10 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_tech_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.warp_drive_level.write(planet_id, techs.warp + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
-        //#########################################################################################
-        //                                      DOCKYARD FUNCTIONS                                #
-        //########################################################################################
+
         fn carrier_build(ref self: ContractState, quantity: u128) {
             let caller = get_caller_address();
             self._collect_resources(caller);
@@ -445,9 +394,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .carrier_available
                 .write(planet_id, self.carrier_available.read(planet_id) + quantity);
@@ -464,9 +410,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .scraper_available
                 .write(planet_id, self.scraper_available.read(planet_id) + quantity);
@@ -483,9 +426,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .celestia_available
                 .write(planet_id, self.celestia_available.read(planet_id) + quantity);
@@ -502,9 +442,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .sparrow_available
                 .write(planet_id, self.sparrow_available.read(planet_id) + quantity);
@@ -521,9 +458,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .frigate_available
                 .write(planet_id, self.frigate_available.read(planet_id) + quantity);
@@ -540,9 +474,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .armade_available
                 .write(planet_id, self.armade_available.read(planet_id) + quantity);
@@ -563,9 +494,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .blaster_available
                 .write(planet_id, self.blaster_available.read(planet_id) + quantity);
@@ -582,9 +510,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self.beam_available.write(planet_id, self.beam_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -599,9 +524,6 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .astral_launcher_available
                 .write(planet_id, self.astral_launcher_available.read(planet_id) + quantity);
@@ -617,18 +539,11 @@ mod NoGame {
             let cost = Defences::get_defences_cost(quantity, 50000, 50000, 30000);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            self.update_resources_spent(planet_id, cost);
-            self.update_fleet_spent(planet_id, cost);
-            self.update_leaderboard(planet_id);
             self
                 .plasma_projector_available
                 .write(planet_id, self.plasma_projector_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
-
-        //#########################################################################################
-        //                                      VIEW FUNCTIONS                                #
-        //########################################################################################
 
         fn get_token_addresses(self: @ContractState) -> Tokens {
             self.get_tokens_addresses()
@@ -636,14 +551,6 @@ mod NoGame {
 
         fn get_number_of_planets(self: @ContractState) -> u32 {
             self.number_of_planets.read()
-        }
-
-        fn get_leaderboard(self: @ContractState) -> LeaderBoard {
-            LeaderBoard {
-                point_leader: self.point_leader.read(),
-                tech_leader: self.tech_leader.read(),
-                fleet_leader: self.fleet_leader.read()
-            }
         }
 
         fn get_planet_points(self: @ContractState, planet_id: u128) -> u128 {
@@ -797,6 +704,30 @@ mod NoGame {
             } else {
                 return 100 * ((n.into() + 1) / 2) + 8;
             }
+        }
+
+        fn calculate_planet_position(ref self: ContractState, planet_id: u128) -> u64 {
+            let contract_address = self.rand_address.read();
+            let mut position: u64 = 0;
+            loop {
+                let system: u64 = (IXoroshiroDispatcher { contract_address }.next() % 500 + 1)
+                    .try_into()
+                    .unwrap();
+                let orbit: u64 = (IXoroshiroDispatcher { contract_address }.next() % 15 + 1)
+                    .try_into()
+                    .unwrap();
+                position = system * 100 + orbit;
+                if self.position_to_planet_id.read(position) == 0 {
+                    self.position_to_planet_id.write(position, planet_id);
+                    break;
+                }
+                let x = 0;
+            };
+            position
+        }
+
+        fn extract_planet_position(raw_position: u64) -> (u64, u64) {
+            DivRem::div_rem(raw_position, 100_u64.try_into().unwrap())
         }
 
         fn get_token_owner(self: @ContractState, caller: ContractAddress) -> u128 {
@@ -1080,82 +1011,6 @@ mod NoGame {
                     planet_id, self.resources_spent.read(planet_id) + spent.steel + spent.quartz
                 );
         }
-
-        /// Updates the total resources spent for a specific planet within a contract.
-        ///
-        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
-        /// with the sum of the current spent, steel cost, and quartz cost.
-        ///
-        /// # Arguments
-        ///
-        /// * `ref self` - A reference to the contract's state.
-        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
-        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
-        ///
-        fn update_resources_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
-            let current_spent = self.resources_spent.read(planet_id);
-            self.resources_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
-        }
-
-        /// Updates the tech spent for a specific planet within a contract.
-        ///
-        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
-        /// with the sum of the current spent, steel cost, and quartz cost.
-        ///
-        /// # Arguments
-        ///
-        /// * `ref self` - A reference to the contract's state.
-        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
-        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
-        ///
-        fn update_tech_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
-            let current_spent = self.tech_spent.read(planet_id);
-            self.tech_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
-        }
-
-        /// Updates the fleet spent for a specific.
-        ///
-        /// This method reads the current fleet spent for the given `planet_id` and then updates the `tech_spent` 
-        /// with the sum of the current spent, steel cost, and quartz cost.
-        ///
-        /// # Arguments
-        ///
-        /// * `ref self` - A reference to the contract's state.
-        /// * `planet_id` - The unique identifier for the planet for which the fleet spending needs to be updated.
-        /// * `cost` - An instance of the `ERC20s` struct containing the cost details in steel and quartz.
-        ///
-        fn update_fleet_spent(ref self: ContractState, planet_id: u128, cost: ERC20s) {
-            let current_spent = self.fleet_spent.read(planet_id);
-            self.tech_spent.write(planet_id, current_spent + cost.steel + cost.quartz);
-        }
-
-        /// Updates the leaderboard of the contract state based on the resources, tech, and fleet spent.
-        ///
-        /// The function compares the resources, tech, and fleet spent on a given planet with the
-        /// current leaders in each category. If the given planet has spent more in any of these
-        /// categories, it becomes the new leader.
-        ///
-        /// # Arguments
-        ///
-        /// * `ref self`: Reference to the contract state that contains the current leaders and the amount spent.
-        /// * `planet_id`: The unique identifier of the planet for which the leaderboard is to be updated.
-        ///
-        fn update_leaderboard(ref self: ContractState, planet_id: u128) {
-            if self
-                .resources_spent
-                .read(planet_id) > self
-                .resources_spent
-                .read(self.point_leader.read()) {
-                self.point_leader.write(planet_id);
-            }
-            if self.tech_spent.read(planet_id) > self.tech_spent.read(self.tech_leader.read()) {
-                self.tech_leader.write(planet_id);
-            }
-            if self.fleet_spent.read(planet_id) > self.fleet_spent.read(self.fleet_leader.read()) {
-                self.fleet_leader.write(planet_id);
-            }
-        }
-
 
         /// Returns the time elapsed since the last collection for a specified planet.
         ///

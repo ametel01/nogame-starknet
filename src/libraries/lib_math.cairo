@@ -1,8 +1,3 @@
-use option::OptionTrait;
-use traits::Into;
-
-use debug::PrintTrait;
-
 /// Raise a number to a power.
 /// * `base` - The number to raise.
 /// * `exp` - The exponent.

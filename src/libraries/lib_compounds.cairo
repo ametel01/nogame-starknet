@@ -1,5 +1,4 @@
 use core::integer::U256Mul;
-use core::traits::Into;
 use integer::U128Div;
 
 use nogame::game::game_library::ERC20s;

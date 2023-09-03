@@ -1,4 +1,3 @@
-use core::traits::Into;
 use nogame::game::game_library::{ERC20s, TechLevels};
 
 #[generate_trait]

@@ -1,9 +1,4 @@
-use array::ArrayTrait;
 use debug::PrintTrait;
-use option::OptionTrait;
-use result::ResultTrait;
-use traits::Into;
-use traits::TryInto;
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
@@ -40,20 +35,6 @@ fn test_get_number_of_planets() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
     assert(dsp.game.get_number_of_planets() == 1, 'wrong n planets');
-}
-
-#[test]
-fn test_get_leaderboard() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
-    dsp.game.generate_planet();
-
-    let board = dsp.game.get_leaderboard();
-    assert(
-        board.point_leader == 0 && board.tech_leader == 0 && board.fleet_leader == 0,
-        'wrong leaderboard'
-    );
 }
 
 #[test]
