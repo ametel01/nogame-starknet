@@ -8,23 +8,13 @@ license = "MIT"
 [dependencies]
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", branch = "cairo-2" }
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.5.0" }
+xoroshiro = { git ="https://github.com/ametel01/xoroshiro-cairo.git" }
 starknet = "2.2.0"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "all"
-build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20"]
+build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "xoroshiro::xoroshiro::Xoroshiro" ]
 sierra = true
 casm = true
 
-[tool.snforge]
-exit_first = true
 
-# [lib]
-# sierra = true  # Enable Sierra codegen.
-# casm = true   # Enable CASM codegen.
-# [scripts]
-# test = "cairo-test ."
-
-# [lib]
-# sierra = true
-# casm = false
