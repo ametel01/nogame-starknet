@@ -1,3 +1,4 @@
+use snforge_std::PrintTrait;
 use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
@@ -9,14 +10,6 @@ struct Tokens {
     steel: ContractAddress,
     quartz: ContractAddress,
     tritium: ContractAddress,
-}
-
-#[derive(Copy, Drop, Serde)]
-struct Resources {
-    steel: u128,
-    quartz: u128,
-    tritium: u128,
-    energy: u128
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -137,6 +130,13 @@ struct PlanetPosition {
     orbit: u8,
 }
 
+impl PlanetPositionPrint of PrintTrait<PlanetPosition> {
+    fn print(self: PlanetPosition) {
+        self.system.print();
+        self.orbit.print();
+    }
+}
+
 impl PlanetPositionZeroable of Zeroable<PlanetPosition> {
     fn zero() -> PlanetPosition {
         PlanetPosition { system: 0, orbit: 0 }
@@ -154,5 +154,11 @@ struct Cargo {
     steel: u128,
     quartz: u128,
     tritium: u128,
+}
+
+#[derive(Copy, Drop, Serde, starknet::Store)]
+struct Debris {
+    steel: u64,
+    quartz: u64
 }
 

@@ -2,7 +2,7 @@ use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-use nogame::game::library::TechLevels;
+use nogame::game::library::{TechLevels, Debris};
 use debug::PrintTrait;
 
 fn RAND() -> ContractAddress {
@@ -26,12 +26,6 @@ struct Unit {
     shield: u32,
     weapon: u32,
     exists: bool,
-}
-
-#[derive(Drop)]
-struct Debris {
-    steel: u64,
-    quartz: u64
 }
 
 extern fn alloc_local<Unit>() -> Unit nopanic;

@@ -1,9 +1,8 @@
-use debug::PrintTrait;
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 
-use snforge_std::{start_prank, start_warp};
+use snforge_std::{start_prank, start_warp, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::game::library::{
@@ -37,6 +36,27 @@ fn test_get_number_of_planets() {
 }
 
 #[test]
+fn test_get_planet_position() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+
+    dsp.game.get_planet_position(1).print();
+}
+
+#[test]
+fn test_get_position_slot_occupant() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+
+    let position = dsp.game.get_planet_position(1);
+    dsp.game.get_position_slot_occupant(position).print();
+}
+
+#[test]
 fn test_get_spendable_resources() {
     let dsp = set_up();
     init_game(dsp);
@@ -48,6 +68,7 @@ fn test_get_spendable_resources() {
     assert(spendable.quartz == 300, 'wrong spendable ');
     assert(spendable.tritium == 100, 'wrong spendable ');
 }
+
 
 #[test]
 fn test_get_collectible_resources() {

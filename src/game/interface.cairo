@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use nogame::game::library::{
-    DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, Resources,
-    ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo
+    DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
+    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris
 };
 
 #[starknet::interface]
@@ -14,23 +14,6 @@ trait INoGame<TState> {
         tritium: ContractAddress,
         rand: ContractAddress,
     );
-    // View functions
-    fn get_token_addresses(self: @TState) -> Tokens;
-    fn get_number_of_planets(self: @TState) -> u16;
-    fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
-    fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_energy_available(self: @TState, planet_id: u16) -> u128;
-    fn get_planet_points(self: @TState, planet_id: u16) -> u128;
-    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
-    fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
-    fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
-    fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
-    fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
-    fn get_ships_levels(self: @TState, planet_id: u16) -> ShipsLevels;
-    fn get_ships_cost(self: @TState) -> ShipsCost;
-    fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
-    fn get_defences_cost(self: @TState) -> DefencesCost;
     // Write functions
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
@@ -69,4 +52,23 @@ trait INoGame<TState> {
     fn drop_resources(ref self: TState, mission_id: u8);
     fn attack_planet(ref self: TState, mission_id: u8);
     fn recall_fleet(ref self: TState, mission_id: u8);
+    // View functions
+    fn get_token_addresses(self: @TState) -> Tokens;
+    fn get_number_of_planets(self: @TState) -> u16;
+    fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
+    fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
+    fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
+    fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
+    fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
+    fn get_energy_available(self: @TState, planet_id: u16) -> u128;
+    fn get_planet_points(self: @TState, planet_id: u16) -> u128;
+    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
+    fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
+    fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
+    fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
+    fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
+    fn get_ships_levels(self: @TState, planet_id: u16) -> ShipsLevels;
+    fn get_ships_cost(self: @TState) -> ShipsCost;
+    fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
+    fn get_defences_cost(self: @TState) -> DefencesCost;
 }
