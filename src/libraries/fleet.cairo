@@ -2,7 +2,7 @@ use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-use nogame::game::game_library::TechLevels;
+use nogame::game::library::TechLevels;
 use debug::PrintTrait;
 
 fn RAND() -> ContractAddress {
@@ -11,27 +11,27 @@ fn RAND() -> ContractAddress {
 
 #[derive(Drop, Copy, PartialEq)]
 struct Fleet {
-    n_ships: u128,
-    carrier: u128,
-    scraper: u128,
-    sparrow: u128,
-    frigate: u128,
-    armade: u128,
+    n_ships: u32,
+    carrier: u32,
+    scraper: u32,
+    sparrow: u32,
+    frigate: u32,
+    armade: u32,
 }
 
 #[derive(Drop, Copy, Debug, PartialEq)]
 struct Unit {
     id: u8,
-    hull: u64,
-    shield: u64,
-    weapon: u64,
+    hull: u32,
+    shield: u32,
+    weapon: u32,
     exists: bool,
 }
 
 #[derive(Drop)]
 struct Debris {
-    steel: u128,
-    quartz: u128
+    steel: u64,
+    quartz: u64
 }
 
 extern fn alloc_local<Unit>() -> Unit nopanic;
@@ -171,7 +171,6 @@ fn perform_combat(mut attacker: Unit, mut defender: Unit) -> Unit {
         if (defender.hull * 10000 / initial_hull) < 7500 {
             let prob = 10000 - (defender.hull * 10000 / initial_hull);
             let rand = IXoroshiroDispatcher { contract_address: RAND() }.next() % 10000;
-            rand.print();
             if (rand < prob.into()) {
                 defender.hull = 0;
                 defender.exists = false;
@@ -270,45 +269,45 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
         }
         if fleet.armade > 0 {
             let mut ship = ARMADE();
-            ship.weapon += ship.weapon * techs.weapons / 10;
-            ship.shield += ship.shield * techs.shield / 10;
-            ship.hull += ship.hull * techs.armour / 10;
+            ship.weapon += ship.weapon * techs.weapons.into() / 10;
+            ship.shield += ship.shield * techs.shield.into() / 10;
+            ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
             fleet.n_ships -= 1;
             fleet.armade -= 1;
         }
         if fleet.frigate > 0 {
             let mut ship = FRIGATE();
-            ship.weapon += ship.weapon * techs.weapons / 10;
-            ship.shield += ship.shield * techs.shield / 10;
-            ship.hull += ship.hull * techs.armour / 10;
+            ship.weapon += ship.weapon * techs.weapons.into() / 10;
+            ship.shield += ship.shield * techs.shield.into() / 10;
+            ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
             fleet.n_ships -= 1;
             fleet.frigate -= 1;
         }
         if fleet.sparrow > 0 {
             let mut ship = SPARROW();
-            ship.weapon += ship.weapon * techs.weapons / 10;
-            ship.shield += ship.shield * techs.shield / 10;
-            ship.hull += ship.hull * techs.armour / 10;
+            ship.weapon += ship.weapon * techs.weapons.into() / 10;
+            ship.shield += ship.shield * techs.shield.into() / 10;
+            ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
             fleet.n_ships -= 1;
             fleet.sparrow -= 1;
         }
         if fleet.scraper > 0 {
             let mut ship = SCRAPER();
-            ship.weapon += ship.weapon * techs.weapons / 10;
-            ship.shield += ship.shield * techs.shield / 10;
-            ship.hull += ship.hull * techs.armour / 10;
+            ship.weapon += ship.weapon * techs.weapons.into() / 10;
+            ship.shield += ship.shield * techs.shield.into() / 10;
+            ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
             fleet.n_ships -= 1;
             fleet.scraper -= 1;
         }
         if fleet.carrier > 0 {
             let mut ship = CARRIER();
-            ship.weapon += ship.weapon * techs.weapons / 10;
-            ship.shield += ship.shield * techs.shield / 10;
-            ship.hull += ship.hull * techs.armour / 10;
+            ship.weapon += ship.weapon * techs.weapons.into() / 10;
+            ship.shield += ship.shield * techs.shield.into() / 10;
+            ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
             fleet.n_ships -= 1;
             fleet.carrier -= 1;
@@ -389,7 +388,4 @@ fn test_combat() {
     let mut attackers = TEST_FLEET_1();
     let mut defenders = TEST_FLEET_2();
     let (attackers, defenders) = combat(attackers, TEST_TECHS_2(), defenders, TEST_TECHS_1());
-    attackers.armade.print();
-    defenders.frigate.print();
-    defenders.sparrow.print();
 }

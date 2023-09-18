@@ -1,5 +1,5 @@
-use nogame::libraries::lib_packable::PackPackable;
-use nogame::game::game_library::CompoundsLevelsPacked;
+use nogame::libraries::packable::PackPackable;
+use nogame::game::library::CompoundsLevelsPacked;
 
 #[test]
 fn pack_test() {

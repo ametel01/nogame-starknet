@@ -1,9 +1,11 @@
 use array::ArrayTrait;
 use starknet::{ContractAddress, contract_address_const};
 
-use nogame::game::game_interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::token::token_erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
-use nogame::token::token_erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
+use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
+
+use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
 use snforge_std::{declare, ContractClassTrait};
 
@@ -16,6 +18,7 @@ struct Dispatchers {
     steel: INGERC20Dispatcher,
     quartz: INGERC20Dispatcher,
     tritium: INGERC20Dispatcher,
+    rand: IXoroshiroDispatcher,
     game: INoGameDispatcher,
 }
 
@@ -45,11 +48,16 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into()];
     let _tritium = contract.deploy(@calldata).unwrap();
 
+    let contract = declare('Xoroshiro');
+    let calldata: Array<felt252> = array![81];
+    let _xoroshiro = contract.deploy(@calldata).unwrap();
+
     Dispatchers {
         erc721: INGERC721Dispatcher { contract_address: _erc721 },
         steel: INGERC20Dispatcher { contract_address: _steel },
         quartz: INGERC20Dispatcher { contract_address: _quartz },
         tritium: INGERC20Dispatcher { contract_address: _tritium },
+        rand: IXoroshiroDispatcher { contract_address: _xoroshiro },
         game: INoGameDispatcher { contract_address: _game }
     }
 }
@@ -61,6 +69,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.erc721.contract_address,
             dsp.steel.contract_address,
             dsp.quartz.contract_address,
-            dsp.tritium.contract_address
+            dsp.tritium.contract_address,
+            dsp.rand.contract_address
         )
 }

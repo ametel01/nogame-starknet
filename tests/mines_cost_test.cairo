@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod MineCostTest {
     use debug::PrintTrait;
-    use nogame::libraries::lib_compounds::Compounds;
-    use nogame::game::game_library::ERC20s;
+    use nogame::libraries::compounds::Compounds;
+    use nogame::game::library::ERC20s;
 
     impl CostPrint of PrintTrait<ERC20s> {
         fn print(self: ERC20s) {

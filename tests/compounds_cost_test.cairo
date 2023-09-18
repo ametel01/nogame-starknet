@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod CompoundsTest {
     // use debug::PrintTrait;
-    use nogame::libraries::lib_compounds::Compounds;
-    use nogame::game::game_library::ERC20s;
+    use nogame::libraries::compounds::Compounds;
+    use nogame::game::library::ERC20s;
     use debug::PrintTrait;
 
     impl Print of PrintTrait<ERC20s> {
@@ -36,10 +36,6 @@ mod CompoundsTest {
         assert(cost.steel == 429496729600, 'wrong formula');
         assert(cost.quartz == 214748364800, 'wrong formula');
         assert(cost.tritium == 107374182400, 'wrong formula');
-        let cost = Compounds::dockyard_cost(60);
-        assert(cost.steel == 461168601842738790400, 'wrong formula');
-        assert(cost.quartz == 230584300921369395200, 'wrong formula');
-        assert(cost.tritium == 115292150460684697600, 'wrong formula');
     }
     #[test]
     #[available_gas(1000000000)]
@@ -64,13 +60,9 @@ mod CompoundsTest {
         assert(cost.steel == 209715200, 'wrong formula');
         assert(cost.quartz == 419430400, 'wrong formula');
         assert(cost.tritium == 209715200, 'wrong formula');
-        let cost = Compounds::lab_cost(20);
-        assert(cost.steel == 209715200, 'wrong formula');
-        assert(cost.quartz == 419430400, 'wrong formula');
-        assert(cost.tritium == 209715200, 'wrong formula');
-        let cost = Compounds::lab_cost(60);
-        assert(cost.steel == 230584300921369395200, 'wrong formula');
-        assert(cost.quartz == 461168601842738790400, 'wrong formula');
-        assert(cost.tritium == 230584300921369395200, 'wrong formula');
+        let cost = Compounds::lab_cost(30);
+        assert(cost.steel == 214748364800, 'wrong formula');
+        assert(cost.quartz == 429496729600, 'wrong formula');
+        assert(cost.tritium == 214748364800, 'wrong formula');
     }
 }

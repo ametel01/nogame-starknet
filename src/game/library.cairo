@@ -38,12 +38,12 @@ struct CompoundsLevelsPacked {
 
 #[derive(Copy, Drop, Serde)]
 struct CompoundsLevels {
-    steel: u128,
-    quartz: u128,
-    tritium: u128,
-    energy: u128,
-    lab: u128,
-    dockyard: u128,
+    steel: u8,
+    quartz: u8,
+    tritium: u8,
+    energy: u8,
+    lab: u8,
+    dockyard: u8,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -58,18 +58,18 @@ struct CompoundsCost {
 
 #[derive(Copy, Drop, Serde)]
 struct TechLevels {
-    energy: u64,
-    digital: u64,
-    beam: u64,
-    armour: u64,
-    ion: u64,
-    plasma: u64,
-    weapons: u64,
-    shield: u64,
-    spacetime: u64,
-    combustion: u64,
-    thrust: u64,
-    warp: u64,
+    energy: u8,
+    digital: u8,
+    beam: u8,
+    armour: u8,
+    ion: u8,
+    plasma: u8,
+    weapons: u8,
+    shield: u8,
+    spacetime: u8,
+    combustion: u8,
+    thrust: u8,
+    warp: u8,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -90,12 +90,12 @@ struct TechsCost {
 
 #[derive(Copy, Drop, Serde)]
 struct ShipsLevels {
-    carrier: u128,
-    celestia: u128,
-    scraper: u128,
-    sparrow: u128,
-    frigate: u128,
-    armade: u128,
+    carrier: u32,
+    celestia: u32,
+    scraper: u32,
+    sparrow: u32,
+    frigate: u32,
+    armade: u32,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -110,10 +110,10 @@ struct ShipsCost {
 
 #[derive(Copy, Drop, Serde)]
 struct DefencesLevels {
-    blaster: u128,
-    beam: u128,
-    astral: u128,
-    plasma: u128
+    blaster: u32,
+    beam: u32,
+    astral: u32,
+    plasma: u32
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -131,10 +131,28 @@ struct EnergyCost {
     tritium: u128,
 }
 
+#[derive(Copy, Default, Drop, Serde, starknet::Store)]
+struct PlanetPosition {
+    system: u8,
+    orbit: u8,
+}
+
+impl PlanetPositionZeroable of Zeroable<PlanetPosition> {
+    fn zero() -> PlanetPosition {
+        PlanetPosition { system: 0, orbit: 0 }
+    }
+    fn is_zero(self: PlanetPosition) -> bool {
+        self.system == 0 && self.orbit == 0
+    }
+    fn is_non_zero(self: PlanetPosition) -> bool {
+        !self.is_zero()
+    }
+}
+
 #[derive(Copy, Drop, Serde)]
-struct LeaderBoard {
-    point_leader: u128,
-    tech_leader: u128,
-    fleet_leader: u128,
+struct Cargo {
+    steel: u128,
+    quartz: u128,
+    tritium: u128,
 }
 

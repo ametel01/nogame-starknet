@@ -6,7 +6,7 @@ use integer::{
 };
 use traits::DivRem;
 
-use nogame::game::game_library::{CompoundsLevelsPacked};
+use nogame::game::library::{CompoundsLevelsPacked};
 
 const B6_felt: felt252 = 64;
 const B6: u64 = 64;
