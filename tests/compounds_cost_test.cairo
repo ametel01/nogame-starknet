@@ -1,17 +1,9 @@
 #[cfg(test)]
 mod CompoundsTest {
     // use debug::PrintTrait;
-    use nogame::libraries::compounds::Compounds;
-    use nogame::game::library::ERC20s;
+    use nogame::compounds::Compounds;
+    use nogame::ERC20s;
     use debug::PrintTrait;
-
-    impl Print of PrintTrait<ERC20s> {
-        fn print(self: ERC20s) {
-            self.steel.print();
-            self.quartz.print();
-            self.tritium.print();
-        }
-    }
 
     #[test]
     #[available_gas(100000000)]

@@ -1,5 +1,5 @@
-use nogame::libraries::math::power;
-use nogame::game::library::{ERC20s, TechLevels};
+use nogame::math::power;
+use nogame::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Lab of LabTrait {

@@ -1,8 +1,8 @@
 use core::integer::U256Mul;
 use integer::U8Div;
 
-use nogame::game::library::ERC20s;
-use nogame::libraries::math::{power, BitShift};
+use nogame::ERC20s;
+use nogame::math::{power, BitShift};
 
 
 #[generate_trait]

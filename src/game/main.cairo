@@ -3,14 +3,14 @@ mod NoGame {
     use traits::DivRem;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use nogame::game::interface::INoGame;
-    use nogame::game::library::{
+    use nogame::{
         E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
         ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris
     };
-    use nogame::libraries::compounds::Compounds;
-    use nogame::libraries::defences::Defences;
-    use nogame::libraries::dockyard::Dockyard;
-    use nogame::libraries::research::Lab;
+    use nogame::compounds::Compounds;
+    use nogame::defences::Defences;
+    use nogame::dockyard::Dockyard;
+    use nogame::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
 

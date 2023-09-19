@@ -5,7 +5,7 @@ use starknet::{ContractAddress, contract_address_const};
 use snforge_std::{start_prank, start_warp, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::game::library::{
+use nogame::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
@@ -64,6 +64,7 @@ fn test_get_spendable_resources() {
     dsp.game.generate_planet();
 
     let spendable = dsp.game.get_spendable_resources(1);
+    spendable.print();
     assert(spendable.steel == 500, 'wrong spendable');
     assert(spendable.quartz == 300, 'wrong spendable ');
     assert(spendable.tritium == 100, 'wrong spendable ');
@@ -79,6 +80,7 @@ fn test_get_collectible_resources() {
 
     start_warp(dsp.game.contract_address, HOUR * 3);
     let collectible = dsp.game.get_collectible_resources(1);
+    collectible.print();
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');

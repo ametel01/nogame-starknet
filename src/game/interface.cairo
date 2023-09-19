@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use nogame::game::library::{
+use nogame::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris
 };

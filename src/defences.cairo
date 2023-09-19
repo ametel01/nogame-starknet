@@ -1,4 +1,4 @@
-use nogame::game::library::{ERC20s, TechLevels};
+use nogame::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Defences of DefencesTrait {
@@ -36,3 +36,4 @@ impl Defences of DefencesTrait {
         assert(techs.plasma >= 7, 'Plasma Engineering 7 required');
     }
 }
+

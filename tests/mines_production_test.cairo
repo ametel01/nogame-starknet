@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod MineProductionTest {
     use traits::Into;
-    use nogame::libraries::compounds::Compounds;
+    use nogame::compounds::Compounds;
 
     #[test]
     #[available_gas(1000000000)]

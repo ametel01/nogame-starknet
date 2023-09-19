@@ -1,4 +1,4 @@
-use nogame::game::library::{ERC20s, TechLevels};
+use nogame::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Dockyard of DockyardTrait {
@@ -48,3 +48,4 @@ impl Dockyard of DockyardTrait {
         assert(techs.warp >= 4, 'Warp Drive 4 required');
     }
 }
+

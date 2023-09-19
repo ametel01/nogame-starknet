@@ -6,7 +6,7 @@ use starknet::{ContractAddress, contract_address_const};
 use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::game::library::{
+use nogame::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
