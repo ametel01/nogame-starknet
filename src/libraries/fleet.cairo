@@ -1,8 +1,7 @@
-// // use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
-// // use debug::PrintTrait;
-
+use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
 use nogame::libraries::types::{TechLevels, Debris, Fleet, Unit, UnitTrait, PlanetPosition};
+use debug::PrintTrait;
 
 fn CARRIER() -> Unit {
     Unit {
@@ -39,7 +38,6 @@ fn ARMADE() -> Unit {
         fuel_consumption: 500
     }
 }
-
 
 fn war(
     mut attackers: Fleet, a_techs: TechLevels, mut defenders: Fleet, d_techs: TechLevels
@@ -84,58 +82,6 @@ fn war(
     };
     (build_fleet_struct(temp1), build_fleet_struct(temp2))
 }
-
-// fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {0}
-
-fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
-    let mut min_speed = 10000000000;
-    if fleet.carrier > 0 {
-        if techs.thrust > 4 {
-            let base_speed = CARRIER().speed * 2;
-            let level_diff = techs.thrust - 4;
-            let speed = base_speed + (base_speed * level_diff * 2) / 100;
-        } else {
-            let base_speed = CARRIER().speed;
-            let speed = base_speed + (base_speed * techs.combustion) / 100;
-        }
-        if speed < min_speed {
-            min_speed = speed;
-        }
-    }
-    if fleet.scraper > 0 {
-        let base_speed = SCRAPER().speed;
-        let speed = base_speed + (base_speed * techs.combustion) / 100;
-
-        if speed < min_speed {
-            min_speed = speed;
-        }
-    }
-    if fleet.sparrow > 0 {
-        let base_speed = SPARROW().speed;
-        let speed = base_speed + (base_speed * techs.combustion) / 100;
-        if speed < min_speed {
-            min_speed = speed;
-        }
-    }
-    if fleet.frigate > 0 {
-        let base_speed = FRIGATE().speed;
-        let level_diff = techs.thrust - 4;
-        let speed = base_speed + (base_speed * level_diff * 2) / 100;
-        if speed < min_speed {
-            min_speed = speed;
-        }
-    }
-    if fleet.armade > 0 {
-        let base_speed = ARMADE().speed;
-        let level_diff = techs.spacetime - 4;
-        let speed = base_speed + (base_speed * level_diff * 3) / 100;
-        if speed < min_speed {
-            min_speed = speed;
-        }
-    }
-    min_speed
-}
-
 
 fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
     loop {
@@ -265,148 +211,85 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
     };
     array
 }
-// // // fn combat(
-// // //     attackers: Fleet, a_techs: TechLevels, defenders: Fleet, d_techs: TechLevels
-// // // ) -> (Fleet, Fleet) {
-// // //     let mut attackers = build_ships_array(attackers, a_techs);
-// // //     let mut defenders = build_ships_array(defenders, d_techs);
-// // //     let mut rounds = 6;
-// // //     loop {
-// // //         if rounds == 0 {
-// // //             break;
-// // //         }
-// // //         let mut len = attackers.len();
-// // //         loop {
-// // //             if attackers.len() == 0 || defenders.len() == 0 {
-// // //                 break;
-// // //             }
-// // //             if len == 0 {
-// // //                 break;
-// // //             }
-// // //             let attacker = attackers.pop_front().unwrap();
-// // //             let mut target = defenders.pop_front().unwrap();
-// // //             target = perform_combat(attacker, target);
-// // //             let (is_rapidfire, mut rapidfire) = rapid_fire(attacker, target);
-// // //             if is_rapidfire {
-// // //                 loop {
-// // //                     if defenders.len() == 0 {
-// // //                         break;
-// // //                     }
-// // //                     if rapidfire == 0 {
-// // //                         break;
-// // //                     }
-// // //                     let mut target_rf = defenders.pop_front().unwrap();
-// // //                     target_rf = perform_combat(attacker, target_rf);
-// // //                     defenders.append(target_rf);
-// // //                     rapidfire -= 1;
-// // //                 }
-// // //             }
-// // //             if target.exists {
-// // //                 defenders.append(target);
-// // //             }
-// // //             len -= 1;
-// // //             attackers.append(attacker);
-// // //         };
-// // //         let mut len = 0;
-// // //         loop {
-// // //             if attackers.len() == 0 || defenders.len() == 0 {
-// // //                 break;
-// // //             }
-// // //             if len == 0 {
-// // //                 break;
-// // //             }
-// // //             let attacker = defenders.pop_front().unwrap();
-// // //             let mut target = attackers.pop_front().unwrap();
-// // //             target = perform_combat(attacker, target);
-// // //             let (is_rapidfire, mut rapidfire) = rapid_fire(attacker, target);
-// // //             if is_rapidfire {
-// // //                 loop {
-// // //                     if attackers.len() == 0 {
-// // //                         break;
-// // //                     }
-// // //                     if rapidfire == 0 {
-// // //                         break;
-// // //                     }
-// // //                     let mut target_rf = attackers.pop_front().unwrap();
-// // //                     target_rf = perform_combat(attacker, target_rf);
-// // //                     attackers.append(target_rf);
-// // //                     rapidfire -= 1;
-// // //                 }
-// // //             }
-// // //             if target.exists {
-// // //                 attackers.append(target);
-// // //             }
-// // //             len -= 1;
-// // //             defenders.append(attacker);
-// // //         };
 
-// // //         rounds -= 1;
-// // //     };
+fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
+    let mut min_speed = 4294967295;
+    let combustion: u32 = techs.combustion.into();
+    let thrust: u32 = techs.thrust.into();
+    if fleet.carrier > 0 && thrust >= 4 {
+        let base_speed = CARRIER().speed * 2;
+        let level_diff = thrust - 4;
+        let speed = base_speed + (base_speed * level_diff * 2) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    if fleet.carrier > 0 && thrust < 4 {
+        let base_speed = CARRIER().speed;
+        let speed = base_speed + (base_speed * combustion) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    if fleet.scraper > 0 {
+        let base_speed = SCRAPER().speed;
+        let speed = base_speed + (base_speed * combustion) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    if fleet.sparrow > 0 {
+        let base_speed = SPARROW().speed;
+        let speed = base_speed + (base_speed * combustion) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    if fleet.frigate > 0 {
+        let base_speed = FRIGATE().speed;
+        let level_diff = thrust - 4;
+        let speed = base_speed + (base_speed * level_diff * 2) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    if fleet.armade > 0 {
+        let base_speed = ARMADE().speed;
+        let level_diff = techs.spacetime - 4;
+        let speed = base_speed + (base_speed * level_diff.into() * 3) / 10;
+        if speed < min_speed {
+            min_speed = speed;
+        }
+    }
+    min_speed
+}
 
-// // //     (build_fleet_struct(attackers), build_fleet_struct(defenders))
-// // // }
+// TODO: implement speed modifier.
+fn get_flight_time(speed: u32, distance: u32) -> u64 {
+    let f_speed = FixedTrait::new_unscaled(speed.into(), false);
+    let f_distance = FixedTrait::new_unscaled(distance.into(), false);
+    let multiplier = FixedTrait::new_unscaled(3510, false);
+    let res = multiplier
+        * FixedTrait::sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
+    res.mag / ONE
+}
 
-// // // fn perform_combat(mut attacker: Unit, mut defender: Unit) -> Unit {
-// // //     if attacker.weapon < (defender.shield / 100) {
-// // //         return defender;
-// // //     } else if attacker.weapon < defender.shield {
-// // //         defender.shield -= attacker.weapon;
-// // //     } else if defender.hull < attacker.weapon - defender.shield {
-// // //         defender.hull = 0;
-// // //         defender.exists = false;
-// // //     } else {
-// // //         let initial_hull = get_unit(defender.id).hull;
-// // //         defender.hull -= (attacker.weapon - defender.shield);
-// // //         if (defender.hull * 10000 / initial_hull) < 7500 {
-// // //             let prob = 10000 - (defender.hull * 10000 / initial_hull);
-// // //             let rand = IXoroshiroDispatcher { contract_address: RAND() }.next() % 10000;
-// // //             if (rand < prob.into()) {
-// // //                 defender.hull = 0;
-// // //                 defender.exists = false;
-// // //             }
-// // //         }
-// // //     }
-// // //     defender
-// // // }
-
-// // // fn rapid_fire(a: Unit, b: Unit) -> (bool, u8) {
-// // //     let rapid_fire = get_rapid_fire(a.id, b.id);
-// // //     (rapid_fire > 0, rapid_fire)
-// // // }
-
-// // // fn get_rapid_fire(a_id: u8, b_id: u8) -> u8 {
-// // //     if a_id == 0 {
-// // //         let rf = CARRIER_RF();
-// // //         return *rf.at(b_id.into());
-// // //     } else if a_id == 1 {
-// // //         return 0;
-// // //     } else if a_id == 2 {
-// // //         let rf = SCRAPER_RF();
-// // //         return *rf.at(b_id.into());
-// // //     } else if a_id == 3 {
-// // //         let rf = SPARROW_RF();
-// // //         return *rf.at(b_id.into());
-// // //     } else if a_id == 4 {
-// // //         let rf = FRIGATE_RF();
-// // //         return *rf.at(b_id.into());
-// // //     } else {
-// // //         let rf = ARMADE_RF();
-// // //         return *rf.at(b_id.into());
-// // //     }
-// // // }
-
-// // // fn get_unit(id: u8) -> Unit {
-// // //     if id == 0 {
-// // //         return CARRIER();
-// // //     } else if id == 1 {
-// // //         return SCRAPER();
-// // //     } else if id == 2 {
-// // //         return SPARROW();
-// // //     } else if id == 3 {
-// // //         return FRIGATE();
-// // //     } else {
-// // //         return ARMADE();
-// // //     }
-// // // }
-
-
+fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
+    if start.system == end.system {
+        if start.orbit > end.orbit {
+            let dis: u32 = (start.orbit - end.orbit).into();
+            return 1000 + 5 * dis;
+        } else {
+            let dis: u32 = (end.orbit - start.orbit).into();
+            return 1000 + 5 * dis;
+        }
+    } else {
+        if start.system > end.system {
+            let dis: u32 = (start.system - end.system).into();
+            return 2700 + 95 * dis;
+        } else {
+            let dis: u32 = (end.system - start.system).into();
+            return 2700 + 95 * dis;
+        }
+    }
+}

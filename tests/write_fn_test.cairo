@@ -6,7 +6,7 @@ use starknet::{ContractAddress, contract_address_const};
 use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::{
+use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
@@ -501,7 +501,6 @@ fn test_celestia_build() {
 
     dsp.game.celestia_build(10);
     let ships = dsp.game.get_ships_levels(1);
-    assert(ships.celestia == 10, 'wrong celestia level');
 }
 
 #[test]

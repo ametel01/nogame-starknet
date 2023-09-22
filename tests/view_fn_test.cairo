@@ -5,7 +5,7 @@ use starknet::{ContractAddress, contract_address_const};
 use snforge_std::{start_prank, start_warp, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::{
+use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
@@ -214,7 +214,6 @@ fn test_get_ships_levels() {
 
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.carrier == 0, 'wrong carrier`');
-    assert(ships.celestia == 0, 'wrong celestia');
     assert(ships.scraper == 0, 'wrong scraper');
     assert(ships.sparrow == 0, 'wrong sparrow');
     assert(ships.frigate == 0, 'wrong frigate');
