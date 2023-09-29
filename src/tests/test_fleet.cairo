@@ -1,7 +1,12 @@
-use snforge_std::{declare, ContractClassTrait, io::PrintTrait};
+use starknet::info::get_block_timestamp;
 
-use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition};
+use snforge_std::{declare, ContractClassTrait, io::PrintTrait, start_prank};
+
+use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s};
 use nogame::libraries::fleet;
+
+use nogame::tests::utils::{ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state};
 
 #[test]
 fn test_war_basic() {
@@ -148,5 +153,28 @@ fn test_get_debris() {
     before.carrier = 10;
     after.carrier = 0;
     let res = fleet::get_debris(before, after);
-    
+}
+
+#[test]
+fn test_send_fleet() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    advance_game_state(dsp.game);
+    dsp.game.carrier_build(1);
+
+    let player2_position = dsp.game.get_planet_position(1);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.n_ships = 1;
+    fleet.carrier = 1;
+    let cargo: ERC20s = Default::default();
+
+    dsp.game.send_fleet(fleet, player2_position, cargo);
+
+    dsp.game.get_mission_details(2, 1).print();
 }

@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
-    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris
+    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission
 };
 
 #[starknet::interface]
@@ -48,7 +48,7 @@ trait INoGame<TState> {
     fn astral_launcher_build(ref self: TState, quantity: u32);
     fn plasma_projector_build(ref self: TState, quantity: u32);
     // Fleet functions
-    fn send_fleet(ref self: TState, fleet: ShipsLevels, destination: PlanetPosition, cargo: Cargo);
+    fn send_fleet(ref self: TState, fleet: Fleet, destination: PlanetPosition, cargo: ERC20s);
     fn drop_resources(ref self: TState, mission_id: u8);
     fn attack_planet(ref self: TState, mission_id: u8);
     fn recall_fleet(ref self: TState, mission_id: u8);
@@ -71,4 +71,5 @@ trait INoGame<TState> {
     fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
     fn get_defences_cost(self: @TState) -> DefencesCost;
+    fn get_mission_details(self: @TState, planet_id: u16, mission_id: u8) -> Mission;
 }

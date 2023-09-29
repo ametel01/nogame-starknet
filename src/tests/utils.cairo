@@ -7,7 +7,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait};
+use snforge_std::{declare, ContractClassTrait, start_warp};
 
 const E18: u128 = 1000000000000000000;
 const HOUR: u64 = 3600;
@@ -72,4 +72,77 @@ fn init_game(dsp: Dispatchers) {
             dsp.tritium.contract_address,
             dsp.rand.contract_address
         )
+}
+
+fn advance_game_state(game: INoGameDispatcher) {
+    game.energy_plant_upgrade();
+    game.tritium_mine_upgrade();
+    start_warp(game.contract_address, HOUR * 2400000000);
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade();
+    game.dockyard_upgrade(); // dockyard #8
+    game.lab_upgrade();
+    game.lab_upgrade();
+    game.lab_upgrade();
+    game.lab_upgrade();
+    game.lab_upgrade();
+    game.lab_upgrade();
+    game.lab_upgrade(); // lab #7
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade();
+    game.energy_innovation_upgrade(); // energy #8
+    game.combustive_engine_upgrade();
+    game.combustive_engine_upgrade();
+    game.combustive_engine_upgrade();
+    game.combustive_engine_upgrade();
+    game.combustive_engine_upgrade();
+    game.combustive_engine_upgrade(); // combustive #6
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade();
+    game.beam_technology_upgrade(); // beam 10
+    game.shield_tech_upgrade();
+    game.shield_tech_upgrade();
+    game.shield_tech_upgrade();
+    game.shield_tech_upgrade();
+    game.shield_tech_upgrade(); // shield #5
+    game.spacetime_warp_upgrade();
+    game.spacetime_warp_upgrade();
+    game.spacetime_warp_upgrade(); // spacetime #3
+    game.warp_drive_upgrade();
+    game.warp_drive_upgrade();
+    game.warp_drive_upgrade();
+    game.warp_drive_upgrade(); // warp #4
+    game.ion_systems_upgrade();
+    game.ion_systems_upgrade();
+    game.ion_systems_upgrade();
+    game.ion_systems_upgrade();
+    game.ion_systems_upgrade(); // ion #5
+    game.thrust_propulsion_upgrade();
+    game.thrust_propulsion_upgrade();
+    game.thrust_propulsion_upgrade();
+    game.thrust_propulsion_upgrade(); // impulse #4
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade();
+    game.plasma_engineering_upgrade(); // plasma #7
 }

@@ -1,7 +1,9 @@
 use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
 use nogame::libraries::dockyard::Dockyard;
-use nogame::libraries::types::{TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition};
+use nogame::libraries::types::{
+    TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition
+};
 use debug::PrintTrait;
 
 fn CARRIER() -> Unit {
@@ -310,7 +312,7 @@ fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
         + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.quartz)
         + ((f_before.armade - f_after.armade).into() * costs.sparrow.quartz);
 
-    debris.steel = steel  / 3;
-    debris.quartz = quartz  / 3;
+    debris.steel = steel / 3;
+    debris.quartz = quartz / 3;
     debris
 }

@@ -5,12 +5,13 @@ mod NoGame {
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
         E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
-        ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris,
-        Mission, MAX_NUMBER_OF_PLANETS
+        ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Debris, Mission,
+        Fleet, MAX_NUMBER_OF_PLANETS
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
     use nogame::libraries::dockyard::Dockyard;
+    use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
@@ -24,7 +25,7 @@ mod NoGame {
         // General.
         number_of_planets: u16,
         planet_position: LegacyMap::<u16, PlanetPosition>,
-        position_raw_to_planet_id: LegacyMap::<u16, u16>,
+        position_to_planet_id: LegacyMap::<u16, u16>,
         planet_debris_field: LegacyMap::<u16, Debris>,
         universe_start_time: u64,
         resources_spent: LegacyMap::<u16, u128>,
@@ -69,7 +70,9 @@ mod NoGame {
         astral_launcher_available: LegacyMap::<u16, u32>,
         plasma_projector_available: LegacyMap::<u16, u32>,
         // Fleet
-        active_missions: LegacyMap::<u16, Mission>
+        active_missions: LegacyMap::<(u16, u8), Mission>,
+        active_missions_len: LegacyMap<u16, u8>,
+        hostile_missions: LegacyMap<u16, (PlanetPosition, u32)>,
     }
 
     #[event]
@@ -129,9 +132,8 @@ mod NoGame {
             let token_id = number_of_planets + 1;
             self.erc721.read().mint(to: caller, token_id: token_id.into());
             let position = self.calculate_planet_position(token_id);
-            let raw_position = self.get_raw_from_position(position);
             self.planet_position.write(token_id, position);
-            self.position_raw_to_planet_id.write(raw_position, token_id);
+            self.position_to_planet_id.write(self.get_raw_from_position(position), token_id);
             self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
@@ -560,8 +562,43 @@ mod NoGame {
         //                         Fleet Functions                                
         /////////////////////////////////////////////////////////////////////
         fn send_fleet(
-            ref self: ContractState, fleet: ShipsLevels, destination: PlanetPosition, cargo: Cargo
-        ) {}
+            ref self: ContractState, fleet: Fleet, destination: PlanetPosition, cargo: ERC20s
+        ) {
+            let destination_id = self
+                .position_to_planet_id
+                .read(self.get_raw_from_position(destination));
+            assert(!destination_id.is_zero(), 'no planet at destination');
+            let planet_id = self.get_owned_planet(get_caller_address());
+            self.check_enough_ships(planet_id, fleet);
+            // Calculate distance
+            let distance = fleet::get_distance(
+                self.calculate_planet_position(planet_id), destination
+            );
+            // Calculate time
+            let techs = self.get_tech_levels(planet_id);
+            let speed = fleet::get_fleet_speed(fleet, techs);
+            let travel_time = fleet::get_flight_time(speed, distance);
+            // Check numeber of mission
+            let active_missions = self.active_missions_len.read(planet_id);
+            assert(active_missions <= techs.digital + 1, 'max active missions');
+            // Write mission
+            let mission = Mission {
+                destination: self.get_position_slot_occupant(destination),
+                number_of_ships: fleet.n_ships,
+                time_arrival: get_block_timestamp() + travel_time
+            };
+            self.active_missions.write((planet_id, active_missions + 1), mission);
+            self.active_missions_len.write(planet_id, active_missions + 1);
+            // Write new fleet levels
+            self.fleet_leave_planet(planet_id, fleet);
+            self
+                .hostile_missions
+                .write(
+                    self.position_to_planet_id.read(self.get_raw_from_position(destination)),
+                    (self.get_planet_position(planet_id), fleet.n_ships)
+                );
+        }
+
         fn drop_resources(ref self: ContractState, mission_id: u8) {}
         fn attack_planet(ref self: ContractState, mission_id: u8) {}
         fn recall_fleet(ref self: ContractState, mission_id: u8) {}
@@ -582,7 +619,7 @@ mod NoGame {
         }
 
         fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u16 {
-            self.position_raw_to_planet_id.read(self.get_raw_from_position(position))
+            self.position_to_planet_id.read(self.get_raw_from_position(position))
         }
 
         fn get_debris_field(self: @ContractState, planet_id: u16) -> Debris {
@@ -719,6 +756,10 @@ mod NoGame {
                 plasma: ERC20s { steel: 50000, quartz: 50000, tritium: 30000 },
             }
         }
+
+        fn get_mission_details(self: @ContractState, planet_id: u16, mission_id: u8) -> Mission {
+            self.active_missions.read((planet_id, mission_id))
+        }
     }
 
     #[generate_trait]
@@ -729,10 +770,7 @@ mod NoGame {
             loop {
                 position.system = (rand.next() % 200 + 1).try_into().unwrap();
                 position.orbit = (rand.next() % 10 + 1).try_into().unwrap();
-                if self
-                    .position_raw_to_planet_id
-                    .read(self.get_raw_from_position(position))
-                    .is_zero() {
+                if self.position_to_planet_id.read(self.get_raw_from_position(position)).is_zero() {
                     break;
                 }
                 continue;
@@ -753,10 +791,6 @@ mod NoGame {
             position.system.into() * 10 + position.orbit.into()
         }
 
-        #[inline(always)]
-        fn extract_planet_position(raw_position: u64) -> (u64, u64) {
-            DivRem::div_rem(raw_position, 100_u64.try_into().unwrap())
-        }
 
         #[inline(always)]
         fn get_owned_planet(self: @ContractState, caller: ContractAddress) -> u16 {
@@ -1047,6 +1081,42 @@ mod NoGame {
                 weapons: weapons,
                 shield: shield
             }
+        }
+
+        fn fleet_leave_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+            if fleet.carrier > 0 {
+                self
+                    .carrier_available
+                    .write(planet_id, self.carrier_available.read(planet_id) - fleet.carrier);
+            }
+            if fleet.scraper > 0 {
+                self
+                    .scraper_available
+                    .write(planet_id, self.scraper_available.read(planet_id) - fleet.scraper);
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .sparrow_available
+                    .write(planet_id, self.sparrow_available.read(planet_id) - fleet.sparrow);
+            }
+            if fleet.frigate > 0 {
+                self
+                    .frigate_available
+                    .write(planet_id, self.frigate_available.read(planet_id) - fleet.frigate);
+            }
+            if fleet.armade > 0 {
+                self
+                    .armade_available
+                    .write(planet_id, self.armade_available.read(planet_id) - fleet.armade);
+            }
+        }
+
+        fn check_enough_ships(self: @ContractState, planet_id: u16, fleet: Fleet) {
+            assert(self.carrier_available.read(planet_id) >= fleet.carrier, 'not enough carrier-');
+            assert(self.scraper_available.read(planet_id) >= fleet.scraper, 'not enough scrapers');
+            assert(self.sparrow_available.read(planet_id) >= fleet.sparrow, 'not enough sparrows');
+            assert(self.frigate_available.read(planet_id) >= fleet.frigate, 'not enough frigates');
+            assert(self.armade_available.read(planet_id) >= fleet.armade, 'not enough armades');
         }
     }
 }

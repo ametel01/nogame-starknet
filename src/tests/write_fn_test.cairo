@@ -752,11 +752,11 @@ fn test_plasma_build() {
     dsp.game.dockyard_upgrade();
     dsp.game.dockyard_upgrade();
     dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
+    dsp.game.dockyard_upgrade(); // dockyard #8
     dsp.game.lab_upgrade();
     dsp.game.lab_upgrade();
     dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
+    dsp.game.lab_upgrade(); // lab #4
     dsp.game.energy_innovation_upgrade();
     dsp.game.energy_innovation_upgrade();
     dsp.game.energy_innovation_upgrade();
@@ -764,7 +764,7 @@ fn test_plasma_build() {
     dsp.game.energy_innovation_upgrade();
     dsp.game.energy_innovation_upgrade();
     dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_innovation_upgrade(); // energy #8
     dsp.game.beam_technology_upgrade();
     dsp.game.beam_technology_upgrade();
     dsp.game.beam_technology_upgrade();
@@ -774,19 +774,19 @@ fn test_plasma_build() {
     dsp.game.beam_technology_upgrade();
     dsp.game.beam_technology_upgrade();
     dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
+    dsp.game.beam_technology_upgrade(); // beam 10
     dsp.game.ion_systems_upgrade();
     dsp.game.ion_systems_upgrade();
     dsp.game.ion_systems_upgrade();
     dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
+    dsp.game.ion_systems_upgrade(); // ion #5
     dsp.game.plasma_engineering_upgrade();
     dsp.game.plasma_engineering_upgrade();
     dsp.game.plasma_engineering_upgrade();
     dsp.game.plasma_engineering_upgrade();
     dsp.game.plasma_engineering_upgrade();
     dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
+    dsp.game.plasma_engineering_upgrade(); // plasma #7
 
     dsp.game.plasma_projector_build(10);
     let def = dsp.game.get_defences_levels(1);

@@ -14,7 +14,7 @@ struct Tokens {
     tritium: ContractAddress,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde)]
 struct ERC20s {
     steel: u128,
     quartz: u128,
@@ -178,7 +178,7 @@ impl DebrisPrint of PrintTrait<Debris> {
     }
 }
 
-#[derive(Default, Drop, Copy, PartialEq)]
+#[derive(Default, Drop, Copy, PartialEq, Serde)]
 struct Fleet {
     n_ships: u32,
     carrier: u32,
@@ -216,8 +216,15 @@ impl PrintUnit of PrintTrait<Unit> {
 
 #[derive(Copy, Default, Drop, Serde, starknet::Store)]
 struct Mission {
-    origin: u16,
     destination: u16,
     number_of_ships: u32,
     time_arrival: u64,
+}
+
+impl MissionPrint of PrintTrait<Mission> {
+    fn print(self: Mission) {
+        self.destination.print();
+        self.number_of_ships.print();
+        self.time_arrival.print();
+    }
 }
