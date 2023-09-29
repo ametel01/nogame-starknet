@@ -1,21 +1,20 @@
 [package]
 name = "nogame"
 version = "0.1.0"
-cairo-version = "2.2.0"
+cairo-version = ">=2.2.0"
 authors = ["ametel01"]
 license = "MIT"
 
 [dependencies]
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", branch = "cairo-2" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.6.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.7.1" }
 xoroshiro = { git ="https://github.com/ametel01/xoroshiro-cairo.git" }
 cubit = {git ="https://github.com/influenceth/cubit.git", rev="41bdf71"}
-starknet = "2.2.0"
+starknet = ">=2.2.0"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
 build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "xoroshiro::xoroshiro::Xoroshiro" ]
 sierra = true
 casm = true
-
 

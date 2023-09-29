@@ -19,8 +19,13 @@ mod token {
     mod erc721;
 }
 
-#[cfg(test)]
-mod test {
+mod tests {
+    mod compounds_cost_test;
+    mod mines_cost_test;
+    mod mines_production_test;
+    mod test_fleet;
+    mod view_fn_test;
+    mod write_fn_test;
     mod utils;
 }
 

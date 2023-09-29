@@ -1,6 +1,7 @@
 use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
-use nogame::libraries::types::{TechLevels, Debris, Fleet, Unit, UnitTrait, PlanetPosition};
+use nogame::libraries::dockyard::Dockyard;
+use nogame::libraries::types::{TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition};
 use debug::PrintTrait;
 
 fn CARRIER() -> Unit {
@@ -292,4 +293,24 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
             return 2700 + 95 * dis;
         }
     }
+}
+
+fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
+    let mut debris: Debris = Default::default();
+    let costs = Dockyard::get_ships_unit_cost();
+    let steel = ((f_before.carrier - f_after.carrier).into() * costs.carrier.steel)
+        + ((f_before.scraper - f_after.scraper).into() * costs.scraper.steel)
+        + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.steel)
+        + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.steel)
+        + ((f_before.armade - f_after.armade).into() * costs.sparrow.steel);
+
+    let quartz = ((f_before.carrier - f_after.carrier).into() * costs.carrier.quartz)
+        + ((f_before.scraper - f_after.scraper).into() * costs.scraper.quartz)
+        + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.quartz)
+        + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.quartz)
+        + ((f_before.armade - f_after.armade).into() * costs.sparrow.quartz);
+
+    debris.steel = steel  / 3;
+    debris.quartz = quartz  / 3;
+    debris
 }

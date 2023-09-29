@@ -1,7 +1,9 @@
-use snforge_std::PrintTrait;
+use snforge_std::io::PrintTrait;
+
 use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
+const MAX_NUMBER_OF_PLANETS: u16 = 1000;
 
 
 #[derive(Copy, Drop, Serde)]
@@ -163,10 +165,17 @@ struct Cargo {
     tritium: u128,
 }
 
-#[derive(Copy, Drop, Serde, starknet::Store)]
+#[derive(Copy, Default, Drop, Serde, starknet::Store)]
 struct Debris {
-    steel: u64,
-    quartz: u64
+    steel: u128,
+    quartz: u128
+}
+
+impl DebrisPrint of PrintTrait<Debris> {
+    fn print(self: Debris) {
+        self.steel.print();
+        self.quartz.print();
+    }
 }
 
 #[derive(Default, Drop, Copy, PartialEq)]

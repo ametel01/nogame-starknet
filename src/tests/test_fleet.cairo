@@ -1,4 +1,4 @@
-use snforge_std::{declare, ContractClassTrait, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, io::PrintTrait};
 
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition};
 use nogame::libraries::fleet;
@@ -121,10 +121,9 @@ fn test_distance() {
     end.orbit = 2;
     assert(fleet::get_distance(start, end) == 1005, 'wrong distance 1005');
 
-
     end.orbit = 10;
     assert(fleet::get_distance(start, end) == 1045, 'wrong distance 1045');
-    
+
     start.system = 1;
     end.system = 2;
     assert(fleet::get_distance(start, end) == 2795, 'wrong distance 2795');
@@ -140,4 +139,14 @@ fn test_distance() {
     start.system = 241;
     end.system = 5;
     assert(fleet::get_distance(start, end) == 25120, 'wrong distance 25120');
+}
+
+#[test]
+fn test_get_debris() {
+    let mut before: Fleet = Default::default();
+    let mut after: Fleet = Default::default();
+    before.carrier = 10;
+    after.carrier = 0;
+    let res = fleet::get_debris(before, after);
+    
 }

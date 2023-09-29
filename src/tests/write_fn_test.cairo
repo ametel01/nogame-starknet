@@ -3,7 +3,7 @@ use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, io::PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -11,7 +11,7 @@ use nogame::libraries::types::{
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
-use nogame::test::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
 fn test_generate() {
@@ -47,18 +47,18 @@ fn test_planet_position() {
         contract_address_const::<4>(),
         contract_address_const::<5>(),
     ];
-    let mut len = 0;
+    let mut len = 1;
     loop {
-        if len == 5 {
+        if len == 10 {
             break;
         }
-        start_prank(dsp.game.contract_address, *addresses.at(len));
+        start_prank(dsp.game.contract_address, len.try_into().unwrap());
         dsp.game.generate_planet();
-        let position = dsp.game.get_planet_position((len + 1).try_into().unwrap());
+        let position = dsp.game.get_planet_position((len).try_into().unwrap());
         assert(position.system <= 200, 'system out of bound');
         assert(position.orbit <= 10, 'orbit out of bound');
         len += 1;
-    }
+    };
 }
 
 #[test]

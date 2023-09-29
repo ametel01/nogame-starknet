@@ -6,7 +6,7 @@ mod NoGame {
     use nogame::libraries::types::{
         E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
         ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris,
-        Mission
+        Mission, MAX_NUMBER_OF_PLANETS
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -124,13 +124,15 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
-            let token_id = self.number_of_planets.read() + 1;
+            let number_of_planets = self.number_of_planets.read();
+            assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
+            let token_id = number_of_planets + 1;
             self.erc721.read().mint(to: caller, token_id: token_id.into());
             let position = self.calculate_planet_position(token_id);
             let raw_position = self.get_raw_from_position(position);
             self.planet_position.write(token_id, position);
             self.position_raw_to_planet_id.write(raw_position, token_id);
-            self.number_of_planets.write(token_id);
+            self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
         }
