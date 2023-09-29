@@ -1,0 +1,20 @@
+name: Test
+
+on: [push, pull_request]
+
+env:
+  SCARB_VERSION: 0.7.0
+  STARKNET_FOUNDRY_VERSION: 0.7.1
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "0.7.0"
+      - name: Install starknet foundry
+        run: curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh -s -- -v ${STARKNET_FOUNDRY_VERSION}
+      - name: Run cairo tests
+        run: snforge
