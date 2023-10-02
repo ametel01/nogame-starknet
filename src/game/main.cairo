@@ -18,7 +18,7 @@ mod NoGame {
 
     use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-    use debug::PrintTrait;
+    use snforge_std::io::PrintTrait;
 
     #[storage]
     struct Storage {
@@ -561,47 +561,113 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Fleet Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn send_fleet(
-            ref self: ContractState, fleet: Fleet, destination: PlanetPosition, cargo: ERC20s
-        ) {
+        fn send_fleet(ref self: ContractState, f: Fleet, destination: PlanetPosition) {
             let destination_id = self
                 .position_to_planet_id
                 .read(self.get_raw_from_position(destination));
             assert(!destination_id.is_zero(), 'no planet at destination');
-            let planet_id = self.get_owned_planet(get_caller_address());
-            self.check_enough_ships(planet_id, fleet);
+            let caller = get_caller_address();
+            let planet_id = self.get_owned_planet(caller);
+            self.check_enough_ships(planet_id, f);
             // Calculate distance
             let distance = fleet::get_distance(
                 self.calculate_planet_position(planet_id), destination
             );
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
-            let speed = fleet::get_fleet_speed(fleet, techs);
+            let speed = fleet::get_fleet_speed(f, techs);
             let travel_time = fleet::get_flight_time(speed, distance);
             // Check numeber of mission
             let active_missions = self.active_missions_len.read(planet_id);
             assert(active_missions <= techs.digital + 1, 'max active missions');
+            // Pay for fuel
+            let consumption = fleet::get_fuel_consumption(f, distance);
+            let mut cost: ERC20s = Default::default();
+            cost.tritium = consumption;
+            self.check_enough_resources(caller, cost);
+            self.pay_resources_erc20(caller, cost);
             // Write mission
+            let time_now = get_block_timestamp();
             let mission = Mission {
+                time_start: time_now,
                 destination: self.get_position_slot_occupant(destination),
-                number_of_ships: fleet.n_ships,
-                time_arrival: get_block_timestamp() + travel_time
+                time_arrival: time_now + travel_time,
+                fleet: f,
+                is_return: false
             };
             self.active_missions.write((planet_id, active_missions + 1), mission);
             self.active_missions_len.write(planet_id, active_missions + 1);
             // Write new fleet levels
-            self.fleet_leave_planet(planet_id, fleet);
+            self.fleet_leave_planet(planet_id, f);
             self
                 .hostile_missions
                 .write(
                     self.position_to_planet_id.read(self.get_raw_from_position(destination)),
-                    (self.get_planet_position(planet_id), fleet.n_ships)
+                    (self.get_planet_position(planet_id), fleet::calculate_number_of_ships(f))
                 );
         }
 
-        fn drop_resources(ref self: ContractState, mission_id: u8) {}
-        fn attack_planet(ref self: ContractState, mission_id: u8) {}
-        fn recall_fleet(ref self: ContractState, mission_id: u8) {}
+        fn dock_fleet(ref self: ContractState, mission_id: u8) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mut mission = self.active_missions.read((origin, mission_id));
+            assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
+            self.fleet_return_planet(origin, mission.fleet);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
+        }
+
+        fn attack_planet(ref self: ContractState, mission_id: u8) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mut mission = self.active_missions.read((origin, mission_id));
+            let time_now = get_block_timestamp();
+            assert(time_now >= mission.time_arrival, 'destination not reached yet');
+            let defender_fleet = self.get_ships_levels(mission.destination);
+            let t1 = self.get_tech_levels(origin);
+            let t2 = self.get_tech_levels(mission.destination);
+            let (f1, f2) = fleet::war(mission.fleet, t1, defender_fleet, t2);
+            // calculate debris and update field
+            let debris1 = fleet::get_debris(mission.fleet, f1);
+            let debris2 = fleet::get_debris(defender_fleet, f2);
+            let total_debris = debris1 + debris2;
+            let current_debries_field = self.planet_debris_field.read(mission.destination);
+            self
+                .planet_debris_field
+                .write(mission.destination, current_debries_field + total_debris);
+            self.update_fleet_levels_after_attack(mission.destination, f2);
+            if f1.is_zero() {
+                self.active_missions.write((origin, mission_id), Zeroable::zero());
+            } else {
+                let collectible = self.get_collectible_resources(mission.destination);
+                let spendable = self.get_spendable_resources(mission.destination);
+                let loot_amount = fleet::calculate_loot(spendable);
+                'loot amount'.print();
+                loot_amount.print();
+                'collectible'.print();
+                collectible.print();
+                self.resources_timer.write(mission.destination, time_now);
+                self
+                    .pay_resources_erc20(
+                        self.erc721.read().owner_of(mission.destination.into()), loot_amount
+                    );
+                self.receive_resources_erc20(get_caller_address(), loot_amount + collectible);
+                mission.fleet = f1;
+                let time_travel = mission.time_arrival - mission.time_start;
+                mission.time_arrival = time_now + time_travel;
+                mission.is_return = true;
+                self.active_missions.write((origin, mission_id), mission);
+            }
+        }
+
+        fn recall_fleet(ref self: ContractState, mission_id: u8) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mut mission = self.active_missions.read((origin, mission_id));
+            assert(!mission.is_zero(), 'no fleet to recall');
+            assert(!mission.is_return, 'mission already returning');
+            let time_now = get_block_timestamp();
+            let time_travel = time_now - mission.time_start;
+            mission.time_arrival = time_now + time_travel;
+            mission.is_return = true;
+            self.active_missions.write((origin, mission_id), mission);
+        }
 
         /////////////////////////////////////////////////////////////////////
         //                         View Functions                                
@@ -718,13 +784,13 @@ mod NoGame {
             self.techs_cost(techs)
         }
 
-        fn get_ships_levels(self: @ContractState, planet_id: u16) -> ShipsLevels {
-            ShipsLevels {
+        fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
+            Fleet {
                 carrier: self.carrier_available.read(planet_id),
                 scraper: self.scraper_available.read(planet_id),
                 sparrow: self.sparrow_available.read(planet_id),
                 frigate: self.frigate_available.read(planet_id),
-                armade: self.armade_available.read(planet_id)
+                armade: self.armade_available.read(planet_id),
             }
         }
 
@@ -926,7 +992,7 @@ mod NoGame {
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: ERC20s) {
             self.steel.read().mint(to, (amounts.steel * E18).into());
             self.quartz.read().mint(to, (amounts.quartz * E18).into());
-            self.tritium.read().mint(to, (amounts.tritium * E18).into())
+            self.tritium.read().mint(to, (amounts.tritium * E18).into());
         }
 
         /// Burns the specified amount of ERC20 tokens from the given account.
@@ -950,7 +1016,15 @@ mod NoGame {
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
             self.steel.read().burn(account, (amounts.steel * E18).into());
             self.quartz.read().burn(account, (amounts.quartz * E18).into());
-            self.tritium.read().burn(account, (amounts.tritium * E18).into())
+            self.tritium.read().burn(account, (amounts.tritium * E18).into());
+        }
+
+        fn receive_loot_erc20(
+            self: @ContractState, from: ContractAddress, to: ContractAddress, amounts: ERC20s
+        ) {
+            self.steel.read().transfer_from(from, to, (amounts.steel * E18).into());
+            self.quartz.read().transfer_from(from, to, (amounts.quartz * E18).into());
+            self.tritium.read().transfer_from(from, to, (amounts.tritium * E18).into());
         }
 
         /// Checks if the caller has enough resources based on the provided amounts of ERC20 tokens.
@@ -1111,12 +1185,48 @@ mod NoGame {
             }
         }
 
+        fn fleet_return_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+            if fleet.carrier > 0 {
+                self
+                    .carrier_available
+                    .write(planet_id, self.carrier_available.read(planet_id) + fleet.carrier);
+            }
+            if fleet.scraper > 0 {
+                self
+                    .scraper_available
+                    .write(planet_id, self.scraper_available.read(planet_id) + fleet.scraper);
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .sparrow_available
+                    .write(planet_id, self.sparrow_available.read(planet_id) + fleet.sparrow);
+            }
+            if fleet.frigate > 0 {
+                self
+                    .frigate_available
+                    .write(planet_id, self.frigate_available.read(planet_id) + fleet.frigate);
+            }
+            if fleet.armade > 0 {
+                self
+                    .armade_available
+                    .write(planet_id, self.armade_available.read(planet_id) + fleet.armade);
+            }
+        }
+
         fn check_enough_ships(self: @ContractState, planet_id: u16, fleet: Fleet) {
             assert(self.carrier_available.read(planet_id) >= fleet.carrier, 'not enough carrier-');
             assert(self.scraper_available.read(planet_id) >= fleet.scraper, 'not enough scrapers');
             assert(self.sparrow_available.read(planet_id) >= fleet.sparrow, 'not enough sparrows');
             assert(self.frigate_available.read(planet_id) >= fleet.frigate, 'not enough frigates');
             assert(self.armade_available.read(planet_id) >= fleet.armade, 'not enough armades');
+        }
+
+        fn update_fleet_levels_after_attack(ref self: ContractState, planet_id: u16, f: Fleet) {
+            self.carrier_available.write(planet_id, f.carrier);
+            self.scraper_available.write(planet_id, f.scraper);
+            self.sparrow_available.write(planet_id, f.sparrow);
+            self.frigate_available.write(planet_id, f.frigate);
+            self.armade_available.write(planet_id, f.armade);
         }
     }
 }

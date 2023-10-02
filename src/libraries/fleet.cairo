@@ -1,44 +1,30 @@
 use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
-use nogame::libraries::dockyard::Dockyard;
+use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
-    TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition
+    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition
 };
-use debug::PrintTrait;
+use snforge_std::io::PrintTrait;
 
 fn CARRIER() -> Unit {
-    Unit {
-        id: 0, weapon: 10, shield: 50, hull: 400, speed: 5000, cargo: 5000, fuel_consumption: 10
-    }
+    Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 5000, consumption: 10 }
 }
 
 fn SCRAPER() -> Unit {
-    Unit {
-        id: 1, weapon: 2, shield: 100, hull: 1600, speed: 2000, cargo: 20000, fuel_consumption: 300
-    }
+    Unit { id: 1, weapon: 50, shield: 100, hull: 1600, speed: 2000, cargo: 20000, consumption: 300 }
 }
 
 fn SPARROW() -> Unit {
-    Unit {
-        id: 2, weapon: 250, shield: 50, hull: 800, speed: 12500, cargo: 50, fuel_consumption: 20
-    }
+    Unit { id: 2, weapon: 250, shield: 10, hull: 1000, speed: 12500, cargo: 50, consumption: 20 }
 }
 
 fn FRIGATE() -> Unit {
-    Unit {
-        id: 3, weapon: 800, shield: 100, hull: 5000, speed: 15000, cargo: 800, fuel_consumption: 300
-    }
+    Unit { id: 3, weapon: 400, shield: 50, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 fn ARMADE() -> Unit {
     Unit {
-        id: 4,
-        weapon: 1500,
-        shield: 200,
-        hull: 9000,
-        speed: 10000,
-        cargo: 1500,
-        fuel_consumption: 500
+        id: 4, weapon: 1000, shield: 200, hull: 15000, speed: 10000, cargo: 1500, consumption: 500
     }
 }
 
@@ -127,31 +113,26 @@ fn build_fleet_struct(mut a: Array<Unit>) -> Fleet {
         if u.id == 0 {
             if u.hull > 0 {
                 fleet.carrier += 1;
-                fleet.n_ships += 1;
             }
         }
         if u.id == 1 {
             if u.hull > 0 {
                 fleet.scraper += 1;
-                fleet.n_ships += 1;
             }
         }
         if u.id == 2 {
             if u.hull > 0 {
                 fleet.sparrow += 1;
-                fleet.n_ships += 1;
             }
         }
         if u.id == 3 {
             if u.hull > 0 {
                 fleet.frigate += 1;
-                fleet.n_ships += 1;
             }
         }
         if u.id == 4 {
             if u.hull > 0 {
                 fleet.armade += 1;
-                fleet.n_ships += 1;
             }
         }
         continue;
@@ -159,10 +140,15 @@ fn build_fleet_struct(mut a: Array<Unit>) -> Fleet {
     fleet
 }
 
+fn calculate_number_of_ships(fleet: Fleet) -> u32 {
+    fleet.carrier + fleet.scraper + fleet.sparrow + fleet.frigate + fleet.armade
+}
+
 fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
     let mut array: Array<Unit> = array![];
+    let mut n_ships = calculate_number_of_ships(fleet);
     loop {
-        if fleet.n_ships == 0 {
+        if n_ships == 0 {
             break;
         }
         if fleet.armade > 0 {
@@ -171,7 +157,7 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             ship.shield += ship.shield * techs.shield.into() / 10;
             ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
-            fleet.n_ships -= 1;
+            n_ships -= 1;
             fleet.armade -= 1;
         }
         if fleet.frigate > 0 {
@@ -180,7 +166,7 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             ship.shield += ship.shield * techs.shield.into() / 10;
             ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
-            fleet.n_ships -= 1;
+            n_ships -= 1;
             fleet.frigate -= 1;
         }
         if fleet.sparrow > 0 {
@@ -189,7 +175,7 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             ship.shield += ship.shield * techs.shield.into() / 10;
             ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
-            fleet.n_ships -= 1;
+            n_ships -= 1;
             fleet.sparrow -= 1;
         }
         if fleet.scraper > 0 {
@@ -198,7 +184,7 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             ship.shield += ship.shield * techs.shield.into() / 10;
             ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
-            fleet.n_ships -= 1;
+            n_ships -= 1;
             fleet.scraper -= 1;
         }
         if fleet.carrier > 0 {
@@ -207,7 +193,7 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             ship.shield += ship.shield * techs.shield.into() / 10;
             ship.hull += ship.hull * techs.armour.into() / 10;
             array.append(ship);
-            fleet.n_ships -= 1;
+            n_ships -= 1;
             fleet.carrier -= 1;
         }
         let a = 0;
@@ -258,7 +244,7 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
     }
     if fleet.armade > 0 {
         let base_speed = ARMADE().speed;
-        let level_diff = techs.spacetime - 4;
+        let level_diff = techs.spacetime - 3;
         let speed = base_speed + (base_speed * level_diff.into() * 3) / 10;
         if speed < min_speed {
             min_speed = speed;
@@ -275,6 +261,20 @@ fn get_flight_time(speed: u32, distance: u32) -> u64 {
     let res = multiplier
         * FixedTrait::sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
     res.mag / ONE
+}
+
+fn get_unit_consumption(ship: Unit, distance: u32) -> u128 {
+    // TODO: when speed variation is available tweak this formula
+    // https://ogame.fandom.com/wiki/Fuel_Consumption?so=search
+    (ship.consumption * distance / 35000).into()
+}
+
+fn get_fuel_consumption(f: Fleet, distance: u32) -> u128 {
+    f.carrier.into() * get_unit_consumption(CARRIER(), distance)
+        + f.scraper.into() * get_unit_consumption(SCRAPER(), distance)
+        + f.sparrow.into() * get_unit_consumption(SPARROW(), distance)
+        + f.frigate.into() * get_unit_consumption(FRIGATE(), distance)
+        + f.armade.into() * get_unit_consumption(ARMADE(), distance)
 }
 
 fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
@@ -315,4 +315,10 @@ fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
     debris.steel = steel / 3;
     debris.quartz = quartz / 3;
     debris
+}
+
+fn calculate_loot(spendable: ERC20s) -> ERC20s {
+    ERC20s {
+        steel: spendable.steel / 2, quartz: spendable.quartz / 2, tritium: spendable.tritium / 2,
+    }
 }

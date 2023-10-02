@@ -48,8 +48,8 @@ trait INoGame<TState> {
     fn astral_launcher_build(ref self: TState, quantity: u32);
     fn plasma_projector_build(ref self: TState, quantity: u32);
     // Fleet functions
-    fn send_fleet(ref self: TState, fleet: Fleet, destination: PlanetPosition, cargo: ERC20s);
-    fn drop_resources(ref self: TState, mission_id: u8);
+    fn send_fleet(ref self: TState, f: Fleet, destination: PlanetPosition);
+    fn dock_fleet(ref self: TState, mission_id: u8);
     fn attack_planet(ref self: TState, mission_id: u8);
     fn recall_fleet(ref self: TState, mission_id: u8);
     // View functions
@@ -67,7 +67,7 @@ trait INoGame<TState> {
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
     fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
     fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
-    fn get_ships_levels(self: @TState, planet_id: u16) -> ShipsLevels;
+    fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
     fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
     fn get_defences_cost(self: @TState) -> DefencesCost;

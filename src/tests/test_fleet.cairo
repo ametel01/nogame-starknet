@@ -1,36 +1,35 @@
 use starknet::info::get_block_timestamp;
 
-use snforge_std::{declare, ContractClassTrait, io::PrintTrait, start_prank};
+use snforge_std::{declare, ContractClassTrait, io::PrintTrait, start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s};
 use nogame::libraries::fleet;
 
-use nogame::tests::utils::{ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state};
+use nogame::tests::utils::{
+    ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR
+};
 
 #[test]
 fn test_war_basic() {
     let mut attackers: Fleet = Default::default();
     let mut defenders: Fleet = Default::default();
     let (res1, res2) = fleet::war(attackers, Default::default(), defenders, Default::default());
-    res1.n_ships.print();
-    res2.n_ships.print();
 }
 #[test]
 fn test_cargo_speed() {
     let mut fleet: Fleet = Default::default();
     let mut techs: TechLevels = Default::default();
     fleet.carrier = 1;
-    assert(fleet::get_fleet_speed(fleet, techs) == 5000, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 5000, 'wrong_speed 5000');
     techs.combustion = 1;
-    assert(fleet::get_fleet_speed(fleet, techs) == 5500, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 5500, 'wrong_speed 5500');
     techs.combustion = 9;
-    assert(fleet::get_fleet_speed(fleet, techs) == 9500, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 9500, 'wrong_speed 9500');
     techs.thrust = 4;
-    assert(fleet::get_fleet_speed(fleet, techs) == 10000, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 10000, 'wrong_speed 10000');
     techs.thrust = 8;
-    fleet::get_fleet_speed(fleet, techs).print();
-    assert(fleet::get_fleet_speed(fleet, techs) == 18000, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 18000, 'wrong_speed 18000');
 }
 
 #[test]
@@ -75,12 +74,13 @@ fn test_armade_speed() {
     let mut fleet: Fleet = Default::default();
     let mut techs: TechLevels = Default::default();
     fleet.armade = 1;
-    techs.spacetime = 4;
+    techs.spacetime = 3;
     assert(fleet::get_fleet_speed(fleet, techs) == 10000, 'wrong_speed');
     techs.spacetime = 5;
-    assert(fleet::get_fleet_speed(fleet, techs) == 13000, 'wrong_speed');
+    assert(fleet::get_fleet_speed(fleet, techs) == 16000, 'wrong_speed');
     techs.spacetime = 9;
-    assert(fleet::get_fleet_speed(fleet, techs) == 25000, 'wrong_speed');
+    fleet::get_fleet_speed(fleet, techs).print();
+    assert(fleet::get_fleet_speed(fleet, techs) == 28000, 'wrong_speed');
 }
 
 #[test]
@@ -147,6 +147,14 @@ fn test_distance() {
 }
 
 #[test]
+fn test_fuel_consumption() {
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+    fleet.armade = 1;
+    fleet::get_fuel_consumption(fleet, 2700);
+}
+
+#[test]
 fn test_get_debris() {
     let mut before: Fleet = Default::default();
     let mut after: Fleet = Default::default();
@@ -164,17 +172,76 @@ fn test_send_fleet() {
     dsp.game.generate_planet();
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
-    advance_game_state(dsp.game);
+    build_basic_mines(dsp.game, 1);
+    advance_game_state(dsp.game, 1);
     dsp.game.carrier_build(1);
+    dsp.game.scraper_build(1);
+    dsp.game.sparrow_build(1);
+    dsp.game.frigate_build(1);
+    dsp.game.armade_build(1);
 
-    let player2_position = dsp.game.get_planet_position(1);
+    let p2_position = dsp.game.get_planet_position(1);
 
     let mut fleet: Fleet = Default::default();
-    fleet.n_ships = 1;
     fleet.carrier = 1;
-    let cargo: ERC20s = Default::default();
+    fleet.scraper = 1;
+    fleet.sparrow = 1;
+    fleet.frigate = 1;
+    fleet.armade = 1;
 
-    dsp.game.send_fleet(fleet, player2_position, cargo);
+    assert(dsp.game.get_ships_levels(2).carrier == 1, 'wrong ships before');
+    assert(dsp.game.get_ships_levels(2).scraper == 1, 'wrong ships before');
+    assert(dsp.game.get_ships_levels(2).sparrow == 1, 'wrong ships before');
+    assert(dsp.game.get_ships_levels(2).frigate == 1, 'wrong ships before');
+    assert(dsp.game.get_ships_levels(2).armade == 1, 'wrong ships before');
+
+    dsp.game.send_fleet(fleet, p2_position);
+    assert(dsp.game.get_ships_levels(2).carrier == 0, 'wrong ships after');
+    assert(dsp.game.get_ships_levels(2).scraper == 0, 'wrong ships after');
+    assert(dsp.game.get_ships_levels(2).sparrow == 0, 'wrong ships after');
+    assert(dsp.game.get_ships_levels(2).frigate == 0, 'wrong ships after');
+    assert(dsp.game.get_ships_levels(2).armade == 0, 'wrong ships after');
 
     dsp.game.get_mission_details(2, 1).print();
+}
+
+#[test]
+fn test_attack_planet() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game, 1);
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game, 5);
+    advance_game_state(dsp.game, 2);
+    // dsp.game.carrier_build(100);
+    dsp.game.frigate_build(20);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    advance_game_state(dsp.game, 4);
+    dsp.game.sparrow_build(100);
+    dsp.game.armade_build(5);
+    let p2_position = dsp.game.get_planet_position(2);
+    let mut fleet_a: Fleet = Default::default();
+    // fleet_a.sparrow = 100;
+    fleet_a.armade = 5;
+    dsp.game.send_fleet(fleet_a, p2_position);
+    let mission = dsp.game.get_mission_details(1, 1);
+    // dsp.game.get_ships_levels(1).print();
+    start_warp(dsp.game.contract_address, mission.time_arrival + 1);
+    dsp.game.get_spendable_resources(1).print();
+    // dsp.game.get_collectible_resources(2).print();
+    // dsp.game.get_collectible_resources(1).print();
+    dsp.game.attack_planet(1);
+    // dsp.game.get_spendable_resources(2).print();
+    // dsp.game.get_collectible_resources(2).print();
+    dsp.game.get_spendable_resources(1).print();
+    let mission = dsp.game.get_mission_details(1, 1);
+    start_warp(dsp.game.contract_address, mission.time_arrival + 1);
+    dsp.game.dock_fleet(1);
+// dsp.game.get_ships_levels(1).print();
+// dsp.game.get_debris_field(2).print();
+// dsp.game.get_mission_details(1, 1).print();
 }

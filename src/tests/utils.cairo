@@ -1,5 +1,5 @@
 use array::ArrayTrait;
-use starknet::{ContractAddress, contract_address_const};
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
 
@@ -7,10 +7,13 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_warp};
+use snforge_std::{declare, ContractClassTrait, start_warp, io::PrintTrait};
 
 const E18: u128 = 1000000000000000000;
 const HOUR: u64 = 3600;
+const DAY: u64 = 86400;
+const WEEK: u64 = 604800;
+const YEAR: u64 = 31557600;
 
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
@@ -74,10 +77,32 @@ fn init_game(dsp: Dispatchers) {
         )
 }
 
-fn advance_game_state(game: INoGameDispatcher) {
+fn build_basic_mines(game: INoGameDispatcher, multiplier: u64) {
+    start_warp(game.contract_address, WEEK * multiplier);
+    game.energy_plant_upgrade();
+    game.energy_plant_upgrade();
+    game.steel_mine_upgrade();
+    game.steel_mine_upgrade();
+    game.quartz_mine_upgrade();
+    start_warp(game.contract_address, WEEK * 2 * multiplier);
+    game.energy_plant_upgrade();
+    game.energy_plant_upgrade();
+    game.energy_plant_upgrade();
+    game.quartz_mine_upgrade();
+    game.quartz_mine_upgrade();
+    game.quartz_mine_upgrade();
+    start_warp(game.contract_address, WEEK * 3 * multiplier);
+    game.tritium_mine_upgrade();
+    start_warp(game.contract_address, WEEK * 4 * multiplier);
+    game.tritium_mine_upgrade();
+    game.tritium_mine_upgrade();
     game.energy_plant_upgrade();
     game.tritium_mine_upgrade();
-    start_warp(game.contract_address, HOUR * 2400000000);
+    game.steel_mine_upgrade();
+}
+
+fn advance_game_state(game: INoGameDispatcher, multiplier: u64) {
+    start_warp(game.contract_address, YEAR * multiplier);
     game.dockyard_upgrade();
     game.dockyard_upgrade();
     game.dockyard_upgrade();

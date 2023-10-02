@@ -1,6 +1,8 @@
 use snforge_std::io::PrintTrait;
 
+use integer::u128_overflowing_add;
 use starknet::ContractAddress;
+
 
 const E18: u128 = 1000000000000000000;
 const MAX_NUMBER_OF_PLANETS: u16 = 1000;
@@ -21,22 +23,22 @@ struct ERC20s {
     tritium: u128,
 }
 
+impl ERC20sAdd of Add<ERC20s> {
+    fn add(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
+        ERC20s {
+            steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
+            quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow'),
+            tritium: u128_overflowing_add(lhs.tritium, rhs.tritium).expect('u128_add Overflow'),
+        }
+    }
+}
+
 impl ERC20Print of PrintTrait<ERC20s> {
     fn print(self: ERC20s) {
         self.steel.print();
         self.quartz.print();
         self.tritium.print();
     }
-}
-
-#[derive(Copy, Drop, Serde)]
-struct CompoundsLevelsPacked {
-    steel: u8,
-    quartz: u8,
-    tritium: u8,
-    energy: u8,
-    lab: u8,
-    dockyard: u8,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -57,6 +59,17 @@ struct CompoundsCost {
     energy: ERC20s,
     lab: ERC20s,
     dockyard: ERC20s,
+}
+
+impl CompoundsCostPrint of PrintTrait<CompoundsCost> {
+    fn print(self: CompoundsCost) {
+        self.steel.print();
+        self.quartz.print();
+        self.tritium.print();
+        self.energy.print();
+        self.lab.print();
+        self.dockyard.print();
+    }
 }
 
 #[derive(Copy, Default, Drop, Serde)]
@@ -178,14 +191,48 @@ impl DebrisPrint of PrintTrait<Debris> {
     }
 }
 
-#[derive(Default, Drop, Copy, PartialEq, Serde)]
+impl DebrisAdd of Add<Debris> {
+    fn add(lhs: Debris, rhs: Debris) -> Debris {
+        Debris {
+            steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
+            quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow')
+        }
+    }
+}
+
+#[derive(Default, Drop, Copy, PartialEq, Serde, starknet::Store)]
 struct Fleet {
-    n_ships: u32,
     carrier: u32,
     scraper: u32,
     sparrow: u32,
     frigate: u32,
     armade: u32,
+}
+
+impl FleetZeroable of Zeroable<Fleet> {
+    fn zero() -> Fleet {
+        Fleet { carrier: 0, scraper: 0, sparrow: 0, frigate: 0, armade: 0, }
+    }
+    fn is_zero(self: Fleet) -> bool {
+        self.carrier == 0
+            && self.scraper == 0
+            && self.sparrow == 0
+            && self.frigate == 0
+            && self.armade == 0
+    }
+    fn is_non_zero(self: Fleet) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl FleetPrint of PrintTrait<Fleet> {
+    fn print(self: Fleet) {
+        self.carrier.print();
+        self.scraper.print();
+        self.sparrow.print();
+        self.frigate.print();
+        self.armade.print();
+    }
 }
 
 #[derive(Default, Drop, Copy, PartialEq, Serde, starknet::Store)]
@@ -196,7 +243,7 @@ struct Unit {
     weapon: u32,
     speed: u32,
     cargo: u32,
-    fuel_consumption: u32,
+    consumption: u32,
 }
 
 #[generate_trait]
@@ -216,15 +263,40 @@ impl PrintUnit of PrintTrait<Unit> {
 
 #[derive(Copy, Default, Drop, Serde, starknet::Store)]
 struct Mission {
+    time_start: u64,
     destination: u16,
-    number_of_ships: u32,
     time_arrival: u64,
+    fleet: Fleet,
+    is_return: bool,
+}
+
+impl MissionZeroable of Zeroable<Mission> {
+    fn zero() -> Mission {
+        Mission {
+            time_start: 0,
+            destination: 0,
+            time_arrival: 0,
+            fleet: Zeroable::zero(),
+            is_return: false,
+        }
+    }
+    fn is_zero(self: Mission) -> bool {
+        self.time_start == 0
+            && self.destination == 0
+            && self.time_arrival == 0
+            && self.fleet == Zeroable::zero()
+            && self.is_return == false
+    }
+    fn is_non_zero(self: Mission) -> bool {
+        !self.is_zero()
+    }
 }
 
 impl MissionPrint of PrintTrait<Mission> {
     fn print(self: Mission) {
+        self.time_start.print();
         self.destination.print();
-        self.number_of_ships.print();
         self.time_arrival.print();
+        self.fleet.print();
     }
 }
