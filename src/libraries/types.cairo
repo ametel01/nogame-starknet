@@ -123,12 +123,39 @@ struct ShipsCost {
     armade: ERC20s,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde)]
 struct DefencesLevels {
+    celestia: u32,
     blaster: u32,
     beam: u32,
     astral: u32,
     plasma: u32
+}
+
+impl DefencesLevelsPrint of PrintTrait<DefencesLevels> {
+    fn print(self: DefencesLevels) {
+        self.celestia.print();
+        self.blaster.print();
+        self.beam.print();
+        self.astral.print();
+        self.plasma.print();
+    }
+}
+
+impl DefencesLevelsZeroable of Zeroable<DefencesLevels> {
+    fn zero() -> DefencesLevels {
+        DefencesLevels { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0, }
+    }
+    fn is_zero(self: DefencesLevels) -> bool {
+        self.celestia == 0
+            && self.blaster == 0
+            && self.beam == 0
+            && self.astral == 0
+            && self.plasma == 0
+    }
+    fn is_non_zero(self: DefencesLevels) -> bool {
+        !self.is_zero()
+    }
 }
 
 #[derive(Copy, Drop, Serde)]

@@ -67,8 +67,8 @@ mod NoGame {
         // Defences
         blaster_available: LegacyMap::<u16, u32>,
         beam_available: LegacyMap::<u16, u32>,
-        astral_launcher_available: LegacyMap::<u16, u32>,
-        plasma_projector_available: LegacyMap::<u16, u32>,
+        astral_available: LegacyMap::<u16, u32>,
+        plasma_available: LegacyMap::<u16, u32>,
         // Fleet
         active_missions: LegacyMap::<(u16, u8), Mission>,
         active_missions_len: LegacyMap<u16, u8>,
@@ -538,8 +538,8 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self
-                .astral_launcher_available
-                .write(planet_id, self.astral_launcher_available.read(planet_id) + quantity);
+                .astral_available
+                .write(planet_id, self.astral_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn plasma_projector_build(ref self: ContractState, quantity: u32) {
@@ -553,8 +553,8 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self
-                .plasma_projector_available
-                .write(planet_id, self.plasma_projector_available.read(planet_id) + quantity);
+                .plasma_available
+                .write(planet_id, self.plasma_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -603,11 +603,17 @@ mod NoGame {
                 .hostile_missions
                 .write(
                     self.position_to_planet_id.read(self.get_raw_from_position(destination)),
-                    (self.get_planet_position(planet_id), fleet::calculate_number_of_ships(f))
+                    (
+                        self.get_planet_position(planet_id),
+                        fleet::calculate_number_of_ships(f, Zeroable::zero())
+                    )
                 );
         }
 
         fn dock_fleet(ref self: ContractState, mission_id: u8) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mut mission = self.active_missions.read((origin, mission_id));
+            assert(!mission.is_zero(), 'no fleet to dock');
             let origin = self.get_owned_planet(get_caller_address());
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
@@ -621,9 +627,11 @@ mod NoGame {
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
             let defender_fleet = self.get_ships_levels(mission.destination);
+            let defences = self.get_defences_levels(mission.destination);
             let t1 = self.get_tech_levels(origin);
             let t2 = self.get_tech_levels(mission.destination);
-            let (f1, f2) = fleet::war(mission.fleet, t1, defender_fleet, t2);
+            let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
+            // f1.print();
             // calculate debris and update field
             let debris1 = fleet::get_debris(mission.fleet, f1);
             let debris2 = fleet::get_debris(defender_fleet, f2);
@@ -633,22 +641,19 @@ mod NoGame {
                 .planet_debris_field
                 .write(mission.destination, current_debries_field + total_debris);
             self.update_fleet_levels_after_attack(mission.destination, f2);
+            self.update_defences_after_attack(mission.destination, d);
             if f1.is_zero() {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
-                let collectible = self.get_collectible_resources(mission.destination);
                 let spendable = self.get_spendable_resources(mission.destination);
-                let loot_amount = fleet::calculate_loot(spendable);
-                'loot amount'.print();
-                loot_amount.print();
-                'collectible'.print();
-                collectible.print();
+                let storage = fleet::get_fleet_cargo_capacity(f1);
+                let loot_amount = fleet::load_resources(spendable, storage);
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
                         self.erc721.read().owner_of(mission.destination.into()), loot_amount
                     );
-                self.receive_resources_erc20(get_caller_address(), loot_amount + collectible);
+                self.receive_resources_erc20(get_caller_address(), loot_amount);
                 mission.fleet = f1;
                 let time_travel = mission.time_arrival - mission.time_start;
                 mission.time_arrival = time_now + time_travel;
@@ -807,10 +812,11 @@ mod NoGame {
 
         fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
             DefencesLevels {
+                celestia: self.celestia_available.read(planet_id),
                 blaster: self.blaster_available.read(planet_id),
                 beam: self.beam_available.read(planet_id),
-                astral: self.astral_launcher_available.read(planet_id),
-                plasma: self.plasma_projector_available.read(planet_id),
+                astral: self.astral_available.read(planet_id),
+                plasma: self.plasma_available.read(planet_id),
             }
         }
 
@@ -1227,6 +1233,16 @@ mod NoGame {
             self.sparrow_available.write(planet_id, f.sparrow);
             self.frigate_available.write(planet_id, f.frigate);
             self.armade_available.write(planet_id, f.armade);
+        }
+
+        fn update_defences_after_attack(
+            ref self: ContractState, planet_id: u16, d: DefencesLevels
+        ) {
+            self.celestia_available.write(planet_id, d.celestia);
+            self.blaster_available.write(planet_id, d.blaster);
+            self.beam_available.write(planet_id, d.beam);
+            self.astral_available.write(planet_id, d.astral);
+            self.plasma_available.write(planet_id, d.plasma);
         }
     }
 }

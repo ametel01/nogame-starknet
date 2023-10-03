@@ -86,3 +86,10 @@ fn power(x: u128, y: u128) -> u128 {
     result * ((100 / 19) * y) / 10 + (700 / 190)
 }
 
+fn min(a: u128, b: u128) -> u128 {
+    if a < b {
+        return a;
+    } else {
+        return b;
+    }
+}

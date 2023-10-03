@@ -3,7 +3,7 @@ use starknet::info::get_block_timestamp;
 use snforge_std::{declare, ContractClassTrait, io::PrintTrait, start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s};
+use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
 use nogame::libraries::fleet;
 
 use nogame::tests::utils::{
@@ -14,7 +14,10 @@ use nogame::tests::utils::{
 fn test_war_basic() {
     let mut attackers: Fleet = Default::default();
     let mut defenders: Fleet = Default::default();
-    let (res1, res2) = fleet::war(attackers, Default::default(), defenders, Default::default());
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
 }
 #[test]
 fn test_cargo_speed() {
@@ -219,28 +222,25 @@ fn test_attack_planet() {
     advance_game_state(dsp.game, 2);
     // dsp.game.carrier_build(100);
     dsp.game.frigate_build(20);
+    dsp.game.blaster_build(20);
     start_prank(dsp.game.contract_address, ACCOUNT1());
     advance_game_state(dsp.game, 4);
     dsp.game.sparrow_build(100);
-    dsp.game.armade_build(5);
+    dsp.game.armade_build(50);
     let p2_position = dsp.game.get_planet_position(2);
     let mut fleet_a: Fleet = Default::default();
     // fleet_a.sparrow = 100;
-    fleet_a.armade = 5;
+    fleet_a.armade = 50;
     dsp.game.send_fleet(fleet_a, p2_position);
     let mission = dsp.game.get_mission_details(1, 1);
-    // dsp.game.get_ships_levels(1).print();
     start_warp(dsp.game.contract_address, mission.time_arrival + 1);
-    dsp.game.get_spendable_resources(1).print();
-    // dsp.game.get_collectible_resources(2).print();
-    // dsp.game.get_collectible_resources(1).print();
     dsp.game.attack_planet(1);
-    // dsp.game.get_spendable_resources(2).print();
-    // dsp.game.get_collectible_resources(2).print();
-    dsp.game.get_spendable_resources(1).print();
+    dsp.game.get_ships_levels(2).print();
+    dsp.game.get_defences_levels(2).print();
     let mission = dsp.game.get_mission_details(1, 1);
+    dsp.game.get_debris_field(2).print();
     start_warp(dsp.game.contract_address, mission.time_arrival + 1);
-    dsp.game.dock_fleet(1);
+// dsp.game.dock_fleet(1);
 // dsp.game.get_ships_levels(1).print();
 // dsp.game.get_debris_field(2).print();
 // dsp.game.get_mission_details(1, 1).print();

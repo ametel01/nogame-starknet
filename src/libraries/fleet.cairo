@@ -2,7 +2,7 @@ use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
 use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
-    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition
+    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
 use snforge_std::io::PrintTrait;
 
@@ -28,11 +28,36 @@ fn ARMADE() -> Unit {
     }
 }
 
+fn CELESTIA() -> Unit {
+    Unit { id: 5, weapon: 1, shield: 1, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+}
+
+fn BLASTER() -> Unit {
+    Unit { id: 6, weapon: 80, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+}
+
+fn BEAM() -> Unit {
+    Unit { id: 7, weapon: 250, shield: 100, hull: 2000, speed: 0, cargo: 0, consumption: 0 }
+}
+
+fn ASTRAL() -> Unit {
+    Unit { id: 8, weapon: 1100, shield: 200, hull: 8750, speed: 0, cargo: 0, consumption: 0 }
+}
+
+fn PLASMA() -> Unit {
+    Unit { id: 9, weapon: 3000, shield: 300, hull: 25000, speed: 0, cargo: 0, consumption: 0 }
+}
+
+
 fn war(
-    mut attackers: Fleet, a_techs: TechLevels, mut defenders: Fleet, d_techs: TechLevels
-) -> (Fleet, Fleet) {
-    let mut attackers = build_ships_array(attackers, a_techs);
-    let mut defenders = build_ships_array(defenders, d_techs);
+    mut attackers: Fleet,
+    a_techs: TechLevels,
+    mut defenders: Fleet,
+    defences: DefencesLevels,
+    d_techs: TechLevels
+) -> (Fleet, Fleet, DefencesLevels) {
+    let mut attackers = build_ships_array(attackers, Zeroable::zero(), a_techs);
+    let mut defenders = build_ships_array(defenders, defences, d_techs);
     let mut temp1: Array<Unit> = array![];
     let mut temp2: Array<Unit> = array![];
     let mut u1: Unit = Default::default();
@@ -48,7 +73,6 @@ fn war(
         if u2.hull.is_zero() {
             u2 = defenders.pop_front().unwrap();
         }
-
         unit_combat(ref u1, ref u2);
     };
     if u1.hull > 0 {
@@ -69,7 +93,7 @@ fn war(
         }
         temp2.append(defenders.pop_front().unwrap());
     };
-    (build_fleet_struct(temp1), build_fleet_struct(temp2))
+    (build_fleet_struct(ref temp1), build_fleet_struct(ref temp2), build_defences_struct(ref temp2))
 }
 
 fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
@@ -103,7 +127,7 @@ fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
     };
 }
 
-fn build_fleet_struct(mut a: Array<Unit>) -> Fleet {
+fn build_fleet_struct(ref a: Array<Unit>) -> Fleet {
     let mut fleet: Fleet = Default::default();
     loop {
         if a.len().is_zero() {
@@ -140,16 +164,73 @@ fn build_fleet_struct(mut a: Array<Unit>) -> Fleet {
     fleet
 }
 
-fn calculate_number_of_ships(fleet: Fleet) -> u32 {
-    fleet.carrier + fleet.scraper + fleet.sparrow + fleet.frigate + fleet.armade
+fn build_defences_struct(ref a: Array<Unit>) -> DefencesLevels {
+    let mut d: DefencesLevels = Default::default();
+    loop {
+        if a.len().is_zero() {
+            break;
+        }
+        let u = a.pop_front().unwrap();
+        if u.id == 5 {
+            if u.hull > 0 {
+                d.celestia += 1;
+            }
+        }
+        if u.id == 6 {
+            if u.hull > 0 {
+                d.blaster += 1;
+            }
+        }
+        if u.id == 7 {
+            if u.hull > 0 {
+                d.beam += 1;
+            }
+        }
+        if u.id == 8 {
+            if u.hull > 0 {
+                d.astral += 1;
+            }
+        }
+        if u.id == 9 {
+            if u.hull > 0 {
+                d.plasma += 1;
+            }
+        }
+        continue;
+    };
+    d
 }
 
-fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
+fn calculate_number_of_ships(fleet: Fleet, defences: DefencesLevels) -> u32 {
+    fleet.carrier
+        + fleet.scraper
+        + fleet.sparrow
+        + fleet.frigate
+        + fleet.armade
+        + defences.celestia
+        + defences.blaster
+        + defences.beam
+        + defences.astral
+        + defences.plasma
+}
+
+fn build_ships_array(
+    mut fleet: Fleet, mut defences: DefencesLevels, techs: TechLevels
+) -> Array<Unit> {
     let mut array: Array<Unit> = array![];
-    let mut n_ships = calculate_number_of_ships(fleet);
+    let mut n_ships = calculate_number_of_ships(fleet, defences);
     loop {
         if n_ships == 0 {
             break;
+        }
+        if defences.plasma > 0 {
+            let mut defence = PLASMA();
+            defence.weapon += defence.weapon * techs.weapons.into() / 10;
+            defence.shield += defence.shield * techs.shield.into() / 10;
+            defence.hull += defence.hull * techs.armour.into() / 10;
+            array.append(defence);
+            n_ships -= 1;
+            defences.plasma -= 1;
         }
         if fleet.armade > 0 {
             let mut ship = ARMADE();
@@ -160,6 +241,15 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             n_ships -= 1;
             fleet.armade -= 1;
         }
+        if defences.astral > 0 {
+            let mut defence = ASTRAL();
+            defence.weapon += defence.weapon * techs.weapons.into() / 10;
+            defence.shield += defence.shield * techs.shield.into() / 10;
+            defence.hull += defence.hull * techs.armour.into() / 10;
+            array.append(defence);
+            n_ships -= 1;
+            defences.astral -= 1;
+        }
         if fleet.frigate > 0 {
             let mut ship = FRIGATE();
             ship.weapon += ship.weapon * techs.weapons.into() / 10;
@@ -168,6 +258,15 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             array.append(ship);
             n_ships -= 1;
             fleet.frigate -= 1;
+        }
+        if defences.beam > 0 {
+            let mut defence = BEAM();
+            defence.weapon += defence.weapon * techs.weapons.into() / 10;
+            defence.shield += defence.shield * techs.shield.into() / 10;
+            defence.hull += defence.hull * techs.armour.into() / 10;
+            array.append(defence);
+            n_ships -= 1;
+            defences.beam -= 1;
         }
         if fleet.sparrow > 0 {
             let mut ship = SPARROW();
@@ -178,6 +277,15 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             n_ships -= 1;
             fleet.sparrow -= 1;
         }
+        if defences.blaster > 0 {
+            let mut defence = BLASTER();
+            defence.weapon += defence.weapon * techs.weapons.into() / 10;
+            defence.shield += defence.shield * techs.shield.into() / 10;
+            defence.hull += defence.hull * techs.armour.into() / 10;
+            array.append(defence);
+            n_ships -= 1;
+            defences.blaster -= 1;
+        }
         if fleet.scraper > 0 {
             let mut ship = SCRAPER();
             ship.weapon += ship.weapon * techs.weapons.into() / 10;
@@ -186,6 +294,15 @@ fn build_ships_array(mut fleet: Fleet, techs: TechLevels) -> Array<Unit> {
             array.append(ship);
             n_ships -= 1;
             fleet.scraper -= 1;
+        }
+        if defences.celestia > 0 {
+            let mut defence = CELESTIA();
+            defence.weapon += defence.weapon * techs.weapons.into() / 10;
+            defence.shield += defence.shield * techs.shield.into() / 10;
+            defence.hull += defence.hull * techs.armour.into() / 10;
+            array.append(defence);
+            n_ships -= 1;
+            defences.celestia -= 1;
         }
         if fleet.carrier > 0 {
             let mut ship = CARRIER();
@@ -317,8 +434,103 @@ fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
     debris
 }
 
-fn calculate_loot(spendable: ERC20s) -> ERC20s {
-    ERC20s {
-        steel: spendable.steel / 2, quartz: spendable.quartz / 2, tritium: spendable.tritium / 2,
+fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
+    // metal_loaded, crystal_loaded, deuterium_loaded = 0, 0, 0
+    let mut steel_loaded = 0;
+    let mut quartz_loaded = 0;
+    let mut tritium_loaded = 0;
+
+    // # Step 1: Load Metal
+    // metal_to_load = metal / 2
+    let mut steel_to_load = resources.steel / 2;
+    // if metal_to_load <= storage / 3:
+    if steel_to_load <= storage / 3 {
+        //     metal_loaded += metal_to_load
+        steel_loaded += steel_to_load;
+        //     metal -= metal_to_load
+        resources.steel -= steel_to_load
+    } else {
+        //     metal_loaded += storage / 3
+        steel_loaded += storage / 3;
+        //     metal -= storage / 3
+        resources.steel -= storage / 3;
     }
+    // storage -= metal_loaded
+    storage -= steel_loaded;
+
+    // # Step 2: Load Crystal
+    // crystal_to_load = crystal / 2
+    let mut quartz_to_load = resources.quartz / 2;
+    // if crystal_to_load <= storage / 2:
+    if quartz_to_load <= storage / 2 {
+        //     crystal_loaded += crystal_to_load
+        quartz_loaded += quartz_to_load;
+        //     crystal -= crystal_to_load
+        resources.quartz -= quartz_to_load;
+    // else:
+    } else {
+        //     crystal_loaded += storage / 2
+        quartz_loaded += storage / 2;
+        //     crystal -= storage / 2
+        resources.quartz -= storage / 2;
+    }
+    // storage -= crystal_loaded
+    storage -= quartz_loaded;
+
+    // # Step 3: Load Deuterium
+    // deuterium_to_load = deuterium / 2
+    let tritium_to_load = resources.tritium / 2;
+    // if deuterium_to_load <= storage:
+    if tritium_to_load <= storage {
+        //     deuterium_loaded += deuterium_to_load
+        tritium_loaded += tritium_to_load;
+        //     deuterium -= deuterium_to_load
+        resources.tritium -= tritium_to_load;
+    // else:
+    } else {
+        //     deuterium_loaded += storage
+        tritium_loaded += storage;
+        //     deuterium -= storage
+        resources.tritium -= storage;
+    }
+    // storage -= deuterium_loaded
+    storage -= tritium_loaded;
+
+    // # Step 4: Load remaining Metal if space is available
+    // if storage > 0:
+    if storage > 0 {
+        //     metal_to_load = min(metal, storage / 2)
+        steel_to_load = math::min(resources.steel, storage / 2);
+        //     metal_loaded += metal_to_load
+        steel_loaded += steel_to_load;
+        //     metal -= metal_to_load
+        resources.steel -= steel_to_load;
+        //     storage -= metal_to_load
+        storage -= steel_to_load;
+    }
+
+    // # Step 5: Load remaining Crystal if space is available
+    // if storage > 0:
+    if storage > 0 {
+        //     crystal_to_load = min(crystal, storage)
+        quartz_to_load = math::min(resources.quartz, storage);
+        //     crystal_loaded += crystal_to_load
+        quartz_loaded += quartz_to_load;
+        //     crystal -= crystal_to_load
+        resources.quartz -= quartz_to_load;
+        //     storage -= crystal_to_load
+        storage -= quartz_to_load;
+    }
+    ERC20s { steel: steel_loaded, quartz: quartz_loaded, tritium: tritium_loaded }
+// return metal_loaded, crystal_loaded, deuterium_loaded, storage
+
+}
+
+fn get_fleet_cargo_capacity(f: Fleet) -> u128 {
+    (CARRIER().cargo * f.carrier
+        + SCRAPER().cargo * f.scraper
+        + SPARROW().cargo * f.sparrow
+        + FRIGATE().cargo * f.frigate
+        + ARMADE().cargo * f.armade)
+        .into()
 }
