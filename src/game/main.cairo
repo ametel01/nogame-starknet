@@ -22,6 +22,7 @@ mod NoGame {
 
     #[storage]
     struct Storage {
+        owner: ContractAddress,
         // General.
         number_of_planets: u16,
         planet_position: LegacyMap::<u16, PlanetPosition>,
@@ -101,13 +102,15 @@ mod NoGame {
         spent: u128,
     }
 
+    #[constructor]
     fn constructor(ref self: ContractState) {
+        self.owner.write(get_caller_address());
         self.universe_start_time.write(get_block_timestamp());
     }
 
     #[external(v0)]
     impl NoGame of INoGame<ContractState> {
-        fn _initializer(
+        fn initializer(
             ref self: ContractState,
             erc721: ContractAddress,
             steel: ContractAddress,
@@ -115,6 +118,8 @@ mod NoGame {
             tritium: ContractAddress,
             rand: ContractAddress,
         ) {
+            // NOTE: uncomment the following after testing with katana.
+            // assert(get_caller_address() == self.owner.read(), 'caller is not owner');
             self.erc721.write(INGERC721Dispatcher { contract_address: erc721 });
             self.steel.write(INGERC20Dispatcher { contract_address: steel });
             self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
@@ -683,6 +688,20 @@ mod NoGame {
 
         fn get_number_of_planets(self: @ContractState) -> u16 {
             self.number_of_planets.read()
+        }
+
+        fn get_generated_planets_positions(self: @ContractState) -> Array<PlanetPosition> {
+            let mut arr: Array<PlanetPosition> = array![];
+            let mut i = self.get_number_of_planets();
+            loop {
+                if i.is_zero() {
+                    break;
+                }
+                let position = self.get_planet_position(i);
+                arr.append(position);
+                i -= 1;
+            };
+            arr
         }
 
         fn get_planet_position(self: @ContractState, planet_id: u16) -> PlanetPosition {

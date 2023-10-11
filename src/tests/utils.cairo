@@ -68,7 +68,7 @@ fn set_up() -> Dispatchers {
 fn init_game(dsp: Dispatchers) {
     dsp
         .game
-        ._initializer(
+        .initializer(
             dsp.erc721.contract_address,
             dsp.steel.contract_address,
             dsp.quartz.contract_address,

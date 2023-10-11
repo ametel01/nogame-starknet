@@ -3,8 +3,8 @@ Scarb
 #######
 
 target
-nogame/deployed_contracts.txt
+deployed_contracts.txt
 metadata_gen
-.account
-
-.keystore
+.account*
+.braavos*
+.keystore.json

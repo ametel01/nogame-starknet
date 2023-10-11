@@ -38,15 +38,6 @@ fn test_generate() {
 fn test_planet_position() {
     let dsp = set_up();
     init_game(dsp);
-
-    start_prank(dsp.game.contract_address, ACCOUNT1());
-    let addresses = array![
-        contract_address_const::<1>(),
-        contract_address_const::<2>(),
-        contract_address_const::<3>(),
-        contract_address_const::<4>(),
-        contract_address_const::<5>(),
-    ];
     let mut len = 1;
     loop {
         if len == 10 {
@@ -58,6 +49,16 @@ fn test_planet_position() {
         assert(position.system <= 200, 'system out of bound');
         assert(position.orbit <= 10, 'orbit out of bound');
         len += 1;
+    };
+    let positions = dsp.game.get_generated_planets_positions();
+    positions.len().print();
+    let mut i = positions.len();
+    loop {
+        if i.is_zero() {
+            break;
+        }
+        (*positions.at(i - 1)).print();
+        i -= 1;
     };
 }
 

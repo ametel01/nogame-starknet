@@ -6,7 +6,7 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait INoGame<TState> {
-    fn _initializer(
+    fn initializer(
         ref self: TState,
         erc721: ContractAddress,
         steel: ContractAddress,
@@ -55,6 +55,7 @@ trait INoGame<TState> {
     // View functions
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_number_of_planets(self: @TState) -> u16;
+    fn get_generated_planets_positions(self: @TState) -> Array<PlanetPosition>;
     fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
     fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;

@@ -20,6 +20,7 @@ mod token {
 }
 
 mod tests {
+    mod test_math;
     mod compounds_cost_test;
     mod mines_cost_test;
     mod mines_production_test;
