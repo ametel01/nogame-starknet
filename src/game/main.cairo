@@ -1,3 +1,19 @@
+// TODOS: 
+// 1 - Implement signed int for energy
+// 2 - Implement view func for celestia available
+// 3 - Implement view func for energy gain for energy plant and celestia updates
+// 4 - Implement modifier for celestia and tritium production based on orbit
+// 5 - Make contract upgradable
+// 6 - Implement VRGDA and related view fn
+// 7 - Implement noob protection
+// 8 - Implement noob protection view fn that takes target planet_id and return if noob active 
+// 9 - Implement view for travel time + fuel consumption for send fleet
+// 10 - Implement view for hostile missions
+// 11 - Implement view for active missions
+// 12 - Add view for increase in energy for energy plant and satellite
+// 13 - Adjust energy and deuterium production based on orbit
+// 14 - Add events for battle reports
+
 #[starknet::contract]
 mod NoGame {
     use traits::DivRem;

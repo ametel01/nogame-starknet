@@ -4,7 +4,7 @@ use integer::U8Div;
 use nogame::libraries::types::ERC20s;
 use nogame::libraries::math::{power, BitShift};
 
-const UNI_SPEED: u128 = 10000;
+const UNI_SPEED: u128 = 10_000;
 
 
 #[generate_trait]

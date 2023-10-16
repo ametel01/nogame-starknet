@@ -26,7 +26,7 @@ impl Defences of DefencesTrait {
     fn astral_launcher_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 6, 'Dockyard 6 required');
         assert(techs.energy >= 6, 'Energy Innovation 6 required');
-        assert(techs.armour >= 3, 'Armour Innovation 3 required');
+        assert(techs.weapons >= 3, 'Armour Innovation 3 required');
         assert(techs.shield >= 1, 'Shield Tech 1 required')
     }
 
