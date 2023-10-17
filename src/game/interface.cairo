@@ -3,6 +3,7 @@ use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission
 };
+use nogame::I128Serde;
 
 #[starknet::interface]
 trait INoGame<TState> {
@@ -13,6 +14,7 @@ trait INoGame<TState> {
         quartz: ContractAddress,
         tritium: ContractAddress,
         rand: ContractAddress,
+        eth: ContractAddress,
     );
     // Write functions
     fn generate_planet(ref self: TState);
@@ -53,7 +55,9 @@ trait INoGame<TState> {
     fn attack_planet(ref self: TState, mission_id: u8);
     fn recall_fleet(ref self: TState, mission_id: u8);
     // View functions
+    fn get_owner(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;
+    fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u16;
     fn get_generated_planets_positions(self: @TState) -> Array<PlanetPosition>;
     fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
@@ -61,16 +65,32 @@ trait INoGame<TState> {
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_energy_available(self: @TState, planet_id: u16) -> u128;
+    fn get_energy_available(self: @TState, planet_id: u16) -> i128;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
     fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
     fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
+    fn get_energy_gain_after_upgrade(self: @TState, planet_id: u16) -> u128;
+    fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
     fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
     fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
+    fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
     fn get_defences_cost(self: @TState) -> DefencesCost;
+    fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
     fn get_mission_details(self: @TState, planet_id: u16, mission_id: u8) -> Mission;
+    fn get_hostile_missions(self: @TState, planet_id: u16) -> (PlanetPosition, u32);
+    fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
+    fn get_travel_time(
+        self: @TState,
+        origin: PlanetPosition,
+        destination: PlanetPosition,
+        fleet: Fleet,
+        techs: TechLevels
+    ) -> u64;
+    fn get_fuel_consumption(
+        self: @TState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
+    ) -> u128;
 }

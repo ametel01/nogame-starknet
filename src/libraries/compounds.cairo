@@ -4,7 +4,7 @@ use integer::U8Div;
 use nogame::libraries::types::ERC20s;
 use nogame::libraries::math::{power, BitShift};
 
-const UNI_SPEED: u128 = 10_000;
+const UNI_SPEED: u128 = 1;
 
 
 #[generate_trait]
@@ -122,7 +122,8 @@ impl Compounds of CompoundsTrait {
             * current_level.into()
             * BitShift::fpow(11.into(), current_level.into())
             / BitShift::fpow(10.into(), current_level.into()))
-            .low * UNI_SPEED
+            .low
+            * UNI_SPEED
     }
 
     #[inline(always)]
@@ -135,7 +136,8 @@ impl Compounds of CompoundsTrait {
             * current_level.into()
             * BitShift::fpow(11.into(), current_level.into())
             / BitShift::fpow(10.into(), current_level.into()))
-            .low * UNI_SPEED
+            .low
+            * UNI_SPEED
     }
 
     #[inline(always)]
@@ -145,8 +147,9 @@ impl Compounds of CompoundsTrait {
             * current_level.into()
             * BitShift::fpow(11.into(), current_level.into())
             / BitShift::fpow(10.into(), current_level.into()))
-            .low * UNI_SPEED
-    } 
+            .low
+            * UNI_SPEED
+    }
 
     #[inline(always)]
     fn energy_plant_production(current_level: u8) -> u128 {

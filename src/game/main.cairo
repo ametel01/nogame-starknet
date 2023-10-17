@@ -1,28 +1,20 @@
 // TODOS: 
-// 1 - Implement signed int for energy
-// 2 - Implement view func for celestia available
-// 3 - Implement view func for energy gain for energy plant and celestia updates
-// 4 - Implement modifier for celestia and tritium production based on orbit
+// 4 - Implement modifier for  tritium production based on orbit
 // 5 - Make contract upgradable
-// 6 - Implement VRGDA and related view fn
-// 7 - Implement noob protection
-// 8 - Implement noob protection view fn that takes target planet_id and return if noob active 
-// 9 - Implement view for travel time + fuel consumption for send fleet
-// 10 - Implement view for hostile missions
-// 11 - Implement view for active missions
-// 12 - Add view for increase in energy for energy plant and satellite
-// 13 - Adjust energy and deuterium production based on orbit
 // 14 - Add events for battle reports
 
 #[starknet::contract]
 mod NoGame {
     use traits::DivRem;
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
-        E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels,
-        ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Debris, Mission,
-        Fleet, MAX_NUMBER_OF_PLANETS
+        ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
+        CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
+        PlanetPosition, Debris, Mission, Fleet, MAX_NUMBER_OF_PLANETS, _0_10, PRICE, DAY
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -31,6 +23,9 @@ mod NoGame {
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
+    use nogame::I128Serde;
+
+    use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
     use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
@@ -38,6 +33,7 @@ mod NoGame {
 
     #[storage]
     struct Storage {
+        world_start_time: u64,
         owner: ContractAddress,
         // General.
         number_of_planets: u16,
@@ -46,12 +42,14 @@ mod NoGame {
         planet_debris_field: LegacyMap::<u16, Debris>,
         universe_start_time: u64,
         resources_spent: LegacyMap::<u16, u128>,
+        last_active: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: INGERC721Dispatcher,
         steel: INGERC20Dispatcher,
         quartz: INGERC20Dispatcher,
         tritium: INGERC20Dispatcher,
         rand: IXoroshiroDispatcher,
+        ETH: IERC20Dispatcher,
         // Infrastructures.
         steel_mine_level: LegacyMap::<u16, u8>,
         quartz_mine_level: LegacyMap::<u16, u8>,
@@ -133,14 +131,17 @@ mod NoGame {
             quartz: ContractAddress,
             tritium: ContractAddress,
             rand: ContractAddress,
+            eth: ContractAddress,
         ) {
             // NOTE: uncomment the following after testing with katana.
-            // assert(get_caller_address() == self.owner.read(), 'caller is not owner');
+            assert(get_caller_address() == self.owner.read(), 'caller is not owner');
             self.erc721.write(INGERC721Dispatcher { contract_address: erc721 });
             self.steel.write(INGERC20Dispatcher { contract_address: steel });
             self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
             self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
+            self.ETH.write(IERC20Dispatcher { contract_address: eth });
+            self.world_start_time.write(get_block_timestamp());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -148,6 +149,10 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
+            caller.print();
+            let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
+            let price: u256 = self.get_planet_price(time_elapsed).into();
+            self.ETH.read().transfer_from(caller, self.owner.read(), price);
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
@@ -177,6 +182,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn quartz_mine_upgrade(ref self: ContractState) {
@@ -189,6 +195,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn tritium_mine_upgrade(ref self: ContractState) {
@@ -201,6 +208,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn energy_plant_upgrade(ref self: ContractState) {
@@ -213,6 +221,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -226,6 +235,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
         fn lab_upgrade(ref self: ContractState) {
@@ -238,6 +248,7 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -255,6 +266,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.energy_innovation_level.write(planet_id, techs.energy + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -269,6 +281,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.digital_systems_level.write(planet_id, techs.digital + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -283,6 +296,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.beam_technology_level.write(planet_id, techs.beam + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -297,6 +311,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.armour_innovation_level.write(planet_id, techs.armour + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -311,6 +326,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.ion_systems_level.write(planet_id, techs.ion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -325,6 +341,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.plasma_engineering_level.write(planet_id, techs.plasma + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -340,6 +357,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.weapons_development_level.write(planet_id, techs.weapons + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -354,6 +372,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.shield_tech_level.write(planet_id, techs.shield + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -368,6 +387,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -382,6 +402,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.combustive_engine_level.write(planet_id, techs.combustion + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -396,6 +417,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -410,6 +432,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.warp_drive_level.write(planet_id, techs.warp + 1);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -428,6 +451,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .carrier_available
                 .write(planet_id, self.carrier_available.read(planet_id) + quantity);
@@ -444,6 +468,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .scraper_available
                 .write(planet_id, self.scraper_available.read(planet_id) + quantity);
@@ -460,6 +485,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .celestia_available
                 .write(planet_id, self.celestia_available.read(planet_id) + quantity);
@@ -476,6 +502,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .sparrow_available
                 .write(planet_id, self.sparrow_available.read(planet_id) + quantity);
@@ -492,6 +519,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .frigate_available
                 .write(planet_id, self.frigate_available.read(planet_id) + quantity);
@@ -508,6 +536,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .armade_available
                 .write(planet_id, self.armade_available.read(planet_id) + quantity);
@@ -528,6 +557,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .blaster_available
                 .write(planet_id, self.blaster_available.read(planet_id) + quantity);
@@ -544,6 +574,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self.beam_available.write(planet_id, self.beam_available.read(planet_id) + quantity);
             self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
         }
@@ -558,6 +589,7 @@ mod NoGame {
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .astral_available
                 .write(planet_id, self.astral_available.read(planet_id) + quantity);
@@ -573,6 +605,7 @@ mod NoGame {
             let cost = Defences::get_defences_cost(quantity, 50000, 50000, 30000);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .plasma_available
                 .write(planet_id, self.plasma_available.read(planet_id) + quantity);
@@ -589,6 +622,7 @@ mod NoGame {
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
+            assert(!self.is_noob_protected(planet_id, destination_id), 'noob protection active');
             self.check_enough_ships(planet_id, f);
             // Calculate distance
             let distance = fleet::get_distance(
@@ -629,16 +663,18 @@ mod NoGame {
                         fleet::calculate_number_of_ships(f, Zeroable::zero())
                     )
                 );
+            self.last_active.write(planet_id, get_block_timestamp());
         }
 
         fn dock_fleet(ref self: ContractState, mission_id: u8) {
             let origin = self.get_owned_planet(get_caller_address());
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'no fleet to dock');
-            let origin = self.get_owned_planet(get_caller_address());
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
             self.fleet_return_planet(origin, mission.fleet);
+            let active_missions = self.active_missions_len.read(origin);
+            self.active_missions_len.write(origin, active_missions - 1);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
         }
 
@@ -698,8 +734,16 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         View Functions                                
         /////////////////////////////////////////////////////////////////////
+        fn get_owner(self: @ContractState) -> ContractAddress {
+            self.owner.read()
+        }
         fn get_token_addresses(self: @ContractState) -> Tokens {
             self.get_tokens_addresses()
+        }
+
+        fn get_current_planet_price(self: @ContractState) -> u128 {
+            let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
+            self.get_planet_price(time_elapsed)
         }
 
         fn get_number_of_planets(self: @ContractState) -> u16 {
@@ -758,18 +802,26 @@ mod NoGame {
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
-        fn get_energy_available(self: @ContractState, planet_id: u16) -> u128 {
+        fn get_energy_available(self: @ContractState, planet_id: u16) -> i128 {
             let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            let gross_production = Compounds::energy_plant_production(
-                self.energy_plant_level.read(planet_id)
-            );
-            let celestia_production: u128 = self.celestia_available.read(planet_id).into() * 15;
-            let energy_required = self.calculate_energy_consumption(compounds_levels);
-            if (gross_production + celestia_production) < energy_required {
-                return 0;
-            } else {
-                return gross_production + celestia_production - energy_required;
-            }
+            let gross_production: felt252 = Compounds::energy_plant_production(
+                compounds_levels.energy
+            )
+                .into();
+            let celestia_production: felt252 = (self.celestia_available.read(planet_id).into() * 15)
+                .into();
+            let energy_required: felt252 = (self.calculate_energy_consumption(compounds_levels))
+                .into();
+            let gross_production_i: i128 = gross_production
+                .try_into()
+                .expect('felt into i32 failed');
+            let celestia_production_i: i128 = energy_required
+                .try_into()
+                .expect('felt into i32 failed');
+            let energy_required_i: i128 = celestia_production
+                .try_into()
+                .expect('felt into i32 failed');
+            gross_production_i + celestia_production_i - energy_required_i
         }
 
         fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
@@ -815,6 +867,17 @@ mod NoGame {
             EnergyCost { steel: steel, quartz: quartz, tritium: tritium }
         }
 
+        fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
+            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
+            Compounds::energy_plant_production(compounds_levels.energy + 1)
+                - Compounds::energy_plant_production(compounds_levels.energy)
+        }
+
+        fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
+            let position = self.get_planet_position(planet_id);
+            self.position_to_celestia_production(position.orbit)
+        }
+
         fn get_techs_levels(self: @ContractState, planet_id: u16) -> TechLevels {
             self.get_tech_levels(planet_id)
         }
@@ -832,6 +895,10 @@ mod NoGame {
                 frigate: self.frigate_available.read(planet_id),
                 armade: self.armade_available.read(planet_id),
             }
+        }
+
+        fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
+            self.celestia_available.read(planet_id)
         }
 
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
@@ -864,13 +931,77 @@ mod NoGame {
             }
         }
 
+        fn is_noob_protected(self: @ContractState, planet1_id: u16, planet2_id: u16) -> bool {
+            let p1_points = self.get_planet_points(planet1_id);
+            let p2_points = self.get_planet_points(planet2_id);
+            if p1_points > p2_points {
+                return p1_points > p2_points * 5;
+            } else {
+                return p2_points > p1_points * 5;
+            }
+        }
+
         fn get_mission_details(self: @ContractState, planet_id: u16, mission_id: u8) -> Mission {
             self.active_missions.read((planet_id, mission_id))
+        }
+
+        fn get_active_missions(self: @ContractState, planet_id: u16) -> Array<Mission> {
+            let mut arr: Array<Mission> = array![];
+            let len = self.active_missions_len.read(planet_id);
+            let mut i: u8 = 1;
+            loop {
+                if i.into() > len {
+                    break;
+                }
+                arr.append(self.active_missions.read((planet_id, i)));
+                i += 1;
+            };
+            arr
+        }
+
+        fn get_hostile_missions(self: @ContractState, planet_id: u16) -> (PlanetPosition, u32) {
+            self.hostile_missions.read(planet_id)
+        }
+
+        fn get_travel_time(
+            self: @ContractState,
+            origin: PlanetPosition,
+            destination: PlanetPosition,
+            fleet: Fleet,
+            techs: TechLevels
+        ) -> u64 {
+            let distance = fleet::get_distance(origin, destination);
+            let speed = fleet::get_fleet_speed(fleet, techs);
+            fleet::get_flight_time(speed, distance)
+        }
+
+        fn get_fuel_consumption(
+            self: @ContractState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
+        ) -> u128 {
+            let distance = fleet::get_distance(origin, destination);
+            fleet::get_fuel_consumption(fleet, distance)
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
+            let auction = LinearVRGDA {
+                target_price: FixedTrait::new(PRICE, false),
+                decay_constant: FixedTrait::new(_0_10, true),
+                per_time_unit: FixedTrait::new_unscaled(10, false),
+            };
+            let planet_sold: u128 = self.number_of_planets.read().into();
+            auction
+                .get_vrgda_price(
+                    FixedTrait::new_unscaled(time_elapsed.into(), false),
+                    FixedTrait::new_unscaled(planet_sold, false)
+                )
+                .mag
+                * E18
+                / ONE
+        }
+
         fn calculate_planet_position(self: @ContractState, planet_id: u16) -> PlanetPosition {
             let mut position: PlanetPosition = Default::default();
             let rand = self.rand.read();
@@ -1278,6 +1409,38 @@ mod NoGame {
             self.beam_available.write(planet_id, d.beam);
             self.astral_available.write(planet_id, d.astral);
             self.plasma_available.write(planet_id, d.plasma);
+        }
+
+        fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u16 {
+            if orbit == 1 {
+                return 48;
+            }
+            if orbit == 2 {
+                return 41;
+            }
+            if orbit == 3 {
+                return 36;
+            }
+            if orbit == 4 {
+                return 32;
+            }
+            if orbit == 5 {
+                return 27;
+            }
+            if orbit == 6 {
+                return 24;
+            }
+            if orbit == 7 {
+                return 21;
+            }
+            if orbit == 8 {
+                return 17;
+            }
+            if orbit == 9 {
+                return 14;
+            } else {
+                return 11;
+            }
         }
     }
 }
