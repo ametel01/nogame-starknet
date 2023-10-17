@@ -149,7 +149,6 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
-            caller.print();
             let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
             self.ETH.read().transfer_from(caller, self.owner.read(), price);
@@ -603,6 +602,7 @@ mod NoGame {
             let techs = self.get_tech_levels(planet_id);
             Defences::plasma_beam_requirements_check(dockyard_level, techs);
             let cost = Defences::get_defences_cost(quantity, 50000, 50000, 30000);
+            self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
@@ -622,6 +622,7 @@ mod NoGame {
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
+            assert(destination_id != planet_id, 'cannot send to own planet');
             assert(!self.is_noob_protected(planet_id, destination_id), 'noob protection active');
             self.check_enough_ships(planet_id, f);
             // Calculate distance
@@ -688,7 +689,6 @@ mod NoGame {
             let t1 = self.get_tech_levels(origin);
             let t2 = self.get_tech_levels(mission.destination);
             let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
-            // f1.print();
             // calculate debris and update field
             let debris1 = fleet::get_debris(mission.fleet, f1);
             let debris2 = fleet::get_debris(defender_fleet, f2);

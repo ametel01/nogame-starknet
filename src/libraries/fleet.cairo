@@ -24,7 +24,7 @@ fn FRIGATE() -> Unit {
 
 fn ARMADE() -> Unit {
     Unit {
-        id: 4, weapon: 1000, shield: 200, hull: 15000, speed: 10000, cargo: 1500, consumption: 500
+        id: 4, weapon: 600, shield: 200, hull: 15000, speed: 10000, cargo: 1500, consumption: 500
     }
 }
 
