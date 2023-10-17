@@ -28,17 +28,17 @@ mod token {
     mod erc721;
 }
 
-mod tests {
-    mod auction_price_test;
-    mod test_math;
-    mod compounds_cost_test;
-    mod mines_cost_test;
-    mod mines_production_test;
-    mod test_fleet;
-    mod view_fn_test;
-    mod write_fn_test;
-    mod utils;
-}
+// mod tests {
+//     mod auction_price_test;
+//     mod test_math;
+//     mod compounds_cost_test;
+//     mod mines_cost_test;
+//     mod mines_production_test;
+//     mod test_fleet;
+//     mod view_fn_test;
+//     mod write_fn_test;
+//     mod utils;
+// }
 
 impl I128Serde of Serde<i128> {
     fn serialize(self: @i128, ref output: Array<felt252>) {

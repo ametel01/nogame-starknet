@@ -6,7 +6,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
 use nogame::libraries::fleet;
 
-use nogame::tests::utils::{
+use tests::utils::{
     ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
     warp_multiple
 };

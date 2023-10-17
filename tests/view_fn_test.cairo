@@ -11,7 +11,7 @@ use nogame::libraries::types::{
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
-use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
 fn test_get_token_addresses() {
