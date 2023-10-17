@@ -1,5 +1,7 @@
 use array::ArrayTrait;
-use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp, get_contract_address};
+use openzeppelin::token::erc20::erc20::ERC20;
+use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
 
@@ -7,13 +9,14 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_warp, io::PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, io::PrintTrait};
 
-const E18: u128 = 1000000000000000000;
-const HOUR: u64 = 3600;
-const DAY: u64 = 86400;
-const WEEK: u64 = 604800;
-const YEAR: u64 = 31557600;
+const E18: u128 = 1_000_000_000_000_000_000;
+const ETH_SUPPLY: felt252 = 1_000_000_000_000_000_000_000;
+const HOUR: u64 = 3_600;
+const DAY: u64 = 86_400;
+const WEEK: u64 = 604_800;
+const YEAR: u64 = 31_557_600;
 
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
@@ -22,7 +25,12 @@ struct Dispatchers {
     quartz: INGERC20Dispatcher,
     tritium: INGERC20Dispatcher,
     rand: IXoroshiroDispatcher,
+    eth: IERC20Dispatcher,
     game: INoGameDispatcher,
+}
+
+fn DEPLOYER() -> ContractAddress {
+    contract_address_const::<'DEPLOYER'>()
 }
 
 fn ACCOUNT1() -> ContractAddress {
@@ -35,7 +43,10 @@ fn ACCOUNT2() -> ContractAddress {
 fn set_up() -> Dispatchers {
     let contract = declare('NoGame');
     let calldata: Array<felt252> = array![];
+    let contract_address = contract.precalculate_address(@calldata);
+    start_prank(contract_address, DEPLOYER());
     let _game = contract.deploy(@calldata).unwrap();
+    stop_prank(contract_address);
 
     let contract = declare('NGERC721');
     let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into()];
@@ -55,17 +66,23 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array![81];
     let _xoroshiro = contract.deploy(@calldata).unwrap();
 
+    let contract = declare('ERC20');
+    let calldata: Array<felt252> = array!['ETHER', 'ETH', ETH_SUPPLY, 0, DEPLOYER().into()];
+    let _eth = contract.deploy(@calldata).expect('failed to deploy eth');
+
     Dispatchers {
         erc721: INGERC721Dispatcher { contract_address: _erc721 },
         steel: INGERC20Dispatcher { contract_address: _steel },
         quartz: INGERC20Dispatcher { contract_address: _quartz },
         tritium: INGERC20Dispatcher { contract_address: _tritium },
         rand: IXoroshiroDispatcher { contract_address: _xoroshiro },
+        eth: IERC20Dispatcher { contract_address: _eth },
         game: INoGameDispatcher { contract_address: _game }
     }
 }
 
 fn init_game(dsp: Dispatchers) {
+    start_prank(dsp.game.contract_address, DEPLOYER());
     dsp
         .game
         .initializer(
@@ -73,27 +90,45 @@ fn init_game(dsp: Dispatchers) {
             dsp.steel.contract_address,
             dsp.quartz.contract_address,
             dsp.tritium.contract_address,
-            dsp.rand.contract_address
-        )
+            dsp.rand.contract_address,
+            dsp.eth.contract_address,
+        );
+    start_prank(dsp.eth.contract_address, DEPLOYER());
+    dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
+    dsp.eth.transfer(ACCOUNT2(), (10 * E18).into());
+
+    start_prank(dsp.eth.contract_address, ACCOUNT1());
+    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    stop_prank(dsp.eth.contract_address);
+
+    start_prank(dsp.eth.contract_address, ACCOUNT2());
+    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    stop_prank(dsp.eth.contract_address);
 }
 
-fn build_basic_mines(game: INoGameDispatcher, multiplier: u64) {
-    start_warp(game.contract_address, WEEK * multiplier);
+#[test]
+fn test_deploy_and_init() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.eth.contract_address, dsp.game.contract_address);
+    dsp.eth.transfer_from(ACCOUNT1(), DEPLOYER(), 1.into());
+}
+
+fn build_basic_mines(game: INoGameDispatcher) {
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();
     game.steel_mine_upgrade();
     game.steel_mine_upgrade();
     game.quartz_mine_upgrade();
-    start_warp(game.contract_address, WEEK * 2 * multiplier);
+    // warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();
     game.quartz_mine_upgrade();
     game.quartz_mine_upgrade();
     game.quartz_mine_upgrade();
-    start_warp(game.contract_address, WEEK * 3 * multiplier);
     game.tritium_mine_upgrade();
-    start_warp(game.contract_address, WEEK * 4 * multiplier);
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.energy_plant_upgrade();
@@ -101,8 +136,8 @@ fn build_basic_mines(game: INoGameDispatcher, multiplier: u64) {
     game.steel_mine_upgrade();
 }
 
-fn advance_game_state(game: INoGameDispatcher, multiplier: u64) {
-    start_warp(game.contract_address, YEAR * multiplier);
+fn advance_game_state(game: INoGameDispatcher) {
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.dockyard_upgrade();
     game.dockyard_upgrade();
     game.dockyard_upgrade();
@@ -170,4 +205,14 @@ fn advance_game_state(game: INoGameDispatcher, multiplier: u64) {
     game.plasma_engineering_upgrade();
     game.plasma_engineering_upgrade();
     game.plasma_engineering_upgrade(); // plasma #7
+    game.weapons_development_upgrade();
+    game.weapons_development_upgrade();
+    game.weapons_development_upgrade(); // weapons #3
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
+}
+
+
+fn warp_multiple(a: ContractAddress, b: ContractAddress, time: u64) {
+    start_warp(a, time);
+    start_warp(b, time);
 }
