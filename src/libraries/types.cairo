@@ -10,7 +10,7 @@ const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
 const BANK_ADDRESS: felt252 =
     1860366167800154921415928660539590774912334121378072733158434352123488366392;
-const _0_10: u128 = 3689348814741911000;
+const _0_05: u128 = 922337203685477600;
 const PRICE: u128 = 221360928884514600;
 const PRECISION: u128 = 1_000_000_000_000_000_000;
 const DAY: u64 = 86400;
@@ -216,6 +216,18 @@ struct Cargo {
 struct Debris {
     steel: u128,
     quartz: u128
+}
+
+impl DebrisZeroable of Zeroable<Debris> {
+    fn zero() -> Debris {
+        Debris { steel: 0, quartz: 0 }
+    }
+    fn is_zero(self: Debris) -> bool {
+        self.steel == 0 && self.quartz == 0
+    }
+    fn is_non_zero(self: Debris) -> bool {
+        !self.is_zero()
+    }
 }
 
 impl DebrisPrint of PrintTrait<Debris> {

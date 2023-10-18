@@ -15,7 +15,7 @@ mod NoGame {
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
-        PlanetPosition, Debris, Mission, Fleet, MAX_NUMBER_OF_PLANETS, _0_10, PRICE, DAY
+        PlanetPosition, Debris, Mission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE, DAY
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -24,7 +24,7 @@ mod NoGame {
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
-    use nogame::I128Serde;
+    use nogame::libraries::i128::{I128Serde, to_signed};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
@@ -806,24 +806,14 @@ mod NoGame {
 
         fn get_energy_available(self: @ContractState, planet_id: u16) -> i128 {
             let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            let gross_production: felt252 = Compounds::energy_plant_production(
-                compounds_levels.energy
-            )
-                .into();
-            let celestia_production: felt252 = (self.celestia_available.read(planet_id).into() * 15)
-                .into();
-            let energy_required: felt252 = (self.calculate_energy_consumption(compounds_levels))
-                .into();
-            let gross_production_i: i128 = gross_production
-                .try_into()
-                .expect('felt into i32 failed');
-            let celestia_production_i: i128 = energy_required
-                .try_into()
-                .expect('felt into i32 failed');
-            let energy_required_i: i128 = celestia_production
-                .try_into()
-                .expect('felt into i32 failed');
-            gross_production_i + celestia_production_i - energy_required_i
+            let gross_production = Compounds::energy_plant_production(compounds_levels.energy);
+            let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
+            let energy_required = (self.calculate_energy_consumption(compounds_levels));
+            if (gross_production + celestia_production < energy_required) {
+                return to_signed(energy_required - (gross_production + celestia_production), false);
+            } else {
+                return to_signed(gross_production + celestia_production - energy_required, true);
+            }
         }
 
         fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
@@ -990,7 +980,7 @@ mod NoGame {
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             let auction = LinearVRGDA {
                 target_price: FixedTrait::new(PRICE, false),
-                decay_constant: FixedTrait::new(_0_10, true),
+                decay_constant: FixedTrait::new(_0_05, true),
                 per_time_unit: FixedTrait::new_unscaled(10, false),
             };
             let planet_sold: u128 = self.number_of_planets.read().into();
