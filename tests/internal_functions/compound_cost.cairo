@@ -1,6 +1,6 @@
-use debug::PrintTrait;
 use nogame::libraries::compounds::Compounds;
 use nogame::libraries::types::ERC20s;
+use snforge_std::io::PrintTrait;
 
 impl CostPrint of PrintTrait<ERC20s> {
     fn print(self: ERC20s) {
@@ -33,6 +33,7 @@ fn steel_mine_cost_test() {
     assert(cost.steel == 7445614915178, 'wrong formula');
     assert(cost.quartz == 1861403728794, 'wrong formula');
 }
+
 #[test]
 fn quartz_mine_cost_test() {
     let cost = Compounds::quartz_mine_cost(0);
@@ -57,6 +58,7 @@ fn quartz_mine_cost_test() {
     assert(cost.steel == 102084710, 'wrong formula');
     assert(cost.quartz == 51042355, 'wrong formula');
 }
+
 #[test]
 fn tritium_mine_cost_test() {
     let cost = Compounds::tritium_mine_cost(0);
@@ -81,6 +83,7 @@ fn tritium_mine_cost_test() {
     assert(cost.steel == 27921055931921, 'wrong formula');
     assert(cost.quartz == 9307018643973, 'wrong formula');
 }
+
 #[test]
 fn solar_plant_cost_test() {
     let cost = Compounds::energy_plant_cost(0);
@@ -104,5 +107,56 @@ fn solar_plant_cost_test() {
     let cost = Compounds::energy_plant_cost(63);
     assert(cost.steel == 9307018643973, 'wrong formula');
     assert(cost.quartz == 3722807457589, 'wrong formula');
+}
+
+#[test]
+fn dockyard_cost_test() {
+    let cost = Compounds::dockyard_cost(0);
+    assert(cost.steel == 400, 'wrong formula');
+    assert(cost.quartz == 200, 'wrong formula');
+    assert(cost.tritium == 100, 'wrong formula');
+    let cost = Compounds::dockyard_cost(1);
+    assert(cost.steel == 800, 'wrong formula');
+    assert(cost.quartz == 400, 'wrong formula');
+    assert(cost.tritium == 200, 'wrong formula');
+    let cost = Compounds::dockyard_cost(5);
+    assert(cost.steel == 12800, 'wrong formula');
+    assert(cost.quartz == 6400, 'wrong formula');
+    assert(cost.tritium == 3200, 'wrong formula');
+    let cost = Compounds::dockyard_cost(10);
+    assert(cost.steel == 409600, 'wrong formula');
+    assert(cost.quartz == 204800, 'wrong formula');
+    assert(cost.tritium == 102400, 'wrong formula');
+    let cost = Compounds::dockyard_cost(30);
+    assert(cost.steel == 429496729600, 'wrong formula');
+    assert(cost.quartz == 214748364800, 'wrong formula');
+    assert(cost.tritium == 107374182400, 'wrong formula');
+}
+#[test]
+fn lab_cost_test() {
+    let cost = Compounds::lab_cost(0);
+    assert(cost.steel == 200, 'wrong formula');
+    assert(cost.quartz == 400, 'wrong formula');
+    assert(cost.tritium == 200, 'wrong formula');
+    let cost = Compounds::lab_cost(1);
+    assert(cost.steel == 400, 'wrong formula');
+    assert(cost.quartz == 800, 'wrong formula');
+    assert(cost.tritium == 400, 'wrong formula');
+    let cost = Compounds::lab_cost(5);
+    assert(cost.steel == 6400, 'wrong formula');
+    assert(cost.quartz == 12800, 'wrong formula');
+    assert(cost.tritium == 6400, 'wrong formula');
+    let cost = Compounds::lab_cost(10);
+    assert(cost.steel == 204800, 'wrong formula');
+    assert(cost.quartz == 409600, 'wrong formula');
+    assert(cost.tritium == 204800, 'wrong formula');
+    let cost = Compounds::lab_cost(20);
+    assert(cost.steel == 209715200, 'wrong formula');
+    assert(cost.quartz == 419430400, 'wrong formula');
+    assert(cost.tritium == 209715200, 'wrong formula');
+    let cost = Compounds::lab_cost(30);
+    assert(cost.steel == 214748364800, 'wrong formula');
+    assert(cost.quartz == 429496729600, 'wrong formula');
+    assert(cost.tritium == 214748364800, 'wrong formula');
 }
 
