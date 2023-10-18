@@ -3,7 +3,7 @@ use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission
 };
-use nogame::I128Serde;
+use nogame::libraries::i128::I128Serde;
 
 #[starknet::interface]
 trait INoGame<TState> {
