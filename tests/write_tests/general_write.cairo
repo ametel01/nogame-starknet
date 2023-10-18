@@ -50,6 +50,12 @@ fn test_generate() {
 }
 
 #[test]
+fn test_generate_planet_fails_max_number_of_planets() {
+    // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_collect_resources() {
     let dsp = set_up();
     init_game(dsp);

@@ -1,17 +1,19 @@
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
-use starknet::{ContractAddress, contract_address_const};
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 use snforge_std::io::PrintTrait;
 
 use snforge_std::{start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
+    Fleet
 };
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
-use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up, DEPLOYER};
+use tests::utils::{
+    E18, HOUR, DAY, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game,
+    set_up, DEPLOYER, build_basic_mines, advance_game_state, warp_multiple,
+};
 
 #[test]
 fn test_get_owner() {
@@ -24,8 +26,31 @@ fn test_get_owner() {
 }
 
 #[test]
-fn test_get_current_planet_price() { // TODO
-    assert(0 == 0, 'todo');
+fn test_get_current_planet_price() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    (dsp.game.get_current_planet_price() == 11999999999999998, 'wrong price-1');
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+
+    (dsp.game.get_current_planet_price() == 12060150250085595, 'wrong price-1');
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+
+    (dsp.game.get_current_planet_price() == 12120602004610750, 'wrong price-1');
+    start_prank(dsp.game.contract_address, ACCOUNT3());
+    dsp.game.generate_planet();
+
+    start_warp(dsp.game.contract_address, DAY * 13);
+
+    (dsp.game.get_current_planet_price() == 6359225859946644, 'wrong price-1');
+    start_prank(dsp.game.contract_address, ACCOUNT4());
+    dsp.game.generate_planet();
+
+    (dsp.game.get_current_planet_price() == 6391101612214528, 'wrong price-1');
+    start_prank(dsp.game.contract_address, ACCOUNT5());
+    dsp.game.generate_planet();
 }
 
 #[test]
@@ -52,8 +77,30 @@ fn test_get_number_of_planets() {
 }
 
 #[test]
-fn test_get_generated_planets_positions() { // TODO
-    assert(0 == 0, 'todo');
+fn test_get_generated_planets_positions() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT3());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT4());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT5());
+    dsp.game.generate_planet();
+
+    let mut arr_planets = dsp.game.get_generated_planets_positions();
+    assert(arr_planets.len() == 5, 'wrong arr len');
+
+    loop {
+        if arr_planets.len().is_zero() {
+            break;
+        }
+        arr_planets.pop_front().unwrap().print();
+        continue;
+    };
 }
 
 #[test]
@@ -61,7 +108,6 @@ fn test_get_planet_position() {
     let dsp = set_up();
     init_game(dsp);
     start_prank(dsp.game.contract_address, ACCOUNT1());
-    dsp.game.generate_planet();
 
     dsp.game.get_planet_position(1).print();
 }
@@ -78,8 +124,38 @@ fn test_get_position_slot_occupant() {
 }
 
 #[test]
-fn test_get_debris_field() { // TODO
-    assert(0 == 0, 'todo');
+fn test_get_debris_field() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+
+    assert(dsp.game.get_debris_field(1).is_zero(), 'wrong debris field');
+    assert(dsp.game.get_debris_field(2).is_zero(), 'wrong debris field');
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.carrier_build(100);
+
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.astral_launcher_build(50);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    let mut fleet: Fleet = Default::default();
+    let position = dsp.game.get_planet_position(2);
+    fleet.carrier = 100;
+    dsp.game.send_fleet(fleet, position);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    dsp.game.attack_planet(1);
+
+    assert(dsp.game.get_debris_field(1).is_zero(), 'wrong debris field');
+    let debris = dsp.game.get_debris_field(2);
+    assert(debris.steel == 66666 && debris.quartz == 66666, 'wrong debris field');
 }
 
 #[test]
@@ -113,6 +189,20 @@ fn test_get_collectible_resources() {
 }
 
 #[test]
-fn test_get_planet_points() { // TODO
-    assert(0 == 0, 'todo');
+fn test_get_planet_points() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT3());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    (dsp.game.get_planet_points(1) == 0, 'wrong points 0');
+    (dsp.game.get_planet_points(2) == 5, 'wrong points 5');
+    (dsp.game.get_planet_points(3) == 972, 'wrong points 972');
 }
