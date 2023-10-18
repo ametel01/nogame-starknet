@@ -13,7 +13,7 @@ cubit = {git ="https://github.com/influenceth/cubit.git", rev="41bdf71"}
 starknet = ">=2.2.0"
 
 [[target.starknet-contract]]
-allowed-libfuncs-list.name = "experimental"
+allowed-libfuncs-list.name = "all"
 build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "xoroshiro::xoroshiro::Xoroshiro" ]
 sierra = true
 casm = true
