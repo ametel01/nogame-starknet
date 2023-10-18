@@ -12,6 +12,31 @@ use tests::utils::{
 };
 
 #[test]
+fn test_send_fleet_success() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_send_fleet_fails_no_planet_at_destination() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_send_fleet_fails_origin_is_destination() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_send_fleet_fails_noob_protection() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_send_fleet_fails_not_enough_fleet_slots() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_send_fleet() {
     let dsp = set_up();
     init_game(dsp);
@@ -46,12 +71,12 @@ fn test_send_fleet() {
     assert(dsp.game.get_ships_levels(1).sparrow == 1, 'wrong ships before');
     assert(dsp.game.get_ships_levels(1).frigate == 1, 'wrong ships before');
     assert(dsp.game.get_ships_levels(1).armade == 1, 'wrong ships before');
-    
+
     let initial = testing::get_available_gas();
     gas::withdraw_gas().unwrap();
     dsp.game.send_fleet(fleet, p2_position);
     (initial - testing::get_available_gas()).print();
-    
+
     assert(dsp.game.get_ships_levels(2).carrier == 0, 'wrong ships after');
     assert(dsp.game.get_ships_levels(2).scraper == 0, 'wrong ships after');
     assert(dsp.game.get_ships_levels(2).sparrow == 0, 'wrong ships after');
@@ -59,6 +84,21 @@ fn test_send_fleet() {
     assert(dsp.game.get_ships_levels(2).armade == 0, 'wrong ships after');
 
     dsp.game.get_mission_details(1, 1).print();
+}
+
+#[test]
+fn test_dock_fleet() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_dock_fleet_fails_no_fleet_to_dock() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_dock_fleet_fails_destination_not_reached() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 #[test]
@@ -107,4 +147,29 @@ fn test_attack_planet() {
     'P2 ships'.print();
     dsp.game.get_ships_levels(2).print();
 // dsp.game.get_mission_details(1, 1).print();
+}
+
+#[test]
+fn test_attack_planet_fails_empty_mission() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_attack_planet_fails_destination_not_reached() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_recall_fleet() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_recall_fleet_fails_no_fleet_to_recall() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_recall_fleet_fails_mission_already_returning() { // TODO
+    assert(0 == 0, 'todo');
 }

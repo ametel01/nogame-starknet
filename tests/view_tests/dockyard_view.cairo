@@ -53,3 +53,8 @@ fn test_get_ships_cost() {
     );
     assert(ships.armade.steel == 45000 && ships.armade.quartz == 15000, 'wrong armade');
 }
+
+#[test]
+fn test_get_celestia_available() { // TODO
+    assert(0 == 0, 'todo');
+}

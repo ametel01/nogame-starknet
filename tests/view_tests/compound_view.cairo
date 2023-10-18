@@ -14,6 +14,17 @@ use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
+fn test_energy_available() {
+    // TODO: test for i128 values
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+
+    assert(dsp.game.get_energy_available(1) == 0, 'wrong energy');
+}
+
+#[test]
 fn test_get_compounds_levels() {
     let dsp = set_up();
     init_game(dsp);
@@ -64,4 +75,14 @@ fn test_get_energy_for_upgrade() {
     assert(costs.steel == 11, 'wrong steel energy');
     assert(costs.quartz == 11, 'wrong quartz energy');
     assert(costs.tritium == 22, 'wrong tritium energy');
+}
+
+#[test]
+fn test_get_energy_gain_after_upgrade() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_celestia_production() { // TODO
+    assert(0 == 0, 'todo');
 }

@@ -2,6 +2,7 @@ use nogame::libraries::types::{ERC20s, ShipsCost, TechLevels};
 
 #[generate_trait]
 impl Dockyard of DockyardTrait {
+    #[inline(always)]
     fn get_ships_cost(quantity: u32, cost: ERC20s) -> ERC20s {
         ERC20s {
             steel: (cost.steel * quantity.into()),
@@ -10,6 +11,7 @@ impl Dockyard of DockyardTrait {
         }
     }
 
+    #[inline(always)]
     fn get_ships_unit_cost() -> ShipsCost {
         ShipsCost {
             carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
@@ -28,13 +30,6 @@ impl Dockyard of DockyardTrait {
     }
 
     #[inline(always)]
-    fn scraper_requirements_check(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 4, 'Dockyard 4 required');
-        assert(techs.combustion >= 6, 'Combustive Engine 6 required');
-        assert(techs.shield >= 2, 'Shield Tech 2 required');
-    }
-
-    #[inline(always)]
     fn celestia_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 1, 'Dockyard 1 required');
         assert(techs.combustion >= 1, 'Combustive Engine 1 required');
@@ -44,6 +39,13 @@ impl Dockyard of DockyardTrait {
     fn sparrow_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 1, 'Dockyard 1 required');
         assert(techs.combustion >= 1, 'Combustive Engine 1 required');
+    }
+
+    #[inline(always)]
+    fn scraper_requirements_check(dockyard_level: u8, techs: TechLevels) {
+        assert(dockyard_level >= 4, 'Dockyard 4 required');
+        assert(techs.combustion >= 6, 'Combustive Engine 6 required');
+        assert(techs.shield >= 2, 'Shield Tech 2 required');
     }
 
     #[inline(always)]

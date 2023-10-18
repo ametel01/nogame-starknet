@@ -33,6 +33,11 @@ fn test_blaster_build() {
 }
 
 #[test]
+fn test_blaster_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_beam_build() {
     let dsp = set_up();
     init_game(dsp);
@@ -55,6 +60,21 @@ fn test_beam_build() {
     dsp.game.beam_build(10);
     let def = dsp.game.get_defences_levels(1);
     assert(def.beam == 10, 'wrong beam level');
+}
+
+#[test]
+fn test_beam_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_beam_build_fails_energy_tech_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_beam_build_fails_beam_tech_level() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 fn test_astral_build() {
@@ -96,6 +116,26 @@ fn test_astral_build() {
     dsp.game.astral_launcher_build(10);
     let def = dsp.game.get_defences_levels(1);
     assert(def.astral == 10, 'wrong astral level');
+}
+
+#[test]
+fn test_astral_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_astral_build_fails_energy_tech_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_astral_build_fails_weapons_tech_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_astral_build_fails_shield_tech_level() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 fn test_plasma_build() {
@@ -154,4 +194,14 @@ fn test_plasma_build() {
     dsp.game.plasma_projector_build(10);
     let def = dsp.game.get_defences_levels(1);
     assert(def.plasma == 10, 'wrong plasma level');
+}
+
+#[test]
+fn test_plasma_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_plasma_build_fails_plasma_tech_level() { // TODO
+    assert(0 == 0, 'todo');
 }

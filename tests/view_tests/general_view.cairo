@@ -11,7 +11,22 @@ use nogame::libraries::types::{
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up, DEPLOYER};
+
+#[test]
+fn test_get_owner() {
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+
+    assert(dsp.game.get_owner() == DEPLOYER(), 'owner is not deployer');
+}
+
+#[test]
+fn test_get_current_planet_price() { // TODO
+    assert(0 == 0, 'todo');
+}
 
 #[test]
 fn test_get_token_addresses() {
@@ -37,6 +52,11 @@ fn test_get_number_of_planets() {
 }
 
 #[test]
+fn test_get_generated_planets_positions() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_get_planet_position() {
     let dsp = set_up();
     init_game(dsp);
@@ -55,6 +75,11 @@ fn test_get_position_slot_occupant() {
 
     let position = dsp.game.get_planet_position(1);
     dsp.game.get_position_slot_occupant(position).print();
+}
+
+#[test]
+fn test_get_debris_field() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 #[test]
@@ -88,11 +113,6 @@ fn test_get_collectible_resources() {
 }
 
 #[test]
-fn test_energy_available() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
-    dsp.game.generate_planet();
-
-    assert(dsp.game.get_energy_available(1) == 0, 'wrong energy');
+fn test_get_planet_points() { // TODO
+    assert(0 == 0, 'todo');
 }

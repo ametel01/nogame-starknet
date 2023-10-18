@@ -12,3 +12,33 @@ use nogame::libraries::types::{
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+
+#[tests]
+fn test_is_noob_protected() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_mission_details() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_hostile_missions() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_active_missions() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_travel_time() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_get_fuel_consumption() { // TODO
+    assert(0 == 0, 'todo');
+}

@@ -65,8 +65,8 @@ trait INoGame<TState> {
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_energy_available(self: @TState, planet_id: u16) -> i128;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
+    fn get_energy_available(self: @TState, planet_id: u16) -> i128;
     fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
     fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
@@ -75,8 +75,8 @@ trait INoGame<TState> {
     fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
     fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
-    fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_ships_cost(self: @TState) -> ShipsCost;
+    fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
     fn get_defences_cost(self: @TState) -> DefencesCost;
     fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;

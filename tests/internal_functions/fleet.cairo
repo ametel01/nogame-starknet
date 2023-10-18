@@ -167,4 +167,3 @@ fn test_get_debris() {
     let res = fleet::get_debris(before, after);
 }
 
-

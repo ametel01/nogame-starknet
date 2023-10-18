@@ -1,7 +1,8 @@
 // TODOS: 
-// 4 - Implement modifier for  tritium production based on orbit
-// 5 - Make contract upgradable
-// 14 - Add events for battle reports
+// - Implement modifier for  tritium production based on orbit
+// - Make contract upgradable
+// - Add events for battle reports
+// - Implement collect debris
 
 #[starknet::contract]
 mod NoGame {
@@ -682,6 +683,7 @@ mod NoGame {
         fn attack_planet(ref self: ContractState, mission_id: u8) {
             let origin = self.get_owned_planet(get_caller_address());
             let mut mission = self.active_missions.read((origin, mission_id));
+            assert(!mission.is_zero(), 'the mission is empty');
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
             let defender_fleet = self.get_ships_levels(mission.destination);

@@ -316,10 +316,9 @@ impl MissionZeroable of Zeroable<Mission> {
     }
     fn is_zero(self: Mission) -> bool {
         self.time_start == 0
-            && self.destination == 0
-            && self.time_arrival == 0
-            && self.fleet == Zeroable::zero()
-            && self.is_return == false
+            || self.destination == 0
+            || self.time_arrival == 0
+            || self.fleet == Zeroable::zero()
     }
     fn is_non_zero(self: Mission) -> bool {
         !self.is_zero()

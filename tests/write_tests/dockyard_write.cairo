@@ -38,6 +38,16 @@ fn test_carrier_build() {
 }
 
 #[test]
+fn test_carrier_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_carrier_build_fails_combustion_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_celestia_build() {
     let dsp = set_up();
     init_game(dsp);
@@ -55,6 +65,16 @@ fn test_celestia_build() {
 
     dsp.game.celestia_build(10);
     let ships = dsp.game.get_ships_levels(1);
+}
+
+#[test]
+fn test_celestia_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_celestia_build_fails_combustion_level() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 #[test]
@@ -76,6 +96,16 @@ fn test_sparrow_build() {
     dsp.game.sparrow_build(10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.sparrow == 10, 'wrong sparrow level');
+}
+
+#[test]
+fn test_sparrow_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_sparrow_build_fails_combustion_level() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 #[test]
@@ -117,6 +147,21 @@ fn test_scraper_build() {
 }
 
 #[test]
+fn test_scraper_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_scraper_build_fails_combustion_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_scraper_build_fails_shield_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
 fn test_frigate_build() {
     let dsp = set_up();
     init_game(dsp);
@@ -155,6 +200,21 @@ fn test_frigate_build() {
     dsp.game.frigate_build(10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.frigate == 10, 'wrong frigate level');
+}
+
+#[test]
+fn test_frigate_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_frigate_build_fails_ion_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_frigate_build_fails_thrust_level() { // TODO
+    assert(0 == 0, 'todo');
 }
 
 #[test]
@@ -203,4 +263,14 @@ fn test_armade_build() {
     dsp.game.armade_build(10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.armade == 10, 'wrong armade level');
+}
+
+#[test]
+fn test_armade_build_fails_dockyard_level() { // TODO
+    assert(0 == 0, 'todo');
+}
+
+#[test]
+fn test_armade_build_fails_warp_level() { // TODO
+    assert(0 == 0, 'todo');
 }
