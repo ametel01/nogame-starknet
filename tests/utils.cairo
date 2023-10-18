@@ -32,12 +32,20 @@ struct Dispatchers {
 fn DEPLOYER() -> ContractAddress {
     contract_address_const::<'DEPLOYER'>()
 }
-
 fn ACCOUNT1() -> ContractAddress {
     contract_address_const::<1>()
 }
 fn ACCOUNT2() -> ContractAddress {
     contract_address_const::<2>()
+}
+fn ACCOUNT3() -> ContractAddress {
+    contract_address_const::<3>()
+}
+fn ACCOUNT4() -> ContractAddress {
+    contract_address_const::<4>()
+}
+fn ACCOUNT5() -> ContractAddress {
+    contract_address_const::<5>()
 }
 
 fn set_up() -> Dispatchers {
@@ -96,12 +104,27 @@ fn init_game(dsp: Dispatchers) {
     start_prank(dsp.eth.contract_address, DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT2(), (10 * E18).into());
+    dsp.eth.transfer(ACCOUNT3(), (10 * E18).into());
+    dsp.eth.transfer(ACCOUNT4(), (10 * E18).into());
+    dsp.eth.transfer(ACCOUNT5(), (10 * E18).into());
 
     start_prank(dsp.eth.contract_address, ACCOUNT1());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
     stop_prank(dsp.eth.contract_address);
 
     start_prank(dsp.eth.contract_address, ACCOUNT2());
+    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    stop_prank(dsp.eth.contract_address);
+
+    start_prank(dsp.eth.contract_address, ACCOUNT3());
+    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    stop_prank(dsp.eth.contract_address);
+
+    start_prank(dsp.eth.contract_address, ACCOUNT4());
+    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    stop_prank(dsp.eth.contract_address);
+
+    start_prank(dsp.eth.contract_address, ACCOUNT5());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
     stop_prank(dsp.eth.contract_address);
 }
@@ -114,6 +137,11 @@ fn test_deploy_and_init() {
     dsp.eth.transfer_from(ACCOUNT1(), DEPLOYER(), 1.into());
 }
 
+// builds:
+// - steel_mine: 3
+// - quartz_mine: 4
+// - tritium_mine: 4
+// - energy_plant: 6
 fn build_basic_mines(game: INoGameDispatcher) {
     warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.energy_plant_upgrade();
