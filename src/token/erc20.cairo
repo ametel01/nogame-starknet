@@ -25,7 +25,8 @@ mod NGERC20 {
     use openzeppelin::token::erc20::interface::IERC20CamelOnly;
     use starknet::ContractAddress;
     use starknet::get_caller_address;
-    use zeroable::Zeroable;
+
+    use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
     #[storage]
     struct Storage {
@@ -35,6 +36,7 @@ mod NGERC20 {
         _balances: LegacyMap<ContractAddress, u256>,
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
         _minter: ContractAddress,
+        nft: INGERC721Dispatcher,
     }
 
     #[event]
@@ -60,9 +62,13 @@ mod NGERC20 {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: felt252, symbol: felt252, minter: ContractAddress
+        ref self: ContractState,
+        name: felt252,
+        symbol: felt252,
+        minter: ContractAddress,
+        nft_address: ContractAddress
     ) {
-        self.initializer(name, symbol, minter);
+        self.initializer(name, symbol, minter, nft_address);
     }
 
     //
@@ -137,11 +143,16 @@ mod NGERC20 {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn initializer(
-            ref self: ContractState, name_: felt252, symbol_: felt252, minter_: ContractAddress
+            ref self: ContractState,
+            name_: felt252,
+            symbol_: felt252,
+            minter_: ContractAddress,
+            nft_address: ContractAddress
         ) {
             self._name.write(name_);
             self._symbol.write(symbol_);
             self._minter.write(minter_);
+            self.nft.write(INGERC721Dispatcher { contract_address: nft_address });
         }
 
         fn _increase_allowance(
@@ -196,6 +207,9 @@ mod NGERC20 {
         ) {
             assert(!sender.is_zero(), 'ERC20: transfer from 0');
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
+            assert(
+                !self.nft.read().balance_of(recipient).is_zero(), 'recipient is not planet owner'
+            );
             self._balances.write(sender, self._balances.read(sender) - amount);
             self._balances.write(recipient, self._balances.read(recipient) + amount);
             self.emit(Transfer { from: sender, to: recipient, value: amount });

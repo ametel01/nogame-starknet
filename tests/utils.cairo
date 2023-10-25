@@ -61,13 +61,13 @@ fn set_up() -> Dispatchers {
     let _erc721 = contract.deploy(@calldata).unwrap();
 
     let contract = declare('NGERC20');
-    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into()];
+    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into(), _erc721.into()];
     let _steel = contract.deploy(@calldata).unwrap();
 
-    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into()];
+    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into(), _erc721.into()];
     let _quartz = contract.deploy(@calldata).unwrap();
 
-    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into()];
+    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into(), _erc721.into()];
     let _tritium = contract.deploy(@calldata).unwrap();
 
     let contract = declare('Xoroshiro');
