@@ -9,7 +9,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, io::PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait};
 
 const E18: u128 = 1_000_000_000_000_000_000;
 const ETH_SUPPLY: felt252 = 1_000_000_000_000_000_000_000;

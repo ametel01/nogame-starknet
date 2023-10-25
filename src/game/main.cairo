@@ -30,7 +30,7 @@ mod NoGame {
 
     use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-    use snforge_std::io::PrintTrait;
+    use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {

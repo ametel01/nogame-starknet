@@ -1,7 +1,7 @@
 use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
-use snforge_std::io::PrintTrait;
+use snforge_std::PrintTrait;
 
 const _0_31: u128 = 5718490662849961000;
 const _0_10: u128 = 3689348814741911000;

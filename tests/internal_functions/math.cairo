@@ -1,4 +1,4 @@
-use snforge_std::io::PrintTrait;
+use snforge_std::PrintTrait;
 
 use nogame::libraries::math::BitShift;
 

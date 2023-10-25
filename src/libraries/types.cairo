@@ -1,4 +1,4 @@
-use snforge_std::io::PrintTrait;
+use snforge_std::PrintTrait;
 
 use integer::u128_overflowing_add;
 use starknet::ContractAddress;

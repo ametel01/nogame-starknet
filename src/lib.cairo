@@ -3,7 +3,7 @@ use starknet::{
     {SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall}}
 };
 use integer::BoundedInt;
-use snforge_std::io::PrintTrait;
+use snforge_std::PrintTrait;
 
 mod libraries {
     mod auction;
