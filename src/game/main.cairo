@@ -668,24 +668,14 @@ mod NoGame {
             // Write mission
             let time_now = get_block_timestamp();
             let mut mission: Mission = Default::default();
+            mission.time_start = time_now;
+            mission.destination = self.get_position_slot_occupant(destination);
+            mission.time_arrival = time_now + travel_time;
+            mission.fleet = f;
             if is_debris_collection {
-                mission =
-                    Mission {
-                        time_start: time_now,
-                        destination: self.get_position_slot_occupant(destination),
-                        time_arrival: time_now + travel_time,
-                        fleet: f,
-                        is_debris: true,
-                    };
+                mission.is_debris = true;
             } else {
-                mission =
-                    Mission {
-                        time_start: time_now,
-                        destination: self.get_position_slot_occupant(destination),
-                        time_arrival: time_now + travel_time,
-                        fleet: f,
-                        is_debris: false,
-                    };
+                mission.is_debris = false;
                 self
                     .hostile_missions
                     .write(
@@ -696,7 +686,6 @@ mod NoGame {
                         )
                     );
             }
-
             self.active_missions.write((planet_id, active_missions + 1), mission);
             self.active_missions_len.write(planet_id, active_missions + 1);
             // Write new fleet levels
@@ -781,6 +770,8 @@ mod NoGame {
                 .scraper_available
                 .write(origin, self.scraper_available.read(origin) + mission.fleet.scraper);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
+            let active_missions = self.active_missions_len.read(origin);
+            self.active_missions_len.write(origin, active_missions - 1);
         }
 
         /////////////////////////////////////////////////////////////////////
