@@ -616,15 +616,37 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Fleet Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn send_fleet(ref self: ContractState, f: Fleet, destination: PlanetPosition) {
+        fn send_fleet(
+            ref self: ContractState,
+            f: Fleet,
+            destination: PlanetPosition,
+            is_debris_collection: bool
+        ) {
             let destination_id = self
                 .position_to_planet_id
                 .read(self.get_raw_from_position(destination));
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
-            assert(destination_id != planet_id, 'cannot send to own planet');
-            assert(!self.is_noob_protected(planet_id, destination_id), 'noob protection active');
+
+            if is_debris_collection {
+                assert(
+                    !self.planet_debris_field.read(destination_id).is_zero(), 'empty debris fiels'
+                );
+                assert(f.scraper >= 1, 'no scrapers for collection');
+                assert(
+                    f.carrier.is_zero()
+                        && f.sparrow.is_zero()
+                        && f.frigate.is_zero() & f.armade.is_zero(),
+                    'only scraper can collect'
+                );
+            } else {
+                assert(destination_id != planet_id, 'cannot send to own planet');
+                assert(
+                    !self.is_noob_protected(planet_id, destination_id), 'noob protection active'
+                );
+            }
+
             self.check_enough_ships(planet_id, f);
             // Calculate distance
             let distance = fleet::get_distance(
@@ -636,7 +658,7 @@ mod NoGame {
             let travel_time = fleet::get_flight_time(speed, distance);
             // Check numeber of mission
             let active_missions = self.active_missions_len.read(planet_id);
-            assert(active_missions <= techs.digital + 1, 'max active missions');
+            assert(active_missions < techs.digital + 1, 'max active missions');
             // Pay for fuel
             let consumption = fleet::get_fuel_consumption(f, distance);
             let mut cost: ERC20s = Default::default();
@@ -645,40 +667,53 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
             // Write mission
             let time_now = get_block_timestamp();
-            let mission = Mission {
-                time_start: time_now,
-                destination: self.get_position_slot_occupant(destination),
-                time_arrival: time_now + travel_time,
-                fleet: f,
-                is_return: false
-            };
+            let mut mission: Mission = Default::default();
+            if is_debris_collection {
+                let mission = Mission {
+                    time_start: time_now,
+                    destination: self.get_position_slot_occupant(destination),
+                    time_arrival: time_now + travel_time,
+                    fleet: f,
+                    is_debris: true,
+                };
+            } else {
+                let mission = Mission {
+                    time_start: time_now,
+                    destination: self.get_position_slot_occupant(destination),
+                    time_arrival: time_now + travel_time,
+                    fleet: f,
+                    is_debris: false,
+                };
+                self
+                    .hostile_missions
+                    .write(
+                        self.position_to_planet_id.read(self.get_raw_from_position(destination)),
+                        (
+                            self.get_planet_position(planet_id),
+                            fleet::calculate_number_of_ships(f, Zeroable::zero())
+                        )
+                    );
+            }
+
             self.active_missions.write((planet_id, active_missions + 1), mission);
             self.active_missions_len.write(planet_id, active_missions + 1);
             // Write new fleet levels
             self.fleet_leave_planet(planet_id, f);
-            self
-                .hostile_missions
-                .write(
-                    self.position_to_planet_id.read(self.get_raw_from_position(destination)),
-                    (
-                        self.get_planet_position(planet_id),
-                        fleet::calculate_number_of_ships(f, Zeroable::zero())
-                    )
-                );
+
             self.last_active.write(planet_id, get_block_timestamp());
         }
 
-        fn dock_fleet(ref self: ContractState, mission_id: u8) {
-            let origin = self.get_owned_planet(get_caller_address());
-            let mut mission = self.active_missions.read((origin, mission_id));
-            assert(!mission.is_zero(), 'no fleet to dock');
-            let mut mission = self.active_missions.read((origin, mission_id));
-            assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
-            self.fleet_return_planet(origin, mission.fleet);
-            let active_missions = self.active_missions_len.read(origin);
-            self.active_missions_len.write(origin, active_missions - 1);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
-        }
+        // fn dock_fleet(ref self: ContractState, mission_id: u8) {
+        //     let origin = self.get_owned_planet(get_caller_address());
+        //     let mut mission = self.active_missions.read((origin, mission_id));
+        //     assert(!mission.is_zero(), 'no fleet to dock');
+        //     let mut mission = self.active_missions.read((origin, mission_id));
+        //     assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
+        //     self.fleet_return_planet(origin, mission.fleet);
+        //     let active_missions = self.active_missions_len.read(origin);
+        //     self.active_missions_len.write(origin, active_missions - 1);
+        //     self.active_missions.write((origin, mission_id), Zeroable::zero());
+        // }
 
         fn attack_planet(ref self: ContractState, mission_id: u8) {
             let origin = self.get_owned_planet(get_caller_address());
@@ -713,24 +748,49 @@ mod NoGame {
                         self.erc721.read().owner_of(mission.destination.into()), loot_amount
                     );
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
+                self.fleet_return_planet(origin, mission.fleet);
                 mission.fleet = f1;
-                let time_travel = mission.time_arrival - mission.time_start;
-                mission.time_arrival = time_now + time_travel;
-                mission.is_return = true;
-                self.active_missions.write((origin, mission_id), mission);
+                let active_missions = self.active_missions_len.read(origin);
+                self.active_missions_len.write(origin, active_missions - 1);
+                self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
+            self.hostile_missions.write(mission.destination, (Zeroable::zero(), Zeroable::zero()));
         }
 
         fn recall_fleet(ref self: ContractState, mission_id: u8) {
             let origin = self.get_owned_planet(get_caller_address());
-            let mut mission = self.active_missions.read((origin, mission_id));
+            let mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'no fleet to recall');
-            assert(!mission.is_return, 'mission already returning');
+            self.fleet_return_planet(origin, mission.fleet);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
+        }
+
+        fn collect_debris(ref self: ContractState, mission_id: u8) {
+            let caller = get_caller_address();
+            let origin = self.get_owned_planet(caller);
+            let mut mission = self.active_missions.read((origin, mission_id));
+            assert(!mission.is_zero(), 'the mission is empty');
+            assert(mission.is_debris, 'not a debris mission');
             let time_now = get_block_timestamp();
-            let time_travel = time_now - mission.time_start;
-            mission.time_arrival = time_now + time_travel;
-            mission.is_return = true;
-            self.active_missions.write((origin, mission_id), mission);
+            assert(time_now >= mission.time_arrival, 'destination not reached yet');
+            let debris = self.planet_debris_field.read(mission.destination);
+            let storage = fleet::get_fleet_cargo_capacity(mission.fleet);
+            let collectible_debris = fleet::get_collectible_debris(storage, debris);
+            let new_debris = Debris {
+                steel: debris.steel - collectible_debris.steel,
+                quartz: debris.quartz - collectible_debris.quartz
+            };
+            self.planet_debris_field.write(mission.destination, new_debris);
+            let erc20 = ERC20s {
+                steel: collectible_debris.steel,
+                quartz: collectible_debris.quartz,
+                tritium: Zeroable::zero()
+            };
+            self.receive_resources_erc20(caller, erc20);
+            self
+                .scraper_available
+                .write(origin, self.scraper_available.read(origin) + mission.fleet.scraper);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -1050,6 +1110,7 @@ mod NoGame {
         fn _collect_resources(ref self: ContractState, caller: ContractAddress) {
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
+            assert(!planet_id.is_zero(), 'planet does not exist');
             let production = self.calculate_production(planet_id);
             self.receive_resources_erc20(caller, production);
             self.resources_timer.write(planet_id, get_block_timestamp());

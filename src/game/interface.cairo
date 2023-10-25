@@ -50,10 +50,13 @@ trait INoGame<TState> {
     fn astral_launcher_build(ref self: TState, quantity: u32);
     fn plasma_projector_build(ref self: TState, quantity: u32);
     // Fleet functions
-    fn send_fleet(ref self: TState, f: Fleet, destination: PlanetPosition);
-    fn dock_fleet(ref self: TState, mission_id: u8);
+    fn send_fleet(
+        ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
+    );
+    // fn dock_fleet(ref self: TState, mission_id: u8);
     fn attack_planet(ref self: TState, mission_id: u8);
     fn recall_fleet(ref self: TState, mission_id: u8);
+    fn collect_debris(ref self: TState, mission_id: u8);
     // View functions
     fn get_owner(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;

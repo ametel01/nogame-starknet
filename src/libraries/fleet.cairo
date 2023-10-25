@@ -552,3 +552,23 @@ fn get_fleet_cargo_capacity(f: Fleet) -> u128 {
         + ARMADE().cargo * f.armade)
         .into()
 }
+
+fn get_collectible_debris(cargo_capacity: u128, debris: Debris) -> Debris {
+    let total_debris = debris.steel + debris.quartz;
+    if cargo_capacity >= total_debris {
+        return debris;
+    }
+
+    let half_capacity = cargo_capacity / 2;
+    let mut collected_steel = math::min(debris.steel, half_capacity);
+    let mut collected_quartz = math::min(debris.quartz, half_capacity);
+
+    let remaining_capacity = cargo_capacity - collected_steel - collected_quartz;
+    if collected_steel < half_capacity {
+        collected_quartz += remaining_capacity;
+    } else if collected_quartz < half_capacity {
+        collected_steel += remaining_capacity;
+    }
+    return Debris { steel: collected_steel, quartz: collected_quartz };
+}
+

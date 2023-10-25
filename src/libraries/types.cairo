@@ -313,7 +313,7 @@ struct Mission {
     destination: u16,
     time_arrival: u64,
     fleet: Fleet,
-    is_return: bool,
+    is_debris: bool,
 }
 
 impl MissionZeroable of Zeroable<Mission> {
@@ -323,7 +323,7 @@ impl MissionZeroable of Zeroable<Mission> {
             destination: 0,
             time_arrival: 0,
             fleet: Zeroable::zero(),
-            is_return: false,
+            is_debris: false,
         }
     }
     fn is_zero(self: Mission) -> bool {
