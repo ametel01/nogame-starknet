@@ -669,21 +669,23 @@ mod NoGame {
             let time_now = get_block_timestamp();
             let mut mission: Mission = Default::default();
             if is_debris_collection {
-                let mission = Mission {
-                    time_start: time_now,
-                    destination: self.get_position_slot_occupant(destination),
-                    time_arrival: time_now + travel_time,
-                    fleet: f,
-                    is_debris: true,
-                };
+                mission =
+                    Mission {
+                        time_start: time_now,
+                        destination: self.get_position_slot_occupant(destination),
+                        time_arrival: time_now + travel_time,
+                        fleet: f,
+                        is_debris: true,
+                    };
             } else {
-                let mission = Mission {
-                    time_start: time_now,
-                    destination: self.get_position_slot_occupant(destination),
-                    time_arrival: time_now + travel_time,
-                    fleet: f,
-                    is_debris: false,
-                };
+                mission =
+                    Mission {
+                        time_start: time_now,
+                        destination: self.get_position_slot_occupant(destination),
+                        time_arrival: time_now + travel_time,
+                        fleet: f,
+                        is_debris: false,
+                    };
                 self
                     .hostile_missions
                     .write(
@@ -702,18 +704,6 @@ mod NoGame {
 
             self.last_active.write(planet_id, get_block_timestamp());
         }
-
-        // fn dock_fleet(ref self: ContractState, mission_id: u8) {
-        //     let origin = self.get_owned_planet(get_caller_address());
-        //     let mut mission = self.active_missions.read((origin, mission_id));
-        //     assert(!mission.is_zero(), 'no fleet to dock');
-        //     let mut mission = self.active_missions.read((origin, mission_id));
-        //     assert(get_block_timestamp() >= mission.time_arrival, 'destination not reached yet');
-        //     self.fleet_return_planet(origin, mission.fleet);
-        //     let active_missions = self.active_missions_len.read(origin);
-        //     self.active_missions_len.write(origin, active_missions - 1);
-        //     self.active_missions.write((origin, mission_id), Zeroable::zero());
-        // }
 
         fn attack_planet(ref self: ContractState, mission_id: u8) {
             let origin = self.get_owned_planet(get_caller_address());

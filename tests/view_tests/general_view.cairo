@@ -149,7 +149,7 @@ fn test_get_debris_field() {
     let mut fleet: Fleet = Default::default();
     let position = dsp.game.get_planet_position(2);
     fleet.carrier = 100;
-    dsp.game.send_fleet(fleet, position);
+    dsp.game.send_fleet(fleet, position, false);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
     dsp.game.attack_planet(1);
 

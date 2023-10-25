@@ -74,7 +74,7 @@ fn test_send_fleet() {
 
     let initial = testing::get_available_gas();
     gas::withdraw_gas().unwrap();
-    dsp.game.send_fleet(fleet, p2_position);
+    dsp.game.send_fleet(fleet, p2_position, false);
     (initial - testing::get_available_gas()).print();
 
     assert(dsp.game.get_ships_levels(2).carrier == 0, 'wrong ships after');
@@ -131,7 +131,7 @@ fn test_attack_planet() {
     let mut fleet_a: Fleet = Default::default();
     // fleet_a.sparrow = 100;
     fleet_a.armade = 50;
-    dsp.game.send_fleet(fleet_a, p2_position);
+    dsp.game.send_fleet(fleet_a, p2_position, false);
     let mission = dsp.game.get_mission_details(2, 1);
     start_warp(dsp.game.contract_address, mission.time_arrival + 1);
     dsp.game.attack_planet(1);
@@ -143,7 +143,6 @@ fn test_attack_planet() {
     dsp.game.get_defences_levels(1).print();
     let mission = dsp.game.get_mission_details(2, 1);
     start_warp(dsp.game.contract_address, mission.time_arrival + 1);
-    dsp.game.dock_fleet(1);
     'P2 ships'.print();
     dsp.game.get_ships_levels(2).print();
 // dsp.game.get_mission_details(1, 1).print();
