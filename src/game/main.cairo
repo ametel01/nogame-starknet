@@ -649,9 +649,7 @@ mod NoGame {
 
             self.check_enough_ships(planet_id, f);
             // Calculate distance
-            let distance = fleet::get_distance(
-                self.planet_position.read(planet_id), destination
-            );
+            let distance = fleet::get_distance(self.planet_position.read(planet_id), destination);
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
             let speed = fleet::get_fleet_speed(f, techs);
@@ -729,8 +727,7 @@ mod NoGame {
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
                 self.fleet_return_planet(origin, mission.fleet);
                 mission.fleet = f1;
-                let active_missions = self.active_missions_len.read(origin);
-                self.active_missions_len.write(origin, active_missions - 1);
+                self.active_missions_len.write(origin, self.active_missions_len.read(origin) - 1);
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
             self.hostile_missions.write(mission.destination, (Zeroable::zero(), Zeroable::zero()));
@@ -742,6 +739,7 @@ mod NoGame {
             assert(!mission.is_zero(), 'no fleet to recall');
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.active_missions_len.write(origin, self.active_missions_len.read(origin) - 1);
         }
 
         fn collect_debris(ref self: ContractState, mission_id: u8) {
