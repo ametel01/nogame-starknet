@@ -16,13 +16,13 @@ fn test_send_fleet_success() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT2());
-    dsp.game.generate_planet();
     start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(dsp.game.contract_address, ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
@@ -47,7 +47,11 @@ fn test_send_fleet_success() {
     assert(dsp.game.get_ships_levels(1).frigate == 1, 'wrong ships before');
     assert(dsp.game.get_ships_levels(1).armade == 1, 'wrong ships before');
 
+    let tritium_before = dsp.game.get_spendable_resources(1).tritium;
+
     dsp.game.send_fleet(fleet, p2_position, false);
+
+    let tritium_after = dsp.game.get_spendable_resources(1).tritium;
 
     assert(dsp.game.get_ships_levels(2).carrier == 0, 'wrong ships after');
     assert(dsp.game.get_ships_levels(2).scraper == 0, 'wrong ships after');
@@ -55,7 +59,19 @@ fn test_send_fleet_success() {
     assert(dsp.game.get_ships_levels(2).frigate == 0, 'wrong ships after');
     assert(dsp.game.get_ships_levels(2).armade == 0, 'wrong ships after');
 
+    let techs = dsp.game.get_techs_levels(1);
+    let fleet_speed = fleet::get_fleet_speed(fleet, techs);
+
+    let p1_position = dsp.game.get_planet_position(1);
+    let distance = fleet::get_distance(p1_position, p2_position);
+    let flight_time = fleet::get_flight_time(fleet_speed, distance);
+
+    let fuel_consumption = fleet::get_fuel_consumption(fleet, distance);
+    assert(tritium_after == tritium_before - fuel_consumption, 'wrong fuel consumption');
+
     let mission = dsp.game.get_mission_details(1, 1);
+    assert(mission.time_arrival == get_block_timestamp() + flight_time, 'wrong flight time');
+
     assert(mission.fleet.carrier == 1, 'wrong carrier');
     assert(mission.fleet.scraper == 1, 'wrong scraper');
     assert(mission.fleet.sparrow == 1, 'wrong sparrow');
@@ -158,7 +174,7 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
 }
 
 #[test]
-fn test_send_fleet_debris_success() { // TODO
+fn test_send_fleet_debris_success() {
     let dsp = set_up();
     init_game(dsp);
 
@@ -182,11 +198,7 @@ fn test_send_fleet_debris_success() { // TODO
 
     dsp.game.send_fleet(fleet, p1_position, false);
     let mission = dsp.game.get_mission_details(1, 1);
-    warp_multiple(
-        dsp.game.contract_address,
-        get_contract_address(),
-        get_block_timestamp() + mission.time_arrival + 1
-    );
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
 
     let mut fleet: Fleet = Default::default();
@@ -194,11 +206,7 @@ fn test_send_fleet_debris_success() { // TODO
     let debris = dsp.game.get_debris_field(2);
     dsp.game.send_fleet(fleet, p1_position, true);
     let mission = dsp.game.get_mission_details(1, 2);
-    warp_multiple(
-        dsp.game.contract_address,
-        get_contract_address(),
-        get_block_timestamp() + mission.time_arrival + 1
-    );
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.game.get_spendable_resources(1);
     dsp.game.collect_debris(2);
     assert(dsp.game.get_ships_levels(1).scraper == 1, 'wrong scraper back');
@@ -208,25 +216,100 @@ fn test_send_fleet_debris_success() { // TODO
         resources_after.quartz == resources_before.quartz + debris.quartz, 'wrong quartz collected'
     );
     let debris_after_collection = dsp.game.get_debris_field(2);
-    assert(
-        debris_after_collection.steel.is_zero() && debris_after_collection.quartz.is_zero(),
-        'wrong debris after'
-    );
+    assert(debris_after_collection.is_zero(), 'wrong debris after');
 }
 
 #[test]
-fn test_send_fleet_debris_fails_empty_debris_field() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('empty debris fiels',))]
+fn test_send_fleet_debris_fails_empty_debris_field() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade();
+    dsp.game.carrier_build(10);
+    dsp.game.scraper_build(1);
+    let p2_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.scraper = 1;
+
+    dsp.game.send_fleet(fleet, p2_position, true);
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.collect_debris(2);
 }
 
 #[test]
-fn test_send_fleet_debris_fails_no_scrapers() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('no scrapers for collection',))]
+fn test_send_fleet_debris_fails_no_scrapers() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.plasma_projector_build(1);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade();
+    dsp.game.carrier_build(2);
+    let p1_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    dsp.game.send_fleet(fleet, p1_position, false);
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
+
+    dsp.game.send_fleet(fleet, p1_position, true);
 }
 
 #[test]
-fn test_send_fleet_debris_fails_not_only_scrapers() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('only scraper can collect',))]
+fn test_send_fleet_debris_fails_not_only_scrapers() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.plasma_projector_build(1);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade();
+    dsp.game.carrier_build(2);
+    dsp.game.scraper_build(1);
+    let p1_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    dsp.game.send_fleet(fleet, p1_position, false);
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
+
+    fleet.scraper = 1;
+    dsp.game.send_fleet(fleet, p1_position, true);
 }
 
 #[test]
@@ -234,69 +317,155 @@ fn test_attack_planet() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT2());
-    dsp.game.generate_planet();
     start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.blaster_build(1);
+    let defences_before = dsp.game.get_defences_levels(2);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
+    dsp.game.sparrow_build(1);
+    let fleetA_before = dsp.game.get_ships_levels(1);
 
-    dsp.game.sparrow_build(200);
-    dsp.game.frigate_build(20);
-    dsp.game.blaster_build(20);
-    dsp.game.beam_build(20);
-    dsp.game.astral_launcher_build(20);
-    dsp.game.plasma_projector_build(1);
-
-    start_prank(dsp.game.contract_address, ACCOUNT1());
-    dsp.game.sparrow_build(100);
-    dsp.game.armade_build(50);
-
-    let p2_position = dsp.game.get_planet_position(1);
+    let p2_position = dsp.game.get_planet_position(2);
     let mut fleet_a: Fleet = Default::default();
+    let fleet_b: Fleet = Zeroable::zero();
     // fleet_a.sparrow = 100;
-    fleet_a.armade = 50;
+    fleet_a.sparrow = 1;
     dsp.game.send_fleet(fleet_a, p2_position, false);
-    let mission = dsp.game.get_mission_details(2, 1);
-    start_warp(dsp.game.contract_address, mission.time_arrival + 1);
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
-    'P1 debris'.print();
-    dsp.game.get_debris_field(1).print();
-    'P1 ships'.print();
-    dsp.game.get_ships_levels(1).print();
-    'P1 defences'.print();
-    dsp.game.get_defences_levels(1).print();
-    let mission = dsp.game.get_mission_details(2, 1);
-    start_warp(dsp.game.contract_address, mission.time_arrival + 1);
-    'P2 ships'.print();
-    dsp.game.get_ships_levels(2).print();
-// dsp.game.get_mission_details(1, 1).print();
+
+    let a_techs = dsp.game.get_techs_levels(1);
+    let b_techs = dsp.game.get_techs_levels(2);
+    let (fleetA_after, fleetB_after, defences_after) = fleet::war(
+        fleet_a, a_techs, fleet_b, defences_before, b_techs
+    );
+    let expected_debris = fleet::get_debris(fleetA_before, fleetA_after);
+    let debris_field = dsp.game.get_debris_field(2);
+    assert(debris_field == expected_debris, 'wrong after debris');
+
+    let fleet_a = dsp.game.get_ships_levels(1);
+    let fleet_b = dsp.game.get_ships_levels(2);
+    let defences = dsp.game.get_defences_levels(2);
+    assert(fleet_a == fleetA_after, 'wrong fleet_a after');
+    assert(fleet_b == fleetB_after, 'wrong fleet_b after');
+    assert(defences == defences_after, 'wrong fleet_b after');
 }
 
 #[test]
-fn test_attack_planet_fails_empty_mission() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('the mission is empty',))]
+fn test_attack_planet_fails_empty_mission() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.sparrow_build(1);
+    let fleetA_before = dsp.game.get_ships_levels(1);
+
+    let p2_position = dsp.game.get_planet_position(2);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.sparrow = 1;
+
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+    let mission = dsp.game.get_mission_details(1, 1);
+
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(2)
 }
 
 #[test]
-fn test_attack_planet_fails_destination_not_reached() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('destination not reached yet',))]
+fn test_attack_planet_fails_destination_not_reached() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.sparrow_build(1);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.sparrow = 1;
+
+    let p2_position = dsp.game.get_planet_position(2);
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+
+    let mission = dsp.game.get_mission_details(1, 1);
+    dsp.game.attack_planet(1)
 }
 
 #[test]
-fn test_recall_fleet() { // TODO
-    assert(0 == 0, 'todo');
+fn test_recall_fleet() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.sparrow_build(1);
+    let fleet_before = dsp.game.get_ships_levels(1);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.sparrow = 1;
+
+    let p2_position = dsp.game.get_planet_position(2);
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + 60);
+    dsp.game.recall_fleet(1);
+    let fleet_after = dsp.game.get_ships_levels(1);
+    assert(fleet_after == fleet_before, 'wrong fleet after');
+    let mission_after = dsp.game.get_mission_details(1, 1);
+    assert(mission_after == Zeroable::zero(), 'wrong mission after');
+    assert(dsp.game.get_active_missions(1).len() == 0, 'wrong active missions');
 }
 
 #[test]
-fn test_recall_fleet_fails_no_fleet_to_recall() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('no fleet to recall',))]
+fn test_recall_fleet_fails_no_fleet_to_recall() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.sparrow_build(1);
+    let fleet_before = dsp.game.get_ships_levels(1);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.sparrow = 1;
+
+    let p2_position = dsp.game.get_planet_position(2);
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + 60);
+    dsp.game.recall_fleet(2);
 }
 
-#[test]
-fn test_recall_fleet_fails_mission_already_returning() { // TODO
-    assert(0 == 0, 'todo');
-}
