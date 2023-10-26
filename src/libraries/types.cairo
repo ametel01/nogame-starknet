@@ -130,7 +130,7 @@ struct ShipsCost {
     armade: ERC20s,
 }
 
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Default, PartialEq, Drop, Serde)]
 struct DefencesLevels {
     celestia: u32,
     blaster: u32,
@@ -180,7 +180,7 @@ struct EnergyCost {
     tritium: u128,
 }
 
-#[derive(Copy, Default, Drop, Serde, starknet::Store)]
+#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
 struct PlanetPosition {
     system: u8,
     orbit: u8,
@@ -212,7 +212,7 @@ struct Cargo {
     tritium: u128,
 }
 
-#[derive(Copy, Default, Drop, Serde, starknet::Store)]
+#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
 struct Debris {
     steel: u128,
     quartz: u128
@@ -307,7 +307,7 @@ impl PrintUnit of PrintTrait<Unit> {
     }
 }
 
-#[derive(Copy, Default, Drop, Serde, starknet::Store)]
+#[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
     time_start: u64,
     destination: u16,
