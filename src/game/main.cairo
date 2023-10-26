@@ -650,7 +650,7 @@ mod NoGame {
             self.check_enough_ships(planet_id, f);
             // Calculate distance
             let distance = fleet::get_distance(
-                self.calculate_planet_position(planet_id), destination
+                self.planet_position.read(planet_id), destination
             );
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
