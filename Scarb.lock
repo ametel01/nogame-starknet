@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "cubit"
 version = "1.2.0"
-source = "git+https://github.com/influenceth/cubit.git?rev=2ccb253#2ccb2536dffa3f15ebd38b755c1be65fde1eab0c"
+source = "git+https://github.com/ametel01/cubit?rev=72784d8#72784d843630a9b216045631aca87b86d4bf5e10"
 
 [[package]]
 name = "nogame"
@@ -18,8 +18,8 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin"
-version = "0.7.0"
-source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.7.0#61a2505fe0c0f19b5de2b3f8dedf421ba2cff657"
+version = "0.8.0-beta.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?rev=4c95981#4c95981a7178e43730f152c85a92336dc6a22d62"
 
 [[package]]
 name = "snforge_std"

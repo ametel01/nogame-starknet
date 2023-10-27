@@ -15,7 +15,8 @@ mod NoGame {
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
-        PlanetPosition, Debris, Mission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE, DAY
+        PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
+        DAY
     };
     use nogame::libraries::compounds::Compounds;
     use nogame::libraries::defences::Defences;
@@ -23,8 +24,8 @@ mod NoGame {
     use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
-    use nogame::token::erc721::{INGERC721DispatcherTrait, INGERC721Dispatcher};
-    use nogame::libraries::i128::{I128Serde, to_signed};
+    use nogame::token::erc721::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
+    use nogame::libraries::i128::{to_signed};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
@@ -45,7 +46,7 @@ mod NoGame {
         resources_spent: LegacyMap::<u16, u128>,
         last_active: LegacyMap::<u16, u64>,
         // Tokens.
-        erc721: INGERC721Dispatcher,
+        erc721: IERC721NoGameDispatcher,
         steel: INGERC20Dispatcher,
         quartz: INGERC20Dispatcher,
         tritium: INGERC20Dispatcher,
@@ -86,9 +87,10 @@ mod NoGame {
         astral_available: LegacyMap::<u16, u32>,
         plasma_available: LegacyMap::<u16, u32>,
         // Fleet
-        active_missions: LegacyMap::<(u16, u8), Mission>,
-        active_missions_len: LegacyMap<u16, u8>,
-        hostile_missions: LegacyMap<u16, (PlanetPosition, u32)>,
+        active_missions: LegacyMap::<(u16, u32), Mission>,
+        active_missions_len: LegacyMap<u16, usize>,
+        hostile_missions: LegacyMap<(u16, u32), HostileMission>,
+        hostile_missions_len: LegacyMap<u16, usize>,
     }
 
     #[event]
@@ -136,7 +138,7 @@ mod NoGame {
         ) {
             // NOTE: uncomment the following after testing with katana.
             assert(get_caller_address() == self.owner.read(), 'caller is not owner');
-            self.erc721.write(INGERC721Dispatcher { contract_address: erc721 });
+            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
             self.steel.write(INGERC20Dispatcher { contract_address: steel });
             self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
             self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
@@ -156,7 +158,7 @@ mod NoGame {
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
-            self.erc721.read().mint(to: caller, token_id: token_id.into());
+            self.erc721.read().mint(caller, token_id.into());
             let position = self.calculate_planet_position(token_id);
             self.planet_position.write(token_id, position);
             self.position_to_planet_id.write(self.get_raw_from_position(position), token_id);
@@ -656,7 +658,7 @@ mod NoGame {
             let travel_time = fleet::get_flight_time(speed, distance);
             // Check numeber of mission
             let active_missions = self.active_missions_len.read(planet_id);
-            assert(active_missions < techs.digital + 1, 'max active missions');
+            assert(active_missions < techs.digital.into() + 1, 'max active missions');
             // Pay for fuel
             let consumption = fleet::get_fuel_consumption(f, distance);
             let mut cost: ERC20s = Default::default();
@@ -672,27 +674,25 @@ mod NoGame {
             mission.fleet = f;
             if is_debris_collection {
                 mission.is_debris = true;
+                self.add_active_mission(planet_id, mission);
             } else {
+                let id = self.add_active_mission(planet_id, mission);
                 mission.is_debris = false;
-                self
-                    .hostile_missions
-                    .write(
-                        self.position_to_planet_id.read(self.get_raw_from_position(destination)),
-                        (
-                            self.get_planet_position(planet_id),
-                            fleet::calculate_number_of_ships(f, Zeroable::zero())
-                        )
-                    );
+                let mut hostile_mission: HostileMission = Default::default();
+                hostile_mission.origin = planet_id;
+                hostile_mission.id_at_origin = id;
+                hostile_mission.time_arrival = mission.time_arrival;
+                hostile_mission
+                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
+
+                self.add_hostile_mission(destination_id, hostile_mission);
             }
-            self.active_missions.write((planet_id, active_missions + 1), mission);
-            self.active_missions_len.write(planet_id, active_missions + 1);
             // Write new fleet levels
             self.fleet_leave_planet(planet_id, f);
-
             self.last_active.write(planet_id, get_block_timestamp());
         }
 
-        fn attack_planet(ref self: ContractState, mission_id: u8) {
+        fn attack_planet(ref self: ContractState, mission_id: usize) {
             let origin = self.get_owned_planet(get_caller_address());
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
@@ -722,27 +722,26 @@ mod NoGame {
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
-                        self.erc721.read().owner_of(mission.destination.into()), loot_amount
+                        self.erc721.read().ng_owner_of(mission.destination.into()), loot_amount
                     );
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
                 self.fleet_return_planet(origin, mission.fleet);
                 mission.fleet = f1;
-                self.active_missions_len.write(origin, self.active_missions_len.read(origin) - 1);
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
-            self.hostile_missions.write(mission.destination, (Zeroable::zero(), Zeroable::zero()));
+            self.remove_hostile_mission(mission.destination, mission_id);
         }
 
-        fn recall_fleet(ref self: ContractState, mission_id: u8) {
+        fn recall_fleet(ref self: ContractState, mission_id: usize) {
             let origin = self.get_owned_planet(get_caller_address());
             let mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'no fleet to recall');
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
-            self.active_missions_len.write(origin, self.active_missions_len.read(origin) - 1);
+            self.remove_hostile_mission(mission.destination, mission_id);
         }
 
-        fn collect_debris(ref self: ContractState, mission_id: u8) {
+        fn collect_debris(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
             let origin = self.get_owned_planet(caller);
             let mut mission = self.active_missions.read((origin, mission_id));
@@ -822,7 +821,7 @@ mod NoGame {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
-            let planet_owner = self.erc721.read().owner_of(planet_id.into());
+            let planet_owner = self.erc721.read().ng_owner_of(planet_id.into());
             let steel = self.steel.read().balance_of(planet_owner).low / E18;
             let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
             let tritium = self.tritium.read().balance_of(planet_owner).low / E18;
@@ -972,26 +971,42 @@ mod NoGame {
             }
         }
 
-        fn get_mission_details(self: @ContractState, planet_id: u16, mission_id: u8) -> Mission {
+        fn get_mission_details(self: @ContractState, planet_id: u16, mission_id: usize) -> Mission {
             self.active_missions.read((planet_id, mission_id))
         }
 
         fn get_active_missions(self: @ContractState, planet_id: u16) -> Array<Mission> {
             let mut arr: Array<Mission> = array![];
             let len = self.active_missions_len.read(planet_id);
-            let mut i: u8 = 1;
+            let mut i = 1;
             loop {
-                if i.into() > len {
+                if i > len {
                     break;
                 }
-                arr.append(self.active_missions.read((planet_id, i)));
+                let mission = self.active_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
                 i += 1;
             };
             arr
         }
 
-        fn get_hostile_missions(self: @ContractState, planet_id: u16) -> (PlanetPosition, u32) {
-            self.hostile_missions.read(planet_id)
+        fn get_hostile_missions(self: @ContractState, planet_id: u16) -> Array<HostileMission> {
+            let mut arr: Array<HostileMission> = array![];
+            let len = self.hostile_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.hostile_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
+                i += 1;
+            };
+            arr
         }
 
         fn get_travel_time(
@@ -1441,6 +1456,57 @@ mod NoGame {
             self.beam_available.write(planet_id, d.beam);
             self.astral_available.write(planet_id, d.astral);
             self.plasma_available.write(planet_id, d.plasma);
+        }
+
+        fn add_active_mission(ref self: ContractState, planet_id: u16, mission: Mission) -> usize {
+            let len = self.active_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    self.active_missions.write((planet_id, i), mission);
+                    self.active_missions_len.write(planet_id, i);
+                    break;
+                }
+                i.print();
+                let mission = self.active_missions.read((planet_id, i));
+                if mission.is_zero() {
+                    self.active_missions.write((planet_id, i), mission);
+                }
+                i += 1;
+            };
+            i
+        }
+
+        fn add_hostile_mission(ref self: ContractState, planet_id: u16, mission: HostileMission) {
+            let len = self.hostile_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    self.hostile_missions.write((planet_id, i), mission);
+                    self.hostile_missions_len.write(planet_id, i);
+                    break;
+                }
+                let mission = self.hostile_missions.read((planet_id, i));
+                if mission.is_zero() {
+                    self.hostile_missions.write((planet_id, i), mission);
+                }
+                i += 1;
+            };
+        }
+
+        fn remove_hostile_mission(ref self: ContractState, planet_id: u16, id_to_remove: usize) {
+            let len = self.hostile_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.hostile_missions.read((planet_id, i));
+                if mission.id_at_origin == id_to_remove {
+                    self.hostile_missions.write((planet_id, i), Zeroable::zero());
+                }
+                i += 1;
+            }
         }
 
         fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u16 {

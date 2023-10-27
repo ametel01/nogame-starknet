@@ -11,7 +11,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
-use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
+use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]
@@ -29,7 +29,7 @@ fn test_generate() {
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet1 not paid'
     );
-    assert(dsp.erc721.balance_of(ACCOUNT1()).low == 1, 'wrong nft balance');
+    assert(dsp.erc721.ng_balance_of(ACCOUNT1()).low == 1, 'wrong nft balance');
     assert(dsp.steel.balance_of(ACCOUNT1()).low == 500 * E18, 'wrong steel balance');
     assert(dsp.quartz.balance_of(ACCOUNT1()).low == 300 * E18, 'wrong quartz balance');
     assert(dsp.tritium.balance_of(ACCOUNT1()).low == 100 * E18, 'wrong steel balance');
@@ -42,7 +42,7 @@ fn test_generate() {
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet2 not paid'
     );
-    assert(dsp.erc721.balance_of(ACCOUNT2()).low == 1, 'wrong nft balance');
+    assert(dsp.erc721.ng_balance_of(ACCOUNT2()).low == 1, 'wrong nft balance');
     assert(dsp.steel.balance_of(ACCOUNT2()).low == 500 * E18, 'wrong steel balance');
     assert(dsp.quartz.balance_of(ACCOUNT2()).low == 300 * E18, 'wrong quartz balance');
     assert(dsp.tritium.balance_of(ACCOUNT2()).low == 100 * E18, 'wrong steel balance');

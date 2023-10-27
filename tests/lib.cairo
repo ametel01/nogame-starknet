@@ -6,10 +6,6 @@ mod internal_functions {
     mod mine_production;
 }
 
-mod token_tests {
-    mod erc721;
-}
-
 mod view_tests {
     mod general_view;
     mod compound_view;

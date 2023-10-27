@@ -308,6 +308,40 @@ impl PrintUnit of PrintTrait<Unit> {
 }
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
+struct HostileMission {
+    origin: u16,
+    id_at_origin: usize,
+    time_arrival: u64,
+    number_of_ships: u32,
+}
+
+impl HostileMissionPrint of PrintTrait<HostileMission> {
+    fn print(self: HostileMission) {
+        self.origin.print();
+        self.id_at_origin.print();
+        self.time_arrival.print();
+        self.number_of_ships.print();
+    }
+}
+
+impl HostileMissionZeroable of Zeroable<HostileMission> {
+    fn zero() -> HostileMission {
+        HostileMission {
+            origin: Zeroable::zero(),
+            id_at_origin: Zeroable::zero(),
+            time_arrival: Zeroable::zero(),
+            number_of_ships: Zeroable::zero(),
+        }
+    }
+    fn is_zero(self: HostileMission) -> bool {
+        self.origin.is_zero() || self.number_of_ships.is_zero() || self.time_arrival.is_zero()
+    }
+    fn is_non_zero(self: HostileMission) -> bool {
+        !self.is_zero()
+    }
+}
+
+#[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
     time_start: u64,
     destination: u16,

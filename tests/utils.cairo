@@ -7,7 +7,7 @@ use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoro
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
-use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
+use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
 use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait};
 
@@ -20,7 +20,7 @@ const YEAR: u64 = 31_557_600;
 
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
-    erc721: INGERC721Dispatcher,
+    erc721: IERC721NoGameDispatcher,
     steel: INGERC20Dispatcher,
     quartz: INGERC20Dispatcher,
     tritium: INGERC20Dispatcher,
@@ -79,7 +79,7 @@ fn set_up() -> Dispatchers {
     let _eth = contract.deploy(@calldata).expect('failed to deploy eth');
 
     Dispatchers {
-        erc721: INGERC721Dispatcher { contract_address: _erc721 },
+        erc721: IERC721NoGameDispatcher { contract_address: _erc721 },
         steel: INGERC20Dispatcher { contract_address: _steel },
         quartz: INGERC20Dispatcher { contract_address: _quartz },
         tritium: INGERC20Dispatcher { contract_address: _tritium },

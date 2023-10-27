@@ -1,9 +1,9 @@
 use starknet::ContractAddress;
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
-    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission
+    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
+    HostileMission
 };
-use nogame::libraries::i128::I128Serde;
 
 #[starknet::interface]
 trait INoGame<TState> {
@@ -54,9 +54,9 @@ trait INoGame<TState> {
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
     );
     // fn dock_fleet(ref self: TState, mission_id: u8);
-    fn attack_planet(ref self: TState, mission_id: u8);
-    fn recall_fleet(ref self: TState, mission_id: u8);
-    fn collect_debris(ref self: TState, mission_id: u8);
+    fn attack_planet(ref self: TState, mission_id: usize);
+    fn recall_fleet(ref self: TState, mission_id: usize);
+    fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
     fn get_owner(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;
@@ -83,8 +83,8 @@ trait INoGame<TState> {
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
     fn get_defences_cost(self: @TState) -> DefencesCost;
     fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
-    fn get_mission_details(self: @TState, planet_id: u16, mission_id: u8) -> Mission;
-    fn get_hostile_missions(self: @TState, planet_id: u16) -> (PlanetPosition, u32);
+    fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
+    fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
     fn get_travel_time(
         self: @TState,

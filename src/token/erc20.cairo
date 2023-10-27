@@ -26,7 +26,7 @@ mod NGERC20 {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
 
-    use nogame::token::erc721::{INGERC721Dispatcher, INGERC721DispatcherTrait};
+    use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
     #[storage]
     struct Storage {
@@ -36,7 +36,7 @@ mod NGERC20 {
         _balances: LegacyMap<ContractAddress, u256>,
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
         _minter: ContractAddress,
-        nft: INGERC721Dispatcher,
+        nft: IERC721NoGameDispatcher,
     }
 
     #[event]
@@ -152,7 +152,7 @@ mod NGERC20 {
             self._name.write(name_);
             self._symbol.write(symbol_);
             self._minter.write(minter_);
-            self.nft.write(INGERC721Dispatcher { contract_address: nft_address });
+            self.nft.write(IERC721NoGameDispatcher { contract_address: nft_address });
         }
 
         fn _increase_allowance(
@@ -208,7 +208,7 @@ mod NGERC20 {
             assert(!sender.is_zero(), 'ERC20: transfer from 0');
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
             assert(
-                !self.nft.read().balance_of(recipient).is_zero(), 'recipient is not planet owner'
+                !self.nft.read().ng_balance_of(recipient).is_zero(), 'recipient is not planet owner'
             );
             self._balances.write(sender, self._balances.read(sender) - amount);
             self._balances.write(recipient, self._balances.read(recipient) + amount);
