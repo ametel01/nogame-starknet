@@ -376,6 +376,7 @@ impl MissionPrint of PrintTrait<Mission> {
         self.time_start.print();
         self.destination.print();
         self.time_arrival.print();
+        self.is_debris.print();
         self.fleet.print();
     }
 }

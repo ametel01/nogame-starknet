@@ -191,12 +191,12 @@ fn test_send_fleet_debris_success() {
     dsp.game.digital_systems_upgrade();
     dsp.game.carrier_build(10);
     dsp.game.scraper_build(1);
-    let p1_position = dsp.game.get_planet_position(2);
+    let p2_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 5;
 
-    dsp.game.send_fleet(fleet, p1_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
@@ -204,11 +204,12 @@ fn test_send_fleet_debris_success() {
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 1;
     let debris = dsp.game.get_debris_field(2);
-    dsp.game.send_fleet(fleet, p1_position, true);
-    let mission = dsp.game.get_mission_details(1, 2);
+    dsp.game.send_fleet(fleet, p2_position, true);
+    let missions = dsp.game.get_active_missions(1);
+    let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.game.get_spendable_resources(1);
-    dsp.game.collect_debris(2);
+    dsp.game.collect_debris(1);
     assert(dsp.game.get_ships_levels(1).scraper == 1, 'wrong scraper back');
     let resources_after = dsp.game.get_spendable_resources(1);
     assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
