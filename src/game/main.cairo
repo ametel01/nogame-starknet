@@ -1467,10 +1467,10 @@ mod NoGame {
                     self.active_missions_len.write(planet_id, i);
                     break;
                 }
-                i.print();
-                let mission = self.active_missions.read((planet_id, i));
-                if mission.is_zero() {
+                let read_mission = self.active_missions.read((planet_id, i));
+                if read_mission.is_zero() {
                     self.active_missions.write((planet_id, i), mission);
+                    break;
                 }
                 i += 1;
             };
@@ -1486,9 +1486,10 @@ mod NoGame {
                     self.hostile_missions_len.write(planet_id, i);
                     break;
                 }
-                let mission = self.hostile_missions.read((planet_id, i));
-                if mission.is_zero() {
+                let read_mission = self.hostile_missions.read((planet_id, i));
+                if read_mission.is_zero() {
                     self.hostile_missions.write((planet_id, i), mission);
+                    break;
                 }
                 i += 1;
             };
@@ -1504,6 +1505,7 @@ mod NoGame {
                 let mission = self.hostile_missions.read((planet_id, i));
                 if mission.id_at_origin == id_to_remove {
                     self.hostile_missions.write((planet_id, i), Zeroable::zero());
+                    break;
                 }
                 i += 1;
             }

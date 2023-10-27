@@ -45,7 +45,7 @@ fn test_get_mission_details() { // TODO
 }
 
 #[test]
-fn test_get_hostile_missions() { // TODO
+fn test_get_hostile_missions() {
     let dsp = set_up();
     init_game(dsp);
 
@@ -72,22 +72,114 @@ fn test_get_hostile_missions() { // TODO
 
     dsp.game.send_fleet(fleet, p2_position, false);
     dsp.game.send_fleet(fleet, p2_position, false);
-    // dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false);
+
+    let mut missions = dsp.game.get_hostile_missions(2);
+    assert(missions.len() == 3, 'wrong missions len #1');
+    assert(*missions.at(0).origin == 1, 'wrong origin #2');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin #3');
+    assert(*missions.at(1).origin == 1, 'wrong origin #4');
+    assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin #5');
+    assert(*missions.at(2).origin == 1, 'wrong origin #6');
+    assert(*missions.at(2).id_at_origin == 3, 'wrong id at origin #7');
+
     dsp.game.recall_fleet(1);
+    let mut missions = dsp.game.get_hostile_missions(2);
+    assert(missions.len() == 2, 'wrong missions len 2 #8');
+    assert(*missions.at(0).origin == 1, 'wrong origin #9');
+    assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #10');
+    assert(*missions.at(1).origin == 1, 'wrong origin #11');
+    assert(*missions.at(1).id_at_origin == 3, 'wrong id at origin #12');
+
+    dsp.game.recall_fleet(3);
+    let mut missions = dsp.game.get_hostile_missions(2);
+    assert(missions.len() == 1, 'wrong missions len 1 #13');
+    assert(*missions.at(0).origin == 1, 'wrong origin #14');
+    assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #15');
+
     dsp.game.send_fleet(fleet, p2_position, false);
     let mut missions = dsp.game.get_hostile_missions(2);
-    loop {
-        if missions.len().is_zero() {
-            break;
-        }
-        missions.pop_front().unwrap().print();
-        '--------------'.print();
-    }
+    assert(missions.len() == 2, 'wrong missions len 2 #16');
+    assert(*missions.at(0).origin == 1, 'wrong origin #17');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 2 #18');
+    assert(*missions.at(1).origin == 1, 'wrong origin #19');
+    assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin 1 #20');
+
+    dsp.game.recall_fleet(2);
+    let mut missions = dsp.game.get_hostile_missions(2);
+    assert(missions.len() == 1, 'wrong missions len 1 #21');
+    assert(*missions.at(0).origin == 1, 'wrong origin #22');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 1 #23');
+
+    dsp.game.recall_fleet(1);
+    let mut missions = dsp.game.get_hostile_missions(2);
+    assert(missions.len() == 0, 'wrong missions len 1 #24');
 }
 
 #[test]
-fn test_get_active_missions() { // TODO
-    assert(0 == 0, 'todo');
+fn test_get_active_missions() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade();
+
+    dsp.game.carrier_build(5);
+
+    let p2_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false);
+
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 3, 'wrong assert #1');
+    assert(*missions.at(0).destination == 2, 'wrong assert #2');
+    assert(*missions.at(0).is_debris == false, 'wrong assert #3');
+    assert(*missions.at(1).destination == 2, 'wrong assert #4');
+    assert(*missions.at(1).is_debris == false, 'wrong assert #5');
+    assert(*missions.at(2).destination == 2, 'wrong assert #6');
+    assert(*missions.at(2).is_debris == false, 'wrong assert #7');
+
+    dsp.game.recall_fleet(1);
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 2, 'wrong assert #8');
+    assert(*missions.at(0).is_debris == false, 'wrong assert #9');
+    assert(*missions.at(1).is_debris == false, 'wrong assert #10');
+
+    dsp.game.recall_fleet(3);
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 1, 'wrong assert #11');
+    assert(*missions.at(0).is_debris == false, 'wrong assert #12');
+
+    dsp.game.send_fleet(fleet, p2_position, false);
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 2, 'wrong assert #13');
+    assert(*missions.at(0).is_debris == false, 'wrong assert #14');
+    assert(*missions.at(1).is_debris == false, 'wrong assert #15');
+
+    dsp.game.recall_fleet(1);
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 1, 'wrong assert #16');
+    assert(*missions.at(0).is_debris == false, 'wrong assert #17');
+
+    dsp.game.recall_fleet(2);
+    let mut missions = dsp.game.get_active_missions(1);
+    assert(missions.len() == 0, 'wrong assert #18');
 }
 
 #[test]
