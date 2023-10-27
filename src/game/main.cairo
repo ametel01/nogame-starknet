@@ -1016,6 +1016,10 @@ mod NoGame {
             fleet: Fleet,
             techs: TechLevels
         ) -> u64 {
+            let destination_id = self
+                .position_to_planet_id
+                .read(self.get_raw_from_position(destination));
+            assert(!destination_id.is_zero(), 'no planet at destination');
             let distance = fleet::get_distance(origin, destination);
             let speed = fleet::get_fleet_speed(fleet, techs);
             fleet::get_flight_time(speed, distance)
