@@ -1,5 +1,8 @@
 use array::ArrayTrait;
-use starknet::{ContractAddress, contract_address_const, get_block_timestamp, get_contract_address};
+use starknet::{
+    ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,
+    get_caller_address
+};
 use openzeppelin::token::erc20::erc20::ERC20;
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
@@ -149,7 +152,7 @@ fn build_basic_mines(game: INoGameDispatcher) {
     game.steel_mine_upgrade();
     game.steel_mine_upgrade();
     game.quartz_mine_upgrade();
-    // warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();
@@ -160,12 +163,15 @@ fn build_basic_mines(game: INoGameDispatcher) {
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.energy_plant_upgrade();
+    game.tritium_mine_upgrade();
+    game.tritium_mine_upgrade();
+    game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.steel_mine_upgrade();
 }
 
 fn advance_game_state(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
     game.dockyard_upgrade();
     game.dockyard_upgrade();
     game.dockyard_upgrade();
@@ -236,7 +242,6 @@ fn advance_game_state(game: INoGameDispatcher) {
     game.weapons_development_upgrade();
     game.weapons_development_upgrade();
     game.weapons_development_upgrade(); // weapons #3
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
 }
 
 

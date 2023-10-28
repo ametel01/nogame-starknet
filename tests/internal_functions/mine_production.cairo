@@ -1,4 +1,5 @@
 use nogame::libraries::compounds::Compounds;
+use snforge_std::PrintTrait;
 
 #[test]
 fn steel_production_test() {
@@ -37,20 +38,20 @@ fn quartz_production_test() {
 }
 #[test]
 fn tritium_production_test() {
-    let production = Compounds::tritium_production(0);
+    let production = Compounds::tritium_production(0, 20);
     assert(production == 0, 'wrong result');
-    let production = Compounds::tritium_production(1);
-    assert(production == 11, 'wrong result');
-    let production = Compounds::tritium_production(5);
-    assert(production == 80, 'wrong result');
-    let production = Compounds::tritium_production(10);
-    assert(production == 259, 'wrong result');
-    let production = Compounds::tritium_production(20);
-    assert(production == 1345, 'wrong result');
-    let production = Compounds::tritium_production(31);
-    assert(production == 5950, 'wrong result');
-    let production = Compounds::tritium_production(60);
-    assert(production == 182688, 'wrong result');
+    let production = Compounds::tritium_production(1, 20);
+    assert(production == 14, 'wrong result');
+    let production = Compounds::tritium_production(5, 20);
+    assert(production == 102, 'wrong result');
+    let production = Compounds::tritium_production(10, 20);
+    assert(production == 331, 'wrong result');
+    let production = Compounds::tritium_production(20, 20);
+    assert(production == 1721, 'wrong result');
+    let production = Compounds::tritium_production(31, 20);
+    assert(production == 7615, 'wrong result');
+    let production = Compounds::tritium_production(60, 20);
+    assert(production == 233840, 'wrong result');
 }
 #[test]
 fn energy_plant_production_test() {

@@ -1,10 +1,14 @@
 use core::integer::U256Mul;
 use integer::U8Div;
+use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::libraries::types::ERC20s;
 use nogame::libraries::math::{power, BitShift};
 
 const UNI_SPEED: u128 = 1;
+
+const _1_36: u128 = 25087571940244990000;
+const _0_004: u128 = 73786976294838210;
 
 
 #[generate_trait]
@@ -141,14 +145,20 @@ impl Compounds of CompoundsTrait {
     }
 
     #[inline(always)]
-    fn tritium_production(current_level: u8) -> u128 {
+    fn tritium_production(current_level: u8, avg_temp: u16) -> u128 {
         let base: u256 = 10;
-        (base
+        let raw_production = (base
             * current_level.into()
             * BitShift::fpow(11.into(), current_level.into())
             / BitShift::fpow(10.into(), current_level.into()))
             .low
-            * UNI_SPEED
+            * UNI_SPEED;
+
+        let production_fp = FixedTrait::new_unscaled(raw_production, false);
+        let temp = FixedTrait::new_unscaled(avg_temp.into(), false);
+        let f1 = FixedTrait::new(_1_36, false);
+        let f2 = FixedTrait::new(_0_004, false);
+        (production_fp * (f1 - f2 * temp)).mag / ONE
     }
 
     #[inline(always)]

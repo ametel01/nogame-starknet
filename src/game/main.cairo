@@ -1,5 +1,4 @@
 // TODOS: 
-// - Implement modifier for  tritium production based on orbit
 // - Make contract upgradable
 // - Add events for battle reports
 
@@ -829,13 +828,17 @@ mod NoGame {
 
         fn get_collectible_resources(self: @ContractState, planet_id: u16) -> ERC20s {
             let time_elapsed = self.time_since_last_collection(planet_id);
+            let position = self.planet_position.read(planet_id);
+            let temp = self.calculate_avg_temperature(position.orbit);
             let steel = Compounds::steel_production(self.steel_mine_level.read(planet_id))
                 * time_elapsed.into()
                 / 3600;
             let quartz = Compounds::quartz_production(self.quartz_mine_level.read(planet_id))
                 * time_elapsed.into()
                 / 3600;
-            let tritium = Compounds::tritium_production(self.tritium_mine_level.read(planet_id))
+            let tritium = Compounds::tritium_production(
+                self.tritium_mine_level.read(planet_id), temp
+            )
                 * time_elapsed.into()
                 / 3600;
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
@@ -1162,6 +1165,8 @@ mod NoGame {
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
             let mines_levels = NoGame::get_compounds_levels(self, planet_id);
+            let position = self.planet_position.read(planet_id);
+            let temp = self.calculate_avg_temperature(position.orbit);
             let steel_available = Compounds::steel_production(mines_levels.steel)
                 * time_elapsed.into()
                 / 3600;
@@ -1170,7 +1175,7 @@ mod NoGame {
                 * time_elapsed.into()
                 / 3600;
 
-            let tritium_available = Compounds::tritium_production(mines_levels.tritium)
+            let tritium_available = Compounds::tritium_production(mines_levels.tritium, temp)
                 * time_elapsed.into()
                 / 3600;
             let energy_available = Compounds::energy_plant_production(mines_levels.energy);
@@ -1543,6 +1548,38 @@ mod NoGame {
                 return 14;
             } else {
                 return 11;
+            }
+        }
+
+        fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u16 {
+            if orbit == 1 {
+                return 230;
+            }
+            if orbit == 2 {
+                return 170;
+            }
+            if orbit == 3 {
+                return 120;
+            }
+            if orbit == 4 {
+                return 70;
+            }
+            if orbit == 5 {
+                return 60;
+            }
+            if orbit == 6 {
+                return 50;
+            }
+            if orbit == 7 {
+                return 40;
+            }
+            if orbit == 8 {
+                return 40;
+            }
+            if orbit == 9 {
+                return 20;
+            } else {
+                return 10;
             }
         }
     }
