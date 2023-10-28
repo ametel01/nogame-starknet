@@ -83,7 +83,6 @@ fn test_armade_speed() {
     techs.spacetime = 5;
     assert(fleet::get_fleet_speed(fleet, techs) == 16000, 'wrong_speed');
     techs.spacetime = 9;
-    fleet::get_fleet_speed(fleet, techs).print();
     assert(fleet::get_fleet_speed(fleet, techs) == 28000, 'wrong_speed');
 }
 
@@ -102,21 +101,21 @@ fn test_mixed_speed() {
 #[test]
 fn test_basic_speed() {
     let mut fleet: Fleet = Default::default();
-    fleet::get_flight_time(30000, 1005).print();
-    fleet::get_flight_time(15000, 1005).print();
-    fleet::get_flight_time(10000, 1005).print();
-    fleet::get_flight_time(4000, 1005).print();
-    fleet::get_flight_time(2000, 1005).print();
+    assert(fleet::get_flight_time(30000, 1005) == 2031, 'wrong assert #1');
+    assert(fleet::get_flight_time(15000, 1005) == 2873, 'wrong assert #2');
+    assert(fleet::get_flight_time(10000, 1005) == 3518, 'wrong assert #3');
+    assert(fleet::get_flight_time(4000, 1005) == 5563, 'wrong assert #4');
+    assert(fleet::get_flight_time(2000, 1005) == 7868, 'wrong assert #5');
 }
 
 #[test]
 fn test_long_speed() {
     let mut fleet: Fleet = Default::default();
-    fleet::get_flight_time(30000, 21605).print();
-    fleet::get_flight_time(15000, 21605).print();
-    fleet::get_flight_time(10000, 21605).print();
-    fleet::get_flight_time(4000, 21605).print();
-    fleet::get_flight_time(2000, 21605).print();
+    assert(fleet::get_flight_time(30000, 21605) == 9419, 'wrong assert #1');
+    assert(fleet::get_flight_time(15000, 21605) == 13321, 'wrong assert #5');
+    assert(fleet::get_flight_time(10000, 21605) == 16314, 'wrong assert #5');
+    assert(fleet::get_flight_time(4000, 21605) == 25796, 'wrong assert #5');
+    assert(fleet::get_flight_time(2000, 21605) == 36481, 'wrong assert #5');
 }
 
 #[test]

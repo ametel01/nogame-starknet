@@ -21,10 +21,8 @@ fn test_generate() {
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.game.get_current_planet_price();
     start_prank(dsp.game.contract_address, ACCOUNT1());
-    let initial = testing::get_available_gas();
-    gas::withdraw_gas().unwrap();
+
     dsp.game.generate_planet();
-    (initial - testing::get_available_gas()).print();
     assert(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet1 not paid'
@@ -83,13 +81,6 @@ fn test_planet_position() {
         len += 1;
     };
     let positions = dsp.game.get_generated_planets_positions();
-    positions.len().print();
-    let mut i = positions.len();
-    loop {
-        if i.is_zero() {
-            break;
-        }
-        (*positions.at(i - 1)).print();
-        i -= 1;
-    };
+    assert(*positions.at(0).orbit == 2 && *positions.at(0).system == 156, 'wrong assertion #1');
+    assert(*positions.at(1).orbit == 9 && *positions.at(1).system == 188, 'wrong assertion #2');
 }

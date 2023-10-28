@@ -12,7 +12,10 @@ use nogame::libraries::types::{
 };
 use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
+use tests::utils::{
+    E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
+    YEAR, warp_multiple
+};
 
 #[test]
 fn test_blaster_build() {
@@ -33,8 +36,16 @@ fn test_blaster_build() {
 }
 
 #[test]
-fn test_blaster_build_fails_dockyard_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('dockyard 1 required',))]
+fn test_blaster_build_fails_dockyard_level() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+
+    dsp.game.blaster_build(1);
 }
 
 #[test]
@@ -63,13 +74,32 @@ fn test_beam_build() {
 }
 
 #[test]
-fn test_beam_build_fails_dockyard_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('dockyard 2 required',))]
+fn test_beam_build_fails_dockyard_level() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+
+    dsp.game.beam_build(1);
 }
 
 #[test]
-fn test_beam_build_fails_energy_tech_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic(expected: ('energy innovation 2 required',))]
+fn test_beam_build_fails_energy_tech_level() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
+    dsp.game.dockyard_upgrade();
+    dsp.game.dockyard_upgrade();
+
+    dsp.game.beam_build(1);
 }
 
 #[test]

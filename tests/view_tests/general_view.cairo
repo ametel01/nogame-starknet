@@ -93,14 +93,6 @@ fn test_get_generated_planets_positions() {
 
     let mut arr_planets = dsp.game.get_generated_planets_positions();
     assert(arr_planets.len() == 5, 'wrong arr len');
-
-    loop {
-        if arr_planets.len().is_zero() {
-            break;
-        }
-        arr_planets.pop_front().unwrap().print();
-        continue;
-    };
 }
 
 #[test]
@@ -109,7 +101,7 @@ fn test_get_planet_position() {
     init_game(dsp);
     start_prank(dsp.game.contract_address, ACCOUNT1());
 
-    dsp.game.get_planet_position(1).print();
+    assert(dsp.game.get_planet_position(1).is_zero(), 'wrong assert #1');
 }
 
 #[test]
@@ -120,7 +112,7 @@ fn test_get_position_slot_occupant() {
     dsp.game.generate_planet();
 
     let position = dsp.game.get_planet_position(1);
-    dsp.game.get_position_slot_occupant(position).print();
+    assert(dsp.game.get_position_slot_occupant(position) == 1, 'wrong assert #1');
 }
 
 #[test]
@@ -166,7 +158,6 @@ fn test_get_spendable_resources() {
     dsp.game.generate_planet();
 
     let spendable = dsp.game.get_spendable_resources(1);
-    spendable.print();
     assert(spendable.steel == 500, 'wrong spendable');
     assert(spendable.quartz == 300, 'wrong spendable ');
     assert(spendable.tritium == 100, 'wrong spendable ');
@@ -182,7 +173,6 @@ fn test_get_collectible_resources() {
 
     start_warp(dsp.game.contract_address, HOUR * 3);
     let collectible = dsp.game.get_collectible_resources(1);
-    collectible.print();
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');

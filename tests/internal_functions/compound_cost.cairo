@@ -1,14 +1,6 @@
 use nogame::libraries::compounds::Compounds;
 use nogame::libraries::types::ERC20s;
-use snforge_std::PrintTrait;
 
-impl CostPrint of PrintTrait<ERC20s> {
-    fn print(self: ERC20s) {
-        self.steel.print();
-        self.quartz.print();
-        self.tritium.print();
-    }
-}
 
 #[test]
 fn steel_mine_cost_test() {

@@ -2,7 +2,6 @@
 // - Implement modifier for  tritium production based on orbit
 // - Make contract upgradable
 // - Add events for battle reports
-// - Implement collect debris
 
 #[starknet::contract]
 mod NoGame {
