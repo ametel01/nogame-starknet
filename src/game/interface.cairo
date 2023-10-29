@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
@@ -16,6 +16,9 @@ trait INoGame<TState> {
         rand: ContractAddress,
         eth: ContractAddress,
     );
+    // Upgradable
+    fn upgrade(ref self: TState, impl_hash: ClassHash);
+    fn version(self: @TState) -> u8;
     // Write functions
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
@@ -97,3 +100,4 @@ trait INoGame<TState> {
         self: @TState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
     ) -> u128;
 }
+

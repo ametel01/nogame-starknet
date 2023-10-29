@@ -28,3 +28,6 @@ mod token {
     mod erc721;
 }
 
+mod mocks {
+    mod mock_upgradable;
+}

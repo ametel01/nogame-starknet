@@ -1,9 +1,113 @@
+use starknet::{ContractAddress, class_hash::ClassHash};
+use nogame::libraries::types::{
+    DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
+    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
+    HostileMission
+};
+
+#[starknet::interface]
+trait INoGameUpgraded<TState> {
+    fn upgrade(ref self: TState, impl_hash: ClassHash);
+    fn version(self: @TState) -> u8;
+    fn initializer(
+        ref self: TState,
+        erc721: ContractAddress,
+        steel: ContractAddress,
+        quartz: ContractAddress,
+        tritium: ContractAddress,
+        rand: ContractAddress,
+        eth: ContractAddress,
+    );
+    // Write functions
+    fn write_number(ref self: TState, number: usize);
+    fn generate_planet(ref self: TState);
+    fn collect_resources(ref self: TState);
+    fn steel_mine_upgrade(ref self: TState);
+    fn quartz_mine_upgrade(ref self: TState);
+    fn tritium_mine_upgrade(ref self: TState);
+    fn energy_plant_upgrade(ref self: TState);
+    fn dockyard_upgrade(ref self: TState);
+    fn lab_upgrade(ref self: TState);
+    fn energy_innovation_upgrade(ref self: TState);
+    fn digital_systems_upgrade(ref self: TState);
+    fn beam_technology_upgrade(ref self: TState);
+    fn armour_innovation_upgrade(ref self: TState);
+    fn ion_systems_upgrade(ref self: TState);
+    fn plasma_engineering_upgrade(ref self: TState);
+    fn weapons_development_upgrade(ref self: TState);
+    fn shield_tech_upgrade(ref self: TState);
+    fn spacetime_warp_upgrade(ref self: TState);
+    fn combustive_engine_upgrade(ref self: TState);
+    fn thrust_propulsion_upgrade(ref self: TState);
+    fn warp_drive_upgrade(ref self: TState);
+    // Dockyard functions
+    fn carrier_build(ref self: TState, quantity: u32);
+    fn scraper_build(ref self: TState, quantity: u32);
+    fn celestia_build(ref self: TState, quantity: u32);
+    fn sparrow_build(ref self: TState, quantity: u32);
+    fn frigate_build(ref self: TState, quantity: u32);
+    fn armade_build(ref self: TState, quantity: u32);
+    // Defences functions
+    fn blaster_build(ref self: TState, quantity: u32);
+    fn beam_build(ref self: TState, quantity: u32);
+    fn astral_launcher_build(ref self: TState, quantity: u32);
+    fn plasma_projector_build(ref self: TState, quantity: u32);
+    // Fleet functions
+    fn send_fleet(
+        ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
+    );
+    // fn dock_fleet(ref self: TState, mission_id: u8);
+    fn attack_planet(ref self: TState, mission_id: usize);
+    fn recall_fleet(ref self: TState, mission_id: usize);
+    fn collect_debris(ref self: TState, mission_id: usize);
+    // View functions
+    fn get_number(self: @TState) -> usize;
+    fn get_owner(self: @TState) -> ContractAddress;
+    fn get_token_addresses(self: @TState) -> Tokens;
+    fn get_current_planet_price(self: @TState) -> u128;
+    fn get_number_of_planets(self: @TState) -> u16;
+    fn get_generated_planets_positions(self: @TState) -> Array<PlanetPosition>;
+    fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
+    fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
+    fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
+    fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
+    fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
+    fn get_planet_points(self: @TState, planet_id: u16) -> u128;
+    fn get_energy_available(self: @TState, planet_id: u16) -> i128;
+    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
+    fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
+    fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
+    fn get_energy_gain_after_upgrade(self: @TState, planet_id: u16) -> u128;
+    fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
+    fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
+    fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
+    fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
+    fn get_ships_cost(self: @TState) -> ShipsCost;
+    fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
+    fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
+    fn get_defences_cost(self: @TState) -> DefencesCost;
+    fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
+    fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
+    fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
+    fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
+    fn get_travel_time(
+        self: @TState,
+        origin: PlanetPosition,
+        destination: PlanetPosition,
+        fleet: Fleet,
+        techs: TechLevels
+    ) -> u64;
+    fn get_fuel_consumption(
+        self: @TState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
+    ) -> u128;
+}
+
 // TODOS: 
 // - Make contract upgradable
 // - Add events for battle reports
 
 #[starknet::contract]
-mod NoGame {
+mod NoGameUpgraded {
     use traits::DivRem;
     use starknet::{
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
@@ -12,7 +116,6 @@ mod NoGame {
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
-    use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
@@ -36,6 +139,7 @@ mod NoGame {
 
     #[storage]
     struct Storage {
+        number: usize,
         world_start_time: u64,
         owner: ContractAddress,
         // General.
@@ -133,7 +237,17 @@ mod NoGame {
     }
 
     #[abi(embed_v0)]
-    impl NoGame of INoGame<ContractState> {
+    impl NoGameUpgraded of super::INoGameUpgraded<ContractState> {
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            assert(!impl_hash.is_zero(), 'Class hash cannot be zero');
+            starknet::replace_class_syscall(impl_hash).unwrap_syscall();
+            self.emit(Event::Upgraded(Upgraded { implementation: impl_hash }))
+        }
+
+        fn version(self: @ContractState) -> u8 {
+            0
+        }
+
         fn initializer(
             ref self: ContractState,
             erc721: ContractAddress,
@@ -154,19 +268,15 @@ mod NoGame {
             self.world_start_time.write(get_block_timestamp());
         }
 
-        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
-            assert(!impl_hash.is_zero(), 'Class hash cannot be zero');
-            starknet::replace_class_syscall(impl_hash).unwrap_syscall();
-            self.emit(Event::Upgraded(Upgraded { implementation: impl_hash }))
-        }
-
-        fn version(self: @ContractState) -> u8 {
-            0
-        }
-
         /////////////////////////////////////////////////////////////////////
         //                         Planet Functions                                
         /////////////////////////////////////////////////////////////////////
+        fn write_number(ref self: ContractState, number: usize) {
+            self.number.write(number);
+        }
+        fn get_number(self: @ContractState) -> usize {
+            self.number.read()
+        }
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
             let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
@@ -466,7 +576,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::carrier_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).carrier);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().carrier);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -483,7 +593,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::scraper_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).scraper);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().scraper);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -500,7 +610,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::celestia_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).celestia);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().celestia);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -517,7 +627,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::sparrow_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).sparrow);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().sparrow);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -534,7 +644,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::frigate_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).frigate);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().frigate);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -551,7 +661,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::armade_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).armade);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().armade);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -864,7 +974,7 @@ mod NoGame {
         }
 
         fn get_energy_available(self: @ContractState, planet_id: u16) -> i128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
+            let compounds_levels = self.get_compounds_levels(planet_id);
             let gross_production = Compounds::energy_plant_production(compounds_levels.energy);
             let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
             let energy_required = (self.calculate_energy_consumption(compounds_levels));
@@ -919,7 +1029,7 @@ mod NoGame {
         }
 
         fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
+            let compounds_levels = self.get_compounds_levels(planet_id);
             Compounds::energy_plant_production(compounds_levels.energy + 1)
                 - Compounds::energy_plant_production(compounds_levels.energy)
         }
@@ -1183,7 +1293,7 @@ mod NoGame {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
-            let mines_levels = NoGame::get_compounds_levels(self, planet_id);
+            let mines_levels = self.get_compounds_levels(planet_id);
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
             let steel_available = Compounds::steel_production(mines_levels.steel)

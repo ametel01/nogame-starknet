@@ -48,7 +48,7 @@ impl ERC20Print of PrintTrait<ERC20s> {
     }
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde)]
 struct CompoundsLevels {
     steel: u8,
     quartz: u8,
@@ -56,6 +56,17 @@ struct CompoundsLevels {
     energy: u8,
     lab: u8,
     dockyard: u8,
+}
+
+impl CompoundsLevelsPrint of PrintTrait<CompoundsLevels> {
+    fn print(self: CompoundsLevels) {
+        self.steel.print();
+        self.quartz.print();
+        self.tritium.print();
+        self.energy.print();
+        self.lab.print();
+        self.dockyard.print();
+    }
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -93,6 +104,23 @@ struct TechLevels {
     combustion: u8,
     thrust: u8,
     warp: u8,
+}
+
+impl TechLevelsPrint of PrintTrait<TechLevels> {
+    fn print(self: TechLevels) {
+        self.energy.print();
+        self.digital.print();
+        self.beam.print();
+        self.armour.print();
+        self.ion.print();
+        self.plasma.print();
+        self.weapons.print();
+        self.shield.print();
+        self.spacetime.print();
+        self.combustion.print();
+        self.thrust.print();
+        self.warp.print();
+    }
 }
 
 #[derive(Copy, Drop, Serde)]
