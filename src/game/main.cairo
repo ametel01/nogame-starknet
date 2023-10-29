@@ -1,6 +1,7 @@
 // TODOS: 
-// - Make contract upgradable
 // - Add events for battle reports
+// - Add celestia to battle
+// - Adjust players points after battle
 
 #[starknet::contract]
 mod NoGame {
@@ -101,6 +102,7 @@ mod NoGame {
         TechSpent: TechSpent,
         FleetSpent: FleetSpent,
         Upgraded: Upgraded,
+        BattleReport: BattleReport,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -124,6 +126,17 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct Upgraded {
         implementation: ClassHash
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct BattleReport {
+        time: u64,
+        attacker: u16,
+        attacker_fleet_loss: Fleet,
+        defender: u16,
+        defender_fleet_loss: Fleet,
+        defences_loss: DefencesLevels,
+        debris: Debris,
     }
 
     #[constructor]
@@ -669,19 +682,23 @@ mod NoGame {
             self.check_enough_ships(planet_id, f);
             // Calculate distance
             let distance = fleet::get_distance(self.planet_position.read(planet_id), destination);
+
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
             let speed = fleet::get_fleet_speed(f, techs);
             let travel_time = fleet::get_flight_time(speed, distance);
+
             // Check numeber of mission
             let active_missions = self.active_missions_len.read(planet_id);
             assert(active_missions < techs.digital.into() + 1, 'max active missions');
+
             // Pay for fuel
             let consumption = fleet::get_fuel_consumption(f, distance);
             let mut cost: ERC20s = Default::default();
             cost.tritium = consumption;
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
+
             // Write mission
             let time_now = get_block_timestamp();
             let mut mission: Mission = Default::default();
@@ -689,6 +706,7 @@ mod NoGame {
             mission.destination = self.get_position_slot_occupant(destination);
             mission.time_arrival = time_now + travel_time;
             mission.fleet = f;
+
             if is_debris_collection {
                 mission.is_debris = true;
                 self.add_active_mission(planet_id, mission);
@@ -704,13 +722,15 @@ mod NoGame {
 
                 self.add_hostile_mission(destination_id, hostile_mission);
             }
+
             // Write new fleet levels
             self.fleet_leave_planet(planet_id, f);
             self.last_active.write(planet_id, get_block_timestamp());
         }
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
-            let origin = self.get_owned_planet(get_caller_address());
+            let caller = get_caller_address();
+            let origin = self.get_owned_planet(caller);
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
             let time_now = get_block_timestamp();
@@ -719,17 +739,22 @@ mod NoGame {
             let defences = self.get_defences_levels(mission.destination);
             let t1 = self.get_tech_levels(origin);
             let t2 = self.get_tech_levels(mission.destination);
+            let celestia_before = self.get_celestia_available(mission.destination);
+
             let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
+
             // calculate debris and update field
-            let debris1 = fleet::get_debris(mission.fleet, f1);
-            let debris2 = fleet::get_debris(defender_fleet, f2);
+            let debris1 = fleet::get_debris(mission.fleet, f1, 0);
+            let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
             let total_debris = debris1 + debris2;
             let current_debries_field = self.planet_debris_field.read(mission.destination);
             self
                 .planet_debris_field
                 .write(mission.destination, current_debries_field + total_debris);
+
             self.update_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
+
             if f1.is_zero() {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
@@ -746,7 +771,22 @@ mod NoGame {
                 mission.fleet = f1;
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
+
             self.remove_hostile_mission(mission.destination, mission_id);
+
+            let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
+            let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
+            let defences_loss = self.calculate_defences_loss(defences, d);
+            self
+                .emit_battle_report(
+                    time_now,
+                    origin,
+                    attacker_loss,
+                    mission.destination,
+                    defender_loss,
+                    defences_loss,
+                    total_debris
+                );
         }
 
         fn recall_fleet(ref self: ContractState, mission_id: usize) {
@@ -1600,6 +1640,54 @@ mod NoGame {
             } else {
                 return 10;
             }
+        }
+
+        fn calculate_fleet_loss(self: @ContractState, a: Fleet, b: Fleet) -> Fleet {
+            Fleet {
+                carrier: a.carrier - b.carrier,
+                scraper: a.scraper - b.scraper,
+                sparrow: a.sparrow - b.sparrow,
+                frigate: a.frigate - b.frigate,
+                armade: a.armade - b.armade,
+            }
+        }
+
+        fn calculate_defences_loss(
+            self: @ContractState, a: DefencesLevels, b: DefencesLevels
+        ) -> DefencesLevels {
+            DefencesLevels {
+                celestia: a.celestia - b.celestia,
+                blaster: a.blaster - b.blaster,
+                beam: a.beam - b.beam,
+                astral: a.astral - b.astral,
+                plasma: a.plasma - b.plasma,
+            }
+        }
+
+        fn emit_battle_report(
+            ref self: ContractState,
+            time: u64,
+            attacker: u16,
+            attacker_fleet_loss: Fleet,
+            defender: u16,
+            defender_fleet_loss: Fleet,
+            defences_loss: DefencesLevels,
+            debris: Debris
+        ) {
+            self
+                .emit(
+                    Event::BattleReport(
+                        BattleReport {
+                            time,
+                            attacker,
+                            attacker_fleet_loss,
+                            defender,
+                            defender_fleet_loss,
+                            defences_loss,
+                            debris
+                        }
+                    )
+                )
         }
     }
 }

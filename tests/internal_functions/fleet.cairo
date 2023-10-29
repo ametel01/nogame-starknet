@@ -163,6 +163,6 @@ fn test_get_debris() {
     let mut after: Fleet = Default::default();
     before.carrier = 10;
     after.carrier = 0;
-    let res = fleet::get_debris(before, after);
+    let res = fleet::get_debris(before, after, 10);
 }
 

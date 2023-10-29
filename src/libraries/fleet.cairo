@@ -430,7 +430,7 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
 }
 
 #[inline(always)]
-fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
+fn get_debris(f_before: Fleet, f_after: Fleet, celestia: u32) -> Debris {
     let mut debris: Debris = Default::default();
     let costs = Dockyard::get_ships_unit_cost();
     let steel = ((f_before.carrier - f_after.carrier).into() * costs.carrier.steel)
@@ -443,7 +443,8 @@ fn get_debris(f_before: Fleet, f_after: Fleet) -> Debris {
         + ((f_before.scraper - f_after.scraper).into() * costs.scraper.quartz)
         + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.quartz)
         + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.quartz)
-        + ((f_before.armade - f_after.armade).into() * costs.sparrow.quartz);
+        + ((f_before.armade - f_after.armade).into() * costs.sparrow.quartz)
+        + (celestia * 2000).into();
 
     debris.steel = steel / 3;
     debris.quartz = quartz / 3;

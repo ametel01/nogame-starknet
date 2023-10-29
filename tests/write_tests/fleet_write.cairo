@@ -1,6 +1,11 @@
 use starknet::info::{get_block_timestamp, get_contract_address};
 
-use snforge_std::{declare, ContractClassTrait, PrintTrait, start_prank, start_warp};
+use snforge_std::{
+    declare, ContractClassTrait, PrintTrait, start_prank, start_warp, spy_events, SpyOn, EventSpy,
+    EventAssertions, EventFetcher, event_name_hash, Event
+};
+
+use nogame::game::main::NoGame;
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
@@ -324,7 +329,8 @@ fn test_attack_planet() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.blaster_build(1);
+    dsp.game.celestia_build(5);
+    // dsp.game.blaster_build(1);
     let defences_before = dsp.game.get_defences_levels(2);
     start_prank(dsp.game.contract_address, ACCOUNT1());
     build_basic_mines(dsp.game);
@@ -347,7 +353,7 @@ fn test_attack_planet() {
     let (fleetA_after, fleetB_after, defences_after) = fleet::war(
         fleet_a, a_techs, fleet_b, defences_before, b_techs
     );
-    let expected_debris = fleet::get_debris(fleetA_before, fleetA_after);
+    let expected_debris = fleet::get_debris(fleetA_before, fleetA_after, 5);
     let debris_field = dsp.game.get_debris_field(2);
     assert(debris_field == expected_debris, 'wrong after debris');
 
