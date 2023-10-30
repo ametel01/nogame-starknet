@@ -1,6 +1,4 @@
 // TODOS: 
-// - Add events for battle reports
-// - Add celestia to battle
 // - Adjust players points after battle
 
 #[starknet::contract]
@@ -777,6 +775,10 @@ mod NoGame {
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
             let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
             let defences_loss = self.calculate_defences_loss(defences, d);
+
+            self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
+            self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
+
             self
                 .emit_battle_report(
                     time_now,
@@ -1688,6 +1690,38 @@ mod NoGame {
                         }
                     )
                 )
+        }
+
+        fn update_points_after_attack(
+            ref self: ContractState, planet_id: u16, fleet: Fleet, defences: DefencesLevels
+        ) {
+            if fleet.is_zero() && defences.is_zero() {
+                return;
+            }
+            let ships_cost = self.get_ships_cost();
+            let ships_points = fleet.carrier.into()
+                * (ships_cost.carrier.steel + ships_cost.carrier.quartz)
+                + fleet.scraper.into() * (ships_cost.scraper.steel + ships_cost.scraper.quartz)
+                + fleet.sparrow.into() * (ships_cost.sparrow.steel + ships_cost.sparrow.quartz)
+                + fleet.frigate.into() * (ships_cost.frigate.steel + ships_cost.frigate.quartz)
+                + fleet.armade.into() * (ships_cost.armade.steel + ships_cost.armade.quartz);
+
+            let defences_cost = self.get_defences_cost();
+            let defences_points = defences.celestia.into() * 2000
+                + defences.blaster.into()
+                    * (defences_cost.blaster.steel + defences_cost.blaster.quartz)
+                + defences.beam.into() * (defences_cost.beam.steel + defences_cost.beam.quartz)
+                + defences.astral.into()
+                    * (defences_cost.astral.steel + defences_cost.astral.quartz)
+                + defences.plasma.into()
+                    * (defences_cost.plasma.steel + defences_cost.plasma.quartz);
+
+            self
+                .resources_spent
+                .write(
+                    planet_id,
+                    self.resources_spent.read(planet_id) - (ships_points + defences_points)
+                );
         }
     }
 }

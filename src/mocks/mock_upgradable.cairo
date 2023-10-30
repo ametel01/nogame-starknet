@@ -830,7 +830,7 @@ mod NoGameUpgraded {
             let t1 = self.get_tech_levels(origin);
             let t2 = self.get_tech_levels(mission.destination);
             let celestia_before = self.get_celestia_available(mission.destination);
-            
+
             let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
             // calculate debris and update field
             let debris1 = fleet::get_debris(mission.fleet, f1, 0);

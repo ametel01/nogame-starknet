@@ -329,7 +329,7 @@ fn test_attack_planet() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.celestia_build(5);
+    dsp.game.celestia_build(10);
     // dsp.game.blaster_build(1);
     let defences_before = dsp.game.get_defences_levels(2);
     start_prank(dsp.game.contract_address, ACCOUNT1());
@@ -346,6 +346,9 @@ fn test_attack_planet() {
     dsp.game.send_fleet(fleet_a, p2_position, false);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+
+    let points_before = dsp.game.get_planet_points(2);
+
     dsp.game.attack_planet(1);
 
     let a_techs = dsp.game.get_techs_levels(1);
@@ -353,13 +356,14 @@ fn test_attack_planet() {
     let (fleetA_after, fleetB_after, defences_after) = fleet::war(
         fleet_a, a_techs, fleet_b, defences_before, b_techs
     );
-    let expected_debris = fleet::get_debris(fleetA_before, fleetA_after, 5);
+    let expected_debris = fleet::get_debris(fleetA_before, fleetA_after, 10);
     let debris_field = dsp.game.get_debris_field(2);
     assert(debris_field == expected_debris, 'wrong after debris');
 
     let fleet_a = dsp.game.get_ships_levels(1);
     let fleet_b = dsp.game.get_ships_levels(2);
     let defences = dsp.game.get_defences_levels(2);
+    let points_after = dsp.game.get_planet_points(2);
     assert(fleet_a == fleetA_after, 'wrong fleet_a after');
     assert(fleet_b == fleetB_after, 'wrong fleet_b after');
     assert(defences == defences_after, 'wrong fleet_b after');
