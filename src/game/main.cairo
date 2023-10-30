@@ -37,6 +37,7 @@ mod NoGame {
     struct Storage {
         world_start_time: u64,
         owner: ContractAddress,
+        version: u8,
         // General.
         number_of_planets: u16,
         planet_position: LegacyMap::<u16, PlanetPosition>,
@@ -96,15 +97,25 @@ mod NoGame {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        ResourcesSpent: ResourcesSpent,
+        PlanetGenerated: PlanetGenerated,
+        CompoundSpent: CompoundSpent,
         TechSpent: TechSpent,
         FleetSpent: FleetSpent,
-        Upgraded: Upgraded,
+        DefenceSpent: DefenceSpent,
+        FleetSent: FleetSent,
         BattleReport: BattleReport,
+        DebrisCollected: DebrisCollected,
+        Upgraded: Upgraded,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct ResourcesSpent {
+    struct PlanetGenerated {
+        id: u16,
+        account: ContractAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CompoundSpent {
         planet_id: u16,
         spent: ERC20s
     }
@@ -112,19 +123,34 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct TechSpent {
         planet_id: u16,
-        spent: u128,
+        spent: ERC20s
     }
 
     #[derive(Drop, starknet::Event)]
     struct FleetSpent {
         planet_id: u16,
-        spent: u128,
+        spent: ERC20s
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct DefenceSpent {
+        planet_id: u16,
+        spent: ERC20s
     }
 
     #[derive(Drop, starknet::Event)]
     struct Upgraded {
         implementation: ClassHash
     }
+
+    #[derive(Drop, starknet::Event)]
+    struct FleetSent {
+        time: u64,
+        origin: u16,
+        destination: u16,
+        mission_type: felt252,
+    }
+
 
     #[derive(Drop, starknet::Event)]
     struct BattleReport {
@@ -135,6 +161,13 @@ mod NoGame {
         defender_fleet_loss: Fleet,
         defences_loss: DefencesLevels,
         debris: Debris,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct DebrisCollected {
+        time: u64,
+        debris_field_id: u16,
+        amount: Debris,
     }
 
     #[constructor]
@@ -168,11 +201,12 @@ mod NoGame {
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
             assert(!impl_hash.is_zero(), 'Class hash cannot be zero');
             starknet::replace_class_syscall(impl_hash).unwrap_syscall();
+            self.version.write(self.version.read() + 1);
             self.emit(Event::Upgraded(Upgraded { implementation: impl_hash }))
         }
 
         fn version(self: @ContractState) -> u8 {
-            0
+            self.version.read()
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -193,6 +227,7 @@ mod NoGame {
             self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
+            self.emit(Event::PlanetGenerated(PlanetGenerated { id: token_id, account: caller }));
         }
 
         fn collect_resources(ref self: ContractState) {
@@ -213,7 +248,7 @@ mod NoGame {
             self.steel_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
         fn quartz_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -226,7 +261,7 @@ mod NoGame {
             self.quartz_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
         fn tritium_mine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -239,7 +274,7 @@ mod NoGame {
             self.tritium_mine_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
         fn energy_plant_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -252,7 +287,7 @@ mod NoGame {
             self.energy_plant_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn dockyard_upgrade(ref self: ContractState) {
@@ -266,7 +301,7 @@ mod NoGame {
             self.dockyard_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
         fn lab_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -279,7 +314,7 @@ mod NoGame {
             self.lab_level.write(planet_id, current_level + 1);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -298,7 +333,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.energy_innovation_level.write(planet_id, techs.energy + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn digital_systems_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -313,7 +348,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.digital_systems_level.write(planet_id, techs.digital + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn beam_technology_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -328,7 +363,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.beam_technology_level.write(planet_id, techs.beam + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn armour_innovation_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -343,7 +378,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.armour_innovation_level.write(planet_id, techs.armour + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn ion_systems_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -358,7 +393,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.ion_systems_level.write(planet_id, techs.ion + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn plasma_engineering_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -373,7 +408,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.plasma_engineering_level.write(planet_id, techs.plasma + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
         fn weapons_development_upgrade(ref self: ContractState) {
@@ -389,7 +424,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.weapons_development_level.write(planet_id, techs.weapons + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn shield_tech_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -404,7 +439,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.shield_tech_level.write(planet_id, techs.shield + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn spacetime_warp_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -419,7 +454,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn combustive_engine_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -434,7 +469,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.combustive_engine_level.write(planet_id, techs.combustion + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn thrust_propulsion_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -449,7 +484,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn warp_drive_upgrade(ref self: ContractState) {
             let caller = get_caller_address();
@@ -464,7 +499,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.warp_drive_level.write(planet_id, techs.warp + 1);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -485,7 +520,7 @@ mod NoGame {
             self
                 .carrier_available
                 .write(planet_id, self.carrier_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
         fn scraper_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -502,7 +537,7 @@ mod NoGame {
             self
                 .scraper_available
                 .write(planet_id, self.scraper_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
         fn celestia_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -519,7 +554,7 @@ mod NoGame {
             self
                 .celestia_available
                 .write(planet_id, self.celestia_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
         fn sparrow_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -536,7 +571,7 @@ mod NoGame {
             self
                 .sparrow_available
                 .write(planet_id, self.sparrow_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
         fn frigate_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -553,7 +588,7 @@ mod NoGame {
             self
                 .frigate_available
                 .write(planet_id, self.frigate_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
         fn armade_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -570,7 +605,7 @@ mod NoGame {
             self
                 .armade_available
                 .write(planet_id, self.armade_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::FleetSpent(FleetSpent { planet_id: planet_id, spent: cost }))
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -591,7 +626,7 @@ mod NoGame {
             self
                 .blaster_available
                 .write(planet_id, self.blaster_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::DefenceSpent(DefenceSpent { planet_id: planet_id, spent: cost }))
         }
         fn beam_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -606,7 +641,7 @@ mod NoGame {
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.beam_available.write(planet_id, self.beam_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::DefenceSpent(DefenceSpent { planet_id: planet_id, spent: cost }))
         }
         fn astral_launcher_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -623,7 +658,7 @@ mod NoGame {
             self
                 .astral_available
                 .write(planet_id, self.astral_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::DefenceSpent(DefenceSpent { planet_id: planet_id, spent: cost }))
         }
         fn plasma_projector_build(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
@@ -640,7 +675,7 @@ mod NoGame {
             self
                 .plasma_available
                 .write(planet_id, self.plasma_available.read(planet_id) + quantity);
-            self.emit(Event::ResourcesSpent(ResourcesSpent { planet_id: planet_id, spent: cost }))
+            self.emit(Event::DefenceSpent(DefenceSpent { planet_id: planet_id, spent: cost }))
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -708,6 +743,17 @@ mod NoGame {
             if is_debris_collection {
                 mission.is_debris = true;
                 self.add_active_mission(planet_id, mission);
+                self
+                    .emit(
+                        Event::FleetSent(
+                            FleetSent {
+                                time: time_now,
+                                origin: planet_id,
+                                destination: destination_id,
+                                mission_type: 'debris collection'
+                            }
+                        )
+                    );
             } else {
                 let id = self.add_active_mission(planet_id, mission);
                 mission.is_debris = false;
@@ -719,6 +765,17 @@ mod NoGame {
                     .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
 
                 self.add_hostile_mission(destination_id, hostile_mission);
+                self
+                    .emit(
+                        Event::FleetSent(
+                            FleetSent {
+                                time: time_now,
+                                origin: planet_id,
+                                destination: destination_id,
+                                mission_type: 'attack'
+                            }
+                        )
+                    );
             }
 
             // Write new fleet levels
@@ -828,6 +885,16 @@ mod NoGame {
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
             self.active_missions_len.write(origin, active_missions - 1);
+            self
+                .emit(
+                    Event::DebrisCollected(
+                        DebrisCollected {
+                            time: time_now,
+                            debris_field_id: mission.destination,
+                            amount: collectible_debris,
+                        }
+                    )
+                );
         }
 
         /////////////////////////////////////////////////////////////////////
