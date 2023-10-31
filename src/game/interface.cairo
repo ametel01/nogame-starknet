@@ -72,7 +72,7 @@ trait INoGame<TState> {
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
-    fn get_energy_available(self: @TState, planet_id: u16) -> i128;
+    fn get_energy_available(self: @TState, planet_id: u16) -> u128;
     fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
     fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;

@@ -25,7 +25,6 @@ mod NoGame {
     use nogame::libraries::research::Lab;
     use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
     use nogame::token::erc721::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use nogame::libraries::i128::{to_signed};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
@@ -972,15 +971,15 @@ mod NoGame {
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
-        fn get_energy_available(self: @ContractState, planet_id: u16) -> i128 {
+        fn get_energy_available(self: @ContractState, planet_id: u16) -> u128 {
             let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
             let gross_production = Compounds::energy_plant_production(compounds_levels.energy);
             let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
             let energy_required = (self.calculate_energy_consumption(compounds_levels));
             if (gross_production + celestia_production < energy_required) {
-                return to_signed(energy_required - (gross_production + celestia_production), false);
+                return 0;
             } else {
-                return to_signed(gross_production + celestia_production - energy_required, true);
+                return gross_production + celestia_production - energy_required;
             }
         }
 
