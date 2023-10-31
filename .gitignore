@@ -8,3 +8,7 @@ metadata_gen
 .account*
 .braavos*
 .keystore.json
+
+.DS_Store
+
+testnet.json
