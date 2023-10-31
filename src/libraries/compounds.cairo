@@ -5,7 +5,7 @@ use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame::libraries::types::ERC20s;
 use nogame::libraries::math::{power, BitShift};
 
-const UNI_SPEED: u128 = 1;
+const UNI_SPEED: u128 = 1000;
 
 const _1_36: u128 = 25087571940244990000;
 const _0_004: u128 = 73786976294838210;
