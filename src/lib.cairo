@@ -14,7 +14,6 @@ mod libraries {
     mod math;
     mod research;
     mod types;
-    mod i128;
 }
 
 
@@ -26,6 +25,7 @@ mod game {
 mod token {
     mod erc20;
     mod erc721;
+    mod interface;
 }
 
 mod mocks {

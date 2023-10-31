@@ -24,4 +24,8 @@ mod write_tests {
     mod research_write;
     mod upgrade_test;
 }
+
+mod token {
+    mod test_erc721;
+}
 mod utils;
