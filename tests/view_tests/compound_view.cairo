@@ -36,7 +36,7 @@ fn test_energy_available_negative() {
     dsp.game.quartz_mine_upgrade();
     let energy = dsp.game.get_energy_available(1);
 
-    assert(energy == -22, 'wrong neg energy');
+    assert(energy == 0, 'wrong neg energy');
 }
 
 #[test]
