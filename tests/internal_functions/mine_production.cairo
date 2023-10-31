@@ -39,19 +39,19 @@ fn quartz_production_test() {
 #[test]
 fn tritium_production_test() {
     let production = Compounds::tritium_production(0, 20);
-    assert(production == 0, 'wrong result');
+    assert(production == 0, 'wrong result #1');
     let production = Compounds::tritium_production(1, 20);
-    assert(production == 14, 'wrong result');
+    assert(production == 14, 'wrong result #2');
     let production = Compounds::tritium_production(5, 20);
-    assert(production == 102, 'wrong result');
+    assert(production == 102, 'wrong result #3');
     let production = Compounds::tritium_production(10, 20);
-    assert(production == 331, 'wrong result');
+    assert(production == 331, 'wrong result #4');
     let production = Compounds::tritium_production(20, 20);
-    assert(production == 1721, 'wrong result');
+    assert(production == 1721, 'wrong result #5');
     let production = Compounds::tritium_production(31, 20);
-    assert(production == 7615, 'wrong result');
+    assert(production == 7615, 'wrong result #6');
     let production = Compounds::tritium_production(60, 20);
-    assert(production == 233840, 'wrong result');
+    assert(production == 233840, 'wrong result #7');
 }
 #[test]
 fn energy_plant_production_test() {
