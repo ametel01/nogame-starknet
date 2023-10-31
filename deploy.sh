@@ -1,39 +1,39 @@
 #!/bin/sh
 
-export STARKNET_RPC="https://starknet-goerli.g.alchemy.com/v2/cBpydqGslyhRC5kv3OKrH3uZENE7ngr3"
+export STARKNET_RPC="https://starknet-goerli.infura.io/v3/25371764a3e44191b39d3b3b98a8c55d"
 export STARKNET_KEYSTORE=".keystore.json" 
-export STARKNET_ACCOUNT=".account.json"
+export STARKNET_ACCOUNT="testnet.json"
 
 echo 'deploying NoGame...'
-stdout=$(starkli deploy  0x04ce3397e5617fcd35aba484cabb8ec24c4ff0da1875befb65880107dcefb6a7) 
+stdout=$(starkli deploy  0x0629c91161e0284f039a945fef7812664ade56461cf9ada5fe377e102c2b42d1) 
 nogame=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NOGAME::'${nogame} > deployed_contracts.txt
 echo '\n'
 
 echo 'deploying NFT...'
 sleep(5)
-stdout=$(starkli deploy  0x062efe1b16895e2dac359fafbc144697dff05fed3d9bb1506b270f16f8498fba  0x4e6f47616d65207465737420506c616e6574 0x4e4774504e54  $nogame)
+stdout=$(starkli deploy  0x0688f127d8ae38093ed40d4efdf2e2a57ab2206959f0a3134dfc4d4997d15221  0x4e6f47616d65207465737420506c616e6574 0x4e4774504e54  $nogame)
 nft=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NFT::'${nft} >> deployed_contracts.txt
 echo '\n'
 
 echo 'deploying Steel...'
 sleep(5)
-stdout=$(starkli deploy 0x006e4f027a6ac23f72d4e93e0969a66953c8e00710e1b9aae218f59f763a887b 0x4e6f47616d65205465737420537465656c 0x4e47745354  $nogame)
+stdout=$(starkli deploy 0x07064396f8716cb704a001ab29876ab2b5a2ecf3a7ae6ee0ec85c7c12bea89e4 0x4e6f47616d65205465737420537465656c 0x4e47745354  $nogame)
 steel=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'STEEL::'${steel} >> deployed_contracts.txt
 echo '\n'
 
 echo 'deploying Quartz...'
 sleep(5)
-stdout=$(starkli deploy  0x006e4f027a6ac23f72d4e93e0969a66953c8e00710e1b9aae218f59f763a887b  0x4e6f47616d6520746573742051756172747a 0x4e4774515a  $nogame )
+stdout=$(starkli deploy  0x07064396f8716cb704a001ab29876ab2b5a2ecf3a7ae6ee0ec85c7c12bea89e4  0x4e6f47616d6520746573742051756172747a 0x4e4774515a  $nogame )
 quartz=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'QUARTZ::'${quartz} >> deployed_contracts.txt
 echo '\n'
 
 echo 'deploying Tritium...'
 sleep(5)
-stdout=$(starkli deploy  0x006e4f027a6ac23f72d4e93e0969a66953c8e00710e1b9aae218f59f763a887b  0x4e6f47616d652074657374205472697469756d 0x4e47745454  $nogame )
+stdout=$(starkli deploy  0x07064396f8716cb704a001ab29876ab2b5a2ecf3a7ae6ee0ec85c7c12bea89e4  0x4e6f47616d652074657374205472697469756d 0x4e47745454  $nogame )
 tritium=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'TRITIUM::'${tritium} >> deployed_contracts.txt
 echo '\n'

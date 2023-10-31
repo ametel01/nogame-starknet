@@ -1,7 +1,7 @@
 [package]
 name = "nogame"
 version = "0.1.0"
-cairo-version = "2.3.0"
+# cairo-version = "2.3.0"
 authors = ["ametel01"]
 license = "MIT"
 
@@ -12,13 +12,23 @@ xoroshiro = { git ="https://github.com/ametel01/xoroshiro-cairo.git" }
 # cubit = {git ="https://github.com/influenceth/cubit.git", rev="2ccb253"}
 cubit = {git ="https://github.com/ametel01/cubit", rev="72784d8"}
 
-starknet = "2.3.0"
+starknet = ">=2.3.0"
 
 [[target.starknet-contract]]
-allowed-libfuncs-list.name = "all"
-build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "xoroshiro::xoroshiro::Xoroshiro" ]
+allowed-libfuncs-list.name = "experimental"
+build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "openzeppelin::account::account::Account","xoroshiro::xoroshiro::Xoroshiro" ]
 sierra = true
 casm = true
 
 [tool.snforge]
 exit_first = true
+
+[tool.sncast.katana]
+account = "k_acc"
+accounts-file = "/Users/alexmetelli/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "http://0.0.0.0:5050"
+
+[tool.sncast.testnet]
+account = "braavos-1"
+accounts-file = "/Users/alexmetelli/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "https://starknet-goerli.infura.io/v3/25371764a3e44191b39d3b3b98a8c55d"
