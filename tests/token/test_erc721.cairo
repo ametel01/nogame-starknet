@@ -14,11 +14,12 @@ use tests::utils::{DEPLOYER, ACCOUNT1};
 fn test_token_uri() {
     let contract = declare('NGERC721');
     let calldata: Array<felt252> = array!['nogamenft', 'NGNFT', DEPLOYER().into()];
+    let contract_address = contract.precalculate_address(@calldata);
+    start_prank(contract_address, DEPLOYER());
     let contract_address = contract.deploy(@calldata).unwrap();
     let erc721 = IERC721NoGameDispatcher { contract_address };
     let erc721_metadata = IERC721NGMetadataCamelOnlyDispatcher { contract_address };
 
-    start_prank(contract_address, DEPLOYER());
     erc721.set_base_uri(base_uri_array().span());
     erc721.mint(ACCOUNT1(), 32);
     let token_uri = erc721_metadata.tokenURI(32);

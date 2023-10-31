@@ -45,6 +45,7 @@ mod NGERC721 {
         ERC721_token_uri: LegacyMap<u256, felt252>,
         ERC721_tokens: LegacyMap<ContractAddress, u256>,
         ERC721_minter: ContractAddress,
+        deployer: ContractAddress,
         uri: LegacyMap<felt252, felt252>,
         #[substorage(v0)]
         src5: src5_component::Storage
@@ -105,7 +106,7 @@ mod NGERC721 {
     fn constructor(
         ref self: ContractState, name: felt252, symbol: felt252, minter: ContractAddress,
     ) {
-        self.initializer(name, symbol, minter);
+        self.initializer(name, symbol, minter, get_caller_address());
     }
 
     //
@@ -199,6 +200,7 @@ mod NGERC721 {
         }
 
         fn set_base_uri(ref self: ContractState, mut base_uri: Span<felt252>) {
+            assert(get_caller_address() == self.deployer.read(), 'erc721 caller not deployer');
             // writing end of text
             self.uri.write(base_uri.len().into(), 0);
             loop {
@@ -343,11 +345,16 @@ mod NGERC721 {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn initializer(
-            ref self: ContractState, name: felt252, symbol: felt252, minter: ContractAddress
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            minter: ContractAddress,
+            deployer: ContractAddress
         ) {
             self.ERC721_name.write(name);
             self.ERC721_symbol.write(symbol);
             self.ERC721_minter.write(minter);
+            self.deployer.write(deployer);
 
             self.src5.register_interface(interface::IERC721_ID);
             self.src5.register_interface(interface::IERC721_METADATA_ID);
