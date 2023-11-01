@@ -21,8 +21,7 @@ fn test_get_receiver() {
     init_game(dsp);
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
-
-    // assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
+// assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
 }
 
 #[test]

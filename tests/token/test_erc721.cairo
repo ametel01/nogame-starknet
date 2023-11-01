@@ -13,7 +13,9 @@ use tests::utils::{DEPLOYER, ACCOUNT1};
 #[test]
 fn test_token_uri() {
     let contract = declare('NGERC721');
-    let calldata: Array<felt252> = array!['nogamenft', 'NGNFT', DEPLOYER().into(), DEPLOYER().into()];
+    let calldata: Array<felt252> = array![
+        'nogamenft', 'NGNFT', DEPLOYER().into(), DEPLOYER().into()
+    ];
     let contract_address = contract.precalculate_address(@calldata);
     start_prank(contract_address, DEPLOYER());
     let contract_address = contract.deploy(@calldata).unwrap();
