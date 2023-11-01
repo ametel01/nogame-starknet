@@ -5,7 +5,7 @@ use starknet::ContractAddress;
 
 
 const E18: u128 = 1000000000000000000;
-const MAX_NUMBER_OF_PLANETS: u16 = 1000;
+const MAX_NUMBER_OF_PLANETS: u16 = 500;
 const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
 const BANK_ADDRESS: felt252 =
@@ -210,7 +210,7 @@ struct EnergyCost {
 
 #[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
 struct PlanetPosition {
-    system: u8,
+    system: u16,
     orbit: u8,
 }
 

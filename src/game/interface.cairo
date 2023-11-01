@@ -15,6 +15,7 @@ trait INoGame<TState> {
         tritium: ContractAddress,
         rand: ContractAddress,
         eth: ContractAddress,
+        receiver: ContractAddress,
     );
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
@@ -61,7 +62,7 @@ trait INoGame<TState> {
     fn recall_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
-    fn get_owner(self: @TState) -> ContractAddress;
+    fn get_receiver(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u16;

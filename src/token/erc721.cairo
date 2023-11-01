@@ -104,9 +104,9 @@ mod NGERC721 {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: felt252, symbol: felt252, minter: ContractAddress,
+        ref self: ContractState, name: felt252, symbol: felt252, minter: ContractAddress, owner: ContractAddress
     ) {
-        self.initializer(name, symbol, minter, get_caller_address());
+        self.initializer(name, symbol, minter, owner);
     }
 
     //

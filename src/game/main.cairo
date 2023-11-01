@@ -34,8 +34,8 @@ mod NoGame {
 
     #[storage]
     struct Storage {
-        world_start_time: u64,
-        owner: ContractAddress,
+        initialized: bool,
+        receiver: ContractAddress,
         version: u8,
         // General.
         number_of_planets: u16,
@@ -171,7 +171,6 @@ mod NoGame {
 
     #[constructor]
     fn constructor(ref self: ContractState) {
-        self.owner.write(get_caller_address());
         self.universe_start_time.write(get_block_timestamp());
     }
 
@@ -185,16 +184,18 @@ mod NoGame {
             tritium: ContractAddress,
             rand: ContractAddress,
             eth: ContractAddress,
+            receiver: ContractAddress,
         ) {
             // NOTE: uncomment the following after testing with katana.
-            assert(get_caller_address() == self.owner.read(), 'caller is not owner');
+            assert(!self.initialized.read(), 'already initialized');
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
             self.steel.write(INGERC20Dispatcher { contract_address: steel });
             self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
             self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
             self.ETH.write(IERC20Dispatcher { contract_address: eth });
-            self.world_start_time.write(get_block_timestamp());
+            self.receiver.write(receiver);
+            self.initialized.write(true);
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
@@ -213,9 +214,9 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
-            let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
+            let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
-            self.ETH.read().transfer_from(caller, self.owner.read(), price);
+            self.ETH.read().transfer_from(caller, self.receiver.read(), price);
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
@@ -899,15 +900,15 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         View Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn get_owner(self: @ContractState) -> ContractAddress {
-            self.owner.read()
+        fn get_receiver(self: @ContractState) -> ContractAddress {
+            self.receiver.read()
         }
         fn get_token_addresses(self: @ContractState) -> Tokens {
             self.get_tokens_addresses()
         }
 
         fn get_current_planet_price(self: @ContractState) -> u128 {
-            let time_elapsed = (get_block_timestamp() - self.world_start_time.read()) / DAY;
+            let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
             self.get_planet_price(time_elapsed)
         }
 
@@ -1185,7 +1186,7 @@ mod NoGame {
             let mut position: PlanetPosition = Default::default();
             let rand = self.rand.read();
             loop {
-                position.system = (rand.next() % 200 + 1).try_into().unwrap();
+                position.system = (rand.next() % 400 + 1).try_into().unwrap();
                 position.orbit = (rand.next() % 10 + 1).try_into().unwrap();
                 if self.position_to_planet_id.read(self.get_raw_from_position(position)).is_zero() {
                     break;
