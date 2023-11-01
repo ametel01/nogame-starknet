@@ -8,7 +8,7 @@ mod NoGame {
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
         SyscallResultTrait, class_hash::ClassHash
     };
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
@@ -51,7 +51,7 @@ mod NoGame {
         quartz: INGERC20Dispatcher,
         tritium: INGERC20Dispatcher,
         rand: IXoroshiroDispatcher,
-        ETH: IERC20Dispatcher,
+        ETH: IERC20CamelDispatcher,
         // Infrastructures.
         steel_mine_level: LegacyMap::<u16, u8>,
         quartz_mine_level: LegacyMap::<u16, u8>,
@@ -193,7 +193,7 @@ mod NoGame {
             self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
             self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
-            self.ETH.write(IERC20Dispatcher { contract_address: eth });
+            self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.receiver.write(receiver);
             self.initialized.write(true);
         }
@@ -216,7 +216,7 @@ mod NoGame {
             let caller = get_caller_address();
             let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
-            self.ETH.read().transfer_from(caller, self.receiver.read(), price);
+            self.ETH.read().transferFrom(caller, self.receiver.read(), price);
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
