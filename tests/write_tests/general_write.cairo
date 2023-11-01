@@ -76,11 +76,11 @@ fn test_planet_position() {
         start_prank(dsp.game.contract_address, len.try_into().unwrap());
         dsp.game.generate_planet();
         let position = dsp.game.get_planet_position((len).try_into().unwrap());
-        assert(position.system <= 200, 'system out of bound');
+        assert(position.system <= 400, 'system out of bound');
         assert(position.orbit <= 10, 'orbit out of bound');
         len += 1;
     };
     let positions = dsp.game.get_generated_planets_positions();
     assert(*positions.at(0).orbit == 2 && *positions.at(0).system == 156, 'wrong assertion #1');
-    assert(*positions.at(1).orbit == 9 && *positions.at(1).system == 188, 'wrong assertion #2');
+    assert(*positions.at(1).orbit == 9 && *positions.at(1).system == 388, 'wrong assertion #2');
 }

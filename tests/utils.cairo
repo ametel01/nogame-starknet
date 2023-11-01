@@ -55,28 +55,25 @@ fn ACCOUNT5() -> ContractAddress {
 fn set_up() -> Dispatchers {
     let contract = declare('NoGame');
     let calldata: Array<felt252> = array![];
-    let contract_address = contract.precalculate_address(@calldata);
-    start_prank(contract_address, DEPLOYER());
-    let _game = contract.deploy(@calldata).unwrap();
-    stop_prank(contract_address);
+    let _game = contract.deploy(@calldata).expect('failed nogame');
 
     let contract = declare('NGERC721');
-    let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into()];
-    let _erc721 = contract.deploy(@calldata).unwrap();
+    let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into(), DEPLOYER().into()];
+    let _erc721 = contract.deploy(@calldata).expect('failed erc721');
 
     let contract = declare('NGERC20');
     let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into(), _erc721.into()];
-    let _steel = contract.deploy(@calldata).unwrap();
+    let _steel = contract.deploy(@calldata).expect('failed steel');
 
     let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into(), _erc721.into()];
-    let _quartz = contract.deploy(@calldata).unwrap();
+    let _quartz = contract.deploy(@calldata).expect('failed quartz');
 
     let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into(), _erc721.into()];
-    let _tritium = contract.deploy(@calldata).unwrap();
+    let _tritium = contract.deploy(@calldata).expect('failed tritium');
 
     let contract = declare('Xoroshiro');
     let calldata: Array<felt252> = array![81];
-    let _xoroshiro = contract.deploy(@calldata).unwrap();
+    let _xoroshiro = contract.deploy(@calldata).expect('failed rand');
 
     let contract = declare('ERC20');
     let calldata: Array<felt252> = array!['ETHER', 'ETH', ETH_SUPPLY, 0, DEPLOYER().into()];
@@ -104,6 +101,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.tritium.contract_address,
             dsp.rand.contract_address,
             dsp.eth.contract_address,
+            DEPLOYER(),
         );
     start_prank(dsp.eth.contract_address, DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
