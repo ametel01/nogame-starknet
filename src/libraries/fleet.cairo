@@ -1,3 +1,4 @@
+use core::array::ArrayTrait;
 use cubit::f64::types::fixed::{Fixed, FixedTrait, ONE};
 
 use nogame::libraries::{math, dockyard::Dockyard};
@@ -40,7 +41,7 @@ fn CELESTIA() -> Unit {
 
 #[inline(always)]
 fn BLASTER() -> Unit {
-    Unit { id: 6, weapon: 80, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 6, weapon: 125, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
@@ -55,7 +56,7 @@ fn ASTRAL() -> Unit {
 
 #[inline(always)]
 fn PLASMA() -> Unit {
-    Unit { id: 9, weapon: 3000, shield: 300, hull: 25000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 9, weapon: 2000, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
 }
 
 
@@ -103,7 +104,9 @@ fn war(
         }
         temp2.append(defenders.pop_front().unwrap());
     };
-    (build_fleet_struct(ref temp1), build_fleet_struct(ref temp2), build_defences_struct(ref temp2))
+    let (attacker_fleet_struct, _) = build_fleet_struct(ref temp1);
+    let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref temp2);
+    (attacker_fleet_struct, defender_fleet_struct, defences_struct)
 }
 
 fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
@@ -137,8 +140,9 @@ fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
     };
 }
 
-fn build_fleet_struct(ref a: Array<Unit>) -> Fleet {
+fn build_fleet_struct(ref a: Array<Unit>) -> (Fleet, DefencesLevels) {
     let mut fleet: Fleet = Default::default();
+    let mut d: DefencesLevels = Default::default();
     loop {
         if a.len().is_zero() {
             break;
@@ -169,9 +173,34 @@ fn build_fleet_struct(ref a: Array<Unit>) -> Fleet {
                 fleet.armade += 1;
             }
         }
+        if u.id == 5 {
+            if u.hull > 0 {
+                d.celestia += 1;
+            }
+        }
+        if u.id == 6 {
+            if u.hull > 0 {
+                d.blaster += 1;
+            }
+        }
+        if u.id == 7 {
+            if u.hull > 0 {
+                d.beam += 1;
+            }
+        }
+        if u.id == 8 {
+            if u.hull > 0 {
+                d.astral += 1;
+            }
+        }
+        if u.id == 9 {
+            if u.hull > 0 {
+                d.plasma += 1;
+            }
+        }
         continue;
     };
-    fleet
+    (fleet, d)
 }
 
 fn build_defences_struct(ref a: Array<Unit>) -> DefencesLevels {
