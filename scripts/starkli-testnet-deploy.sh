@@ -8,7 +8,7 @@ export STARKNET_KEYSTORE=".keystore.json"
 export STARKNET_ACCOUNT="testnet.json"
 
 echo 'deploying NoGame...'
-stdout=$(starkli deploy --watch 0x662ba500782fad9a355418076c74336334340d7691cb94a183977597a4a16f) 
+stdout=$(starkli deploy --watch 0xca2f255cefeec6d5f0ebee60a799f94eaf7d683cf1e32be17a0ec8f8d0c995) 
 nogame=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NOGAME::'${nogame} > deployed_contracts.txt
 
