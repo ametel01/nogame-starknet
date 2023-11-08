@@ -127,7 +127,7 @@ mod NoGameUpgraded {
     use nogame::libraries::dockyard::Dockyard;
     use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
-    use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
+    use nogame::token::erc20::interface::{IERC20NGDispatcherTrait, IERC20NGDispatcher};
     use nogame::token::erc721::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
@@ -151,9 +151,9 @@ mod NoGameUpgraded {
         last_active: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
-        steel: INGERC20Dispatcher,
-        quartz: INGERC20Dispatcher,
-        tritium: INGERC20Dispatcher,
+        steel: IERC20NGDispatcher,
+        quartz: IERC20NGDispatcher,
+        tritium: IERC20NGDispatcher,
         rand: IXoroshiroDispatcher,
         ETH: IERC20Dispatcher,
         // Infrastructures.
@@ -259,9 +259,9 @@ mod NoGameUpgraded {
             // NOTE: uncomment the following after testing with katana.
             assert(get_caller_address() == self.owner.read(), 'caller is not owner');
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.steel.write(INGERC20Dispatcher { contract_address: steel });
-            self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
-            self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
+            self.steel.write(IERC20NGDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NGDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NGDispatcher { contract_address: tritium });
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
             self.ETH.write(IERC20Dispatcher { contract_address: eth });
             self.world_start_time.write(get_block_timestamp());
@@ -950,9 +950,9 @@ mod NoGameUpgraded {
 
         fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
             let planet_owner = self.erc721.read().ng_owner_of(planet_id.into());
-            let steel = self.steel.read().balance_of(planet_owner).low / E18;
-            let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
-            let tritium = self.tritium.read().balance_of(planet_owner).low / E18;
+            let steel = self.steel.read().ng_balance_of(planet_owner).low / E18;
+            let quartz = self.quartz.read().ng_balance_of(planet_owner).low / E18;
+            let tritium = self.tritium.read().ng_balance_of(planet_owner).low / E18;
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -1261,9 +1261,9 @@ mod NoGameUpgraded {
         /// An instance of `ERC20s` struct containing the available balances for steel, quartz, and tritium tokens.
         ///
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> ERC20s {
-            let _steel = self.steel.read().balance_of(caller);
-            let _quartz = self.quartz.read().balance_of(caller);
-            let _tritium = self.tritium.read().balance_of(caller);
+            let _steel = self.steel.read().ng_balance_of(caller);
+            let _quartz = self.quartz.read().ng_balance_of(caller);
+            let _tritium = self.tritium.read().ng_balance_of(caller);
             ERC20s {
                 steel: _steel.try_into().unwrap(),
                 quartz: _quartz.try_into().unwrap(),
@@ -1379,9 +1379,9 @@ mod NoGameUpgraded {
         fn receive_loot_erc20(
             self: @ContractState, from: ContractAddress, to: ContractAddress, amounts: ERC20s
         ) {
-            self.steel.read().transfer_from(from, to, (amounts.steel * E18).into());
-            self.quartz.read().transfer_from(from, to, (amounts.quartz * E18).into());
-            self.tritium.read().transfer_from(from, to, (amounts.tritium * E18).into());
+            self.steel.read().ng_transfer_from(from, to, (amounts.steel * E18).into());
+            self.quartz.read().ng_transfer_from(from, to, (amounts.quartz * E18).into());
+            self.tritium.read().ng_transfer_from(from, to, (amounts.tritium * E18).into());
         }
 
         /// Checks if the caller has enough resources based on the provided amounts of ERC20 tokens.
