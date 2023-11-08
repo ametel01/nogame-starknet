@@ -371,6 +371,7 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
+    id: u16,
     time_start: u64,
     destination: u16,
     time_arrival: u64,
@@ -381,6 +382,7 @@ struct Mission {
 impl MissionZeroable of Zeroable<Mission> {
     fn zero() -> Mission {
         Mission {
+            id: 0,
             time_start: 0,
             destination: 0,
             time_arrival: 0,
