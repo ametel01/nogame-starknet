@@ -1,5 +1,6 @@
 // TODOS: 
 // - Adjust players points after battle
+// - Fix defences and fleet levels after attack
 
 #[starknet::contract]
 mod NoGame {
@@ -23,7 +24,7 @@ mod NoGame {
     use nogame::libraries::dockyard::Dockyard;
     use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
-    use nogame::token::erc20::{INGERC20DispatcherTrait, INGERC20Dispatcher};
+    use nogame::token::erc20::interface::{IERC20NGDispatcherTrait, IERC20NGDispatcher};
     use nogame::token::erc721::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
@@ -40,16 +41,15 @@ mod NoGame {
         // General.
         number_of_planets: u16,
         planet_position: LegacyMap::<u16, PlanetPosition>,
-        position_to_planet_id: LegacyMap::<u16, u16>,
         planet_debris_field: LegacyMap::<u16, Debris>,
         universe_start_time: u64,
         resources_spent: LegacyMap::<u16, u128>,
         last_active: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
-        steel: INGERC20Dispatcher,
-        quartz: INGERC20Dispatcher,
-        tritium: INGERC20Dispatcher,
+        steel: IERC20NGDispatcher,
+        quartz: IERC20NGDispatcher,
+        tritium: IERC20NGDispatcher,
         rand: IXoroshiroDispatcher,
         ETH: IERC20CamelDispatcher,
         // Infrastructures.
@@ -189,9 +189,9 @@ mod NoGame {
             // NOTE: uncomment the following after testing with katana.
             assert(!self.initialized.read(), 'already initialized');
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.steel.write(INGERC20Dispatcher { contract_address: steel });
-            self.quartz.write(INGERC20Dispatcher { contract_address: quartz });
-            self.tritium.write(INGERC20Dispatcher { contract_address: tritium });
+            self.steel.write(IERC20NGDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NGDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NGDispatcher { contract_address: tritium });
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.receiver.write(receiver);
@@ -218,12 +218,11 @@ mod NoGame {
             let price: u256 = self.get_planet_price(time_elapsed).into();
             self.ETH.read().transferFrom(caller, self.receiver.read(), price);
             let number_of_planets = self.number_of_planets.read();
-            assert(number_of_planets <= MAX_NUMBER_OF_PLANETS, 'max number of planets');
-            let token_id = number_of_planets + 1;
+            assert(number_of_planets < MAX_NUMBER_OF_PLANETS, 'max number of planets');
+            let position = self.calculate_planet_position();
+            let token_id = self.get_planet_id_from_position(position);
             self.erc721.read().mint(caller, token_id.into());
-            let position = self.calculate_planet_position(token_id);
             self.planet_position.write(token_id, position);
-            self.position_to_planet_id.write(self.get_raw_from_position(position), token_id);
             self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
@@ -687,9 +686,7 @@ mod NoGame {
             destination: PlanetPosition,
             is_debris_collection: bool
         ) {
-            let destination_id = self
-                .position_to_planet_id
-                .read(self.get_raw_from_position(destination));
+            let destination_id = self.get_planet_id_from_position(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
@@ -797,7 +794,6 @@ mod NoGame {
             let celestia_before = self.get_celestia_available(mission.destination);
 
             let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
-
             // calculate debris and update field
             let debris1 = fleet::get_debris(mission.fleet, f1, 0);
             let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
@@ -935,11 +931,15 @@ mod NoGame {
         }
 
         fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u16 {
-            self.position_to_planet_id.read(self.get_raw_from_position(position))
+            self.get_planet_id_from_position(position)
         }
 
         fn get_debris_field(self: @ContractState, planet_id: u16) -> Debris {
             self.planet_debris_field.read(planet_id)
+        }
+
+        fn get_last_active(self: @ContractState, planet_id: u16) -> u64 {
+            self.last_active.read(planet_id)
         }
 
         fn get_planet_points(self: @ContractState, planet_id: u16) -> u128 {
@@ -948,9 +948,9 @@ mod NoGame {
 
         fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
             let planet_owner = self.erc721.read().ng_owner_of(planet_id.into());
-            let steel = self.steel.read().balance_of(planet_owner).low / E18;
-            let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
-            let tritium = self.tritium.read().balance_of(planet_owner).low / E18;
+            let steel = self.steel.read().ng_balance_of(planet_owner).low / E18;
+            let quartz = self.quartz.read().ng_balance_of(planet_owner).low / E18;
+            let tritium = self.tritium.read().ng_balance_of(planet_owner).low / E18;
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -1146,9 +1146,7 @@ mod NoGame {
             fleet: Fleet,
             techs: TechLevels
         ) -> u64 {
-            let destination_id = self
-                .position_to_planet_id
-                .read(self.get_raw_from_position(destination));
+            let destination_id = self.get_planet_id_from_position(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
             let distance = fleet::get_distance(origin, destination);
             let speed = fleet::get_fleet_speed(fleet, techs);
@@ -1182,13 +1180,14 @@ mod NoGame {
                 / ONE
         }
 
-        fn calculate_planet_position(self: @ContractState, planet_id: u16) -> PlanetPosition {
+        fn calculate_planet_position(self: @ContractState) -> PlanetPosition {
             let mut position: PlanetPosition = Default::default();
             let rand = self.rand.read();
             loop {
-                position.system = (rand.next() % 400 + 1).try_into().unwrap();
+                position.system = (rand.next() % 200 + 1).try_into().unwrap();
                 position.orbit = (rand.next() % 10 + 1).try_into().unwrap();
-                if self.position_to_planet_id.read(self.get_raw_from_position(position)).is_zero() {
+                let calculated_token_id = self.get_planet_id_from_position(position);
+                if self.planet_position.read(calculated_token_id).is_zero() {
                     break;
                 }
                 continue;
@@ -1205,8 +1204,11 @@ mod NoGame {
         }
 
         #[inline(always)]
-        fn get_raw_from_position(self: @ContractState, position: PlanetPosition) -> u16 {
-            position.system.into() * 10 + position.orbit.into()
+        fn get_planet_id_from_position(self: @ContractState, position: PlanetPosition) -> u16 {
+            if position.system > 0 {
+                return ((position.system - 1) * 10 + position.orbit.into());
+            }
+            return 0;
         }
 
 
@@ -1259,9 +1261,9 @@ mod NoGame {
         /// An instance of `ERC20s` struct containing the available balances for steel, quartz, and tritium tokens.
         ///
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> ERC20s {
-            let _steel = self.steel.read().balance_of(caller);
-            let _quartz = self.quartz.read().balance_of(caller);
-            let _tritium = self.tritium.read().balance_of(caller);
+            let _steel = self.steel.read().ng_balance_of(caller);
+            let _quartz = self.quartz.read().ng_balance_of(caller);
+            let _tritium = self.tritium.read().ng_balance_of(caller);
             ERC20s {
                 steel: _steel.try_into().unwrap(),
                 quartz: _quartz.try_into().unwrap(),
@@ -1377,9 +1379,9 @@ mod NoGame {
         fn receive_loot_erc20(
             self: @ContractState, from: ContractAddress, to: ContractAddress, amounts: ERC20s
         ) {
-            self.steel.read().transfer_from(from, to, (amounts.steel * E18).into());
-            self.quartz.read().transfer_from(from, to, (amounts.quartz * E18).into());
-            self.tritium.read().transfer_from(from, to, (amounts.tritium * E18).into());
+            self.steel.read().ng_transfer_from(from, to, (amounts.steel * E18).into());
+            self.quartz.read().ng_transfer_from(from, to, (amounts.quartz * E18).into());
+            self.tritium.read().ng_transfer_from(from, to, (amounts.tritium * E18).into());
         }
 
         /// Checks if the caller has enough resources based on the provided amounts of ERC20 tokens.
@@ -1594,17 +1596,21 @@ mod NoGame {
             self.plasma_available.write(planet_id, d.plasma);
         }
 
-        fn add_active_mission(ref self: ContractState, planet_id: u16, mission: Mission) -> usize {
+        fn add_active_mission(
+            ref self: ContractState, planet_id: u16, mut mission: Mission
+        ) -> usize {
             let len = self.active_missions_len.read(planet_id);
             let mut i = 1;
             loop {
                 if i > len {
+                    mission.id = i.try_into().expect('add active mission fail');
                     self.active_missions.write((planet_id, i), mission);
                     self.active_missions_len.write(planet_id, i);
                     break;
                 }
                 let read_mission = self.active_missions.read((planet_id, i));
                 if read_mission.is_zero() {
+                    mission.id = i.try_into().expect('add active mission fail');
                     self.active_missions.write((planet_id, i), mission);
                     break;
                 }
