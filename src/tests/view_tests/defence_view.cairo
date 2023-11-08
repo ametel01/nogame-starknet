@@ -9,9 +9,9 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
 fn test_get_defences_levels() {
@@ -20,7 +20,7 @@ fn test_get_defences_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.game.get_defences_levels(1879);
     assert(def.blaster == 0, 'wrong blaster');
     assert(def.beam == 0, 'wrong beam');
     assert(def.astral == 0, 'wrong astral');

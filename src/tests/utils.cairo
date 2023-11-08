@@ -9,7 +9,7 @@ use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTr
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::mocks::mock_upgradable::{INoGameUpgradedDispatcher, INoGameUpgradedDispatcherTrait};
 
@@ -25,9 +25,9 @@ const YEAR: u64 = 31_557_600;
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
     erc721: IERC721NoGameDispatcher,
-    steel: INGERC20Dispatcher,
-    quartz: INGERC20Dispatcher,
-    tritium: INGERC20Dispatcher,
+    steel: IERC20NGDispatcher,
+    quartz: IERC20NGDispatcher,
+    tritium: IERC20NGDispatcher,
     rand: IXoroshiroDispatcher,
     eth: IERC20Dispatcher,
     game: INoGameDispatcher,
@@ -61,7 +61,7 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into(), DEPLOYER().into()];
     let _erc721 = contract.deploy(@calldata).expect('failed erc721');
 
-    let contract = declare('NGERC20');
+    let contract = declare('ERC20NG');
     let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into(), _erc721.into()];
     let _steel = contract.deploy(@calldata).expect('failed steel');
 
@@ -81,9 +81,9 @@ fn set_up() -> Dispatchers {
 
     Dispatchers {
         erc721: IERC721NoGameDispatcher { contract_address: _erc721 },
-        steel: INGERC20Dispatcher { contract_address: _steel },
-        quartz: INGERC20Dispatcher { contract_address: _quartz },
-        tritium: INGERC20Dispatcher { contract_address: _tritium },
+        steel: IERC20NGDispatcher { contract_address: _steel },
+        quartz: IERC20NGDispatcher { contract_address: _quartz },
+        tritium: IERC20NGDispatcher { contract_address: _tritium },
         rand: IXoroshiroDispatcher { contract_address: _xoroshiro },
         eth: IERC20Dispatcher { contract_address: _eth },
         game: INoGameDispatcher { contract_address: _game }
@@ -133,7 +133,7 @@ fn init_game(dsp: Dispatchers) {
 
 #[test]
 fn test_deploy_and_init() {
-    let dsp = set_up();
+    let dsp: Dispatchers = set_up();
     init_game(dsp);
     start_prank(dsp.eth.contract_address, dsp.game.contract_address);
     dsp.eth.transfer_from(ACCOUNT1(), DEPLOYER(), 1.into());
@@ -162,10 +162,13 @@ fn build_basic_mines(game: INoGameDispatcher) {
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.energy_plant_upgrade();
+    game.energy_plant_upgrade();
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
     game.tritium_mine_upgrade();
+    game.steel_mine_upgrade();
+    game.steel_mine_upgrade();
     game.steel_mine_upgrade();
 }
 

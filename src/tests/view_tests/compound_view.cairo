@@ -7,7 +7,7 @@ use snforge_std::{start_prank, start_warp};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::compounds::Compounds;
 use nogame::libraries::types::CompoundsLevels;
-use tests::utils::{
+use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,
     build_basic_mines
 };
@@ -20,8 +20,8 @@ fn test_energy_available_positive() {
     dsp.game.generate_planet();
 
     build_basic_mines(dsp.game);
-    let energy = dsp.game.get_energy_available(1);
-    assert(energy == 36, 'wrong pos energy');
+    let energy = dsp.game.get_energy_available(1879);
+    assert(energy == 55, 'wrong pos energy');
 }
 
 #[test]
@@ -31,10 +31,10 @@ fn test_energy_available_negative() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    assert(dsp.game.get_energy_available(1) == 0, 'wrong energy');
+    assert(dsp.game.get_energy_available(1879) == 0, 'wrong energy');
     dsp.game.steel_mine_upgrade();
     dsp.game.quartz_mine_upgrade();
-    let energy = dsp.game.get_energy_available(1);
+    let energy = dsp.game.get_energy_available(1879);
 
     assert(energy == 0, 'wrong neg energy');
 }
@@ -46,7 +46,7 @@ fn test_get_compounds_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.steel == 0, 'wrong steel lev');
     assert(compounds.quartz == 0, 'wrong quartz lev');
     assert(compounds.tritium == 0, 'wrong quartz lev');
@@ -62,7 +62,7 @@ fn test_get_compounds_upgrade_cost() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let costs = dsp.game.get_compounds_upgrade_cost(1);
+    let costs = dsp.game.get_compounds_upgrade_cost(1879);
     assert(costs.steel.steel == 60 && costs.steel.quartz == 15, 'wrong steel cost');
     assert(costs.quartz.steel == 48 && costs.quartz.quartz == 24, 'wrong quartz cost');
     assert(costs.tritium.steel == 225 && costs.tritium.quartz == 75, 'wrong tritium cost');
@@ -86,7 +86,7 @@ fn test_get_energy_for_upgrade() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let costs = dsp.game.get_energy_for_upgrade(1);
+    let costs = dsp.game.get_energy_for_upgrade(1879);
     assert(costs.steel == 11, 'wrong steel energy');
     assert(costs.quartz == 11, 'wrong quartz energy');
     assert(costs.tritium == 22, 'wrong tritium energy');
@@ -100,10 +100,10 @@ fn test_get_energy_gain_after_upgrade() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
 
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     let current_production = Compounds::energy_plant_production(compounds.energy);
     let upgraded_production = Compounds::energy_plant_production(compounds.energy + 1);
-    let actual_value_returned = dsp.game.get_energy_gain_after_upgrade(1);
+    let actual_value_returned = dsp.game.get_energy_gain_after_upgrade(1879);
     assert(actual_value_returned == upgraded_production - current_production, 'wrong energy gain');
 }
 
@@ -122,9 +122,9 @@ fn test_get_celestia_production() {
     start_prank(dsp.game.contract_address, ACCOUNT5());
     dsp.game.generate_planet();
 
-    (dsp.game.get_celestia_production(1) == 14, 'wrong energy produced');
-    (dsp.game.get_celestia_production(2) == 41, 'wrong energy produced');
-    (dsp.game.get_celestia_production(3) == 48, 'wrong energy produced');
-    (dsp.game.get_celestia_production(4) == 41, 'wrong energy produced');
-    (dsp.game.get_celestia_production(5) == 14, 'wrong energy produced');
+    (dsp.game.get_celestia_production(1879) == 14, 'wrong energy produced');
+    (dsp.game.get_celestia_production(1552) == 41, 'wrong energy produced');
+    (dsp.game.get_celestia_production(601) == 48, 'wrong energy produced');
+    (dsp.game.get_celestia_production(1312) == 41, 'wrong energy produced');
+    (dsp.game.get_celestia_production(659) == 14, 'wrong energy produced');
 }

@@ -10,9 +10,9 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
+use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]
 fn test_steel_mine_upgrade() {
@@ -23,7 +23,7 @@ fn test_steel_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.steel_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.steel == 1, 'wrong steel level');
 }
 
@@ -36,7 +36,7 @@ fn test_quartz_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.quartz_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.quartz == 1, 'wrong quartz level');
 }
 
@@ -49,7 +49,7 @@ fn test_tritium_mine_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.tritium_mine_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.tritium == 1, 'wrong tritium level');
 }
 
@@ -62,7 +62,7 @@ fn test_energy_plant_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.energy_plant_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.energy == 1, 'wrong plant level');
 }
 
@@ -75,7 +75,7 @@ fn test_dockyard_upgrade() {
     dsp.game.generate_planet();
 
     dsp.game.dockyard_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.dockyard == 1, 'wrong dockyard level');
 }
 
@@ -91,7 +91,7 @@ fn test_lab_upgrade() {
     dsp.game.tritium_mine_upgrade();
     start_warp(dsp.game.contract_address, HOUR * 240);
     dsp.game.lab_upgrade();
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.lab == 1, 'wrong lab level');
 }
 
@@ -109,6 +109,6 @@ fn test_energy_upgrade() {
     dsp.game.lab_upgrade();
 
     dsp.game.energy_innovation_upgrade();
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(1879);
     assert(techs.energy == 1, 'wrong energy level');
 }

@@ -8,7 +8,7 @@ use nogame::token::{
     },
     erc721::{NGERC721, IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait}
 };
-use tests::utils::{DEPLOYER, ACCOUNT1};
+use nogame::tests::utils::{DEPLOYER, ACCOUNT1};
 
 #[test]
 fn test_token_uri() {

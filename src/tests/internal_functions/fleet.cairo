@@ -6,7 +6,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
 use nogame::libraries::fleet;
 
-use tests::utils::{
+use nogame::tests::utils::{
     ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
     warp_multiple
 };
@@ -20,6 +20,83 @@ fn test_war_basic() {
         attackers, Default::default(), defenders, defences, Default::default()
     );
 }
+
+#[test]
+fn test_war_sparrow_vs_carrier() {
+    let mut attackers: Fleet = Default::default();
+    attackers.sparrow = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.carrier = 5;
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+    assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+
+#[test]
+fn test_war_frigate_vs_carrier() {
+    let mut attackers: Fleet = Default::default();
+    attackers.frigate = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.carrier = 45;
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+    assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+
+#[test]
+fn test_war_armade_vs_carrier() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.carrier = 152;
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+// assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+
+#[test]
+fn test_war_armade_vs_sparrow() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.sparrow = 30;
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+    assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+#[test]
+fn test_war_armade_vs_frigate() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.frigate = 4;
+    let mut defences: DefencesLevels = Default::default();
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+// assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+#[test]
+fn test_war_armade_vs_plasma() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 5;
+    let mut defenders: Fleet = Default::default();
+    let mut defences: DefencesLevels = Default::default();
+    defences.plasma = 1;
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+// assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+
 #[test]
 fn test_cargo_speed() {
     let mut fleet: Fleet = Default::default();

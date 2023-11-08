@@ -9,9 +9,9 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use nogame::token::erc20::{INGERC20Dispatcher, INGERC20DispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
 fn test_get_tech_levels() {
@@ -20,7 +20,7 @@ fn test_get_tech_levels() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(1879);
     assert(techs.energy == 0, 'wrong level');
     assert(techs.digital == 0, 'wrong level');
     assert(techs.beam == 0, 'wrong level');
@@ -42,7 +42,7 @@ fn test_get_tech_upgrade_cost() {
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
 
-    let techs = dsp.game.get_techs_upgrade_cost(1);
+    let techs = dsp.game.get_techs_upgrade_cost(1879);
     assert(techs.energy.quartz == 800 && techs.energy.tritium == 400, 'wrong cost');
     assert(techs.digital.quartz == 400 && techs.digital.tritium == 600, 'wrong cost');
     assert(techs.beam.quartz == 800 && techs.beam.tritium == 400, 'wrong cost');

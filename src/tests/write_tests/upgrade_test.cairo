@@ -3,7 +3,7 @@ use snforge_std::{start_prank, PrintTrait};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::mocks::mock_upgradable::{INoGameUpgradedDispatcher, INoGameUpgradedDispatcherTrait};
 
-use tests::utils::{init_game, set_up, declare_upgradable, ACCOUNT1, build_everything};
+use nogame::tests::utils::{init_game, set_up, declare_upgradable, ACCOUNT1, build_everything};
 
 #[test]
 fn test_upgradable() {
@@ -22,7 +22,7 @@ fn test_upgradable() {
 
     build_everything(upgraded);
 
-    let compounds = dsp.game.get_compounds_levels(1);
+    let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.steel == 3, 'wrong assert #1');
     assert(compounds.quartz == 4, 'wrong assert #2');
     assert(compounds.tritium == 3, 'wrong assert #3');
@@ -30,7 +30,7 @@ fn test_upgradable() {
     assert(compounds.lab == 7, 'wrong assert #5');
     assert(compounds.dockyard == 8, 'wrong assert #6');
 
-    let techs = dsp.game.get_techs_levels(1);
+    let techs = dsp.game.get_techs_levels(1879);
     assert(techs.energy == 8, 'wrong assert #7');
     assert(techs.digital == 0, 'wrong assert #8');
     assert(techs.beam == 10, 'wrong assert #9');
