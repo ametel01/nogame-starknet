@@ -179,7 +179,7 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
 }
 
 #[test]
-fn test_send_fleet_debris_success() {
+fn test_collect_debris_success() {
     let dsp = set_up();
     init_game(dsp);
 
@@ -223,6 +223,56 @@ fn test_send_fleet_debris_success() {
     );
     let debris_after_collection = dsp.game.get_debris_field(1552);
     assert(debris_after_collection.is_zero(), 'wrong debris after');
+}
+
+#[test]
+fn test_collect_debris_fleet_decay() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.plasma_projector_build(1);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade();
+    dsp.game.carrier_build(100);
+    dsp.game.scraper_build(10);
+    let p2_position = dsp.game.get_planet_position(1552);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 100;
+
+    dsp.game.send_fleet(fleet, p2_position, false);
+    let mission = dsp.game.get_mission_details(1879, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.scraper = 10;
+    let debris = dsp.game.get_debris_field(1552);
+    dsp.game.send_fleet(fleet, p2_position, true);
+    let missions = dsp.game.get_active_missions(1879);
+    let mission = dsp.game.get_mission_details(1879, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 5700);
+    let resources_before = dsp.game.get_spendable_resources(1879);
+
+    dsp.game.collect_debris(1);
+
+    assert(dsp.game.get_ships_levels(1879).scraper == 5, 'wrong scraper back');
+
+    let resources_after = dsp.game.get_spendable_resources(1879);
+
+    assert(resources_after.steel == resources_before.steel + 50000, 'wrong steel collected');
+    assert(resources_after.quartz == resources_before.quartz + 50000, 'wrong quartz collected');
+    let debris_after_collection = dsp.game.get_debris_field(1552);
+    assert(debris_after_collection.steel == debris.steel - 50000, 'wrong steel after');
+    assert(debris_after_collection.quartz == debris.quartz - 50000, 'wrong quartz after');
 }
 
 #[test]
@@ -370,6 +420,46 @@ fn test_attack_planet() {
     assert(fleet_a == fleetA_after, 'wrong fleet_a after');
     assert(fleet_b == fleetB_after, 'wrong fleet_b after');
     assert(defences == defences_after, 'wrong fleet_b after');
+}
+#[test]
+fn test_attack_planet_fleet_decay() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(dsp.game.contract_address, ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(dsp.game.contract_address, ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.carrier_build(10);
+    let fleetA_before = dsp.game.get_ships_levels(1879);
+
+    let p2_position = dsp.game.get_planet_position(1552);
+    let mut fleet_a: Fleet = Default::default();
+    let fleet_b: Fleet = Zeroable::zero();
+    fleet_a.carrier = 10;
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+    let mission = dsp.game.get_mission_details(1879, 1);
+
+    // warping 2100 seconds over an hour to create fleet decay
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 5700);
+
+    let points_before = dsp.game.get_planet_points(1879);
+
+    let before = dsp.game.get_ships_levels(1879);
+    assert(before.carrier == 0, 'wrong #1');
+
+    dsp.game.attack_planet(1);
+
+    let after = dsp.game.get_ships_levels(1879);
+    assert(after.carrier == 5, 'wrong #2');
+
+    let points_after = dsp.game.get_planet_points(1879);
+    assert(points_before - points_after == 20, 'wrong #3');
 }
 
 #[test]

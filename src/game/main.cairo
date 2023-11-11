@@ -798,9 +798,8 @@ mod NoGame {
             let mut attacker_fleet: Fleet = mission.fleet;
 
             if time_since_arrived > HOUR {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived);
-                let decayed_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
-                attacker_fleet = decayed_fleet;
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - HOUR);
+                attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
             let (f1, f2, d) = fleet::war(attacker_fleet, t1, defender_fleet, defences, t2);
@@ -829,8 +828,7 @@ mod NoGame {
                         self.erc721.read().ng_owner_of(mission.destination.into()), loot_amount
                     );
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
-                self.fleet_return_planet(origin, mission.fleet);
-                mission.fleet = f1;
+                self.fleet_return_planet(origin, f1);
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
 
@@ -879,9 +877,8 @@ mod NoGame {
             let mut collector_fleet: Fleet = mission.fleet;
 
             if time_since_arrived > HOUR {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived);
-                let decayed_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
-                collector_fleet = decayed_fleet;
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - HOUR);
+                collector_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
             let debris = self.planet_debris_field.read(mission.destination);
@@ -903,7 +900,7 @@ mod NoGame {
             self.receive_resources_erc20(caller, erc20);
             self
                 .scraper_available
-                .write(origin, self.scraper_available.read(origin) + mission.fleet.scraper);
+                .write(origin, self.scraper_available.read(origin) + collector_fleet.scraper);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
             self.active_missions_len.write(origin, active_missions - 1);
