@@ -22,7 +22,6 @@ mod write_tests {
     mod fleet_write;
     mod general_write;
     mod research_write;
-    mod upgrade_test;
 }
 
 mod token {

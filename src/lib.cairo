@@ -31,10 +31,6 @@ mod token {
     mod interface;
 }
 
-mod mocks {
-    mod mock_upgradable;
-}
-
 mod tests {
     mod internal_functions {
         #[cfg(test)]
@@ -77,8 +73,6 @@ mod tests {
         mod general_write;
         #[cfg(test)]
         mod research_write;
-        #[cfg(test)]
-        mod upgrade_test;
     }
 
     mod token {

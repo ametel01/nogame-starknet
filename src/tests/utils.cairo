@@ -11,7 +11,6 @@ use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoro
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use nogame::mocks::mock_upgradable::{INoGameUpgradedDispatcher, INoGameUpgradedDispatcherTrait};
 
 use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait};
 
@@ -102,6 +101,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
+            1
         );
     start_prank(dsp.eth.contract_address, DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
@@ -256,7 +256,7 @@ fn declare_upgradable() -> ClassHash {
     declare('NoGameUpgraded').class_hash
 }
 
-fn build_everything(game: INoGameUpgradedDispatcher) {
+fn build_everything(game: INoGameDispatcher) {
     warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
     game.energy_plant_upgrade();
     game.energy_plant_upgrade();

@@ -1,6 +1,4 @@
 // TODOS: 
-// - Adjust players points after battle
-// - Fix defences and fleet levels after attack
 
 #[starknet::contract]
 mod NoGame {
@@ -19,7 +17,7 @@ mod NoGame {
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
         DAY
     };
-    use nogame::libraries::compounds::Compounds;
+    use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
     use nogame::libraries::dockyard::Dockyard;
     use nogame::libraries::fleet;
@@ -38,6 +36,7 @@ mod NoGame {
         initialized: bool,
         receiver: ContractAddress,
         version: u8,
+        uni_speed: u128,
         // General.
         number_of_planets: u16,
         planet_position: LegacyMap::<u16, PlanetPosition>,
@@ -185,6 +184,7 @@ mod NoGame {
             rand: ContractAddress,
             eth: ContractAddress,
             receiver: ContractAddress,
+            uni_speed: u128,
         ) {
             // NOTE: uncomment the following after testing with katana.
             assert(!self.initialized.read(), 'already initialized');
@@ -195,6 +195,7 @@ mod NoGame {
             self.rand.write(IXoroshiroDispatcher { contract_address: rand });
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.receiver.write(receiver);
+            self.uni_speed.write(uni_speed);
             self.initialized.write(true);
         }
 
@@ -241,7 +242,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = Compounds::steel_mine_cost(current_level);
+            let cost: ERC20s = CompoundCost::steel(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
@@ -254,7 +255,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.quartz_mine_level.read(planet_id);
-            let cost: ERC20s = Compounds::quartz_mine_cost(current_level);
+            let cost: ERC20s = CompoundCost::quartz(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
@@ -267,7 +268,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = Compounds::tritium_mine_cost(current_level);
+            let cost: ERC20s = CompoundCost::tritium(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
@@ -280,7 +281,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.energy_plant_level.read(planet_id);
-            let cost: ERC20s = Compounds::energy_plant_cost(current_level);
+            let cost: ERC20s = CompoundCost::energy(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
@@ -294,7 +295,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.dockyard_level.read(planet_id);
-            let cost: ERC20s = Compounds::dockyard_cost(current_level);
+            let cost: ERC20s = CompoundCost::dockyard(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
@@ -307,7 +308,7 @@ mod NoGame {
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.lab_level.read(planet_id);
-            let cost: ERC20s = Compounds::lab_cost(current_level);
+            let cost: ERC20s = CompoundCost::lab(current_level);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
@@ -958,14 +959,14 @@ mod NoGame {
             let time_elapsed = self.time_since_last_collection(planet_id);
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
-            let steel = Compounds::steel_production(self.steel_mine_level.read(planet_id))
+            let steel = Production::steel(self.steel_mine_level.read(planet_id))
                 * time_elapsed.into()
                 / 3600;
-            let quartz = Compounds::quartz_production(self.quartz_mine_level.read(planet_id))
+            let quartz = Production::quartz(self.quartz_mine_level.read(planet_id))
                 * time_elapsed.into()
                 / 3600;
-            let tritium = Compounds::tritium_production(
-                self.tritium_mine_level.read(planet_id), temp
+            let tritium = Production::tritium(
+                self.tritium_mine_level.read(planet_id), temp, self.uni_speed.read()
             )
                 * time_elapsed.into()
                 / 3600;
@@ -974,7 +975,7 @@ mod NoGame {
 
         fn get_energy_available(self: @ContractState, planet_id: u16) -> u128 {
             let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            let gross_production = Compounds::energy_plant_production(compounds_levels.energy);
+            let gross_production = Production::energy(compounds_levels.energy);
             let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
             let energy_required = (self.calculate_energy_consumption(compounds_levels));
             if (gross_production + celestia_production < energy_required) {
@@ -996,12 +997,12 @@ mod NoGame {
         }
 
         fn get_compounds_upgrade_cost(self: @ContractState, planet_id: u16) -> CompoundsCost {
-            let steel = Compounds::steel_mine_cost(self.steel_mine_level.read(planet_id));
-            let quartz = Compounds::quartz_mine_cost(self.quartz_mine_level.read(planet_id));
-            let tritium = Compounds::tritium_mine_cost(self.tritium_mine_level.read(planet_id));
-            let energy = Compounds::energy_plant_cost(self.energy_plant_level.read(planet_id));
-            let lab = Compounds::lab_cost(self.lab_level.read(planet_id));
-            let dockyard = Compounds::dockyard_cost(self.dockyard_level.read(planet_id));
+            let steel = CompoundCost::steel(self.steel_mine_level.read(planet_id));
+            let quartz = CompoundCost::quartz(self.quartz_mine_level.read(planet_id));
+            let tritium = CompoundCost::tritium(self.tritium_mine_level.read(planet_id));
+            let energy = CompoundCost::energy(self.energy_plant_level.read(planet_id));
+            let lab = CompoundCost::lab(self.lab_level.read(planet_id));
+            let dockyard = CompoundCost::dockyard(self.dockyard_level.read(planet_id));
             CompoundsCost {
                 steel: steel,
                 quartz: quartz,
@@ -1013,24 +1014,20 @@ mod NoGame {
         }
 
         fn get_energy_for_upgrade(self: @ContractState, planet_id: u16) -> EnergyCost {
-            let steel = Compounds::base_mine_consumption(self.steel_mine_level.read(planet_id) + 1)
-                - Compounds::base_mine_consumption(self.steel_mine_level.read(planet_id));
-            let quartz = Compounds::base_mine_consumption(
-                self.quartz_mine_level.read(planet_id) + 1
-            )
-                - Compounds::base_mine_consumption(self.quartz_mine_level.read(planet_id));
-            let tritium = Compounds::tritium_mine_consumption(
-                self.tritium_mine_level.read(planet_id) + 1
-            )
-                - Compounds::tritium_mine_consumption(self.tritium_mine_level.read(planet_id));
+            let steel = Consumption::base(self.steel_mine_level.read(planet_id) + 1)
+                - Consumption::base(self.steel_mine_level.read(planet_id));
+            let quartz = Consumption::base(self.quartz_mine_level.read(planet_id) + 1)
+                - Consumption::base(self.quartz_mine_level.read(planet_id));
+            let tritium = Consumption::tritium(self.tritium_mine_level.read(planet_id) + 1)
+                - Consumption::tritium(self.tritium_mine_level.read(planet_id));
 
             EnergyCost { steel: steel, quartz: quartz, tritium: tritium }
         }
 
         fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
             let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            Compounds::energy_plant_production(compounds_levels.energy + 1)
-                - Compounds::energy_plant_production(compounds_levels.energy)
+            Production::energy(compounds_levels.energy + 1)
+                - Production::energy(compounds_levels.energy)
         }
 
         fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
@@ -1297,21 +1294,23 @@ mod NoGame {
             let mines_levels = NoGame::get_compounds_levels(self, planet_id);
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
-            let steel_available = Compounds::steel_production(mines_levels.steel)
+            let steel_available = Production::steel(mines_levels.steel)
                 * time_elapsed.into()
                 / 3600;
 
-            let quartz_available = Compounds::quartz_production(mines_levels.quartz)
+            let quartz_available = Production::quartz(mines_levels.quartz)
                 * time_elapsed.into()
                 / 3600;
 
-            let tritium_available = Compounds::tritium_production(mines_levels.tritium, temp)
+            let tritium_available = Production::tritium(
+                mines_levels.tritium, temp, self.uni_speed.read()
+            )
                 * time_elapsed.into()
                 / 3600;
-            let energy_available = Compounds::energy_plant_production(mines_levels.energy);
-            let energy_required = Compounds::base_mine_consumption(mines_levels.steel)
-                + Compounds::base_mine_consumption(mines_levels.quartz)
-                + Compounds::tritium_mine_consumption(mines_levels.tritium);
+            let energy_available = Production::energy(mines_levels.energy);
+            let energy_required = Consumption::base(mines_levels.steel)
+                + Consumption::base(mines_levels.quartz)
+                + Consumption::base(mines_levels.tritium);
             if energy_available < energy_required {
                 let _steel = Compounds::production_scaler(
                     steel_available, energy_available, energy_required
@@ -1330,9 +1329,9 @@ mod NoGame {
         }
 
         fn calculate_energy_consumption(self: @ContractState, compounds: CompoundsLevels) -> u128 {
-            Compounds::base_mine_consumption(compounds.steel)
-                + Compounds::base_mine_consumption(compounds.quartz)
-                + Compounds::tritium_mine_consumption(compounds.tritium)
+            Consumption::base(compounds.steel)
+                + Consumption::base(compounds.quartz)
+                + Consumption::base(compounds.tritium)
         }
 
         /// Receives resources in ERC20 token format and mints the corresponding amounts to a contract address.

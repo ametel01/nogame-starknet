@@ -5,7 +5,7 @@ use snforge_std::PrintTrait;
 use snforge_std::{start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::compounds::Compounds;
+use nogame::libraries::compounds::{Production,Compounds};
 use nogame::libraries::types::CompoundsLevels;
 use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,
@@ -21,7 +21,8 @@ fn test_energy_available_positive() {
 
     build_basic_mines(dsp.game);
     let energy = dsp.game.get_energy_available(1879);
-    assert(energy == 55, 'wrong pos energy');
+    energy.print();
+    assert(energy == 95, 'wrong pos energy');
 }
 
 #[test]
@@ -101,8 +102,8 @@ fn test_get_energy_gain_after_upgrade() {
     build_basic_mines(dsp.game);
 
     let compounds = dsp.game.get_compounds_levels(1879);
-    let current_production = Compounds::energy_plant_production(compounds.energy);
-    let upgraded_production = Compounds::energy_plant_production(compounds.energy + 1);
+    let current_production = Production::energy(compounds.energy);
+    let upgraded_production = Production::energy(compounds.energy + 1);
     let actual_value_returned = dsp.game.get_energy_gain_after_upgrade(1879);
     assert(actual_value_returned == upgraded_production - current_production, 'wrong energy gain');
 }

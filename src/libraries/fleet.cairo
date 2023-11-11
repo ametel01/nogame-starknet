@@ -416,9 +416,10 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
 fn get_flight_time(speed: u32, distance: u32) -> u64 {
     let f_speed = FixedTrait::new_unscaled(speed.into(), false);
     let f_distance = FixedTrait::new_unscaled(distance.into(), false);
-    let multiplier = FixedTrait::new_unscaled(3510, false);
-    let res = multiplier
-        * FixedTrait::sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
+    let multiplier = FixedTrait::new_unscaled(3500, false);
+    let ten = FixedTrait::new_unscaled(10, false);
+    let res = ten
+        + multiplier * FixedTrait::sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
     res.mag / ONE
 }
 
@@ -439,6 +440,9 @@ fn get_fuel_consumption(f: Fleet, distance: u32) -> u128 {
 
 #[inline(always)]
 fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
+    if start.system == end.system && start.system > end.system {
+        return 5;
+    }
     if start.system == end.system {
         if start.orbit > end.orbit {
             let dis: u32 = (start.orbit - end.orbit).into();

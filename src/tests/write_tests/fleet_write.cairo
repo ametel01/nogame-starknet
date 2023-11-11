@@ -330,22 +330,16 @@ fn test_attack_planet() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.celestia_build(100);
-    // dsp.game.blaster_build(1);
-    // dsp.game.beam_build(1);
-    // dsp.game.astral_launcher_build(1);
-    // dsp.game.plasma_projector_build(1);
     let defences_before = dsp.game.get_defences_levels(1552);
     start_prank(dsp.game.contract_address, ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    // dsp.game.sparrow_build(1);
     dsp.game.armade_build(10);
     let fleetA_before = dsp.game.get_ships_levels(1879);
 
     let p2_position = dsp.game.get_planet_position(1552);
     let mut fleet_a: Fleet = Default::default();
     let fleet_b: Fleet = Zeroable::zero();
-    // fleet_a.sparrow = 100;
     fleet_a.armade = 10;
     dsp.game.send_fleet(fleet_a, p2_position, false);
     let mission = dsp.game.get_mission_details(1879, 1);

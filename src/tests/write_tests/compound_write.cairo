@@ -16,15 +16,16 @@ use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER,
 
 #[test]
 fn test_steel_mine_upgrade() {
+    let initial = testing::get_available_gas();
     let dsp = set_up();
     init_game(dsp);
 
     start_prank(dsp.game.contract_address, ACCOUNT1());
     dsp.game.generate_planet();
-
     dsp.game.steel_mine_upgrade();
     let compounds = dsp.game.get_compounds_levels(1879);
     assert(compounds.steel == 1, 'wrong steel level');
+    (initial - testing::get_available_gas()).print();
 }
 
 #[test]
