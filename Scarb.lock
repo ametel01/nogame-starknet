@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "cubit"
 version = "1.2.0"
-source = "git+https://github.com/ametel01/cubit?rev=72784d8#72784d843630a9b216045631aca87b86d4bf5e10"
+source = "git+https://github.com/influenceth/cubit.git?rev=b459053#b4590530d5aeae9aabd36740cc2a3d9e6adc5fde"
 
 [[package]]
 name = "nogame"

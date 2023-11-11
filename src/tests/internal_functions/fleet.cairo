@@ -243,3 +243,45 @@ fn test_get_debris() {
     let res = fleet::get_debris(before, after, 10);
 }
 
+#[test]
+fn test_calculate_fleet_loss() {
+    let loss = fleet::calculate_fleet_loss(60);
+    assert(loss == 1, 'wrong #1');
+
+    let loss = fleet::calculate_fleet_loss(350);
+    assert(loss == 11, 'wrong #2');
+
+    let loss = fleet::calculate_fleet_loss(600);
+    assert(loss == 18, 'wrong #3');
+
+    let loss = fleet::calculate_fleet_loss(1800);
+    assert(loss == 45, 'wrong #4');
+
+    let loss = fleet::calculate_fleet_loss(2700);
+    assert(loss == 59, 'wrong #5');
+
+    let loss = fleet::calculate_fleet_loss(3600);
+    assert(loss == 69, 'wrong #6');
+
+    let loss = fleet::calculate_fleet_loss(5400);
+    assert(loss == 83, 'wrong #7');
+
+    let loss = fleet::calculate_fleet_loss(7200);
+    assert(loss == 90, 'wrong #8');
+}
+
+#[test]
+fn test_decay_fleet() {
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 45;
+    fleet.scraper = 128;
+    fleet.sparrow = 555;
+    fleet.frigate = 122;
+    fleet.armade = 2;
+
+    let res = fleet::decay_fleet(fleet, 5);
+    let res = fleet::decay_fleet(fleet, 25);
+    let res = fleet::decay_fleet(fleet, 65);
+    let res = fleet::decay_fleet(fleet, 85);
+    let res = fleet::decay_fleet(fleet, 95);
+}

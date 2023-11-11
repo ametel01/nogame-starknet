@@ -10,7 +10,7 @@ const UNI_SPEED: u128 = 1;
 const _1_36: u128 = 25087571940244990000;
 const _0_004: u128 = 73786976294838210;
 
-mod Compounds  {
+mod Compounds {
     #[inline(always)]
     fn production_scaler(production: u128, available: u128, required: u128) -> u128 {
         if available > required {

@@ -1,4 +1,4 @@
-use nogame::libraries::compounds::{Compounds,Production};
+use nogame::libraries::compounds::{Compounds, Production};
 use snforge_std::PrintTrait;
 
 #[test]

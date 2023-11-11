@@ -5,7 +5,7 @@ use snforge_std::PrintTrait;
 use snforge_std::{start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::compounds::{Production,Compounds};
+use nogame::libraries::compounds::{Production, Compounds};
 use nogame::libraries::types::CompoundsLevels;
 use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,

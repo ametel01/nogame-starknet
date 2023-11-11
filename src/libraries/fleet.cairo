@@ -606,3 +606,29 @@ fn get_collectible_debris(cargo_capacity: u128, debris: Debris) -> Debris {
     return Debris { steel: collected_steel, quartz: collected_quartz };
 }
 
+const _0_02: u64 = 85899346;
+
+// loss = 100 * (1 - math.exp(-k * time_seconds / 60))
+fn calculate_fleet_loss(time_seconds: u64) -> u32 {
+    ((FixedTrait::new_unscaled(100, false)
+        * (FixedTrait::new(ONE, false)
+            - FixedTrait::exp(
+                FixedTrait::new(_0_02, true)
+                    * FixedTrait::new_unscaled(time_seconds, false)
+                    / FixedTrait::new_unscaled(60, false)
+            )))
+        .mag
+        / ONE)
+        .try_into()
+        .expect('fleet loss calc failed')
+}
+
+fn decay_fleet(fleet: Fleet, decay_amount: u32) -> Fleet {
+    let mut res: Fleet = Default::default();
+    res.carrier = fleet.carrier * (100 - decay_amount) / 100;
+    res.scraper = fleet.scraper * (100 - decay_amount) / 100;
+    res.sparrow = fleet.sparrow * (100 - decay_amount) / 100;
+    res.frigate = fleet.frigate * (100 - decay_amount) / 100;
+    res.armade = fleet.armade * (100 - decay_amount) / 100;
+    res
+}

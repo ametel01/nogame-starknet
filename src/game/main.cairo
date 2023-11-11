@@ -15,7 +15,7 @@ mod NoGame {
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY
+        DAY, HOUR
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -794,7 +794,17 @@ mod NoGame {
             let t2 = self.get_tech_levels(mission.destination);
             let celestia_before = self.get_celestia_available(mission.destination);
 
-            let (f1, f2, d) = fleet::war(mission.fleet, t1, defender_fleet, defences, t2);
+            let time_since_arrived = time_now - mission.time_arrival;
+            let mut attacker_fleet: Fleet = mission.fleet;
+
+            if time_since_arrived > HOUR {
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived);
+                let decayed_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
+                attacker_fleet = decayed_fleet;
+            }
+
+            let (f1, f2, d) = fleet::war(attacker_fleet, t1, defender_fleet, defences, t2);
+
             // calculate debris and update field
             let debris1 = fleet::get_debris(mission.fleet, f1, 0);
             let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
@@ -857,24 +867,39 @@ mod NoGame {
         fn collect_debris(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
             let origin = self.get_owned_planet(caller);
+
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
             assert(mission.is_debris, 'not a debris mission');
+
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
+
+            let time_since_arrived = time_now - mission.time_arrival;
+            let mut collector_fleet: Fleet = mission.fleet;
+
+            if time_since_arrived > HOUR {
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived);
+                let decayed_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
+                collector_fleet = decayed_fleet;
+            }
+
             let debris = self.planet_debris_field.read(mission.destination);
-            let storage = fleet::get_fleet_cargo_capacity(mission.fleet);
+            let storage = fleet::get_fleet_cargo_capacity(collector_fleet);
             let collectible_debris = fleet::get_collectible_debris(storage, debris);
             let new_debris = Debris {
                 steel: debris.steel - collectible_debris.steel,
                 quartz: debris.quartz - collectible_debris.quartz
             };
+
             self.planet_debris_field.write(mission.destination, new_debris);
+
             let erc20 = ERC20s {
                 steel: collectible_debris.steel,
                 quartz: collectible_debris.quartz,
                 tritium: Zeroable::zero()
             };
+
             self.receive_resources_erc20(caller, erc20);
             self
                 .scraper_available
@@ -961,15 +986,15 @@ mod NoGame {
             let temp = self.calculate_avg_temperature(position.orbit);
             let steel = Production::steel(self.steel_mine_level.read(planet_id))
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
             let quartz = Production::quartz(self.quartz_mine_level.read(planet_id))
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
             let tritium = Production::tritium(
                 self.tritium_mine_level.read(planet_id), temp, self.uni_speed.read()
             )
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -1296,17 +1321,17 @@ mod NoGame {
             let temp = self.calculate_avg_temperature(position.orbit);
             let steel_available = Production::steel(mines_levels.steel)
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
 
             let quartz_available = Production::quartz(mines_levels.quartz)
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
 
             let tritium_available = Production::tritium(
                 mines_levels.tritium, temp, self.uni_speed.read()
             )
                 * time_elapsed.into()
-                / 3600;
+                / HOUR.into();
             let energy_available = Production::energy(mines_levels.energy);
             let energy_required = Consumption::base(mines_levels.steel)
                 + Consumption::base(mines_levels.quartz)
