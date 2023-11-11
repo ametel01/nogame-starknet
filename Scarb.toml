@@ -7,7 +7,7 @@ license = "MIT"
 
 [dependencies]
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.8.0-beta.0" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.9.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.10.1" }
 xoroshiro = { git ="https://github.com/ametel01/xoroshiro-cairo.git" }
 cubit = {git ="https://github.com/influenceth/cubit.git", rev="b459053"}
 # cubit = {git ="https://github.com/ametel01/cubit", rev="72784d8"}
