@@ -17,6 +17,7 @@ trait INoGame<TState> {
         eth: ContractAddress,
         receiver: ContractAddress,
         uni_speed: u128,
+        token_price: u128,
     );
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);

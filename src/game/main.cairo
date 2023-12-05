@@ -36,6 +36,7 @@ mod NoGame {
         initialized: bool,
         receiver: ContractAddress,
         version: u8,
+        token_price: u128,
         uni_speed: u128,
         // General.
         number_of_planets: u16,
@@ -185,6 +186,7 @@ mod NoGame {
             eth: ContractAddress,
             receiver: ContractAddress,
             uni_speed: u128,
+            token_price: u128,
         ) {
             // NOTE: uncomment the following after testing with katana.
             assert(!self.initialized.read(), 'already initialized');
@@ -197,6 +199,7 @@ mod NoGame {
             self.receiver.write(receiver);
             self.uni_speed.write(uni_speed);
             self.initialized.write(true);
+            self.token_price.write(token_price);
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
@@ -1236,7 +1239,7 @@ mod NoGame {
     impl InternalImpl of InternalTrait {
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             let auction = LinearVRGDA {
-                target_price: FixedTrait::new(PRICE, false),
+                target_price: FixedTrait::new(self.token_price.read(), false),
                 decay_constant: FixedTrait::new(_0_05, true),
                 per_time_unit: FixedTrait::new_unscaled(10, false),
             };

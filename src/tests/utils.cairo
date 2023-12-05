@@ -7,8 +7,10 @@ use openzeppelin::token::erc20::erc20::ERC20;
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
+use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::libraries::types::PRICE;
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
@@ -103,7 +105,8 @@ fn init_game(dsp: Dispatchers) {
             dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
-            1
+            1,
+            ONE
         );
     start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());

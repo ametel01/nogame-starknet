@@ -19,7 +19,8 @@ fn test_carrier_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
 
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);

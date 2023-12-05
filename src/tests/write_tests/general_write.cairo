@@ -35,7 +35,7 @@ fn test_generate() {
 
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.game.get_current_planet_price();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     assert(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
@@ -48,23 +48,6 @@ start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     assert(dsp.game.get_number_of_planets() == 2, 'wrong n planets');
 }
 
-// #[test]
-// #[should_panic(expected: ('max number of planets',))]
-// fn test_generate_planet_fails_max_number_of_planets() {
-//     let dsp = set_up();
-//     init_game(dsp);
-//     let mut i = 1;
-//     loop {
-//         if i == 502 {
-//             break;
-//         }
-//         start_prank(CheatTarget::All, i.try_into().unwrap());
-//         dsp.game.generate_planet();
-//         i += 1;
-//     };
-//     dsp.game.get_number_of_planets().print();
-// }
-
 #[test]
 fn test_collect_resources() {
     let dsp = set_up();
@@ -72,8 +55,20 @@ fn test_collect_resources() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-// dsp.game.collect_resources();
+    dsp.game.collect_resources();
 }
+
+#[test]
+fn test_collect() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    dsp.eth.balance_of(DEPLOYER()).print();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    dsp.eth.balance_of(DEPLOYER()).print();
+}
+
 // #[test]
 // fn test_planet_position() {
 //     let dsp = set_up();

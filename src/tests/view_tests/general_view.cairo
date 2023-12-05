@@ -34,21 +34,21 @@ fn test_get_current_planet_price() {
     dsp.game.generate_planet();
 
     (dsp.game.get_current_planet_price() == 12060150250085595, 'wrong price-1');
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
 
     (dsp.game.get_current_planet_price() == 12120602004610750, 'wrong price-1');
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
     dsp.game.generate_planet();
 
     start_warp(CheatTarget::All, DAY * 13);
 
     (dsp.game.get_current_planet_price() == 6359225859946644, 'wrong price-1');
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
     dsp.game.generate_planet();
 
     (dsp.game.get_current_planet_price() == 6391101612214528, 'wrong price-1');
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
     dsp.game.generate_planet();
 }
 
@@ -81,13 +81,13 @@ fn test_get_generated_planets_positions() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
     dsp.game.generate_planet();
 
     let mut arr_planets = dsp.game.get_generated_planets_positions();
@@ -120,7 +120,7 @@ fn test_get_debris_field() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
 
     assert(dsp.game.get_debris_field(1879).is_zero(), 'wrong debris field');
@@ -131,7 +131,7 @@ start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     advance_game_state(dsp.game);
     dsp.game.carrier_build(100);
 
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.astral_launcher_build(50);
@@ -183,10 +183,10 @@ fn test_get_planet_points() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
-start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
