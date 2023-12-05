@@ -3,7 +3,7 @@ use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 use snforge_std::PrintTrait;
 
-use snforge_std::{start_prank, start_warp};
+use snforge_std::{start_prank, start_warp, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -17,7 +17,7 @@ use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game
 fn test_get_defences_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     let def = dsp.game.get_defences_levels(1879);
@@ -31,7 +31,7 @@ fn test_get_defences_levels() {
 fn test_get_defences_cost() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     let def = dsp.game.get_defences_cost();

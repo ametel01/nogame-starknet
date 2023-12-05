@@ -3,7 +3,7 @@ use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 use snforge_std::PrintTrait;
 
-use snforge_std::{start_prank, start_warp};
+use snforge_std::{start_prank, start_warp, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -22,13 +22,13 @@ fn test_is_noob_protected() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
 
     assert(dsp.game.is_noob_protected(1879, 1552) == true, 'wrong noob true');
@@ -49,19 +49,19 @@ fn test_get_hostile_missions() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
 
     dsp.game.carrier_build(5);
 
@@ -121,19 +121,19 @@ fn test_get_active_missions() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(1);
 
     dsp.game.carrier_build(5);
 
@@ -204,9 +204,9 @@ fn test_get_travel_time() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
 
     let p1 = dsp.game.get_planet_position(1879);
@@ -250,9 +250,9 @@ fn test_get_fuel_consumption() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
 
     let p1 = dsp.game.get_planet_position(1879);

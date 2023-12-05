@@ -4,7 +4,7 @@ use starknet::info::{get_contract_address, get_block_timestamp};
 use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -14,7 +14,7 @@ use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrai
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
-    YEAR, warp_multiple
+    YEAR, warp_multiple, advance_game_state
 };
 
 #[test]
@@ -22,13 +22,13 @@ fn test_blaster_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.dockyard_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.dockyard_upgrade(1);
 
     dsp.game.blaster_build(10);
     let def = dsp.game.get_defences_levels(1879);
@@ -41,9 +41,10 @@ fn test_blaster_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
+    // advance_game_state(dsp.game);
 
     dsp.game.blaster_build(1);
 }
@@ -53,20 +54,20 @@ fn test_beam_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
 
     dsp.game.beam_build(10);
     let def = dsp.game.get_defences_levels(1879);
@@ -79,7 +80,7 @@ fn test_beam_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
 
@@ -92,12 +93,12 @@ fn test_beam_build_fails_energy_tech_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
 
     dsp.game.beam_build(1);
 }
@@ -111,37 +112,8 @@ fn test_astral_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.armour_innovation_upgrade();
-    dsp.game.armour_innovation_upgrade();
-    dsp.game.armour_innovation_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.shield_tech_upgrade();
 
     dsp.game.astral_launcher_build(10);
     let def = dsp.game.get_defences_levels(1879);
@@ -172,54 +144,54 @@ fn test_plasma_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade();
-    dsp.game.dockyard_upgrade(); // dockyard #8
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade(); // lab #4
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade(); // energy #8
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade(); // beam 10
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade(); // ion #5
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade();
-    dsp.game.plasma_engineering_upgrade(); // plasma #7
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(1); // dockyard #8
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1); // lab #4
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1); // energy #8
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1); // beam 10
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1); // ion #5
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.plasma_engineering_upgrade(1); // plasma #7
 
     dsp.game.plasma_projector_build(10);
     let def = dsp.game.get_defences_levels(1879);

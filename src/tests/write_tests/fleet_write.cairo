@@ -2,7 +2,7 @@ use starknet::info::{get_block_timestamp, get_contract_address};
 
 use snforge_std::{
     declare, ContractClassTrait, PrintTrait, start_prank, start_warp, spy_events, SpyOn, EventSpy,
-    EventAssertions, EventFetcher, event_name_hash, Event
+    EventAssertions, EventFetcher, event_name_hash, Event, CheatTarget
 };
 
 use nogame::game::main::NoGame;
@@ -21,13 +21,13 @@ fn test_send_fleet_success() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
@@ -90,7 +90,7 @@ fn test_send_fleet_fails_no_planet_at_destination() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
@@ -111,7 +111,7 @@ fn test_send_fleet_fails_origin_is_destination() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
@@ -132,12 +132,12 @@ fn test_send_fleet_fails_noob_protection() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
@@ -157,13 +157,13 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
@@ -183,17 +183,17 @@ fn test_collect_debris_success() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.plasma_projector_build(1);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     dsp.game.carrier_build(10);
     dsp.game.scraper_build(1);
     let p2_position = dsp.game.get_planet_position(1552);
@@ -230,17 +230,17 @@ fn test_collect_debris_fleet_decay() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.plasma_projector_build(1);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     dsp.game.carrier_build(100);
     dsp.game.scraper_build(10);
     let p2_position = dsp.game.get_planet_position(1552);
@@ -281,16 +281,16 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     dsp.game.carrier_build(10);
     dsp.game.scraper_build(1);
     let p2_position = dsp.game.get_planet_position(1552);
@@ -310,17 +310,17 @@ fn test_send_fleet_debris_fails_no_scrapers() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.plasma_projector_build(1);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     dsp.game.carrier_build(2);
     let p1_position = dsp.game.get_planet_position(1552);
 
@@ -341,17 +341,17 @@ fn test_send_fleet_debris_fails_not_only_scrapers() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.plasma_projector_build(1);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     dsp.game.carrier_build(2);
     dsp.game.scraper_build(1);
     let p1_position = dsp.game.get_planet_position(1552);
@@ -373,15 +373,15 @@ fn test_attack_planet() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.celestia_build(100);
     let defences_before = dsp.game.get_defences_levels(1552);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.armade_build(10);
@@ -427,13 +427,13 @@ fn test_attack_planet_fleet_decay() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.carrier_build(10);
@@ -469,13 +469,13 @@ fn test_attack_planet_fails_empty_mission() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.sparrow_build(1);
@@ -498,13 +498,13 @@ fn test_attack_planet_fails_destination_not_reached() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.sparrow_build(1);
@@ -523,13 +523,13 @@ fn test_recall_fleet() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.sparrow_build(1);
@@ -554,13 +554,13 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.sparrow_build(1);

@@ -12,7 +12,9 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait};
+use snforge_std::{
+    declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget
+};
 
 const E18: u128 = 1_000_000_000_000_000_000;
 const ETH_SUPPLY: felt252 = 1_000_000_000_000_000_000_000;
@@ -90,7 +92,7 @@ fn set_up() -> Dispatchers {
 }
 
 fn init_game(dsp: Dispatchers) {
-    start_prank(dsp.game.contract_address, DEPLOYER());
+    start_prank(CheatTarget::All, DEPLOYER());
     dsp
         .game
         .initializer(
@@ -103,39 +105,44 @@ fn init_game(dsp: Dispatchers) {
             DEPLOYER(),
             1
         );
-    start_prank(dsp.eth.contract_address, DEPLOYER());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT2(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT3(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT4(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT5(), (10 * E18).into());
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
-    start_prank(dsp.eth.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT1());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
-    stop_prank(dsp.eth.contract_address);
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
-    start_prank(dsp.eth.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT2());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
-    stop_prank(dsp.eth.contract_address);
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
-    start_prank(dsp.eth.contract_address, ACCOUNT3());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT3());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
-    stop_prank(dsp.eth.contract_address);
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
-    start_prank(dsp.eth.contract_address, ACCOUNT4());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT4());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
-    stop_prank(dsp.eth.contract_address);
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
-    start_prank(dsp.eth.contract_address, ACCOUNT5());
+    start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT5());
     dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
-    stop_prank(dsp.eth.contract_address);
+    stop_prank(CheatTarget::One(dsp.eth.contract_address));
+    start_prank(CheatTarget::One(dsp.erc721.contract_address), dsp.game.contract_address);
+    start_prank(CheatTarget::One(dsp.steel.contract_address), dsp.game.contract_address);
+    start_prank(CheatTarget::One(dsp.quartz.contract_address), dsp.game.contract_address);
+    start_prank(CheatTarget::One(dsp.tritium.contract_address), dsp.game.contract_address);
 }
 
 #[test]
 fn test_deploy_and_init() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
-    start_prank(dsp.eth.contract_address, dsp.game.contract_address);
+    start_prank(CheatTarget::All, dsp.game.contract_address);
     dsp.eth.transfer_from(ACCOUNT1(), DEPLOYER(), 1.into());
 }
 
@@ -146,208 +153,39 @@ fn test_deploy_and_init() {
 // - energy_plant: 6
 fn build_basic_mines(game: INoGameDispatcher) {
     warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.steel_mine_upgrade();
-    game.steel_mine_upgrade();
-    game.quartz_mine_upgrade();
+    game.energy_plant_upgrade(5);
     warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.quartz_mine_upgrade();
-    game.quartz_mine_upgrade();
-    game.quartz_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.steel_mine_upgrade();
-    game.steel_mine_upgrade();
-    game.steel_mine_upgrade();
+    game.energy_plant_upgrade(3);
+    game.quartz_mine_upgrade(3);
+    game.tritium_mine_upgrade(3);
+    game.energy_plant_upgrade(2);
+    game.tritium_mine_upgrade(4);
+    game.steel_mine_upgrade(3);
 }
 
 fn advance_game_state(game: INoGameDispatcher) {
     warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade(); // dockyard #8
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade(); // lab #7
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade(); // energy #8
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade(); // combustive #6
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade(); // beam 10
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade(); // shield #5
-    game.spacetime_warp_upgrade();
-    game.spacetime_warp_upgrade();
-    game.spacetime_warp_upgrade(); // spacetime #3
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade(); // warp #4
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade(); // ion #5
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade(); // impulse #4
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade(); // plasma #7
-    game.weapons_development_upgrade();
-    game.weapons_development_upgrade();
-    game.weapons_development_upgrade(); // weapons #3
+    game.dockyard_upgrade(8); // dockyard #8
+    game.lab_upgrade(7); // lab #7
+    game.energy_innovation_upgrade(8); // energy #8
+    game.combustive_engine_upgrade(6); // combustive #6
+    game.beam_technology_upgrade(10); // beam 10
+    game.shield_tech_upgrade(5); // shield #5
+    game.spacetime_warp_upgrade(3); // spacetime #3
+    game.warp_drive_upgrade(4); // warp #4
+    game.ion_systems_upgrade(5); // ion #5
+    game.thrust_propulsion_upgrade(4); // impulse #4
+    game.plasma_engineering_upgrade(7); // plasma #7
+    game.weapons_development_upgrade(3); // weapons #3
 }
 
 
 fn warp_multiple(a: ContractAddress, b: ContractAddress, time: u64) {
-    start_warp(a, time);
-    start_warp(b, time);
+    start_warp(CheatTarget::All, time);
+    start_warp(CheatTarget::All, time);
 }
 
 fn declare_upgradable() -> ClassHash {
     declare('NoGameUpgraded').class_hash
 }
 
-fn build_everything(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.steel_mine_upgrade();
-    game.steel_mine_upgrade();
-    game.quartz_mine_upgrade();
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.energy_plant_upgrade();
-    game.quartz_mine_upgrade();
-    game.quartz_mine_upgrade();
-    game.quartz_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.energy_plant_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.tritium_mine_upgrade();
-    game.steel_mine_upgrade();
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade();
-    game.dockyard_upgrade(); // dockyard #8
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade();
-    game.lab_upgrade(); // lab #7
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade();
-    game.energy_innovation_upgrade(); // energy #8
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade();
-    game.combustive_engine_upgrade(); // combustive #6
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade();
-    game.beam_technology_upgrade(); // beam 10
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade();
-    game.shield_tech_upgrade(); // shield #5
-    game.spacetime_warp_upgrade();
-    game.spacetime_warp_upgrade();
-    game.spacetime_warp_upgrade(); // spacetime #3
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade();
-    game.warp_drive_upgrade(); // warp #4
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade();
-    game.ion_systems_upgrade(); // ion #5
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade();
-    game.thrust_propulsion_upgrade(); // impulse #4
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade();
-    game.plasma_engineering_upgrade(); // plasma #7
-    game.weapons_development_upgrade();
-    game.weapons_development_upgrade();
-    game.weapons_development_upgrade(); // weapons #3
-}

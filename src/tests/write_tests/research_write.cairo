@@ -4,7 +4,7 @@ use starknet::info::{get_contract_address, get_block_timestamp};
 use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -29,15 +29,15 @@ fn test_digital_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
 
-    dsp.game.digital_systems_upgrade();
+    dsp.game.digital_systems_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.digital == 1, 'wrong digital level');
 }
@@ -52,17 +52,17 @@ fn test_beam_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
 
-    dsp.game.beam_technology_upgrade();
+    dsp.game.beam_technology_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.beam == 1, 'wrong beam level');
 }
@@ -82,16 +82,16 @@ fn test_armour_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
 
-    dsp.game.armour_innovation_upgrade();
+    dsp.game.armour_innovation_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.armour == 1, 'wrong armour level');
 }
@@ -106,28 +106,28 @@ fn test_ion_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
 
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
 
-    dsp.game.ion_systems_upgrade();
+    dsp.game.ion_systems_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.ion == 1, 'wrong ion level');
 }
@@ -152,41 +152,41 @@ fn test_plasma_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.beam_technology_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
-    dsp.game.ion_systems_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
+    dsp.game.ion_systems_upgrade(1);
 
-    dsp.game.plasma_engineering_upgrade();
+    dsp.game.plasma_engineering_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.plasma == 1, 'wrong plasma level');
 }
@@ -216,18 +216,18 @@ fn test_weapons_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
 
-    dsp.game.weapons_development_upgrade();
+    dsp.game.weapons_development_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.weapons == 1, 'wrong weapons level');
 }
@@ -242,16 +242,16 @@ fn test_combustion_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
 
-    dsp.game.combustive_engine_upgrade();
+    dsp.game.combustive_engine_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.combustion == 1, 'wrong combustion level');
 }
@@ -271,17 +271,17 @@ fn test_thrust_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
 
-    dsp.game.thrust_propulsion_upgrade();
+    dsp.game.thrust_propulsion_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.thrust == 1, 'wrong thrust level');
 }
@@ -301,34 +301,34 @@ fn test_warp_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.spacetime_warp_upgrade();
-    dsp.game.spacetime_warp_upgrade();
-    dsp.game.spacetime_warp_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.spacetime_warp_upgrade(1);
+    dsp.game.spacetime_warp_upgrade(1);
+    dsp.game.spacetime_warp_upgrade(1);
 
-    dsp.game.warp_drive_upgrade();
+    dsp.game.warp_drive_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.warp == 1, 'wrong warp level');
 }
@@ -353,23 +353,23 @@ fn test_shield_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
 
-    dsp.game.shield_tech_upgrade();
+    dsp.game.shield_tech_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.shield == 1, 'wrong shield level');
 }
@@ -389,31 +389,31 @@ fn test_spacetime_upgrade() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade();
-    dsp.game.tritium_mine_upgrade();
-    start_warp(dsp.game.contract_address, HOUR * 2400000);
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.lab_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.energy_innovation_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
-    dsp.game.shield_tech_upgrade();
+    dsp.game.energy_plant_upgrade(1);
+    dsp.game.tritium_mine_upgrade(1);
+    start_warp(CheatTarget::All, HOUR * 2400000);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
+    dsp.game.shield_tech_upgrade(1);
 
-    dsp.game.spacetime_warp_upgrade();
+    dsp.game.spacetime_warp_upgrade(1);
     let techs = dsp.game.get_techs_levels(1879);
     assert(techs.spacetime == 1, 'wrong spacetime level');
 }

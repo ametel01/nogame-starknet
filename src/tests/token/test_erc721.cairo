@@ -1,5 +1,5 @@
 use core::result::ResultTrait;
-use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait, CheatTarget};
 
 use nogame::token::{
     {
@@ -17,7 +17,7 @@ fn test_token_uri() {
         'nogamenft', 'NGNFT', DEPLOYER().into(), DEPLOYER().into()
     ];
     let contract_address = contract.precalculate_address(@calldata);
-    start_prank(contract_address, DEPLOYER());
+    start_prank(CheatTarget::All, DEPLOYER());
     let contract_address = contract.deploy(@calldata).unwrap();
     let erc721 = IERC721NoGameDispatcher { contract_address };
     let erc721_metadata = IERC721NGMetadataCamelOnlyDispatcher { contract_address };

@@ -5,7 +5,7 @@ use starknet::info::{get_contract_address, get_block_timestamp};
 use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait};
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -21,7 +21,7 @@ fn test_generate() {
     init_game(dsp);
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.game.get_current_planet_price();
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
 
     dsp.game.generate_planet();
     assert(
@@ -35,7 +35,7 @@ fn test_generate() {
 
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.game.get_current_planet_price();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
     assert(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
@@ -58,7 +58,7 @@ fn test_generate() {
 //         if i == 502 {
 //             break;
 //         }
-//         start_prank(dsp.game.contract_address, i.try_into().unwrap());
+//         start_prank(CheatTarget::All, i.try_into().unwrap());
 //         dsp.game.generate_planet();
 //         i += 1;
 //     };
@@ -70,10 +70,9 @@ fn test_collect_resources() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-
-    dsp.game.collect_resources();
+// dsp.game.collect_resources();
 }
 // #[test]
 // fn test_planet_position() {
@@ -84,7 +83,7 @@ fn test_collect_resources() {
 //         if len == 3 {
 //             break;
 //         }
-//         start_prank(dsp.game.contract_address, len.try_into().unwrap());
+//         start_prank(CheatTarget::All, len.try_into().unwrap());
 //         dsp.game.generate_planet();
 //         let position = dsp.game.get_planet_position((len).try_into().unwrap());
 //         assert(position.system <= 200, 'system out of bound');

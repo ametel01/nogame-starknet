@@ -2,7 +2,7 @@ use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
 use snforge_std::PrintTrait;
-use snforge_std::{start_prank, start_warp};
+use snforge_std::{start_prank, start_warp, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::compounds::{Production, Compounds};
@@ -16,25 +16,25 @@ use nogame::tests::utils::{
 fn test_energy_available_positive() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     build_basic_mines(dsp.game);
     let energy = dsp.game.get_energy_available(1879);
     energy.print();
-    assert(energy == 95, 'wrong pos energy');
+    assert(energy == 382, 'wrong pos energy');
 }
 
 #[test]
 fn test_energy_available_negative() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     assert(dsp.game.get_energy_available(1879) == 0, 'wrong energy');
-    dsp.game.steel_mine_upgrade();
-    dsp.game.quartz_mine_upgrade();
+    dsp.game.steel_mine_upgrade(1);
+    dsp.game.quartz_mine_upgrade(1);
     let energy = dsp.game.get_energy_available(1879);
 
     assert(energy == 0, 'wrong neg energy');
@@ -44,7 +44,7 @@ fn test_energy_available_negative() {
 fn test_get_compounds_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     let compounds = dsp.game.get_compounds_levels(1879);
@@ -60,7 +60,7 @@ fn test_get_compounds_levels() {
 fn test_get_compounds_upgrade_cost() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     let costs = dsp.game.get_compounds_upgrade_cost(1879);
@@ -84,7 +84,7 @@ fn test_get_compounds_upgrade_cost() {
 fn test_get_energy_for_upgrade() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
     let costs = dsp.game.get_energy_for_upgrade(1879);
@@ -97,7 +97,7 @@ fn test_get_energy_for_upgrade() {
 fn test_get_energy_gain_after_upgrade() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
 
@@ -112,15 +112,15 @@ fn test_get_energy_gain_after_upgrade() {
 fn test_get_celestia_production() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(dsp.game.contract_address, ACCOUNT1());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT2());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT3());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT4());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
     dsp.game.generate_planet();
-    start_prank(dsp.game.contract_address, ACCOUNT5());
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
     dsp.game.generate_planet();
 
     (dsp.game.get_celestia_production(1879) == 14, 'wrong energy produced');

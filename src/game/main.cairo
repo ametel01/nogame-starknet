@@ -12,7 +12,7 @@ mod NoGame {
 
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
-        ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s,
+        ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
         DAY, HOUR
@@ -29,7 +29,7 @@ mod NoGame {
 
     use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-    // use snforge_std::PrintTrait;
+    use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {
@@ -245,7 +245,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::steel(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.steel_mine_level.write(planet_id, current_level + 1);
+            self
+                .steel_mine_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -258,7 +260,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::quartz(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.quartz_mine_level.write(planet_id, current_level + 1);
+            self
+                .quartz_mine_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -271,7 +275,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.tritium_mine_level.write(planet_id, current_level + 1);
+            self
+                .tritium_mine_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -284,7 +290,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::energy(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.energy_plant_level.write(planet_id, current_level + 1);
+            self
+                .energy_plant_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -298,7 +306,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::dockyard(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.dockyard_level.write(planet_id, current_level + 1);
+            self
+                .dockyard_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -311,7 +321,9 @@ mod NoGame {
             let cost: ERC20s = CompoundCost::lab(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
-            self.lab_level.write(planet_id, current_level + 1);
+            self
+                .lab_level
+                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
@@ -327,12 +339,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::energy_innovation_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).energy;
+            let base_cost = self.techs_cost(techs).energy;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.energy_innovation_level.write(planet_id, techs.energy + 1);
+            self
+                .energy_innovation_level
+                .write(planet_id, techs.energy + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn digital_systems_upgrade(ref self: ContractState, quantity: u32) {
@@ -342,12 +357,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::digital_systems_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).digital;
+            let base_cost = self.techs_cost(techs).digital;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.digital_systems_level.write(planet_id, techs.digital + 1);
+            self
+                .digital_systems_level
+                .write(planet_id, techs.digital + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn beam_technology_upgrade(ref self: ContractState, quantity: u32) {
@@ -357,12 +375,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::beam_technology_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).beam;
+            let base_cost = self.techs_cost(techs).beam;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.beam_technology_level.write(planet_id, techs.beam + 1);
+            self
+                .beam_technology_level
+                .write(planet_id, techs.beam + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn armour_innovation_upgrade(ref self: ContractState, quantity: u32) {
@@ -372,12 +393,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::armour_innovation_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).armour;
+            let base_cost = self.techs_cost(techs).armour;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.armour_innovation_level.write(planet_id, techs.armour + 1);
+            self
+                .armour_innovation_level
+                .write(planet_id, techs.armour + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn ion_systems_upgrade(ref self: ContractState, quantity: u32) {
@@ -387,12 +411,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::ion_systems_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).ion;
+            let base_cost = self.techs_cost(techs).ion;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.ion_systems_level.write(planet_id, techs.ion + 1);
+            self
+                .ion_systems_level
+                .write(planet_id, techs.ion + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn plasma_engineering_upgrade(ref self: ContractState, quantity: u32) {
@@ -402,12 +429,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::plasma_engineering_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).plasma;
+            let base_cost = self.techs_cost(techs).plasma;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.plasma_engineering_level.write(planet_id, techs.plasma + 1);
+            self
+                .plasma_engineering_level
+                .write(planet_id, techs.plasma + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
@@ -418,12 +448,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::weapons_development_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).weapons;
+            let base_cost = self.techs_cost(techs).weapons;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.weapons_development_level.write(planet_id, techs.weapons + 1);
+            self
+                .weapons_development_level
+                .write(planet_id, techs.weapons + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn shield_tech_upgrade(ref self: ContractState, quantity: u32) {
@@ -433,12 +466,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::shield_tech_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).shield;
+            let base_cost = self.techs_cost(techs).shield;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.shield_tech_level.write(planet_id, techs.shield + 1);
+            self
+                .shield_tech_level
+                .write(planet_id, techs.shield + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn spacetime_warp_upgrade(ref self: ContractState, quantity: u32) {
@@ -448,12 +484,17 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::spacetime_warp_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).spacetime;
+            let base_cost = self.techs_cost(techs).spacetime;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
+            self
+                .spacetime_warp_level
+                .write(
+                    planet_id, techs.spacetime + quantity.try_into().expect('u32 into u8 failed')
+                );
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn combustive_engine_upgrade(ref self: ContractState, quantity: u32) {
@@ -463,12 +504,17 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::combustive_engine_requirements_check(lab_level, techs);
-            let cost = Lab::get_tech_cost(techs.combustion, 400, 0, 600);
+            let base_cost = self.techs_cost(techs).combustion;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.combustive_engine_level.write(planet_id, techs.combustion + 1);
+            self
+                .combustive_engine_level
+                .write(
+                    planet_id, techs.combustion + quantity.try_into().expect('u32 into u8 failed')
+                );
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn thrust_propulsion_upgrade(ref self: ContractState, quantity: u32) {
@@ -478,12 +524,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::thrust_propulsion_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).thrust;
+            let base_cost = self.techs_cost(techs).thrust;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
+            self
+                .thrust_propulsion_level
+                .write(planet_id, techs.thrust + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
         fn warp_drive_upgrade(ref self: ContractState, quantity: u32) {
@@ -493,12 +542,15 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::warp_drive_requirements_check(lab_level, techs);
-            let cost = self.techs_cost(techs).warp;
+            let base_cost = self.techs_cost(techs).warp;
+            let cost = erc20_mul(base_cost, quantity.into());
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self.warp_drive_level.write(planet_id, techs.warp + 1);
+            self
+                .warp_drive_level
+                .write(planet_id, techs.warp + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
