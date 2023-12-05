@@ -2,7 +2,7 @@ use core::integer::U256Mul;
 use integer::U8Div;
 use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
-use nogame::libraries::types::ERC20s;
+use nogame::libraries::types::{ERC20s};
 use nogame::libraries::math::{power, BitShift};
 
 const UNI_SPEED: u128 = 1;
@@ -22,9 +22,9 @@ mod Compounds {
 }
 
 mod CompoundCost {
-    use nogame::libraries::types::ERC20s;
+    use nogame::libraries::types::{ERC20s, erc20_mul};
 
-    fn steel(level: u8) -> ERC20s {
+    fn steel(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 60, quartz: 15, tritium: 0 },
             ERC20s { steel: 90, quartz: 22, tritium: 0 },
@@ -128,10 +128,10 @@ mod CompoundCost {
             ERC20s { steel: 16262447101408610304, quartz: 4065611775352152576, tritium: 0 },
             ERC20s { steel: 24393670652112912384, quartz: 6098417663028228096, tritium: 0 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
 
-    fn quartz(level: u8) -> ERC20s {
+    fn quartz(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 48, quartz: 24, tritium: 0 },
             ERC20s { steel: 76, quartz: 38, tritium: 0 },
@@ -235,10 +235,10 @@ mod CompoundCost {
             ERC20s { steel: 7746749634260768915456, quartz: 3873374817130384457728, tritium: 0 },
             ERC20s { steel: 12394799414817230684160, quartz: 6197399707408615342080, tritium: 0 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
 
-    fn tritium(level: u8) -> ERC20s {
+    fn tritium(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 225, quartz: 75, tritium: 0 },
             ERC20s { steel: 337, quartz: 112, tritium: 0 },
@@ -342,9 +342,9 @@ mod CompoundCost {
             ERC20s { steel: 60984176630282289152, quartz: 20328058876760764416, tritium: 0 },
             ERC20s { steel: 91476264945423433728, quartz: 30492088315141140480, tritium: 0 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
-    fn energy(level: u8) -> ERC20s {
+    fn energy(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 75, quartz: 30, tritium: 0 },
             ERC20s { steel: 112, quartz: 45, tritium: 0 },
@@ -448,9 +448,9 @@ mod CompoundCost {
             ERC20s { steel: 20328058876760764416, quartz: 8131223550704305152, tritium: 0 },
             ERC20s { steel: 30492088315141140480, quartz: 12196835326056456192, tritium: 0 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
-    fn lab(level: u8) -> ERC20s {
+    fn lab(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 200, quartz: 400, tritium: 200 },
             ERC20s { steel: 400, quartz: 800, tritium: 400 },
@@ -484,9 +484,9 @@ mod CompoundCost {
             ERC20s { steel: 107374182400, quartz: 214748364800, tritium: 107374182400 },
             ERC20s { steel: 214748364800, quartz: 429496729600, tritium: 214748364800 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
-    fn dockyard(level: u8) -> ERC20s {
+    fn dockyard(level: u8, quantity: u32) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 400, quartz: 200, tritium: 100 },
             ERC20s { steel: 800, quartz: 400, tritium: 200 },
@@ -520,7 +520,7 @@ mod CompoundCost {
             ERC20s { steel: 214748364800, quartz: 107374182400, tritium: 53687091200 },
             ERC20s { steel: 429496729600, quartz: 214748364800, tritium: 107374182400 },
         ];
-        *costs.at(level.into())
+        erc20_mul(*costs.at(level.into()), quantity.into())
     }
 }
 

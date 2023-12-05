@@ -29,7 +29,7 @@ mod NoGame {
 
     use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
 
-    use snforge_std::PrintTrait;
+    // use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {
@@ -237,12 +237,12 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Mines Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn steel_mine_upgrade(ref self: ContractState) {
+        fn steel_mine_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::steel(current_level);
+            let cost: ERC20s = CompoundCost::steel(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.steel_mine_level.write(planet_id, current_level + 1);
@@ -250,12 +250,12 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn quartz_mine_upgrade(ref self: ContractState) {
+        fn quartz_mine_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.quartz_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::quartz(current_level);
+            let cost: ERC20s = CompoundCost::quartz(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.quartz_mine_level.write(planet_id, current_level + 1);
@@ -263,12 +263,12 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn tritium_mine_upgrade(ref self: ContractState) {
+        fn tritium_mine_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::tritium(current_level);
+            let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.tritium_mine_level.write(planet_id, current_level + 1);
@@ -276,12 +276,12 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn energy_plant_upgrade(ref self: ContractState) {
+        fn energy_plant_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.energy_plant_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::energy(current_level);
+            let cost: ERC20s = CompoundCost::energy(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.energy_plant_level.write(planet_id, current_level + 1);
@@ -290,12 +290,12 @@ mod NoGame {
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
 
-        fn dockyard_upgrade(ref self: ContractState) {
+        fn dockyard_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.dockyard_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::dockyard(current_level);
+            let cost: ERC20s = CompoundCost::dockyard(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.dockyard_level.write(planet_id, current_level + 1);
@@ -303,12 +303,12 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn lab_upgrade(ref self: ContractState) {
+        fn lab_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let current_level = self.lab_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::lab(current_level);
+            let cost: ERC20s = CompoundCost::lab(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.lab_level.write(planet_id, current_level + 1);
@@ -320,7 +320,7 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Research Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn energy_innovation_upgrade(ref self: ContractState) {
+        fn energy_innovation_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -335,7 +335,7 @@ mod NoGame {
             self.energy_innovation_level.write(planet_id, techs.energy + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn digital_systems_upgrade(ref self: ContractState) {
+        fn digital_systems_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -350,7 +350,7 @@ mod NoGame {
             self.digital_systems_level.write(planet_id, techs.digital + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn beam_technology_upgrade(ref self: ContractState) {
+        fn beam_technology_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -365,7 +365,7 @@ mod NoGame {
             self.beam_technology_level.write(planet_id, techs.beam + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn armour_innovation_upgrade(ref self: ContractState) {
+        fn armour_innovation_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -380,7 +380,7 @@ mod NoGame {
             self.armour_innovation_level.write(planet_id, techs.armour + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn ion_systems_upgrade(ref self: ContractState) {
+        fn ion_systems_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -395,7 +395,7 @@ mod NoGame {
             self.ion_systems_level.write(planet_id, techs.ion + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn plasma_engineering_upgrade(ref self: ContractState) {
+        fn plasma_engineering_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -411,7 +411,7 @@ mod NoGame {
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
-        fn weapons_development_upgrade(ref self: ContractState) {
+        fn weapons_development_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -426,7 +426,7 @@ mod NoGame {
             self.weapons_development_level.write(planet_id, techs.weapons + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn shield_tech_upgrade(ref self: ContractState) {
+        fn shield_tech_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -441,7 +441,7 @@ mod NoGame {
             self.shield_tech_level.write(planet_id, techs.shield + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn spacetime_warp_upgrade(ref self: ContractState) {
+        fn spacetime_warp_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -456,7 +456,7 @@ mod NoGame {
             self.spacetime_warp_level.write(planet_id, techs.spacetime + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn combustive_engine_upgrade(ref self: ContractState) {
+        fn combustive_engine_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -471,7 +471,7 @@ mod NoGame {
             self.combustive_engine_level.write(planet_id, techs.combustion + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn thrust_propulsion_upgrade(ref self: ContractState) {
+        fn thrust_propulsion_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -486,7 +486,7 @@ mod NoGame {
             self.thrust_propulsion_level.write(planet_id, techs.thrust + 1);
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn warp_drive_upgrade(ref self: ContractState) {
+        fn warp_drive_upgrade(ref self: ContractState, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -1019,12 +1019,12 @@ mod NoGame {
         }
 
         fn get_compounds_upgrade_cost(self: @ContractState, planet_id: u16) -> CompoundsCost {
-            let steel = CompoundCost::steel(self.steel_mine_level.read(planet_id));
-            let quartz = CompoundCost::quartz(self.quartz_mine_level.read(planet_id));
-            let tritium = CompoundCost::tritium(self.tritium_mine_level.read(planet_id));
-            let energy = CompoundCost::energy(self.energy_plant_level.read(planet_id));
-            let lab = CompoundCost::lab(self.lab_level.read(planet_id));
-            let dockyard = CompoundCost::dockyard(self.dockyard_level.read(planet_id));
+            let steel = CompoundCost::steel(self.steel_mine_level.read(planet_id), 1);
+            let quartz = CompoundCost::quartz(self.quartz_mine_level.read(planet_id), 1);
+            let tritium = CompoundCost::tritium(self.tritium_mine_level.read(planet_id), 1);
+            let energy = CompoundCost::energy(self.energy_plant_level.read(planet_id), 1);
+            let lab = CompoundCost::lab(self.lab_level.read(planet_id), 1);
+            let dockyard = CompoundCost::dockyard(self.dockyard_level.read(planet_id), 1);
             CompoundsCost {
                 steel: steel,
                 quartz: quartz,

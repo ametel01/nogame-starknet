@@ -41,6 +41,14 @@ impl ERC20sAdd of Add<ERC20s> {
     }
 }
 
+fn erc20_mul(a: ERC20s, multiplicator: u128) -> ERC20s {
+    ERC20s {
+        steel: a.steel * multiplicator,
+        quartz: a.quartz * multiplicator,
+        tritium: a.tritium * multiplicator
+    }
+}
+
 impl ERC20Print of PrintTrait<ERC20s> {
     fn print(self: ERC20s) {
         self.steel.print();
