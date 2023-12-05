@@ -421,6 +421,7 @@ fn test_attack_planet() {
     assert(fleet_b == fleetB_after, 'wrong fleet_b after');
     assert(defences == defences_after, 'wrong fleet_b after');
 }
+
 #[test]
 fn test_attack_planet_fleet_decay() {
     let dsp = set_up();

@@ -15,7 +15,7 @@ fn CARRIER() -> Unit {
 
 #[inline(always)]
 fn SCRAPER() -> Unit {
-    Unit { id: 1, weapon: 50, shield: 100, hull: 1600, speed: 2000, cargo: 20000, consumption: 300 }
+    Unit { id: 1, weapon: 50, shield: 10, hull: 1600, speed: 2000, cargo: 20000, consumption: 300 }
 }
 
 #[inline(always)]
@@ -25,7 +25,7 @@ fn SPARROW() -> Unit {
 
 #[inline(always)]
 fn FRIGATE() -> Unit {
-    Unit { id: 3, weapon: 400, shield: 50, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
+    Unit { id: 3, weapon: 400, shield: 100, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 #[inline(always)]

@@ -44,7 +44,7 @@ fn test_war_frigate_vs_carrier() {
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
-    assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+    assert(res1.frigate == 1 && res2.is_zero(), 'wrong assert 1');
 }
 
 #[test]
@@ -91,6 +91,20 @@ fn test_war_armade_vs_plasma() {
     let mut defenders: Fleet = Default::default();
     let mut defences: DefencesLevels = Default::default();
     defences.plasma = 1;
+    let (res1, res2, def) = fleet::war(
+        attackers, Default::default(), defenders, defences, Default::default()
+    );
+    res1.print();
+    def.print();
+// assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
+}
+#[test]
+fn test_war_armade_vs_astral() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    let mut defences: DefencesLevels = Default::default();
+    defences.astral = 10;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
