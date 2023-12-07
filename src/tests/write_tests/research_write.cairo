@@ -11,7 +11,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]
@@ -38,7 +38,7 @@ fn test_digital_upgrade() {
     dsp.game.lab_upgrade(1);
 
     dsp.game.digital_systems_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.digital == 1, 'wrong digital level');
 }
 
@@ -63,7 +63,7 @@ fn test_beam_upgrade() {
     dsp.game.energy_innovation_upgrade(1);
 
     dsp.game.beam_technology_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.beam == 1, 'wrong beam level');
 }
 
@@ -92,7 +92,7 @@ fn test_armour_upgrade() {
     dsp.game.lab_upgrade(1);
 
     dsp.game.armour_innovation_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.armour == 1, 'wrong armour level');
 }
 
@@ -128,7 +128,7 @@ fn test_ion_upgrade() {
     dsp.game.beam_technology_upgrade(1);
 
     dsp.game.ion_systems_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.ion == 1, 'wrong ion level');
 }
 
@@ -187,7 +187,7 @@ fn test_plasma_upgrade() {
     dsp.game.ion_systems_upgrade(1);
 
     dsp.game.plasma_engineering_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.plasma == 1, 'wrong plasma level');
 }
 
@@ -228,7 +228,7 @@ fn test_weapons_upgrade() {
     dsp.game.lab_upgrade(1);
 
     dsp.game.weapons_development_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.weapons == 1, 'wrong weapons level');
 }
 
@@ -252,7 +252,7 @@ fn test_combustion_upgrade() {
     dsp.game.energy_innovation_upgrade(1);
 
     dsp.game.combustive_engine_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.combustion == 1, 'wrong combustion level');
 }
 
@@ -282,7 +282,7 @@ fn test_thrust_upgrade() {
     dsp.game.energy_innovation_upgrade(1);
 
     dsp.game.thrust_propulsion_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.thrust == 1, 'wrong thrust level');
 }
 
@@ -329,7 +329,7 @@ fn test_warp_upgrade() {
     dsp.game.spacetime_warp_upgrade(1);
 
     dsp.game.warp_drive_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.warp == 1, 'wrong warp level');
 }
 
@@ -370,7 +370,7 @@ fn test_shield_upgrade() {
     dsp.game.energy_innovation_upgrade(1);
 
     dsp.game.shield_tech_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.shield == 1, 'wrong shield level');
 }
 
@@ -414,7 +414,7 @@ fn test_spacetime_upgrade() {
     dsp.game.shield_tech_upgrade(1);
 
     dsp.game.spacetime_warp_upgrade(1);
-    let techs = dsp.game.get_techs_levels(1879);
+    let techs = dsp.game.get_techs_levels(1);
     assert(techs.spacetime == 1, 'wrong spacetime level');
 }
 

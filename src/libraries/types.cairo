@@ -217,7 +217,7 @@ struct EnergyCost {
     tritium: u128,
 }
 
-#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
+#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store, Hash)]
 struct PlanetPosition {
     system: u16,
     orbit: u8,

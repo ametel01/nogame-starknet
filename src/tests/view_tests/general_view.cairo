@@ -100,7 +100,7 @@ fn test_get_planet_position() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
 
-    assert(dsp.game.get_planet_position(1879).is_zero(), 'wrong assert #1');
+    assert(dsp.game.get_planet_position(1).is_zero(), 'wrong assert #1');
 }
 
 #[test]
@@ -110,8 +110,8 @@ fn test_get_position_slot_occupant() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    let position = dsp.game.get_planet_position(1879);
-    assert(dsp.game.get_position_slot_occupant(position) == 1879, 'wrong assert #1');
+    let position = dsp.game.get_planet_position(1);
+    assert(dsp.game.get_position_slot_occupant(position) == 1, 'wrong assert #1');
 }
 
 #[test]
@@ -123,8 +123,8 @@ fn test_get_debris_field() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
 
-    assert(dsp.game.get_debris_field(1879).is_zero(), 'wrong debris field');
-    assert(dsp.game.get_debris_field(1552).is_zero(), 'wrong debris field');
+    assert(dsp.game.get_debris_field(1).is_zero(), 'wrong debris field');
+    assert(dsp.game.get_debris_field(2).is_zero(), 'wrong debris field');
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
@@ -134,18 +134,21 @@ fn test_get_debris_field() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.astral_launcher_build(50);
+    dsp.game.astral_launcher_build(5);
+
+    dsp.game.get_planet_points(1).print();
+    dsp.game.get_planet_points(2).print();
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     let mut fleet: Fleet = Default::default();
-    let position = dsp.game.get_planet_position(1552);
+    let position = dsp.game.get_planet_position(2);
     fleet.carrier = 100;
     dsp.game.send_fleet(fleet, position, false);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
     dsp.game.attack_planet(1);
 
-    assert(dsp.game.get_debris_field(1879).is_zero(), 'wrong debris field');
-    let debris = dsp.game.get_debris_field(1552);
+    assert(dsp.game.get_debris_field(1).is_zero(), 'wrong debris field');
+    let debris = dsp.game.get_debris_field(2);
     assert(debris.steel == 66666 && debris.quartz == 66666, 'wrong debris field');
 }
 
@@ -156,7 +159,7 @@ fn test_get_spendable_resources() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    let spendable = dsp.game.get_spendable_resources(1879);
+    let spendable = dsp.game.get_spendable_resources(1);
     assert(spendable.steel == 500, 'wrong spendable');
     assert(spendable.quartz == 300, 'wrong spendable ');
     assert(spendable.tritium == 100, 'wrong spendable ');
@@ -171,7 +174,7 @@ fn test_get_collectible_resources() {
     dsp.game.generate_planet();
 
     start_warp(CheatTarget::All, HOUR * 3);
-    let collectible = dsp.game.get_collectible_resources(1879);
+    let collectible = dsp.game.get_collectible_resources(1);
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');

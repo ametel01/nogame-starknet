@@ -1,13 +1,7 @@
 use core::result::ResultTrait;
 use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait, CheatTarget};
 
-use nogame::token::{
-    {
-        interface::IERC721NGMetadataCamelOnlyDispatcher,
-        interface::IERC721NGMetadataCamelOnlyDispatcherTrait
-    },
-    erc721::{NGERC721, IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait}
-};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{DEPLOYER, ACCOUNT1};
 
 #[test]
@@ -20,7 +14,7 @@ fn test_token_uri() {
     start_prank(CheatTarget::All, DEPLOYER());
     let contract_address = contract.deploy(@calldata).unwrap();
     let erc721 = IERC721NoGameDispatcher { contract_address };
-    let erc721_metadata = IERC721NGMetadataCamelOnlyDispatcher { contract_address };
+    let erc721_metadata = IERC721NoGameDispatcher { contract_address };
 
     erc721.set_base_uri(base_uri_array().span());
     erc721.mint(ACCOUNT1(), 32);

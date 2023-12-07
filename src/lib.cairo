@@ -27,8 +27,10 @@ mod token {
         mod erc20_ng;
         mod interface;
     }
-    mod erc721;
-    mod interface;
+    mod erc721 {
+        mod erc721_ng;
+        mod interface;
+    }
 }
 
 mod tests {

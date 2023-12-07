@@ -1,17 +1,5 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts for Cairo v0.8.0-beta.0 (token/erc721/erc721.cairo)
-use starknet::ContractAddress;
-
-#[starknet::interface]
-trait IERC721NoGame<TState> {
-    fn ng_balance_of(self: @TState, account: ContractAddress) -> u256;
-    fn ng_owner_of(self: @TState, token_id: u256) -> ContractAddress;
-    fn token_of(self: @TState, address: ContractAddress) -> u256;
-    fn mint(ref self: TState, to: ContractAddress, token_id: u256);
-    fn get_base_uri(self: @TState) -> Array<felt252>;
-    fn get_uri(self: @TState, value: u256) -> Array<felt252>;
-    fn set_base_uri(ref self: TState, base_uri: Span<felt252>);
-}
 
 #[starknet::contract]
 mod NGERC721 {
@@ -25,14 +13,8 @@ mod NGERC721 {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
 
-    use nogame::token::interface::{IERC721NGMetadata, IERC721NGMetadataCamelOnly};
-
-    component!(path: src5_component, storage: src5, event: SRC5Event);
-    #[abi(embed_v0)]
-    impl SRC5Impl = src5_component::SRC5Impl<ContractState>;
-    #[abi(embed_v0)]
-    impl SRC5CamelImpl = src5_component::SRC5CamelImpl<ContractState>;
-    impl SRC5InternalImpl = src5_component::InternalImpl<ContractState>;
+    // use nogame::token::interface::{IERC721NGMetadata, IERC721NGMetadataCamelOnly};
+    use nogame::token::erc721::interface::IERC721NoGame;
 
     #[storage]
     struct Storage {
@@ -118,7 +100,7 @@ mod NGERC721 {
     //
 
     #[external(v0)]
-    impl ERC721NGMetadataImpl of IERC721NGMetadata<ContractState> {
+    impl ERC721NoGameImpl of IERC721NoGame<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self.ERC721_name.read()
         }
@@ -146,16 +128,13 @@ mod NGERC721 {
             append_to_str(ref output, last.into(), to_add.span());
             output
         }
-    }
 
-    #[external(v0)]
-    impl ERC721NoGameImpl of super::IERC721NoGame<ContractState> {
-        fn ng_balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
             assert(!account.is_zero(), Errors::INVALID_ACCOUNT);
             self.ERC721_balances.read(account)
         }
 
-        fn ng_owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
+        fn owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
             self._owner_of(token_id)
         }
 
@@ -214,10 +193,8 @@ mod NGERC721 {
                 }
             };
         }
-    }
 
-    #[external(v0)]
-    impl ERC721NGMetadataCamelOnlyImpl of IERC721NGMetadataCamelOnly<ContractState> {
+
         fn tokenURI(self: @ContractState, tokenId: u256) -> Array<felt252> {
             let mut base = self.get_base_uri();
             let ten: NonZero<u256> = 10_u256.try_into().unwrap();
@@ -237,18 +214,6 @@ mod NGERC721 {
             append_to_str(ref output, last.into(), to_add.span());
             output
         }
-    }
-
-    #[external(v0)]
-    impl ERC721Impl of interface::IERC721<ContractState> {
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            assert(!account.is_zero(), Errors::INVALID_ACCOUNT);
-            self.ERC721_balances.read(account)
-        }
-
-        fn owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
-            self._owner_of(token_id)
-        }
 
         fn get_approved(self: @ContractState, token_id: u256) -> ContractAddress {
             assert(self._exists(token_id), Errors::INVALID_TOKEN_ID);
@@ -266,8 +231,7 @@ mod NGERC721 {
 
             let caller = get_caller_address();
             assert(
-                owner == caller || ERC721Impl::is_approved_for_all(@self, owner, caller),
-                Errors::UNAUTHORIZED
+                owner == caller || self.is_approved_for_all(owner, caller), Errors::UNAUTHORIZED
             );
             self._approve(to, token_id);
         }
@@ -299,36 +263,34 @@ mod NGERC721 {
             );
             self._safe_transfer(from, to, token_id, data);
         }
-    }
 
-    #[external(v0)]
-    impl ERC721CamelOnlyImpl of interface::IERC721CamelOnly<ContractState> {
+
         fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            ERC721Impl::balance_of(self, account)
+            self.balance_of(account)
         }
 
         fn ownerOf(self: @ContractState, tokenId: u256) -> ContractAddress {
-            ERC721Impl::owner_of(self, tokenId)
+            self.owner_of(tokenId)
         }
 
         fn getApproved(self: @ContractState, tokenId: u256) -> ContractAddress {
-            ERC721Impl::get_approved(self, tokenId)
+            self.get_approved(tokenId)
         }
 
         fn isApprovedForAll(
             self: @ContractState, owner: ContractAddress, operator: ContractAddress
         ) -> bool {
-            ERC721Impl::is_approved_for_all(self, owner, operator)
+            self.is_approved_for_all(owner, operator)
         }
 
         fn setApprovalForAll(ref self: ContractState, operator: ContractAddress, approved: bool) {
-            ERC721Impl::set_approval_for_all(ref self, operator, approved)
+            self.set_approval_for_all(operator, approved)
         }
 
         fn transferFrom(
             ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenId: u256
         ) {
-            ERC721Impl::transfer_from(ref self, from, to, tokenId)
+            self.transfer_from(from, to, tokenId)
         }
 
         fn safeTransferFrom(
@@ -338,7 +300,7 @@ mod NGERC721 {
             tokenId: u256,
             data: Span<felt252>
         ) {
-            ERC721Impl::safe_transfer_from(ref self, from, to, tokenId, data)
+            self.safe_transfer_from(from, to, tokenId, data)
         }
     }
 
@@ -359,9 +321,6 @@ mod NGERC721 {
             self.ERC721_symbol.write(symbol);
             self.ERC721_minter.write(minter);
             self.deployer.write(deployer);
-
-            self.src5.register_interface(interface::IERC721_ID);
-            self.src5.register_interface(interface::IERC721_METADATA_ID);
         }
 
         fn _owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
@@ -380,10 +339,8 @@ mod NGERC721 {
             self: @ContractState, spender: ContractAddress, token_id: u256
         ) -> bool {
             let owner = self._owner_of(token_id);
-            let is_approved_for_all = ERC721Impl::is_approved_for_all(self, owner, spender);
-            owner == spender
-                || is_approved_for_all
-                || spender == ERC721Impl::get_approved(self, token_id)
+            let is_approved_for_all = self.is_approved_for_all(owner, spender);
+            owner == spender || is_approved_for_all || spender == self.get_approved(token_id)
         }
 
         fn _approve(ref self: ContractState, to: ContractAddress, token_id: u256) {

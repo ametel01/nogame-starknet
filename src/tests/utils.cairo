@@ -12,7 +12,7 @@ use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::PRICE;
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
 use snforge_std::{
     declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget

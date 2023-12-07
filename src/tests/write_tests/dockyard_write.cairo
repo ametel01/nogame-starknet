@@ -11,7 +11,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]
@@ -33,7 +33,7 @@ fn test_carrier_build() {
     dsp.game.combustive_engine_upgrade(1);
 
     dsp.game.carrier_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.carrier == 10, 'wrong carrier level');
 }
 
@@ -64,7 +64,7 @@ fn test_celestia_build() {
     dsp.game.combustive_engine_upgrade(1);
 
     dsp.game.celestia_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn test_sparrow_build() {
     dsp.game.combustive_engine_upgrade(1);
 
     dsp.game.sparrow_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.sparrow == 10, 'wrong sparrow level');
 }
 
@@ -142,7 +142,7 @@ fn test_scraper_build() {
     dsp.game.shield_tech_upgrade(1);
 
     dsp.game.scraper_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.scraper == 10, 'wrong scraper level');
 }
 
@@ -198,7 +198,7 @@ fn test_frigate_build() {
     dsp.game.thrust_propulsion_upgrade(1);
 
     dsp.game.frigate_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.frigate == 10, 'wrong frigate level');
 }
 
@@ -261,7 +261,7 @@ fn test_armade_build() {
     dsp.game.warp_drive_upgrade(1);
 
     dsp.game.armade_build(10);
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.armade == 10, 'wrong armade level');
 }
 

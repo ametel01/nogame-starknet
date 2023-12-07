@@ -611,7 +611,6 @@ const _0_02: u128 = 368934881474191000;
 
 // loss = 100 * (1 - math.exp(-k * time_seconds / 60))
 fn calculate_fleet_loss(time_seconds: u64) -> u32 {
-    time_seconds.print();
     ((FixedTrait::new_unscaled(100_u128, false)
         * (FixedTrait::new(ONE_u128, false)
             - FixedTrait::exp(

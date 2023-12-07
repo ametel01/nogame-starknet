@@ -12,7 +12,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]
@@ -28,10 +28,10 @@ fn test_generate() {
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet1 not paid'
     );
-    assert(dsp.erc721.ng_balance_of(ACCOUNT1()).low == 1, 'wrong nft balance');
-    assert(dsp.steel.ng_balance_of(ACCOUNT1()).low == 500 * E18, 'wrong steel balance');
-    assert(dsp.quartz.ng_balance_of(ACCOUNT1()).low == 300 * E18, 'wrong quartz balance');
-    assert(dsp.tritium.ng_balance_of(ACCOUNT1()).low == 100 * E18, 'wrong steel balance');
+    assert(dsp.erc721.balance_of(ACCOUNT1()).low == 1, 'wrong nft balance');
+    assert(dsp.steel.balance_of(ACCOUNT1()).low == 500 * E18, 'wrong steel balance');
+    assert(dsp.quartz.balance_of(ACCOUNT1()).low == 300 * E18, 'wrong quartz balance');
+    assert(dsp.tritium.balance_of(ACCOUNT1()).low == 100 * E18, 'wrong steel balance');
 
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.game.get_current_planet_price();
@@ -41,10 +41,10 @@ fn test_generate() {
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet2 not paid'
     );
-    assert(dsp.erc721.ng_balance_of(ACCOUNT2()).low == 1, 'wrong nft balance');
-    assert(dsp.steel.ng_balance_of(ACCOUNT2()).low == 500 * E18, 'wrong steel balance');
-    assert(dsp.quartz.ng_balance_of(ACCOUNT2()).low == 300 * E18, 'wrong quartz balance');
-    assert(dsp.tritium.ng_balance_of(ACCOUNT2()).low == 100 * E18, 'wrong steel balance');
+    assert(dsp.erc721.balance_of(ACCOUNT2()).low == 1, 'wrong nft balance');
+    assert(dsp.steel.balance_of(ACCOUNT2()).low == 500 * E18, 'wrong steel balance');
+    assert(dsp.quartz.balance_of(ACCOUNT2()).low == 300 * E18, 'wrong quartz balance');
+    assert(dsp.tritium.balance_of(ACCOUNT2()).low == 100 * E18, 'wrong steel balance');
     assert(dsp.game.get_number_of_planets() == 2, 'wrong n planets');
 }
 
@@ -68,7 +68,6 @@ fn test_collect() {
     dsp.game.generate_planet();
     dsp.eth.balance_of(DEPLOYER()).print();
 }
-
 // #[test]
 // fn test_planet_position() {
 //     let dsp = set_up();

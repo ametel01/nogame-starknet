@@ -10,7 +10,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
 #[test]
@@ -20,7 +20,7 @@ fn test_get_ships_levels() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    let ships = dsp.game.get_ships_levels(1879);
+    let ships = dsp.game.get_ships_levels(1);
     assert(ships.carrier == 0, 'wrong carrier`');
     assert(ships.scraper == 0, 'wrong scraper');
     assert(ships.sparrow == 0, 'wrong sparrow');

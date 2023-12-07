@@ -15,7 +15,7 @@ mod ERC20NG {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
 
-    use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
     use nogame::token::erc20::interface::IERC20NG;
 
     #[storage]
@@ -85,7 +85,7 @@ mod ERC20NG {
     //
 
     #[external(v0)]
-    impl ERC20Impl of IERC20<ContractState> {
+    impl ERC20NGImpl of IERC20NG<ContractState> {
         /// Returns the name of the token.
         fn name(self: @ContractState) -> felt252 {
             self.ERC20_name.read()
@@ -151,76 +151,28 @@ mod ERC20NG {
             self._approve(caller, spender, amount);
             true
         }
-    }
 
-    /// Increases the allowance granted from the caller to `spender` by `added_value`.
-    /// Emits an [Approval](Approval) event indicating the updated allowance.
-    #[external(v0)]
-    fn increase_allowance(
-        ref self: ContractState, spender: ContractAddress, added_value: u256
-    ) -> bool {
-        self._increase_allowance(spender, added_value)
-    }
-
-    /// Decreases the allowance granted from the caller to `spender` by `subtracted_value`.
-    /// Emits an [Approval](Approval) event indicating the updated allowance.
-    #[external(v0)]
-    fn decrease_allowance(
-        ref self: ContractState, spender: ContractAddress, subtracted_value: u256
-    ) -> bool {
-        self._decrease_allowance(spender, subtracted_value)
-    }
-
-    #[external(v0)]
-    impl ERC20CamelOnlyImpl of IERC20CamelOnly<ContractState> {
-        /// Camel case support.
-        /// See [total_supply](total-supply).
-        fn totalSupply(self: @ContractState) -> u256 {
-            ERC20Impl::total_supply(self)
-        }
-
-        /// Camel case support.
-        /// See [balance_of](balance_of).
-        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            ERC20Impl::balance_of(self, account)
-        }
-
-        /// Camel case support.
-        /// See [transfer_from](transfer_from).
-        fn transferFrom(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
+        fn increase_allowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
         ) -> bool {
-            ERC20Impl::transfer_from(ref self, sender, recipient, amount)
+            self._increase_allowance(spender, added_value)
         }
-    }
 
-    /// Camel case support.
-    /// See [increase_allowance](increase_allowance).
-    #[external(v0)]
-    fn increaseAllowance(
-        ref self: ContractState, spender: ContractAddress, addedValue: u256
-    ) -> bool {
-        increase_allowance(ref self, spender, addedValue)
-    }
+        fn decrease_allowance(
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ) -> bool {
+            self._decrease_allowance(spender, subtracted_value)
+        }
 
-    /// Camel case support.
-    /// See [decrease_allowance](decrease_allowance).
-    #[external(v0)]
-    fn decreaseAllowance(
-        ref self: ContractState, spender: ContractAddress, subtractedValue: u256
-    ) -> bool {
-        decrease_allowance(ref self, spender, subtractedValue)
-    }
+        fn totalSupply(self: @ContractState) -> u256 {
+            self.total_supply()
+        }
 
-    #[external(v0)]
-    impl ERC20NG of IERC20NG<ContractState> {
-        fn ng_balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
             self.balance_of(account)
         }
-        fn ng_transfer_from(
+
+        fn transferFrom(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -228,6 +180,19 @@ mod ERC20NG {
         ) -> bool {
             self.transfer_from(sender, recipient, amount)
         }
+
+        fn increaseAllowance(
+            ref self: ContractState, spender: ContractAddress, addedValue: u256
+        ) -> bool {
+            self.increase_allowance(spender, addedValue)
+        }
+
+        fn decreaseAllowance(
+            ref self: ContractState, spender: ContractAddress, subtractedValue: u256
+        ) -> bool {
+            self.decrease_allowance(spender, subtractedValue)
+        }
+
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             self._mint(recipient, amount);
         }
@@ -269,7 +234,7 @@ mod ERC20NG {
             assert(!sender.is_zero(), Errors::TRANSFER_FROM_ZERO);
             assert(!recipient.is_zero(), Errors::TRANSFER_TO_ZERO);
             assert(
-                !self.ERC20_nft.read().ng_balance_of(recipient).is_zero(),
+                !self.ERC20_nft.read().balance_of(recipient).is_zero(),
                 Errors::RECEPIENT_NOT_PLANET_OWNER
             );
             self.ERC20_balances.write(sender, self.ERC20_balances.read(sender) - amount);

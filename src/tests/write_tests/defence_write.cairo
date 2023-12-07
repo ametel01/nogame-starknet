@@ -11,7 +11,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
     YEAR, warp_multiple, advance_game_state
@@ -31,7 +31,7 @@ fn test_blaster_build() {
     dsp.game.dockyard_upgrade(1);
 
     dsp.game.blaster_build(10);
-    let def = dsp.game.get_defences_levels(1879);
+    let def = dsp.game.get_defences_levels(1);
     assert(def.blaster == 10, 'wrong blaster level');
 }
 
@@ -70,7 +70,7 @@ fn test_beam_build() {
     dsp.game.beam_technology_upgrade(1);
 
     dsp.game.beam_build(10);
-    let def = dsp.game.get_defences_levels(1879);
+    let def = dsp.game.get_defences_levels(1);
     assert(def.beam == 10, 'wrong beam level');
 }
 
@@ -116,7 +116,7 @@ fn test_astral_build() {
     dsp.game.generate_planet();
 
     dsp.game.astral_launcher_build(10);
-    let def = dsp.game.get_defences_levels(1879);
+    let def = dsp.game.get_defences_levels(1);
     assert(def.astral == 10, 'wrong astral level');
 }
 
@@ -194,7 +194,7 @@ fn test_plasma_build() {
     dsp.game.plasma_engineering_upgrade(1); // plasma #7
 
     dsp.game.plasma_projector_build(10);
-    let def = dsp.game.get_defences_levels(1879);
+    let def = dsp.game.get_defences_levels(1);
     assert(def.plasma == 10, 'wrong plasma level');
 }
 
