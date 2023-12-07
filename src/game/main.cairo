@@ -1037,10 +1037,13 @@ mod NoGame {
             let time_elapsed = self.time_since_last_collection(planet_id);
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
+            let speed = self.uni_speed.read();
             let steel = Production::steel(self.steel_mine_level.read(planet_id))
+                * speed
                 * time_elapsed.into()
                 / HOUR.into();
             let quartz = Production::quartz(self.quartz_mine_level.read(planet_id))
+                * speed
                 * time_elapsed.into()
                 / HOUR.into();
             let tritium = Production::tritium(
@@ -1364,17 +1367,18 @@ mod NoGame {
             let mines_levels = NoGame::get_compounds_levels(self, planet_id);
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
+            let speed = self.uni_speed.read();
             let steel_available = Production::steel(mines_levels.steel)
+                * speed
                 * time_elapsed.into()
                 / HOUR.into();
 
             let quartz_available = Production::quartz(mines_levels.quartz)
+                * speed
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let tritium_available = Production::tritium(
-                mines_levels.tritium, temp, self.uni_speed.read()
-            )
+            let tritium_available = Production::tritium(mines_levels.tritium, temp, speed)
                 * time_elapsed.into()
                 / HOUR.into();
             let energy_available = Production::energy(mines_levels.energy);

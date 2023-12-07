@@ -12,3 +12,5 @@ metadata_gen
 .DS_Store
 
 testnet.json
+
+.snfoundry_cache/

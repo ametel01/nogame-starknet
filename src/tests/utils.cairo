@@ -105,7 +105,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
-            1,
+            100,
             ONE
         );
     start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
