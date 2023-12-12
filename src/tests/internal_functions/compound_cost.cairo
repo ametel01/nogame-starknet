@@ -16,9 +16,6 @@ fn steel_mine_cost_test() {
     let cost = CompoundCost::steel(10, 1);
     assert(cost.steel == 3459, 'wrong 4');
     assert(cost.quartz == 864, 'wrong 4');
-    let cost = CompoundCost::steel(10, 10);
-    assert(cost.steel == 34590, 'wrong 4');
-    assert(cost.quartz == 8640, 'wrong 4');
     let cost = CompoundCost::steel(20, 1);
     assert(cost.steel == 199515, 'wrong 5');
     assert(cost.quartz == 49878, 'wrong 5');
@@ -131,27 +128,27 @@ fn dockyard_cost_test() {
 #[test]
 fn lab_cost_test() {
     let cost = CompoundCost::lab(0, 1);
-    assert(cost.steel == 200, 'wrong formula');
+    assert(cost.steel == 200, 'wrong formula 1');
     assert(cost.quartz == 400, 'wrong formula');
     assert(cost.tritium == 200, 'wrong formula');
     let cost = CompoundCost::lab(1, 1);
-    assert(cost.steel == 400, 'wrong formula');
+    assert(cost.steel == 400, 'wrong formula 2');
     assert(cost.quartz == 800, 'wrong formula');
     assert(cost.tritium == 400, 'wrong formula');
     let cost = CompoundCost::lab(5, 1);
-    assert(cost.steel == 6400, 'wrong formula');
+    assert(cost.steel == 6400, 'wrong formula 3');
     assert(cost.quartz == 12800, 'wrong formula');
     assert(cost.tritium == 6400, 'wrong formula');
     let cost = CompoundCost::lab(10, 1);
-    assert(cost.steel == 204800, 'wrong formula');
+    assert(cost.steel == 204800, 'wrong formula 4');
     assert(cost.quartz == 409600, 'wrong formula');
     assert(cost.tritium == 204800, 'wrong formula');
     let cost = CompoundCost::lab(20, 1);
-    assert(cost.steel == 209715200, 'wrong formula');
+    assert(cost.steel == 209715200, 'wrong formula 5');
     assert(cost.quartz == 419430400, 'wrong formula');
     assert(cost.tritium == 209715200, 'wrong formula');
     let cost = CompoundCost::lab(30, 1);
-    assert(cost.steel == 214748364800, 'wrong formula');
+    assert(cost.steel == 214748364800, 'wrong formula 6');
     assert(cost.quartz == 429496729600, 'wrong formula');
     assert(cost.tritium == 214748364800, 'wrong formula');
 }

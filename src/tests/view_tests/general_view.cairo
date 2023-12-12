@@ -175,6 +175,7 @@ fn test_get_collectible_resources() {
 
     start_warp(CheatTarget::All, HOUR * 3);
     let collectible = dsp.game.get_collectible_resources(1);
+    collectible.print();
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');

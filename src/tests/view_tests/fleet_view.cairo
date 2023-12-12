@@ -58,10 +58,7 @@ fn test_get_hostile_missions() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(4);
 
     dsp.game.carrier_build(5);
 
@@ -130,10 +127,8 @@ fn test_get_active_missions() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.digital_systems_upgrade(1);
+    dsp.game.digital_systems_upgrade(4);
+    
 
     dsp.game.carrier_build(5);
 

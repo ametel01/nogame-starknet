@@ -60,14 +60,10 @@ fn test_beam_build() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(1);
-    dsp.game.dockyard_upgrade(1);
+    dsp.game.dockyard_upgrade(2);
     dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
+    dsp.game.energy_innovation_upgrade(2);
+    dsp.game.beam_technology_upgrade(3);
 
     dsp.game.beam_build(10);
     let def = dsp.game.get_defences_levels(1);

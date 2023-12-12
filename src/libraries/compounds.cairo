@@ -129,12 +129,12 @@ mod CompoundCost {
             ERC20s { steel: 24393670652112912384, quartz: 6098417663028228096, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum
@@ -245,12 +245,12 @@ mod CompoundCost {
             ERC20s { steel: 12394799414817230684160, quartz: 6197399707408615342080, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum
@@ -361,12 +361,12 @@ mod CompoundCost {
             ERC20s { steel: 91476264945423433728, quartz: 30492088315141140480, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum
@@ -476,12 +476,12 @@ mod CompoundCost {
             ERC20s { steel: 30492088315141140480, quartz: 12196835326056456192, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum
@@ -521,12 +521,12 @@ mod CompoundCost {
             ERC20s { steel: 214748364800, quartz: 429496729600, tritium: 214748364800 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum
@@ -566,12 +566,12 @@ mod CompoundCost {
             ERC20s { steel: 429496729600, quartz: 214748364800, tritium: 107374182400 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i: usize = (quantity - level).into();
+        let mut i: usize = (level + quantity).into();
         loop {
-            if i.is_zero() {
+            if i == level.into() {
                 break;
             }
-            sum = sum + (*costs.at(level.into() + i - 1));
+            sum = sum + (*costs.at(i - 1));
             i -= 1;
         };
         sum

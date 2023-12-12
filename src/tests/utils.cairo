@@ -105,7 +105,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
-            100,
+            1,
             ONE
         );
     start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
@@ -152,18 +152,14 @@ fn test_deploy_and_init() {
 // builds:
 // - steel_mine: 3
 // - quartz_mine: 4
-// - tritium_mine: 4
-// - energy_plant: 6
+// - tritium_mine: 7
+// - energy_plant: 8
 fn build_basic_mines(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade(5);
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    game.energy_plant_upgrade(3);
-    game.quartz_mine_upgrade(3);
-    game.tritium_mine_upgrade(3);
-    game.energy_plant_upgrade(2);
-    game.tritium_mine_upgrade(4);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 2);
+    game.energy_plant_upgrade(8);
     game.steel_mine_upgrade(3);
+    game.quartz_mine_upgrade(4);
+    game.tritium_mine_upgrade(6);
 }
 
 fn advance_game_state(game: INoGameDispatcher) {

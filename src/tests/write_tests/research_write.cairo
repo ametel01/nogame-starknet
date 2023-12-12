@@ -59,8 +59,7 @@ fn test_beam_upgrade() {
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
     dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.energy_innovation_upgrade(2);
 
     dsp.game.beam_technology_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -88,8 +87,7 @@ fn test_armour_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(2);
 
     dsp.game.armour_innovation_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -112,20 +110,10 @@ fn test_ion_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.lab_upgrade(4);
+    dsp.game.energy_innovation_upgrade(4);
 
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
+    dsp.game.beam_technology_upgrade(5);
 
     dsp.game.ion_systems_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -158,33 +146,10 @@ fn test_plasma_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.beam_technology_upgrade(1);
-    dsp.game.ion_systems_upgrade(1);
-    dsp.game.ion_systems_upgrade(1);
-    dsp.game.ion_systems_upgrade(1);
-    dsp.game.ion_systems_upgrade(1);
-    dsp.game.ion_systems_upgrade(1);
+    dsp.game.lab_upgrade(4);
+    dsp.game.energy_innovation_upgrade(8);
+    dsp.game.beam_technology_upgrade(10);
+    dsp.game.ion_systems_upgrade(5);
 
     dsp.game.plasma_engineering_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -222,10 +187,7 @@ fn test_weapons_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(4);
 
     dsp.game.weapons_development_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -277,8 +239,7 @@ fn test_thrust_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
+    dsp.game.lab_upgrade(2);
     dsp.game.energy_innovation_upgrade(1);
 
     dsp.game.thrust_propulsion_upgrade(1);
@@ -307,26 +268,10 @@ fn test_warp_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.spacetime_warp_upgrade(1);
-    dsp.game.spacetime_warp_upgrade(1);
-    dsp.game.spacetime_warp_upgrade(1);
+    dsp.game.lab_upgrade(7);
+    dsp.game.energy_innovation_upgrade(5);
+    dsp.game.shield_tech_upgrade(5);
+    dsp.game.spacetime_warp_upgrade(3);
 
     dsp.game.warp_drive_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -359,15 +304,8 @@ fn test_shield_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.lab_upgrade(6);
+    dsp.game.energy_innovation_upgrade(3);
 
     dsp.game.shield_tech_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
@@ -395,23 +333,9 @@ fn test_spacetime_upgrade() {
     dsp.game.energy_plant_upgrade(1);
     dsp.game.tritium_mine_upgrade(1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
-    dsp.game.shield_tech_upgrade(1);
+    dsp.game.lab_upgrade(7);
+    dsp.game.energy_innovation_upgrade(5);
+    dsp.game.shield_tech_upgrade(5);
 
     dsp.game.spacetime_warp_upgrade(1);
     let techs = dsp.game.get_techs_levels(1);
