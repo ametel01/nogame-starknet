@@ -155,9 +155,14 @@ mod NoGame {
     struct BattleReport {
         time: u64,
         attacker: u16,
+        attacker_position: PlanetPosition,
+        attacker_initial_fleet: Fleet,
         attacker_fleet_loss: Fleet,
         defender: u16,
+        defender_position: PlanetPosition,
+        defender_initial_fleet: Fleet,
         defender_fleet_loss: Fleet,
+        initial_defences: DefencesLevels,
         defences_loss: DefencesLevels,
         debris: Debris,
     }
@@ -842,6 +847,7 @@ mod NoGame {
             let origin = self.get_owned_planet(caller);
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
+            assert(mission.destination != origin, 'cannot attack own planet');
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
             let defender_fleet = self.get_ships_levels(mission.destination);
@@ -901,9 +907,14 @@ mod NoGame {
                 .emit_battle_report(
                     time_now,
                     origin,
+                    self.planet_position.read(origin),
+                    mission.fleet,
                     attacker_loss,
                     mission.destination,
+                    self.planet_position.read(mission.destination),
+                    defender_fleet,
                     defender_loss,
+                    defences,
                     defences_loss,
                     total_debris
                 );
@@ -1821,9 +1832,14 @@ mod NoGame {
             ref self: ContractState,
             time: u64,
             attacker: u16,
+            attacker_position: PlanetPosition,
+            attacker_initial_fleet: Fleet,
             attacker_fleet_loss: Fleet,
             defender: u16,
+            defender_position: PlanetPosition,
+            defender_initial_fleet: Fleet,
             defender_fleet_loss: Fleet,
+            initial_defences: DefencesLevels,
             defences_loss: DefencesLevels,
             debris: Debris
         ) {
@@ -1833,9 +1849,14 @@ mod NoGame {
                         BattleReport {
                             time,
                             attacker,
+                            attacker_position,
+                            attacker_initial_fleet,
                             attacker_fleet_loss,
                             defender,
+                            defender_position,
+                            defender_initial_fleet,
                             defender_fleet_loss,
+                            initial_defences,
                             defences_loss,
                             debris
                         }
