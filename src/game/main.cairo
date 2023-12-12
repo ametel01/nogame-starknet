@@ -241,7 +241,7 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Mines Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn steel_mine_upgrade(ref self: ContractState, quantity: u32) {
+        fn steel_mine_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -256,7 +256,7 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn quartz_mine_upgrade(ref self: ContractState, quantity: u32) {
+        fn quartz_mine_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -271,7 +271,7 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn tritium_mine_upgrade(ref self: ContractState, quantity: u32) {
+        fn tritium_mine_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -286,7 +286,7 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn energy_plant_upgrade(ref self: ContractState, quantity: u32) {
+        fn energy_plant_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -302,7 +302,7 @@ mod NoGame {
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
 
-        fn dockyard_upgrade(ref self: ContractState, quantity: u32) {
+        fn dockyard_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -317,7 +317,7 @@ mod NoGame {
             self.last_active.write(planet_id, get_block_timestamp());
             self.emit(Event::CompoundSpent(CompoundSpent { planet_id: planet_id, spent: cost }))
         }
-        fn lab_upgrade(ref self: ContractState, quantity: u32) {
+        fn lab_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
@@ -336,15 +336,15 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Research Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn energy_innovation_upgrade(ref self: ContractState, quantity: u32) {
+        fn energy_innovation_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::energy_innovation_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).energy;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().energy;
+            let cost = Lab::get_tech_cost(techs.energy, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -354,15 +354,15 @@ mod NoGame {
                 .write(planet_id, techs.energy + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn digital_systems_upgrade(ref self: ContractState, quantity: u32) {
+        fn digital_systems_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::digital_systems_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).digital;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().digital;
+            let cost = Lab::get_tech_cost(techs.digital, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -372,15 +372,15 @@ mod NoGame {
                 .write(planet_id, techs.digital + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn beam_technology_upgrade(ref self: ContractState, quantity: u32) {
+        fn beam_technology_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::beam_technology_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).beam;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().beam;
+            let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -390,15 +390,15 @@ mod NoGame {
                 .write(planet_id, techs.beam + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn armour_innovation_upgrade(ref self: ContractState, quantity: u32) {
+        fn armour_innovation_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::armour_innovation_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).armour;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().armour;
+            let cost = Lab::get_tech_cost(techs.armour, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -408,15 +408,15 @@ mod NoGame {
                 .write(planet_id, techs.armour + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn ion_systems_upgrade(ref self: ContractState, quantity: u32) {
+        fn ion_systems_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::ion_systems_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).ion;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().ion;
+            let cost = Lab::get_tech_cost(techs.ion, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -426,15 +426,15 @@ mod NoGame {
                 .write(planet_id, techs.ion + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn plasma_engineering_upgrade(ref self: ContractState, quantity: u32) {
+        fn plasma_engineering_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::plasma_engineering_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).plasma;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().plasma;
+            let cost = Lab::get_tech_cost(techs.plasma, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -445,15 +445,15 @@ mod NoGame {
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
 
-        fn weapons_development_upgrade(ref self: ContractState, quantity: u32) {
+        fn weapons_development_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::weapons_development_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).weapons;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().weapons;
+            let cost = Lab::get_tech_cost(techs.weapons, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -463,15 +463,15 @@ mod NoGame {
                 .write(planet_id, techs.weapons + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn shield_tech_upgrade(ref self: ContractState, quantity: u32) {
+        fn shield_tech_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::shield_tech_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).shield;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().shield;
+            let cost = Lab::get_tech_cost(techs.shield, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -481,15 +481,15 @@ mod NoGame {
                 .write(planet_id, techs.shield + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn spacetime_warp_upgrade(ref self: ContractState, quantity: u32) {
+        fn spacetime_warp_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::spacetime_warp_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).spacetime;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().spacetime;
+            let cost = Lab::get_tech_cost(techs.spacetime, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -501,15 +501,15 @@ mod NoGame {
                 );
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn combustive_engine_upgrade(ref self: ContractState, quantity: u32) {
+        fn combustive_engine_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::combustive_engine_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).combustion;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().combustion;
+            let cost = Lab::get_tech_cost(techs.combustion, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -521,15 +521,15 @@ mod NoGame {
                 );
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn thrust_propulsion_upgrade(ref self: ContractState, quantity: u32) {
+        fn thrust_propulsion_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::thrust_propulsion_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).thrust;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().thrust;
+            let cost = Lab::get_tech_cost(techs.thrust, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -539,15 +539,15 @@ mod NoGame {
                 .write(planet_id, techs.thrust + quantity.try_into().expect('u32 into u8 failed'));
             self.emit(Event::TechSpent(TechSpent { planet_id: planet_id, spent: cost }))
         }
-        fn warp_drive_upgrade(ref self: ContractState, quantity: u32) {
+        fn warp_drive_upgrade(ref self: ContractState, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Lab::warp_drive_requirements_check(lab_level, techs);
-            let base_cost = self.techs_cost(techs).warp;
-            let cost = erc20_mul(base_cost, quantity.into());
+            let base_cost: ERC20s = Lab::base_tech_costs().warp;
+            let cost = Lab::get_tech_cost(techs.warp, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -1558,18 +1558,23 @@ mod NoGame {
         }
 
         fn techs_cost(self: @ContractState, techs: TechLevels) -> TechsCost {
-            let energy = Lab::get_tech_cost(techs.energy, 0, 800, 400);
-            let digital = Lab::get_tech_cost(techs.digital, 0, 400, 600);
-            let beam = Lab::get_tech_cost(techs.beam, 0, 800, 400);
-            let ion = Lab::get_tech_cost(techs.ion, 1000, 300, 1000);
-            let plasma = Lab::get_tech_cost(techs.plasma, 2000, 4000, 1000);
-            let spacetime = Lab::get_tech_cost(techs.spacetime, 0, 4000, 2000);
-            let combustion = Lab::get_tech_cost(techs.combustion, 400, 0, 600);
-            let thrust = Lab::get_tech_cost(techs.thrust, 2000, 4000, 600);
-            let warp = Lab::get_tech_cost(techs.warp, 10000, 2000, 6000);
-            let armour = Lab::get_tech_cost(techs.armour, 1000, 0, 0);
-            let weapons = Lab::get_tech_cost(techs.weapons, 800, 200, 0);
-            let shield = Lab::get_tech_cost(techs.shield, 200, 600, 0);
+            let costs: TechsCost = Lab::base_tech_costs();
+            let energy = Lab::get_tech_cost(techs.energy, techs.energy + 1, costs.energy);
+            let digital = Lab::get_tech_cost(techs.digital, techs.digital + 1, costs.digital);
+            let beam = Lab::get_tech_cost(techs.beam, techs.beam + 1, costs.beam);
+            let ion = Lab::get_tech_cost(techs.ion, techs.ion + 1, costs.ion);
+            let plasma = Lab::get_tech_cost(techs.plasma, techs.plasma + 1, costs.plasma);
+            let spacetime = Lab::get_tech_cost(
+                techs.spacetime, techs.spacetime + 1, costs.spacetime
+            );
+            let combustion = Lab::get_tech_cost(
+                techs.combustion, techs.combustion + 1, costs.combustion
+            );
+            let thrust = Lab::get_tech_cost(techs.thrust, techs.thrust + 1, costs.thrust);
+            let warp = Lab::get_tech_cost(techs.warp, techs.warp + 1, costs.warp);
+            let armour = Lab::get_tech_cost(techs.armour, techs.armour + 1, costs.armour);
+            let weapons = Lab::get_tech_cost(techs.weapons, techs.weapons + 1, costs.weapons);
+            let shield = Lab::get_tech_cost(techs.shield, techs.shield + 1, costs.shield);
 
             TechsCost {
                 energy: energy,

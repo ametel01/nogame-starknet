@@ -24,7 +24,7 @@ mod Compounds {
 mod CompoundCost {
     use nogame::libraries::types::{ERC20s, erc20_mul};
 
-    fn steel(level: u8, quantity: u32) -> ERC20s {
+    fn steel(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 60, quartz: 15, tritium: 0 },
             ERC20s { steel: 90, quartz: 22, tritium: 0 },
@@ -129,7 +129,7 @@ mod CompoundCost {
             ERC20s { steel: 24393670652112912384, quartz: 6098417663028228096, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;
@@ -140,7 +140,7 @@ mod CompoundCost {
         sum
     }
 
-    fn quartz(level: u8, quantity: u32) -> ERC20s {
+    fn quartz(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 48, quartz: 24, tritium: 0 },
             ERC20s { steel: 76, quartz: 38, tritium: 0 },
@@ -245,7 +245,7 @@ mod CompoundCost {
             ERC20s { steel: 12394799414817230684160, quartz: 6197399707408615342080, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;
@@ -256,7 +256,7 @@ mod CompoundCost {
         sum
     }
 
-    fn tritium(level: u8, quantity: u32) -> ERC20s {
+    fn tritium(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 225, quartz: 75, tritium: 0 },
             ERC20s { steel: 337, quartz: 112, tritium: 0 },
@@ -361,7 +361,7 @@ mod CompoundCost {
             ERC20s { steel: 91476264945423433728, quartz: 30492088315141140480, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;
@@ -371,7 +371,7 @@ mod CompoundCost {
         };
         sum
     }
-    fn energy(level: u8, quantity: u32) -> ERC20s {
+    fn energy(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 75, quartz: 30, tritium: 0 },
             ERC20s { steel: 112, quartz: 45, tritium: 0 },
@@ -476,7 +476,7 @@ mod CompoundCost {
             ERC20s { steel: 30492088315141140480, quartz: 12196835326056456192, tritium: 0 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;
@@ -486,7 +486,7 @@ mod CompoundCost {
         };
         sum
     }
-    fn lab(level: u8, quantity: u32) -> ERC20s {
+    fn lab(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 200, quartz: 400, tritium: 200 },
             ERC20s { steel: 400, quartz: 800, tritium: 400 },
@@ -521,7 +521,7 @@ mod CompoundCost {
             ERC20s { steel: 214748364800, quartz: 429496729600, tritium: 214748364800 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;
@@ -531,7 +531,7 @@ mod CompoundCost {
         };
         sum
     }
-    fn dockyard(level: u8, quantity: u32) -> ERC20s {
+    fn dockyard(level: u8, quantity: u8) -> ERC20s {
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 400, quartz: 200, tritium: 100 },
             ERC20s { steel: 800, quartz: 400, tritium: 200 },
@@ -566,7 +566,7 @@ mod CompoundCost {
             ERC20s { steel: 429496729600, quartz: 214748364800, tritium: 107374182400 },
         ];
         let mut sum: ERC20s = Default::default();
-        let mut i = quantity - level.into();
+        let mut i: usize = (quantity - level).into();
         loop {
             if i.is_zero() {
                 break;

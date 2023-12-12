@@ -1,18 +1,29 @@
 use nogame::libraries::math::power;
-use nogame::libraries::types::{ERC20s, TechLevels};
+use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
 
 #[generate_trait]
 impl Lab of LabTrait {
-    #[inline(always)]
-    fn get_tech_cost(current_level: u8, steel: u128, quartz: u128, tritium: u128) -> ERC20s {
+    fn get_tech_cost(current_level: u8, level_to_upgrade: u8, base_cost: ERC20s) -> ERC20s {
         if current_level == 0 {
-            ERC20s { steel: steel, quartz: quartz, tritium: tritium }
+            ERC20s { steel: base_cost.steel, quartz: base_cost.quartz, tritium: base_cost.tritium }
         } else {
-            ERC20s {
-                steel: (steel * power(2, current_level.into())),
-                quartz: (quartz * power(2, current_level.into())),
-                tritium: (tritium * power(2, current_level.into()))
-            }
+            let mut cost: ERC20s = Default::default();
+
+            let mut i = level_to_upgrade;
+            loop {
+                if i == current_level {
+                    break;
+                }
+
+                cost = cost
+                    + ERC20s {
+                        steel: (base_cost.steel * power(2, i.into())),
+                        quartz: (base_cost.quartz * power(2, i.into())),
+                        tritium: (base_cost.tritium * power(2, i.into()))
+                    };
+                i -= 1;
+            };
+            cost
         }
     }
 
@@ -94,6 +105,24 @@ impl Lab of LabTrait {
         assert(lab_level >= 7, 'Lab 7 required');
         assert(techs.energy >= 5, 'Energy innovation 5 required');
         assert(techs.spacetime >= 3, 'Spacetime Warp 3 required');
+    }
+
+    #[inline(always)]
+    fn base_tech_costs() -> TechsCost {
+        TechsCost {
+            energy: ERC20s { steel: 0, quartz: 800, tritium: 400 },
+            digital: ERC20s { steel: 0, quartz: 400, tritium: 600 },
+            beam: ERC20s { steel: 0, quartz: 800, tritium: 400 },
+            armour: ERC20s { steel: 1000, quartz: 0, tritium: 0 },
+            ion: ERC20s { steel: 1000, quartz: 300, tritium: 1000 },
+            plasma: ERC20s { steel: 2000, quartz: 4000, tritium: 1000 },
+            weapons: ERC20s { steel: 800, quartz: 200, tritium: 0 },
+            shield: ERC20s { steel: 200, quartz: 600, tritium: 0 },
+            spacetime: ERC20s { steel: 0, quartz: 4000, tritium: 2000 },
+            combustion: ERC20s { steel: 400, quartz: 0, tritium: 600 },
+            thrust: ERC20s { steel: 2000, quartz: 4000, tritium: 600 },
+            warp: ERC20s { steel: 10000, quartz: 2000, tritium: 6000 },
+        }
     }
 }
 
