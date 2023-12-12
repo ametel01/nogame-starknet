@@ -190,17 +190,18 @@ fn test_mixed_speed() {
 }
 
 #[test]
-fn test_basic_speed() {
+fn test_basic_flight_time() {
     let mut fleet: Fleet = Default::default();
     assert(fleet::get_flight_time(30000, 1005) == 2035, 'wrong assert #1');
     assert(fleet::get_flight_time(15000, 1005) == 2874, 'wrong assert #2');
     assert(fleet::get_flight_time(10000, 1005) == 3518, 'wrong assert #3');
     assert(fleet::get_flight_time(4000, 1005) == 5557, 'wrong assert #4');
     assert(fleet::get_flight_time(2000, 1005) == 7855, 'wrong assert #5');
+    assert(fleet::get_flight_time(2000, 5) == 563, 'wrong assert #6');
 }
 
 #[test]
-fn test_long_speed() {
+fn test_long_flight_time() {
     let mut fleet: Fleet = Default::default();
     assert(fleet::get_flight_time(30000, 21605) == 9402, 'wrong assert #1');
     assert(fleet::get_flight_time(15000, 21605) == 13293, 'wrong assert #5');
@@ -222,6 +223,9 @@ fn test_distance() {
 
     end.orbit = 10;
     assert(fleet::get_distance(start, end) == 1045, 'wrong distance 1045');
+
+    end.orbit = 1;
+    assert(fleet::get_distance(start, end) == 5, 'wrong distance 5');
 
     start.system = 1;
     end.system = 2;

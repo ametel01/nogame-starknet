@@ -441,7 +441,7 @@ fn get_fuel_consumption(f: Fleet, distance: u32) -> u128 {
 
 #[inline(always)]
 fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
-    if start.system == end.system && start.system > end.system {
+    if start.system == end.system && start.orbit == end.orbit {
         return 5;
     }
     if start.system == end.system {

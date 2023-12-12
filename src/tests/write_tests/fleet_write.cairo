@@ -226,6 +226,55 @@ fn test_collect_debris_success() {
 }
 
 #[test]
+fn test_collect_debris_own_planet() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.plasma_projector_build(1);
+    dsp.game.scraper_build(1);
+    dsp.game.digital_systems_upgrade(1);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.digital_systems_upgrade(1);
+    dsp.game.carrier_build(1);
+    let p2_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    dsp.game.send_fleet(fleet, p2_position, false);
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.scraper = 1;
+    let debris = dsp.game.get_debris_field(2);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.send_fleet(fleet, p2_position, true);
+    let missions = dsp.game.get_active_missions(2);
+    let mission = dsp.game.get_mission_details(2, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    let resources_before = dsp.game.get_spendable_resources(2);
+    dsp.game.collect_debris(1);
+    assert(dsp.game.get_ships_levels(2).scraper == 1, 'wrong scraper back');
+    let resources_after = dsp.game.get_spendable_resources(2);
+    assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
+    assert(
+        resources_after.quartz == resources_before.quartz + debris.quartz, 'wrong quartz collected'
+    );
+    let debris_after_collection = dsp.game.get_debris_field(2);
+    assert(debris_after_collection.is_zero(), 'wrong debris after');
+}
+
+#[test]
 fn test_collect_debris_fleet_decay() {
     let dsp = set_up();
     init_game(dsp);
