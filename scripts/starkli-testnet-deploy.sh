@@ -2,7 +2,7 @@
 eth_addr=0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
 receiver=0x04b053f79a856f8ba34397b4dd540c3a9600aef13dddf5d976bc8547d1438e54
 deployer=0x482e3154eeec94b161d40ac49b29d1da71d7184e004f3f752b7aea57991cf2
-speed=10000
+speed=100
 price=0
 
 export STARKNET_RPC="https://starknet-goerli.infura.io/v3/25371764a3e44191b39d3b3b98a8c55d"
@@ -10,7 +10,7 @@ export STARKNET_KEYSTORE=".keystore.json"
 export STARKNET_ACCOUNT="testnet.json"
 
 echo 'deploying NoGame...'
-stdout=$(starkli deploy --watch 0x04c413220a2dfb93ea4ac5a7fb40c26671da682069391c1d15267390b76f8527) 
+stdout=$(starkli deploy --watch 0x026c7171f5b9623b3799ccd9d3fccf93050aa449fc1ae29d1ceae1e44aea27e7) 
 nogame=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NOGAME::'${nogame} > deployed_contracts.txt
 

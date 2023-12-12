@@ -156,3 +156,7 @@ fn lab_cost_test() {
     assert(cost.tritium == 214748364800, 'wrong formula');
 }
 
+#[test]
+fn test_multilevel_cost() {
+    CompoundCost::tritium(2, 18).print();
+}
