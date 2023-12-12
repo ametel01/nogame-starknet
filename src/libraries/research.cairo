@@ -1,30 +1,28 @@
-use nogame::libraries::math::power;
+use nogame::libraries::math::pow;
 use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
+
+use snforge_std::PrintTrait;
 
 #[generate_trait]
 impl Lab of LabTrait {
-    fn get_tech_cost(current_level: u8, level_to_upgrade: u8, base_cost: ERC20s) -> ERC20s {
-        if current_level == 0 {
-            ERC20s { steel: base_cost.steel, quartz: base_cost.quartz, tritium: base_cost.tritium }
-        } else {
-            let mut cost: ERC20s = Default::default();
+    fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
+        let mut cost: ERC20s = Default::default();
 
-            let mut i = level_to_upgrade;
-            loop {
-                if i == current_level {
-                    break;
-                }
+        let mut i = current_level + (quantity - current_level);
+        loop {
+            if i == current_level {
+                break;
+            }
 
-                cost = cost
-                    + ERC20s {
-                        steel: (base_cost.steel * power(2, i.into())),
-                        quartz: (base_cost.quartz * power(2, i.into())),
-                        tritium: (base_cost.tritium * power(2, i.into()))
-                    };
-                i -= 1;
+            let level_cost = ERC20s {
+                steel: (base_cost.steel * pow(2, i.into() - 1)),
+                quartz: (base_cost.quartz * pow(2, i.into() - 1)),
+                tritium: (base_cost.tritium * pow(2, i.into() - 1))
             };
-            cost
-        }
+            cost = cost + level_cost;
+            i -= 1;
+        };
+        cost
     }
 
     #[inline(always)]

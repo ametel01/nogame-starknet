@@ -24,7 +24,7 @@ struct Tokens {
     tritium: ContractAddress,
 }
 
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct ERC20s {
     steel: u128,
     quartz: u128,

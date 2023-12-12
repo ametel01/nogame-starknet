@@ -45,6 +45,8 @@ mod tests {
         mod math;
         #[cfg(test)]
         mod mine_production;
+        #[cfg(test)]
+        mod tech_cost;
     }
 
     mod view_tests {

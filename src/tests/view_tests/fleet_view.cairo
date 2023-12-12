@@ -128,7 +128,6 @@ fn test_get_active_missions() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
     dsp.game.digital_systems_upgrade(4);
-    
 
     dsp.game.carrier_build(5);
 
