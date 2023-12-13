@@ -10,7 +10,7 @@ export STARKNET_KEYSTORE=".keystore.json"
 export STARKNET_ACCOUNT="testnet.json"
 
 echo 'deploying NoGame...'
-stdout=$(starkli deploy --watch 0x010dbfb583094ba616a5f920763f9872076f3c33da8c423aa454ec47a2ade875) 
+stdout=$(starkli deploy --watch 0x07d59df63ad1ed4ec8adb122e6c15ac0288f5319e78bcbf1587d0cc5c324d975) 
 nogame=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NOGAME::'${nogame} > deployed_contracts.txt
 
@@ -35,5 +35,5 @@ tritium=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'TRITIUM::'${tritium} >> deployed_contracts.txt
 
 echo 'initializing NoGame...'
-starkli invoke --watch $nogame initializer $nft $steel $quartz $tritium $rand $eth_addr $receiver $speed $price
+starkli invoke --watch $nogame initializer $nft $steel $quartz $tritium $eth_addr $receiver $speed $price
 printf '\n🚀 all contracts are deployed! 🚀\n'
