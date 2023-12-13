@@ -22,13 +22,11 @@ mod NoGame {
     use nogame::libraries::dockyard::Dockyard;
     use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
+    use nogame::libraries::positions;
     use nogame::token::erc20::interface::{IERC20NGDispatcherTrait, IERC20NGDispatcher};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
-
-    use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait};
-
 
     #[storage]
     struct Storage {
@@ -50,7 +48,6 @@ mod NoGame {
         steel: IERC20NGDispatcher,
         quartz: IERC20NGDispatcher,
         tritium: IERC20NGDispatcher,
-        rand: IXoroshiroDispatcher,
         ETH: IERC20CamelDispatcher,
         // Infrastructures.
         steel_mine_level: LegacyMap::<u16, u8>,
@@ -188,7 +185,7 @@ mod NoGame {
             steel: ContractAddress,
             quartz: ContractAddress,
             tritium: ContractAddress,
-            rand: ContractAddress,
+            // rand: ContractAddress,
             eth: ContractAddress,
             receiver: ContractAddress,
             uni_speed: u128,
@@ -200,7 +197,6 @@ mod NoGame {
             self.steel.write(IERC20NGDispatcher { contract_address: steel });
             self.quartz.write(IERC20NGDispatcher { contract_address: quartz });
             self.tritium.write(IERC20NGDispatcher { contract_address: tritium });
-            self.rand.write(IXoroshiroDispatcher { contract_address: rand });
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.receiver.write(receiver);
             self.uni_speed.write(uni_speed);
@@ -228,16 +224,21 @@ mod NoGame {
             let price: u256 = self.get_planet_price(time_elapsed).into();
             self.ETH.read().transferFrom(caller, self.receiver.read(), price);
             let number_of_planets = self.number_of_planets.read();
-            assert(number_of_planets < MAX_NUMBER_OF_PLANETS, 'max number of planets');
-            let position = self.calculate_planet_position();
+            assert(number_of_planets != MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
+            let position = positions::get_planet_position(token_id);
             self.erc721.read().mint(caller, token_id.into());
             self.planet_position.write(token_id, position);
             self.position_to_planet.write(position, token_id);
             self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
-            self.emit(Event::PlanetGenerated(PlanetGenerated { id: token_id, position, account: caller }));
+            self
+                .emit(
+                    Event::PlanetGenerated(
+                        PlanetGenerated { id: token_id, position, account: caller }
+                    )
+                );
         }
 
         fn collect_resources(ref self: ContractState) {
@@ -1270,20 +1271,20 @@ mod NoGame {
                 / ONE
         }
 
-        fn calculate_planet_position(self: @ContractState) -> PlanetPosition {
-            let mut position: PlanetPosition = Default::default();
-            let rand = self.rand.read();
-            loop {
-                position.system = (rand.next() % 200 + 1).try_into().unwrap();
-                position.orbit = (rand.next() % 10 + 1).try_into().unwrap();
-                let calculated_token_id = self.position_to_planet.read(position);
-                if self.planet_position.read(calculated_token_id).is_zero() {
-                    break;
-                }
-                continue;
-            };
-            position
-        }
+        // fn calculate_planet_position(self: @ContractState) -> PlanetPosition {
+        //     let mut position: PlanetPosition = Default::default();
+        //     let rand = self.rand.read();
+        //     loop {
+        //         position.system = (rand.next() % 200 + 1).try_into().unwrap();
+        //         position.orbit = (rand.next() % 10 + 1).try_into().unwrap();
+        //         let calculated_token_id = self.position_to_planet.read(position);
+        //         if self.planet_position.read(calculated_token_id).is_zero() {
+        //             break;
+        //         }
+        //         continue;
+        //     };
+        //     position
+        // }
 
         #[inline(always)]
         fn get_position_from_raw(self: @ContractState, raw_position: u16) -> PlanetPosition {

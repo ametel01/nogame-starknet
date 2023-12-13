@@ -25,6 +25,4 @@ fn multilevel_tech_cost_test() {
     let expected = ERC20s { steel: 0, quartz: 3276800, tritium: 1638400 };
     let cost = Lab::get_tech_cost(12, 13, costs.energy);
     assert(cost == expected, 'wrong assert 5');
-
-    cost.print();
 }

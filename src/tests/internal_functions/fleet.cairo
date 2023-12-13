@@ -94,8 +94,6 @@ fn test_war_armade_vs_plasma() {
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
-    res1.print();
-    def.print();
 // assert(res1.is_zero() && res2.is_zero(), 'wrong assert 1');
 }
 #[test]

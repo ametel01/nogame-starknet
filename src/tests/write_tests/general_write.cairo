@@ -63,10 +63,8 @@ fn test_collect() {
     let dsp = set_up();
     init_game(dsp);
 
-    dsp.eth.balance_of(DEPLOYER()).print();
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    dsp.eth.balance_of(DEPLOYER()).print();
 }
 // #[test]
 // fn test_planet_position() {

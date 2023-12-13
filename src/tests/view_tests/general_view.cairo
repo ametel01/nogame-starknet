@@ -136,9 +136,6 @@ fn test_get_debris_field() {
     advance_game_state(dsp.game);
     dsp.game.astral_launcher_build(5);
 
-    dsp.game.get_planet_points(1).print();
-    dsp.game.get_planet_points(2).print();
-
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     let mut fleet: Fleet = Default::default();
     let position = dsp.game.get_planet_position(2);
@@ -175,7 +172,6 @@ fn test_get_collectible_resources() {
 
     start_warp(CheatTarget::All, HOUR * 3);
     let collectible = dsp.game.get_collectible_resources(1);
-    collectible.print();
     assert(collectible.steel == 30, 'wrong collectible ');
     assert(collectible.quartz == 30, 'wrong collectible ');
     assert(collectible.tritium == 0, 'wrong collectible ');

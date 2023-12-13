@@ -13,7 +13,6 @@ dependencies = [
  "cubit",
  "openzeppelin",
  "snforge_std",
- "xoroshiro",
 ]
 
 [[package]]
@@ -25,8 +24,3 @@ source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.8.0-beta.0#
 name = "snforge_std"
 version = "0.1.0"
 source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.11.0#5465c41541c44a7804d16318fab45a2f0ccec9e7"
-
-[[package]]
-name = "xoroshiro"
-version = "1.0.0"
-source = "git+https://github.com/ametel01/xoroshiro-cairo.git#62ab3ae93a21a120b356eea4155431adcbd21dd8"

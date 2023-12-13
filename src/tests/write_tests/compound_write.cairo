@@ -25,7 +25,6 @@ fn test_steel_mine_upgrade() {
     dsp.game.steel_mine_upgrade(1);
     let compounds = dsp.game.get_compounds_levels(1);
     assert(compounds.steel == 1, 'wrong steel level');
-    (initial - testing::get_available_gas()).print();
 }
 
 #[test]

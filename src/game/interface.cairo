@@ -13,7 +13,7 @@ trait INoGame<TState> {
         steel: ContractAddress,
         quartz: ContractAddress,
         tritium: ContractAddress,
-        rand: ContractAddress,
+        // rand: ContractAddress,
         eth: ContractAddress,
         receiver: ContractAddress,
         uni_speed: u128,

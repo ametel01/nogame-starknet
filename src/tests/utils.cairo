@@ -6,7 +6,6 @@ use starknet::{
 use openzeppelin::token::erc20::erc20::ERC20;
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
-use xoroshiro::xoroshiro::{IXoroshiroDispatcher, IXoroshiroDispatcherTrait, Xoroshiro};
 use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
@@ -31,7 +30,6 @@ struct Dispatchers {
     steel: IERC20NGDispatcher,
     quartz: IERC20NGDispatcher,
     tritium: IERC20NGDispatcher,
-    rand: IXoroshiroDispatcher,
     eth: IERC20Dispatcher,
     game: INoGameDispatcher,
 }
@@ -74,10 +72,6 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into(), _erc721.into()];
     let _tritium = contract.deploy(@calldata).expect('failed tritium');
 
-    let contract = declare('Xoroshiro');
-    let calldata: Array<felt252> = array![81];
-    let _xoroshiro = contract.deploy(@calldata).expect('failed rand');
-
     let contract = declare('ERC20');
     let calldata: Array<felt252> = array!['ETHER', 'ETH', ETH_SUPPLY, 0, DEPLOYER().into()];
     let _eth = contract.deploy(@calldata).expect('failed to deploy eth');
@@ -87,7 +81,6 @@ fn set_up() -> Dispatchers {
         steel: IERC20NGDispatcher { contract_address: _steel },
         quartz: IERC20NGDispatcher { contract_address: _quartz },
         tritium: IERC20NGDispatcher { contract_address: _tritium },
-        rand: IXoroshiroDispatcher { contract_address: _xoroshiro },
         eth: IERC20Dispatcher { contract_address: _eth },
         game: INoGameDispatcher { contract_address: _game }
     }
@@ -102,7 +95,7 @@ fn init_game(dsp: Dispatchers) {
             dsp.steel.contract_address,
             dsp.quartz.contract_address,
             dsp.tritium.contract_address,
-            dsp.rand.contract_address,
+            // dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
             1,

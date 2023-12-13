@@ -14,6 +14,7 @@ mod libraries {
     mod math;
     mod research;
     mod types;
+    mod positions;
 }
 
 

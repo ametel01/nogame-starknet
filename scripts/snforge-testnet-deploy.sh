@@ -33,12 +33,6 @@ stdout=$(sncast --profile testnet deploy -g 0x07064396f8716cb704a001ab29876ab2b5
 tritium=$(echo "$stdout" | grep -o 'contract_address: 0x[0-9a-fA-F]\+' | awk '{print $2}')
 echo 'TRITIUM::'${tritium} >> deployed_contracts.txt
 
-echo 'deploying Xoroshiro...'
-# sleep 20
-stdout=$(sncast --profile testnet deploy -g  0x0266eb21b95149ebbbfe58c25b9a1a1b6e7e883d4e408000bbaee972f55624ec -c 0x1 )
-rand=$(echo "$stdout" | grep -o 'contract_address: 0x[0-9a-fA-F]\+' | awk '{print $2}')
-echo 'XOROSHIRO::'${rand} >> deployed_contracts.txt
-
 printf 'all contracts are deployed, initializing NoGame...\n'
 # sleep 20
 sncast invoke --profile testnet --contract-address $nogame --function initializer --calldata $nft $steel $quartz $tritium $rand $eth_addr $deployer

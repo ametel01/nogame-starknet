@@ -10,7 +10,7 @@ export STARKNET_KEYSTORE=".keystore.json"
 export STARKNET_ACCOUNT="testnet.json"
 
 echo 'deploying NoGame...'
-stdout=$(starkli deploy --watch 0x026c7171f5b9623b3799ccd9d3fccf93050aa449fc1ae29d1ceae1e44aea27e7) 
+stdout=$(starkli deploy --watch 0x010dbfb583094ba616a5f920763f9872076f3c33da8c423aa454ec47a2ade875) 
 nogame=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'NOGAME::'${nogame} > deployed_contracts.txt
 
@@ -33,11 +33,6 @@ echo 'deploying Tritium...'
 stdout=$(starkli deploy --watch 0x05683b6ebacb63eec5751ea388f9b9379891932a8dc2458e815a777d48bd75d0  0x4e6f47616d652074657374205472697469756d 0x4e47745454  $nogame $nft)
 tritium=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
 echo 'TRITIUM::'${tritium} >> deployed_contracts.txt
-
-echo 'deploying Xoroshiro...'
-stdout=$(starkli deploy --watch 0x0266eb21b95149ebbbfe58c25b9a1a1b6e7e883d4e408000bbaee972f55624ec  0x31 )
-rand=$(echo "$stdout" | grep -o '0x[0-9a-fA-F]\+')
-echo 'XOROSHIRO::'${rand} >> deployed_contracts.txt
 
 echo 'initializing NoGame...'
 starkli invoke --watch $nogame initializer $nft $steel $quartz $tritium $rand $eth_addr $receiver $speed $price

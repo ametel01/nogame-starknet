@@ -224,19 +224,19 @@ fn test_get_travel_time() {
     techs.spacetime = 3;
 
     let t1 = dsp.game.get_travel_time(p1, p2, f1, Default::default());
-    assert(t1 == 11868, 'wrong assert #1');
+    assert(t1 == 12812, 'wrong assert #1');
 
     let t2 = dsp.game.get_travel_time(p1, p2, f2, Default::default());
-    assert(t2 == 18760, 'wrong assert #2');
+    assert(t2 == 20252, 'wrong assert #2');
 
     let t3 = dsp.game.get_travel_time(p1, p2, f3, Default::default());
-    assert(t3 == 7510, 'wrong assert #3');
+    assert(t3 == 8107, 'wrong assert #3');
 
     let t4 = dsp.game.get_travel_time(p1, p2, f4, techs);
-    assert(t4 == 6856, 'wrong assert #4');
+    assert(t4 == 7401, 'wrong assert #4');
 
     let t5 = dsp.game.get_travel_time(p1, p2, f5, techs);
-    assert(t5 == 8395, 'wrong assert #5');
+    assert(t5 == 9062, 'wrong assert #5');
 }
 
 #[test]
@@ -269,14 +269,14 @@ fn test_get_fuel_consumption() {
     assert(c1 == 1, 'wrong assert #1');
 
     let c2 = dsp.game.get_fuel_consumption(p1, p2, f2);
-    assert(c2 == 49, 'wrong assert #2');
+    assert(c2 == 57, 'wrong assert #2');
 
     let c3 = dsp.game.get_fuel_consumption(p1, p2, f3);
     assert(c3 == 3, 'wrong assert #3');
 
     let c4 = dsp.game.get_fuel_consumption(p1, p2, f4);
-    assert(c4 == 49, 'wrong assert #4');
+    assert(c4 == 57, 'wrong assert #4');
 
     let c5 = dsp.game.get_fuel_consumption(p1, p2, f5);
-    assert(c5 == 82, 'wrong assert #5');
+    assert(c5 == 95, 'wrong assert #5');
 }

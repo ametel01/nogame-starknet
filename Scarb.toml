@@ -8,15 +8,13 @@ license = "MIT"
 [dependencies]
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.8.0-beta.0" }
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.11.0" }
-xoroshiro = { git ="https://github.com/ametel01/xoroshiro-cairo.git" }
 cubit = {git ="https://github.com/influenceth/cubit.git", rev="b459053"}
-# cubit = {git ="https://github.com/ametel01/cubit", rev="72784d8"}
 
 starknet = ">=2.3.0"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
-build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "openzeppelin::account::account::Account","xoroshiro::xoroshiro::Xoroshiro" ]
+build-external-contracts = ["openzeppelin::token::erc20::erc20::ERC20", "openzeppelin::account::account::Account" ]
 sierra = true
 casm = true
 

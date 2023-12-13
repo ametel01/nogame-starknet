@@ -155,5 +155,5 @@ fn lab_cost_test() {
 
 #[test]
 fn test_multilevel_cost() {
-    CompoundCost::tritium(2, 18).print();
+    CompoundCost::tritium(2, 18);
 }
