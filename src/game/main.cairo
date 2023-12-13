@@ -110,6 +110,7 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct PlanetGenerated {
         id: u16,
+        position: PlanetPosition,
         account: ContractAddress,
     }
 
@@ -236,7 +237,7 @@ mod NoGame {
             self.number_of_planets.write(number_of_planets + 1);
             self.receive_resources_erc20(caller, ERC20s { steel: 500, quartz: 300, tritium: 100 });
             self.resources_timer.write(token_id, get_block_timestamp());
-            self.emit(Event::PlanetGenerated(PlanetGenerated { id: token_id, account: caller }));
+            self.emit(Event::PlanetGenerated(PlanetGenerated { id: token_id, position, account: caller }));
         }
 
         fn collect_resources(ref self: ContractState) {
