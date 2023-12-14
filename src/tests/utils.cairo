@@ -3,14 +3,14 @@ use starknet::{
     ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,
     get_caller_address, class_hash::ClassHash
 };
-use openzeppelin::token::erc20::erc20::ERC20;
-use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
 use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::PRICE;
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
+use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
 use snforge_std::{
@@ -30,7 +30,7 @@ struct Dispatchers {
     steel: IERC20NGDispatcher,
     quartz: IERC20NGDispatcher,
     tritium: IERC20NGDispatcher,
-    eth: IERC20Dispatcher,
+    eth: IERC20CamelDispatcher,
     game: INoGameDispatcher,
 }
 
@@ -81,7 +81,7 @@ fn set_up() -> Dispatchers {
         steel: IERC20NGDispatcher { contract_address: _steel },
         quartz: IERC20NGDispatcher { contract_address: _quartz },
         tritium: IERC20NGDispatcher { contract_address: _tritium },
-        eth: IERC20Dispatcher { contract_address: _eth },
+        eth: IERC20CamelDispatcher { contract_address: _eth },
         game: INoGameDispatcher { contract_address: _game }
     }
 }
@@ -95,7 +95,6 @@ fn init_game(dsp: Dispatchers) {
             dsp.steel.contract_address,
             dsp.quartz.contract_address,
             dsp.tritium.contract_address,
-            // dsp.rand.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
             1,
@@ -139,7 +138,7 @@ fn test_deploy_and_init() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
     start_prank(CheatTarget::All, dsp.game.contract_address);
-    dsp.eth.transfer_from(ACCOUNT1(), DEPLOYER(), 1.into());
+    dsp.eth.transferFrom(ACCOUNT1(), DEPLOYER(), 1.into());
 }
 
 // builds:

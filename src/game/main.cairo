@@ -178,7 +178,7 @@ mod NoGame {
         self.universe_start_time.write(get_block_timestamp());
     }
 
-    #[abi(embed_v0)]
+    #[external(v0)]
     impl NoGame of INoGame<ContractState> {
         fn initializer(
             ref self: ContractState,
@@ -891,7 +891,7 @@ mod NoGame {
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
-                        self.erc721.read().owner_of(mission.destination.into()), loot_amount
+                        self.erc721.read().ownerOf(mission.destination.into()), loot_amount
                     );
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
                 self.fleet_return_planet(origin, f1);
@@ -1042,7 +1042,7 @@ mod NoGame {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
-            let planet_owner = self.erc721.read().owner_of(planet_id.into());
+            let planet_owner = self.erc721.read().ownerOf(planet_id.into());
             let steel = self.steel.read().balance_of(planet_owner).low / E18;
             let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
             let tritium = self.tritium.read().balance_of(planet_owner).low / E18;

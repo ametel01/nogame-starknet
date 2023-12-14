@@ -27,6 +27,7 @@ mod token {
     mod erc20 {
         mod erc20_ng;
         mod interface;
+        mod erc20;
     }
     mod erc721 {
         mod erc721_ng;
@@ -83,6 +84,8 @@ mod tests {
     mod token {
         #[cfg(test)]
         mod test_erc721;
+        #[cfg(test)]
+        mod test_erc20;
     }
     #[cfg(test)]
     mod utils;
