@@ -162,6 +162,7 @@ mod NoGame {
         defender_fleet_loss: Fleet,
         initial_defences: DefencesLevels,
         defences_loss: DefencesLevels,
+        loot: ERC20s,
         debris: Debris,
     }
 
@@ -879,13 +880,14 @@ mod NoGame {
 
             self.update_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
+            let mut loot_amount: ERC20s = Default::default();
 
             if f1.is_zero() {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
                 let spendable = self.get_spendable_resources(mission.destination);
                 let storage = fleet::get_fleet_cargo_capacity(f1);
-                let loot_amount = fleet::load_resources(spendable, storage);
+                loot_amount = fleet::load_resources(spendable, storage);
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
@@ -918,6 +920,7 @@ mod NoGame {
                     defender_loss,
                     defences,
                     defences_loss,
+                    loot_amount,
                     total_debris
                 );
         }
@@ -1843,6 +1846,7 @@ mod NoGame {
             defender_fleet_loss: Fleet,
             initial_defences: DefencesLevels,
             defences_loss: DefencesLevels,
+            loot: ERC20s,
             debris: Debris
         ) {
             self
@@ -1860,6 +1864,7 @@ mod NoGame {
                             defender_fleet_loss,
                             initial_defences,
                             defences_loss,
+                            loot,
                             debris
                         }
                     )
