@@ -11,10 +11,10 @@ mod NGERC721 {
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
-    #[abi(embed_v0)]
+    // #[abi(embed_v0)]
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
 
-    #[abi(embed_v0)]
+    // #[abi(embed_v0)]
     impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
 
     impl InternalImpl = ERC721Component::InternalImpl<ContractState>;
@@ -58,14 +58,12 @@ mod NGERC721 {
 
     #[external(v0)]
     impl ERC721NoGameImpl of IERC721NoGame<ContractState> {
-        fn token_of(self: @ContractState, address: ContractAddress) -> u256 {
-            self.tokens.read(address)
+        fn name(self: @ContractState) -> felt252 {
+            self.erc721.name()
         }
 
-        fn mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
-            assert(get_caller_address() == self.minter.read(), 'ERC721 caller not minter');
-            self.erc721._mint(to, token_id);
-            self.tokens.write(to, token_id);
+        fn symbol(self: @ContractState) -> felt252 {
+            self.erc721.symbol()
         }
 
         fn get_base_uri(self: @ContractState) -> Array<felt252> {
@@ -80,6 +78,52 @@ mod NGERC721 {
                 i += 1;
             };
             output
+        }
+
+        fn token_uri(self: @ContractState, token_id: u256) -> Array<felt252> {
+            let mut base = self.get_base_uri();
+            let ten: NonZero<u256> = 10_u256.try_into().unwrap();
+            let to_add = self.div_rec(token_id, ten);
+
+            let mut output = ArrayTrait::new();
+            let mut last_i = base.len() - 1;
+            let last = *base.at(last_i);
+            let mut i = 0;
+            loop {
+                if i == last_i {
+                    break;
+                }
+                output.append(*base.at(i));
+                i += 1;
+            };
+            self.append_to_str(ref output, last.into(), to_add.span());
+            output
+        }
+
+        fn token_of(self: @ContractState, address: ContractAddress) -> u256 {
+            self.tokens.read(address)
+        }
+
+        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+            self.erc721.balance_of(account)
+        }
+
+        fn owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
+            self.erc721.owner_of(token_id)
+        }
+
+
+        fn transfer_from(
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256
+        ) {
+            self.erc721.transfer_from(from, to, token_id);
+            self.tokens.write(to, token_id)
+        }
+
+        fn mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
+            assert(get_caller_address() == self.minter.read(), 'ERC721 caller not minter');
+            self.erc721._mint(to, token_id);
+            self.tokens.write(to, token_id);
         }
 
         fn set_base_uri(ref self: ContractState, mut base_uri: Span<felt252>) {
@@ -122,21 +166,11 @@ mod NGERC721 {
             self.erc721.owner_of(tokenId)
         }
 
-
         fn transferFrom(
             ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenId: u256
         ) {
-            self.erc721.transfer_from(from, to, tokenId)
-        }
-
-        fn safeTransferFrom(
-            ref self: ContractState,
-            from: ContractAddress,
-            to: ContractAddress,
-            tokenId: u256,
-            data: Span<felt252>
-        ) {
-            self.erc721.safe_transfer_from(from, to, tokenId, data)
+            self.erc721.transfer_from(from, to, tokenId);
+            self.tokens.write(to, tokenId)
         }
     }
 
