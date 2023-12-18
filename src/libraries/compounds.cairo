@@ -25,6 +25,7 @@ mod CompoundCost {
     use nogame::libraries::types::{ERC20s, erc20_mul};
 
     fn steel(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 60, quartz: 15, tritium: 0 },
             ERC20s { steel: 90, quartz: 22, tritium: 0 },
@@ -141,6 +142,7 @@ mod CompoundCost {
     }
 
     fn quartz(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 48, quartz: 24, tritium: 0 },
             ERC20s { steel: 76, quartz: 38, tritium: 0 },
@@ -257,6 +259,7 @@ mod CompoundCost {
     }
 
     fn tritium(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 225, quartz: 75, tritium: 0 },
             ERC20s { steel: 337, quartz: 112, tritium: 0 },
@@ -372,6 +375,7 @@ mod CompoundCost {
         sum
     }
     fn energy(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 75, quartz: 30, tritium: 0 },
             ERC20s { steel: 112, quartz: 45, tritium: 0 },
@@ -487,6 +491,7 @@ mod CompoundCost {
         sum
     }
     fn lab(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 200, quartz: 400, tritium: 200 },
             ERC20s { steel: 400, quartz: 800, tritium: 400 },
@@ -532,6 +537,7 @@ mod CompoundCost {
         sum
     }
     fn dockyard(level: u8, quantity: u8) -> ERC20s {
+        assert(!quantity.is_zero(), 'quantity can not be zero');
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 400, quartz: 200, tritium: 100 },
             ERC20s { steel: 800, quartz: 400, tritium: 200 },

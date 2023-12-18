@@ -154,6 +154,7 @@ fn lab_cost_test() {
 }
 
 #[test]
-fn test_multilevel_cost() {
-    CompoundCost::tritium(2, 18);
+fn test_compounds_multilevel_cost() {
+    // CompoundCost::quartz(8, 3).print();
+    CompoundCost::lab(8, 3).print();
 }

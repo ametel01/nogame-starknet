@@ -1,3 +1,4 @@
+use core::traits::Into;
 use nogame::libraries::math::pow;
 use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
 
@@ -8,7 +9,7 @@ impl Lab of LabTrait {
     fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
         let mut cost: ERC20s = Default::default();
 
-        let mut i = current_level + (quantity - current_level);
+        let mut i = current_level + quantity.into();
         loop {
             if i == current_level {
                 break;
