@@ -162,6 +162,7 @@ mod NoGame {
         defender_fleet_loss: Fleet,
         initial_defences: DefencesLevels,
         defences_loss: DefencesLevels,
+        loot: ERC20s,
         debris: Debris,
     }
 
@@ -177,7 +178,7 @@ mod NoGame {
         self.universe_start_time.write(get_block_timestamp());
     }
 
-    #[abi(embed_v0)]
+    #[external(v0)]
     impl NoGame of INoGame<ContractState> {
         fn initializer(
             ref self: ContractState,
@@ -879,17 +880,18 @@ mod NoGame {
 
             self.update_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
+            let mut loot_amount: ERC20s = Default::default();
 
             if f1.is_zero() {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
                 let spendable = self.get_spendable_resources(mission.destination);
                 let storage = fleet::get_fleet_cargo_capacity(f1);
-                let loot_amount = fleet::load_resources(spendable, storage);
+                loot_amount = fleet::load_resources(spendable, storage);
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
-                        self.erc721.read().owner_of(mission.destination.into()), loot_amount
+                        self.erc721.read().ownerOf(mission.destination.into()), loot_amount
                     );
                 self.receive_resources_erc20(get_caller_address(), loot_amount);
                 self.fleet_return_planet(origin, f1);
@@ -918,6 +920,7 @@ mod NoGame {
                     defender_loss,
                     defences,
                     defences_loss,
+                    loot_amount,
                     total_debris
                 );
         }
@@ -1039,7 +1042,7 @@ mod NoGame {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
-            let planet_owner = self.erc721.read().owner_of(planet_id.into());
+            let planet_owner = self.erc721.read().ownerOf(planet_id.into());
             let steel = self.steel.read().balance_of(planet_owner).low / E18;
             let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
             let tritium = self.tritium.read().balance_of(planet_owner).low / E18;
@@ -1843,6 +1846,7 @@ mod NoGame {
             defender_fleet_loss: Fleet,
             initial_defences: DefencesLevels,
             defences_loss: DefencesLevels,
+            loot: ERC20s,
             debris: Debris
         ) {
             self
@@ -1860,6 +1864,7 @@ mod NoGame {
                             defender_fleet_loss,
                             initial_defences,
                             defences_loss,
+                            loot,
                             debris
                         }
                     )

@@ -234,7 +234,7 @@ mod ERC20NG {
             assert(!sender.is_zero(), Errors::TRANSFER_FROM_ZERO);
             assert(!recipient.is_zero(), Errors::TRANSFER_TO_ZERO);
             assert(
-                !self.ERC20_nft.read().balance_of(recipient).is_zero(),
+                !self.ERC20_nft.read().balanceOf(recipient).is_zero(),
                 Errors::RECEPIENT_NOT_PLANET_OWNER
             );
             self.ERC20_balances.write(sender, self.ERC20_balances.read(sender) - amount);
