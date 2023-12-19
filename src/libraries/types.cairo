@@ -420,3 +420,33 @@ impl MissionPrint of PrintTrait<Mission> {
     }
 }
 
+mod Names {
+    const STEEL: felt252 = 1;
+    const QUARTZ: felt252 = 2;
+    const TRITIUM: felt252 = 3;
+    const ENERGY_PLANT: felt252 = 4;
+    const LAB: felt252 = 5;
+    const DOCKYARD: felt252 = 6;
+    const ENERGY_TECH: felt252 = 7;
+    const DIGITAL: felt252 = 8;
+    const BEAM_TECH: felt252 = 9;
+    const ARMOUR: felt252 = 10;
+    const ION: felt252 = 11;
+    const PLASMA_TECH: felt252 = 12;
+    const WEAPONS: felt252 = 13;
+    const SHIELD: felt252 = 14;
+    const SPACETIME: felt252 = 15;
+    const COMBUSTION: felt252 = 16;
+    const THRUST: felt252 = 17;
+    const WARP: felt252 = 18;
+    const CARRIER: felt252 = 19;
+    const SCRAPER: felt252 = 20;
+    const CELESTIA: felt252 = 21;
+    const SPARROW: felt252 = 22;
+    const FRIGATE: felt252 = 23;
+    const ARMADE: felt252 = 24;
+    const BLASTER: felt252 = 25;
+    const BEAM: felt252 = 26;
+    const ASTRAL: felt252 = 27;
+    const PLASMA: felt252 = 28;
+}
