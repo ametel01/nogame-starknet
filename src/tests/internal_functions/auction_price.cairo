@@ -1,4 +1,4 @@
-use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
 use snforge_std::PrintTrait;

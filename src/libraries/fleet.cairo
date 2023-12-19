@@ -1,11 +1,11 @@
 use core::array::ArrayTrait;
-use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128};
-use cubit::f64::types::fixed::{FixedTrait as FixedU64, ONE};
 
 use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::core::{exp, sqrt};
 use snforge_std::PrintTrait;
 
 #[inline(always)]
@@ -415,13 +415,12 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
 #[inline(always)]
 // TODO: implement speed modifier.
 fn get_flight_time(speed: u32, distance: u32) -> u64 {
-    let f_speed = FixedU64::new_unscaled(speed.into(), false);
-    let f_distance = FixedU64::new_unscaled(distance.into(), false);
-    let multiplier = FixedU64::new_unscaled(3500, false);
-    let ten = FixedU64::new_unscaled(10, false);
-    let res = ten
-        + multiplier * FixedU64::sqrt(FixedU64::new_unscaled(10, false) * f_distance / f_speed);
-    res.mag / ONE
+    let f_speed = FixedTrait::new_unscaled(speed.into(), false);
+    let f_distance = FixedTrait::new_unscaled(distance.into(), false);
+    let multiplier = FixedTrait::new_unscaled(3500, false);
+    let ten = FixedTrait::new_unscaled(10, false);
+    let res = ten + multiplier * sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
+    (res.mag / ONE).try_into().expect('get flight time failed')
 }
 
 #[inline(always)]
@@ -612,14 +611,14 @@ const _0_02: u128 = 368934881474191000;
 // loss = 100 * (1 - math.exp(-k * time_seconds / 60))
 fn calculate_fleet_loss(time_seconds: u64) -> u32 {
     ((FixedTrait::new_unscaled(100_u128, false)
-        * (FixedTrait::new(ONE_u128, false)
+        * (FixedTrait::new(ONE, false)
             - FixedTrait::exp(
                 FixedTrait::new(_0_02, true)
                     * FixedTrait::new_unscaled(time_seconds.into(), false)
                     / FixedTrait::new_unscaled(60, false)
             )))
         .mag
-        / ONE_u128)
+        / ONE)
         .try_into()
         .expect('fleet loss calc failed')
 }

@@ -8,7 +8,7 @@ mod NoGame {
         SyscallResultTrait, class_hash::ClassHash
     };
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
@@ -23,10 +23,11 @@ mod NoGame {
     use nogame::libraries::fleet;
     use nogame::libraries::research::Lab;
     use nogame::libraries::positions;
-    use nogame::token::erc20::interface::{IERC20NGDispatcherTrait, IERC20NGDispatcher};
+    use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
+    use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {
@@ -45,9 +46,9 @@ mod NoGame {
         last_active: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
-        steel: IERC20NGDispatcher,
-        quartz: IERC20NGDispatcher,
-        tritium: IERC20NGDispatcher,
+        steel: IERC20NoGameDispatcher,
+        quartz: IERC20NoGameDispatcher,
+        tritium: IERC20NoGameDispatcher,
         ETH: IERC20CamelDispatcher,
         // Infrastructures.
         steel_mine_level: LegacyMap::<u16, u8>,
@@ -196,12 +197,11 @@ mod NoGame {
             uni_speed: u128,
             token_price: u128,
         ) {
-            // NOTE: uncomment the following after testing with katana.
             assert(!self.initialized.read(), 'already initialized');
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.steel.write(IERC20NGDispatcher { contract_address: steel });
-            self.quartz.write(IERC20NGDispatcher { contract_address: quartz });
-            self.tritium.write(IERC20NGDispatcher { contract_address: tritium });
+            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.receiver.write(receiver);
             self.uni_speed.write(uni_speed);

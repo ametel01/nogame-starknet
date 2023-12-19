@@ -3,8 +3,8 @@ name: Test
 on: [push, pull_request]
 
 env:
-  SCARB_VERSION: 2.3.1
-  STARKNET_FOUNDRY_VERSION: 0.11.0
+  SCARB_VERSION: 2.4.0
+  SNFORGE_VERSION: 0.13.0
 
 jobs:
   check:
@@ -13,12 +13,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: software-mansion/setup-scarb@v1
         with:
-          scarb-version: 2.3.1
-      - name: Install starknet foundry
-        run: |
-          curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh
-          snfoundryup
-        
-
+          scarb-version: ${{ env.SCARB_VERSION }}
+      - uses: foundry-rs/setup-snfoundry@v2
+        with:
+          starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
       - name: Run cairo tests
-        run: snforge test
+        run: 
+          snforge test

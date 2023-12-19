@@ -4,12 +4,12 @@ use starknet::{
     get_caller_address, class_hash::ClassHash
 };
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-
-use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::PRICE;
-use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
+use nogame::token::erc20::erc20_ng::ERC20NoGame;
 use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
@@ -27,9 +27,9 @@ const YEAR: u64 = 31_557_600;
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
     erc721: IERC721NoGameDispatcher,
-    steel: IERC20NGDispatcher,
-    quartz: IERC20NGDispatcher,
-    tritium: IERC20NGDispatcher,
+    steel: IERC20NoGameDispatcher,
+    quartz: IERC20NoGameDispatcher,
+    tritium: IERC20NoGameDispatcher,
     eth: IERC20CamelDispatcher,
     game: INoGameDispatcher,
 }
@@ -62,7 +62,7 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into(), DEPLOYER().into()];
     let _erc721 = contract.deploy(@calldata).expect('failed erc721');
 
-    let contract = declare('ERC20NG');
+    let contract = declare('ERC20NoGame');
     let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into(), _erc721.into()];
     let _steel = contract.deploy(@calldata).expect('failed steel');
 
@@ -78,9 +78,9 @@ fn set_up() -> Dispatchers {
 
     Dispatchers {
         erc721: IERC721NoGameDispatcher { contract_address: _erc721 },
-        steel: IERC20NGDispatcher { contract_address: _steel },
-        quartz: IERC20NGDispatcher { contract_address: _quartz },
-        tritium: IERC20NGDispatcher { contract_address: _tritium },
+        steel: IERC20NoGameDispatcher { contract_address: _steel },
+        quartz: IERC20NoGameDispatcher { contract_address: _quartz },
+        tritium: IERC20NoGameDispatcher { contract_address: _tritium },
         eth: IERC20CamelDispatcher { contract_address: _eth },
         game: INoGameDispatcher { contract_address: _game }
     }
