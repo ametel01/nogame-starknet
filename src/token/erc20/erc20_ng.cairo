@@ -8,13 +8,10 @@ mod ERC20NoGame {
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
-    #[abi(embed_v0)]
     impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
 
-    #[abi(embed_v0)]
     impl SafeAllowanceImpl = ERC20Component::SafeAllowanceImpl<ContractState>;
 
-    #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
 
     impl InternalImpl = ERC20Component::InternalImpl<ContractState>;
@@ -47,6 +44,7 @@ mod ERC20NoGame {
         self.nft.write(IERC721NoGameDispatcher { contract_address: nft_address });
     }
 
+    #[external(v0)]
     impl ERC20NoGameImpl of IERC20NoGame<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self.erc20.name()
