@@ -3,11 +3,15 @@ name = "nogame"
 version = "0.1.0"
 authors = ["ametel01"]
 license = "MIT"
+edition = "2023_01"
+
+[scripts]
+test = "snforge test"
 
 [dependencies]
+starknet = "2.4.0"
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.8.0" }
-cubit = {git ="https://github.com/influenceth/cubit.git", rev="b459053"}
-starknet = "2.3.1"
+nogame_fixed = {git = "https://github.com/ametel01/nogame-fixed.git", rev="5317597"}
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.12.0" }

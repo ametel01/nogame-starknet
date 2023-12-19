@@ -8,7 +8,7 @@ mod NoGame {
         SyscallResultTrait, class_hash::ClassHash
     };
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
@@ -27,6 +27,7 @@ mod NoGame {
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
+    use snforge_std::PrintTrait;
 
     use snforge_std::PrintTrait;
 
