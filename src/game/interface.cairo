@@ -2,7 +2,7 @@ use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    HostileMission
+    HostileMission, UpgradeType, BuildType
 };
 
 #[starknet::interface]
@@ -26,36 +26,10 @@ trait INoGame<TState> {
     // Write functions
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
-    fn steel_mine_upgrade(ref self: TState, quantity: u8);
-    fn quartz_mine_upgrade(ref self: TState, quantity: u8);
-    fn tritium_mine_upgrade(ref self: TState, quantity: u8);
-    fn energy_plant_upgrade(ref self: TState, quantity: u8);
-    fn dockyard_upgrade(ref self: TState, quantity: u8);
-    fn lab_upgrade(ref self: TState, quantity: u8);
-    fn energy_innovation_upgrade(ref self: TState, quantity: u8);
-    fn digital_systems_upgrade(ref self: TState, quantity: u8);
-    fn beam_technology_upgrade(ref self: TState, quantity: u8);
-    fn armour_innovation_upgrade(ref self: TState, quantity: u8);
-    fn ion_systems_upgrade(ref self: TState, quantity: u8);
-    fn plasma_engineering_upgrade(ref self: TState, quantity: u8);
-    fn weapons_development_upgrade(ref self: TState, quantity: u8);
-    fn shield_tech_upgrade(ref self: TState, quantity: u8);
-    fn spacetime_warp_upgrade(ref self: TState, quantity: u8);
-    fn combustive_engine_upgrade(ref self: TState, quantity: u8);
-    fn thrust_propulsion_upgrade(ref self: TState, quantity: u8);
-    fn warp_drive_upgrade(ref self: TState, quantity: u8);
-    // Dockyard functions
-    fn carrier_build(ref self: TState, quantity: u32);
-    fn scraper_build(ref self: TState, quantity: u32);
-    fn celestia_build(ref self: TState, quantity: u32);
-    fn sparrow_build(ref self: TState, quantity: u32);
-    fn frigate_build(ref self: TState, quantity: u32);
-    fn armade_build(ref self: TState, quantity: u32);
-    // Defences functions
-    fn blaster_build(ref self: TState, quantity: u32);
-    fn beam_build(ref self: TState, quantity: u32);
-    fn astral_launcher_build(ref self: TState, quantity: u32);
-    fn plasma_projector_build(ref self: TState, quantity: u32);
+    fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
+    fn process_tech_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
+    fn process_ship_build(ref self: TState, component: BuildType, quantity: u32);
+    fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
     // Fleet functions
     fn send_fleet(
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
