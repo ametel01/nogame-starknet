@@ -438,7 +438,7 @@ enum UpgradeType {
     Shield,
     Spacetime,
     Combustion,
-    Thrusts,
+    Thrust,
     Warp
 }
 
@@ -449,16 +449,16 @@ trait UpgradeTrait<TState, UpgradeType> {
 
 #[derive(Drop, Serde)]
 enum BuildType {
-    Carrier: felt252,
-    Scraper: felt252,
-    Celestia: felt252,
-    Sparrow: felt252,
-    Frigate: felt252,
-    Armade: felt252,
-    Blaster: felt252,
-    Beam: felt252,
-    Astral: felt252,
-    Plasma: felt252
+    Carrier,
+    Scraper,
+    Celestia,
+    Sparrow,
+    Frigate,
+    Armade,
+    Blaster,
+    Beam,
+    Astral,
+    Plasma
 }
 
 mod Names {

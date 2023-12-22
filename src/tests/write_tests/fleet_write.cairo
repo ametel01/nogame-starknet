@@ -8,7 +8,9 @@ use snforge_std::{
 use nogame::game::main::NoGame;
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
+use nogame::libraries::types::{
+    Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels, BuildType, UpgradeType
+};
 use nogame::libraries::fleet;
 
 use nogame::tests::utils::{
@@ -31,11 +33,11 @@ fn test_send_fleet_success() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(1);
-    dsp.game.scraper_build(1);
-    dsp.game.sparrow_build(1);
-    dsp.game.frigate_build(1);
-    dsp.game.armade_build(1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 1);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 1);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 1);
+    dsp.game.process_ship_build(BuildType::Frigate(()), 1);
+    dsp.game.process_ship_build(BuildType::Armade(()), 1);
 
     let p2_position = dsp.game.get_planet_position(2);
 
@@ -95,7 +97,7 @@ fn test_send_fleet_fails_no_planet_at_destination() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 1);
 
     let p2_position = dsp.game.get_planet_position(2);
 
@@ -116,7 +118,7 @@ fn test_send_fleet_fails_origin_is_destination() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 1);
 
     let p1_position = dsp.game.get_planet_position(1);
 
@@ -141,7 +143,7 @@ fn test_send_fleet_fails_noob_protection() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(10);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
 
     let p2_position = dsp.game.get_planet_position(2);
 
@@ -167,7 +169,7 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(10);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
 
     let p2_position = dsp.game.get_planet_position(2);
 
@@ -189,13 +191,13 @@ fn test_collect_debris_success() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.plasma_projector_build(1);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(10);
-    dsp.game.scraper_build(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 1);
     let p2_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -215,7 +217,8 @@ fn test_collect_debris_success() {
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.game.get_spendable_resources(1);
     dsp.game.collect_debris(1);
-    assert(dsp.game.get_ships_levels(1).scraper == 1, 'wrong scraper back');
+    let scraper_back = dsp.game.get_ships_levels(1).scraper;
+    assert!(scraper_back == 1, "scraper back are {}, it should be 1", scraper_back);
     let resources_after = dsp.game.get_spendable_resources(1);
     assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
     assert(
@@ -236,14 +239,14 @@ fn test_collect_debris_own_planet() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.plasma_projector_build(1);
-    dsp.game.scraper_build(1);
-    dsp.game.digital_systems_upgrade(1);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 1);
     let p2_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -285,13 +288,13 @@ fn test_collect_debris_fleet_decay() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.plasma_projector_build(1);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(100);
-    dsp.game.scraper_build(10);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 100);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 10);
     let p2_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -339,9 +342,9 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(10);
-    dsp.game.scraper_build(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 1);
     let p2_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -365,12 +368,12 @@ fn test_send_fleet_debris_fails_no_scrapers() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.plasma_projector_build(1);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(2);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 2);
     let p1_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -396,13 +399,13 @@ fn test_send_fleet_debris_fails_not_only_scrapers() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.plasma_projector_build(1);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(1);
-    dsp.game.carrier_build(2);
-    dsp.game.scraper_build(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 2);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 1);
     let p1_position = dsp.game.get_planet_position(2);
 
     let mut fleet: Fleet = Default::default();
@@ -428,12 +431,12 @@ fn test_attack_planet() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.celestia_build(100);
+    dsp.game.process_ship_build(BuildType::Celestia(()), 100);
     let defences_before = dsp.game.get_defences_levels(2);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.armade_build(10);
+    dsp.game.process_ship_build(BuildType::Armade(()), 10);
     let fleetA_before = dsp.game.get_ships_levels(1);
 
     let p2_position = dsp.game.get_planet_position(2);
@@ -485,7 +488,7 @@ fn test_attack_planet_fleet_decay() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.carrier_build(10);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
     let fleetA_before = dsp.game.get_ships_levels(1);
 
     let p2_position = dsp.game.get_planet_position(2);
@@ -527,7 +530,7 @@ fn test_attack_planet_fails_empty_mission() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.sparrow_build(1);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 1);
     let fleetA_before = dsp.game.get_ships_levels(1);
 
     let p2_position = dsp.game.get_planet_position(2);
@@ -556,7 +559,7 @@ fn test_attack_planet_fails_destination_not_reached() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.sparrow_build(1);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 1);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
 
@@ -581,7 +584,7 @@ fn test_recall_fleet() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.sparrow_build(1);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 1);
     let fleet_before = dsp.game.get_ships_levels(1);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
@@ -612,7 +615,7 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.sparrow_build(1);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 1);
     let fleet_before = dsp.game.get_ships_levels(1);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
