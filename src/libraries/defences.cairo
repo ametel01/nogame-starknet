@@ -2,11 +2,11 @@ use nogame::libraries::types::{ERC20s, TechLevels};
 
 #[generate_trait]
 impl Defences of DefencesTrait {
-    fn get_defences_cost(quantity: u32, _steel: u128, _quartz: u128, _tritium: u128) -> ERC20s {
+    fn get_defences_cost(quantity: u32, base_cost: ERC20s) -> ERC20s {
         ERC20s {
-            steel: _steel * quantity.into(),
-            quartz: _quartz * quantity.into(),
-            tritium: _tritium * quantity.into()
+            steel: base_cost.steel * quantity.into(),
+            quartz: base_cost.quartz * quantity.into(),
+            tritium: base_cost.tritium * quantity.into()
         }
     }
 

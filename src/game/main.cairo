@@ -15,7 +15,7 @@ mod NoGame {
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names
+        DAY, HOUR, Names, UpgradeType, BuildType
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -44,6 +44,7 @@ mod NoGame {
         universe_start_time: u64,
         resources_spent: LegacyMap::<u16, u128>,
         last_active: LegacyMap::<u16, u64>,
+        resources_timer: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
         steel: IERC20NoGameDispatcher,
@@ -51,40 +52,13 @@ mod NoGame {
         tritium: IERC20NoGameDispatcher,
         ETH: IERC20CamelDispatcher,
         // Infrastructures.
-        steel_mine_level: LegacyMap::<u16, u8>,
-        quartz_mine_level: LegacyMap::<u16, u8>,
-        tritium_mine_level: LegacyMap::<u16, u8>,
-        energy_plant_level: LegacyMap::<u16, u8>,
-        dockyard_level: LegacyMap::<u16, u8>,
-        lab_level: LegacyMap::<u16, u8>,
-        resources_timer: LegacyMap::<u16, u64>,
+        compounds_level: LegacyMap::<(u16, felt252), u8>,
         // Technologies
-        energy_innovation_level: LegacyMap::<u16, u8>,
-        digital_systems_level: LegacyMap::<u16, u8>,
-        beam_technology_level: LegacyMap::<u16, u8>,
-        armour_innovation_level: LegacyMap::<u16, u8>,
-        ion_systems_level: LegacyMap::<u16, u8>,
-        plasma_engineering_level: LegacyMap::<u16, u8>,
-        stellar_physics_level: LegacyMap::<u16, u8>,
-        weapons_development_level: LegacyMap::<u16, u8>,
-        shield_tech_level: LegacyMap::<u16, u8>,
-        spacetime_warp_level: LegacyMap::<u16, u8>,
-        combustive_engine_level: LegacyMap::<u16, u8>,
-        thrust_propulsion_level: LegacyMap::<u16, u8>,
-        warp_drive_level: LegacyMap::<u16, u8>,
+        techs_level: LegacyMap::<(u16, felt252), u8>,
         // Ships
-        carrier_available: LegacyMap::<u16, u32>,
-        scraper_available: LegacyMap::<u16, u32>,
-        celestia_available: LegacyMap::<u16, u32>,
-        sparrow_available: LegacyMap::<u16, u32>,
-        frigate_available: LegacyMap::<u16, u32>,
-        armade_available: LegacyMap::<u16, u32>,
+        ships_level: LegacyMap::<(u16, felt252), u32>,
         // Defences
-        blaster_available: LegacyMap::<u16, u32>,
-        beam_available: LegacyMap::<u16, u32>,
-        astral_available: LegacyMap::<u16, u32>,
-        plasma_available: LegacyMap::<u16, u32>,
-        // Fleet
+        defences_level: LegacyMap::<(u16, felt252), u32>,
         active_missions: LegacyMap::<(u16, u32), Mission>,
         active_missions_len: LegacyMap<u16, usize>,
         hostile_missions: LegacyMap<(u16, u32), HostileMission>,
@@ -253,663 +227,51 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         Mines Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn steel_mine_upgrade(ref self: ContractState, quantity: u8) {
+        fn process_compound_upgrade(ref self: ContractState, component: UpgradeType, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
-            let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::steel(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .steel_mine_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
+            let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
             self
                 .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::STEEL, spent: cost
-                        }
-                    )
-                )
-        }
-        fn quartz_mine_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let current_level = self.quartz_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::quartz(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .quartz_mine_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::QUARTZ, spent: cost
-                        }
-                    )
-                )
-        }
-        fn tritium_mine_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let current_level = self.steel_mine_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .tritium_mine_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::TRITIUM, spent: cost
-                        }
-                    )
-                )
-        }
-        fn energy_plant_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let current_level = self.energy_plant_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::energy(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .energy_plant_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::ENERGY_PLANT, spent: cost
-                        }
-                    )
+                    CompoundSpent { planet_id: planet_id, compound_name: Names::STEEL, spent: cost }
                 )
         }
 
-        fn dockyard_upgrade(ref self: ContractState, quantity: u8) {
+        fn process_tech_upgrade(ref self: ContractState, component: UpgradeType, quantity: u8) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
-            let current_level = self.dockyard_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::dockyard(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .dockyard_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
+            let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::DOCKYARD, spent: cost
-                        }
-                    )
-                )
-        }
-        fn lab_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let current_level = self.lab_level.read(planet_id);
-            let cost: ERC20s = CompoundCost::lab(current_level, quantity);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self
-                .lab_level
-                .write(planet_id, current_level + quantity.try_into().expect('u32 into u8 failed'));
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .emit(
-                    Event::CompoundSpent(
-                        CompoundSpent {
-                            planet_id: planet_id, compound_name: Names::LAB, spent: cost
-                        }
-                    )
-                )
+            self.emit(TechSpent { planet_id: planet_id, tech_name: Names::STEEL, spent: cost })
         }
 
-        /////////////////////////////////////////////////////////////////////
-        //                         Research Functions                                
-        /////////////////////////////////////////////////////////////////////
-        fn energy_innovation_upgrade(ref self: ContractState, quantity: u8) {
+        fn process_ship_build(ref self: ContractState, component: BuildType, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
+            let dockyard_level = self.compounds_level.read((planet_id, Names::DOCKYARD));
             let techs = self.get_tech_levels(planet_id);
-            Lab::energy_innovation_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().energy;
-            let cost = Lab::get_tech_cost(techs.energy, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
+            let cost = self
+                .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .energy_innovation_level
-                .write(planet_id, techs.energy + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent {
-                            planet_id: planet_id, tech_name: Names::ENERGY_TECH, spent: cost
-                        }
-                    )
-                )
-        }
-        fn digital_systems_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::digital_systems_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().digital;
-            let cost = Lab::get_tech_cost(techs.digital, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .digital_systems_level
-                .write(planet_id, techs.digital + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::DIGITAL, spent: cost }
-                    )
-                )
-        }
-        fn beam_technology_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::beam_technology_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().beam;
-            let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .beam_technology_level
-                .write(planet_id, techs.beam + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::BEAM_TECH, spent: cost }
-                    )
-                )
-        }
-        fn armour_innovation_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::armour_innovation_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().armour;
-            let cost = Lab::get_tech_cost(techs.armour, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .armour_innovation_level
-                .write(planet_id, techs.armour + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::ARMOUR, spent: cost }
-                    )
-                )
-        }
-        fn ion_systems_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::ion_systems_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().ion;
-            let cost = Lab::get_tech_cost(techs.ion, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .ion_systems_level
-                .write(planet_id, techs.ion + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::ION, spent: cost }
-                    )
-                )
-        }
-        fn plasma_engineering_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::plasma_engineering_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().plasma;
-            let cost = Lab::get_tech_cost(techs.plasma, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .plasma_engineering_level
-                .write(planet_id, techs.plasma + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent {
-                            planet_id: planet_id, tech_name: Names::PLASMA_TECH, spent: cost
-                        }
-                    )
-                )
         }
 
-        fn weapons_development_upgrade(ref self: ContractState, quantity: u8) {
+        fn process_defence_build(ref self: ContractState, component: BuildType, quantity: u32) {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
+            let dockyard_level = self.compounds_level.read((planet_id, Names::DOCKYARD));
             let techs = self.get_tech_levels(planet_id);
-            Lab::weapons_development_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().weapons;
-            let cost = Lab::get_tech_cost(techs.weapons, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
+            let cost = self
+                .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
             self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .weapons_development_level
-                .write(planet_id, techs.weapons + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::WEAPONS, spent: cost }
-                    )
-                )
-        }
-        fn shield_tech_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::shield_tech_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().shield;
-            let cost = Lab::get_tech_cost(techs.shield, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .shield_tech_level
-                .write(planet_id, techs.shield + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::SHIELD, spent: cost }
-                    )
-                )
-        }
-        fn spacetime_warp_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::spacetime_warp_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().spacetime;
-            let cost = Lab::get_tech_cost(techs.spacetime, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .spacetime_warp_level
-                .write(
-                    planet_id, techs.spacetime + quantity.try_into().expect('u32 into u8 failed')
-                );
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::SPACETIME, spent: cost }
-                    )
-                )
-        }
-        fn combustive_engine_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::combustive_engine_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().combustion;
-            let cost = Lab::get_tech_cost(techs.combustion, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .combustive_engine_level
-                .write(
-                    planet_id, techs.combustion + quantity.try_into().expect('u32 into u8 failed')
-                );
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent {
-                            planet_id: planet_id, tech_name: Names::COMBUSTION, spent: cost
-                        }
-                    )
-                )
-        }
-        fn thrust_propulsion_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::thrust_propulsion_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().thrust;
-            let cost = Lab::get_tech_cost(techs.thrust, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .thrust_propulsion_level
-                .write(planet_id, techs.thrust + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::THRUST, spent: cost }
-                    )
-                )
-        }
-        fn warp_drive_upgrade(ref self: ContractState, quantity: u8) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let lab_level = self.lab_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Lab::warp_drive_requirements_check(lab_level, techs);
-            let base_cost: ERC20s = Lab::base_tech_costs().warp;
-            let cost = Lab::get_tech_cost(techs.warp, quantity, base_cost);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .warp_drive_level
-                .write(planet_id, techs.warp + quantity.try_into().expect('u32 into u8 failed'));
-            self
-                .emit(
-                    Event::TechSpent(
-                        TechSpent { planet_id: planet_id, tech_name: Names::WARP, spent: cost }
-                    )
-                )
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        //                         Dockyard Functions                                
-        /////////////////////////////////////////////////////////////////////
-        fn carrier_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::carrier_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).carrier);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .carrier_available
-                .write(planet_id, self.carrier_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::CARRIER, spent: cost }
-                    )
-                )
-        }
-        fn scraper_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::scraper_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).scraper);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .scraper_available
-                .write(planet_id, self.scraper_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::SCRAPER, spent: cost }
-                    )
-                )
-        }
-        fn celestia_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::celestia_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).celestia);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .celestia_available
-                .write(planet_id, self.celestia_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::CELESTIA, spent: cost }
-                    )
-                )
-        }
-        fn sparrow_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::sparrow_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).sparrow);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .sparrow_available
-                .write(planet_id, self.sparrow_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::SPARROW, spent: cost }
-                    )
-                )
-        }
-        fn frigate_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::frigate_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).frigate);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .frigate_available
-                .write(planet_id, self.frigate_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::FRIGATE, spent: cost }
-                    )
-                )
-        }
-        fn armade_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Dockyard::armade_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).armade);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .armade_available
-                .write(planet_id, self.armade_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::ARMADE, spent: cost }
-                    )
-                )
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        //                         Defences Functions                                
-        /////////////////////////////////////////////////////////////////////
-        fn blaster_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Defences::blaster_requirements_check(dockyard_level, techs);
-            let cost = Defences::get_defences_cost(quantity, 2000, 0, 0);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .blaster_available
-                .write(planet_id, self.blaster_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::DefenceSpent(
-                        DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::BLASTER, spent: cost
-                        }
-                    )
-                )
-        }
-        fn beam_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Defences::beam_requirements_check(dockyard_level, techs);
-            let cost = Defences::get_defences_cost(quantity, 6000, 2000, 0);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self.beam_available.write(planet_id, self.beam_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::DefenceSpent(
-                        DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::BEAM, spent: cost
-                        }
-                    )
-                )
-        }
-        fn astral_launcher_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Defences::astral_launcher_requirements_check(dockyard_level, techs);
-            let cost = Defences::get_defences_cost(quantity, 20000, 15000, 2000);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .astral_available
-                .write(planet_id, self.astral_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::DefenceSpent(
-                        DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::ASTRAL, spent: cost
-                        }
-                    )
-                )
-        }
-        fn plasma_projector_build(ref self: ContractState, quantity: u32) {
-            let caller = get_caller_address();
-            self._collect_resources(caller);
-            let planet_id = self.get_owned_planet(caller);
-            let dockyard_level = self.dockyard_level.read(planet_id);
-            let techs = self.get_tech_levels(planet_id);
-            Defences::plasma_beam_requirements_check(dockyard_level, techs);
-            let cost = Defences::get_defences_cost(quantity, 50000, 50000, 30000);
-            self.check_enough_resources(caller, cost);
-            self.pay_resources_erc20(caller, cost);
-            self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self
-                .plasma_available
-                .write(planet_id, self.plasma_available.read(planet_id) + quantity);
-            self
-                .emit(
-                    Event::DefenceSpent(
-                        DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::PLASMA, spent: cost
-                        }
-                    )
-                )
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -1048,7 +410,7 @@ mod NoGame {
                 .planet_debris_field
                 .write(mission.destination, current_debries_field + total_debris);
 
-            self.update_fleet_levels_after_attack(mission.destination, f2);
+            self.update_defender_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
             let mut loot_amount: ERC20s = Default::default();
 
@@ -1141,8 +503,11 @@ mod NoGame {
 
             self.receive_resources_erc20(caller, erc20);
             self
-                .scraper_available
-                .write(origin, self.scraper_available.read(origin) + collector_fleet.scraper);
+                .ships_level
+                .write(
+                    (origin, Names::SCRAPER),
+                    self.ships_level.read((origin, Names::SCRAPER)) + collector_fleet.scraper
+                );
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
             self.active_missions_len.write(origin, active_missions - 1);
@@ -1224,16 +589,16 @@ mod NoGame {
             let position = self.planet_position.read(planet_id);
             let temp = self.calculate_avg_temperature(position.orbit);
             let speed = self.uni_speed.read();
-            let steel = Production::steel(self.steel_mine_level.read(planet_id))
+            let steel = Production::steel(self.compounds_level.read((planet_id, Names::STEEL)))
                 * speed
                 * time_elapsed.into()
                 / HOUR.into();
-            let quartz = Production::quartz(self.quartz_mine_level.read(planet_id))
+            let quartz = Production::quartz(self.compounds_level.read((planet_id, Names::QUARTZ)))
                 * speed
                 * time_elapsed.into()
                 / HOUR.into();
             let tritium = Production::tritium(
-                self.tritium_mine_level.read(planet_id), temp, self.uni_speed.read()
+                self.compounds_level.read((planet_id, Names::TRITIUM)), temp, speed
             )
                 * time_elapsed.into()
                 / HOUR.into();
@@ -1241,10 +606,11 @@ mod NoGame {
         }
 
         fn get_energy_available(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            let gross_production = Production::energy(compounds_levels.energy);
-            let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
-            let energy_required = (self.calculate_energy_consumption(compounds_levels));
+            let compounds = self.get_compounds_levels(planet_id);
+            let gross_production = Production::energy(compounds.energy);
+            let celestia_production = (self.ships_level.read((planet_id, Names::CELESTIA)).into()
+                * 15);
+            let energy_required = (self.calculate_energy_consumption(planet_id));
             if (gross_production + celestia_production < energy_required) {
                 return 0;
             } else {
@@ -1253,23 +619,24 @@ mod NoGame {
         }
 
         fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
-            (CompoundsLevels {
-                steel: self.steel_mine_level.read(planet_id),
-                quartz: self.quartz_mine_level.read(planet_id),
-                tritium: self.tritium_mine_level.read(planet_id),
-                energy: self.energy_plant_level.read(planet_id),
-                lab: self.lab_level.read(planet_id),
-                dockyard: self.dockyard_level.read(planet_id)
-            })
+            CompoundsLevels {
+                steel: self.compounds_level.read((planet_id, Names::STEEL)),
+                quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
+                tritium: self.compounds_level.read((planet_id, Names::TRITIUM)),
+                energy: self.compounds_level.read((planet_id, Names::ENERGY_PLANT)),
+                lab: self.compounds_level.read((planet_id, Names::LAB)),
+                dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
+            }
         }
 
         fn get_compounds_upgrade_cost(self: @ContractState, planet_id: u16) -> CompoundsCost {
-            let steel = CompoundCost::steel(self.steel_mine_level.read(planet_id), 1);
-            let quartz = CompoundCost::quartz(self.quartz_mine_level.read(planet_id), 1);
-            let tritium = CompoundCost::tritium(self.tritium_mine_level.read(planet_id), 1);
-            let energy = CompoundCost::energy(self.energy_plant_level.read(planet_id), 1);
-            let lab = CompoundCost::lab(self.lab_level.read(planet_id), 1);
-            let dockyard = CompoundCost::dockyard(self.dockyard_level.read(planet_id), 1);
+            let compounds = self.get_compounds_levels(planet_id);
+            let steel = CompoundCost::steel(compounds.steel, 1);
+            let quartz = CompoundCost::quartz(compounds.quartz, 1);
+            let tritium = CompoundCost::tritium(compounds.tritium, 1);
+            let energy = CompoundCost::energy(compounds.energy, 1);
+            let lab = CompoundCost::lab(compounds.lab, 1);
+            let dockyard = CompoundCost::dockyard(compounds.dockyard, 1);
             CompoundsCost {
                 steel: steel,
                 quartz: quartz,
@@ -1281,20 +648,19 @@ mod NoGame {
         }
 
         fn get_energy_for_upgrade(self: @ContractState, planet_id: u16) -> EnergyCost {
-            let steel = Consumption::base(self.steel_mine_level.read(planet_id) + 1)
-                - Consumption::base(self.steel_mine_level.read(planet_id));
-            let quartz = Consumption::base(self.quartz_mine_level.read(planet_id) + 1)
-                - Consumption::base(self.quartz_mine_level.read(planet_id));
-            let tritium = Consumption::tritium(self.tritium_mine_level.read(planet_id) + 1)
-                - Consumption::tritium(self.tritium_mine_level.read(planet_id));
+            let compounds = self.get_compounds_levels(planet_id);
+            let steel = Consumption::base(compounds.steel + 1) - Consumption::base(compounds.steel);
+            let quartz = Consumption::base(compounds.quartz + 1)
+                - Consumption::base(compounds.quartz);
+            let tritium = Consumption::tritium(compounds.tritium + 1)
+                - Consumption::tritium(compounds.tritium);
 
             EnergyCost { steel: steel, quartz: quartz, tritium: tritium }
         }
 
         fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
-            Production::energy(compounds_levels.energy + 1)
-                - Production::energy(compounds_levels.energy)
+            let compounds = self.get_compounds_levels(planet_id);
+            Production::energy(compounds.energy + 1) - Production::energy(compounds.energy)
         }
 
         fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
@@ -1313,16 +679,16 @@ mod NoGame {
 
         fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
             Fleet {
-                carrier: self.carrier_available.read(planet_id),
-                scraper: self.scraper_available.read(planet_id),
-                sparrow: self.sparrow_available.read(planet_id),
-                frigate: self.frigate_available.read(planet_id),
-                armade: self.armade_available.read(planet_id),
+                carrier: self.ships_level.read((planet_id, Names::CARRIER)),
+                scraper: self.ships_level.read((planet_id, Names::SCRAPER)),
+                sparrow: self.ships_level.read((planet_id, Names::SPARROW)),
+                frigate: self.ships_level.read((planet_id, Names::FRIGATE)),
+                armade: self.ships_level.read((planet_id, Names::ARMADE)),
             }
         }
 
         fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
-            self.celestia_available.read(planet_id)
+            self.defences_level.read((planet_id, Names::CELESTIA))
         }
 
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
@@ -1338,11 +704,11 @@ mod NoGame {
 
         fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
             DefencesLevels {
-                celestia: self.celestia_available.read(planet_id),
-                blaster: self.blaster_available.read(planet_id),
-                beam: self.beam_available.read(planet_id),
-                astral: self.astral_available.read(planet_id),
-                plasma: self.plasma_available.read(planet_id),
+                celestia: self.defences_level.read((planet_id, Names::CELESTIA)),
+                blaster: self.defences_level.read((planet_id, Names::BLASTER)),
+                beam: self.defences_level.read((planet_id, Names::BEAM)),
+                astral: self.defences_level.read((planet_id, Names::ASTRAL)),
+                plasma: self.defences_level.read((planet_id, Names::PLASMA)),
             }
         }
 
@@ -1425,8 +791,451 @@ mod NoGame {
         }
     }
 
+
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn upgrade_component(
+            ref self: ContractState,
+            caller: ContractAddress,
+            planet_id: u16,
+            component: UpgradeType,
+            quantity: u8
+        ) -> ERC20s {
+            match component {
+                UpgradeType::SteelMine => {
+                    let current_level = self.compounds_level.read((planet_id, Names::STEEL));
+                    let cost: ERC20s = CompoundCost::steel(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::STEEL),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::QuartzMine => {
+                    let current_level = self.compounds_level.read((planet_id, Names::QUARTZ));
+                    let cost: ERC20s = CompoundCost::quartz(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::QUARTZ),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::TritiumMine => {
+                    let current_level = self.compounds_level.read((planet_id, Names::TRITIUM));
+                    let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::TRITIUM),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::EnergyPlant => {
+                    let current_level = self.compounds_level.read((planet_id, Names::ENERGY_PLANT));
+                    let cost: ERC20s = CompoundCost::energy(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::ENERGY_PLANT),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Lab => {
+                    let current_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let cost: ERC20s = CompoundCost::lab(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::LAB),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Dockyard => {
+                    let current_level = self.compounds_level.read((planet_id, Names::DOCKYARD));
+                    let cost: ERC20s = CompoundCost::dockyard(current_level, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .compounds_level
+                        .write(
+                            (planet_id, Names::DOCKYARD),
+                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::EnergyTech => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::energy_innovation_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().energy;
+                    let cost = Lab::get_tech_cost(techs.energy, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::ENERGY_TECH),
+                            techs.energy + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Digital => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::digital_systems_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().digital;
+                    let cost = Lab::get_tech_cost(techs.digital, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::DIGITAL),
+                            techs.digital + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::BeamTech => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::beam_technology_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().beam;
+                    let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self.update_planet_points(planet_id, cost);
+                    self.last_active.write(planet_id, get_block_timestamp());
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::BEAM_TECH),
+                            techs.beam + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Armour => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::armour_innovation_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().armour;
+                    let cost = Lab::get_tech_cost(techs.armour, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::ARMOUR),
+                            techs.beam + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Ion => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::ion_systems_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().ion;
+                    let cost = Lab::get_tech_cost(techs.ion, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::ION),
+                            techs.ion + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::PlasmaTech => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::plasma_engineering_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().plasma;
+                    let cost = Lab::get_tech_cost(techs.plasma, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::PLASMA_TECH),
+                            techs.plasma + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Weapons => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::weapons_development_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().weapons;
+                    let cost = Lab::get_tech_cost(techs.weapons, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::WEAPONS),
+                            techs.weapons + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Shield => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::shield_tech_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().shield;
+                    let cost = Lab::get_tech_cost(techs.shield, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::SHIELD),
+                            techs.shield + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Spacetime => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::spacetime_warp_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().spacetime;
+                    let cost = Lab::get_tech_cost(techs.spacetime, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::SPACETIME),
+                            techs.spacetime + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Combustion => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::combustive_engine_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().combustion;
+                    let cost = Lab::get_tech_cost(techs.combustion, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::COMBUSTION),
+                            techs.combustion + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Thrusts => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::thrust_propulsion_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().thrust;
+                    let cost = Lab::get_tech_cost(techs.thrust, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::THRUST),
+                            techs.thrust + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Warp => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::warp_drive_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().warp;
+                    let cost = Lab::get_tech_cost(techs.warp, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::WARP),
+                            techs.warp + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+            }
+        }
+
+        fn build_component(
+            ref self: ContractState,
+            caller: ContractAddress,
+            planet_id: u16,
+            dockyard_level: u8,
+            techs: TechLevels,
+            component: BuildType,
+            quantity: u32
+        ) -> ERC20s {
+            match component {
+                BuildType::Carrier => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::carrier_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().carrier);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .ships_level
+                        .write(
+                            (planet_id, Names::CARRIER),
+                            self.ships_level.read((planet_id, Names::CARRIER)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Scraper => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().scraper);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .ships_level
+                        .write(
+                            (planet_id, Names::SCRAPER),
+                            self.ships_level.read((planet_id, Names::SCRAPER)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Celestia => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::celestia_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().celestia);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .defences_level
+                        .write(
+                            (planet_id, Names::CELESTIA),
+                            self.defences_level.read((planet_id, Names::CELESTIA)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Sparrow => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::sparrow_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().sparrow);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .ships_level
+                        .write(
+                            (planet_id, Names::SPARROW),
+                            self.ships_level.read((planet_id, Names::SPARROW)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Frigate => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::frigate_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().frigate);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .ships_level
+                        .write(
+                            (planet_id, Names::FRIGATE),
+                            self.ships_level.read((planet_id, Names::FRIGATE)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Armade => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Dockyard::armade_requirements_check(dockyard_level, techs);
+                    let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().armade);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .ships_level
+                        .write(
+                            (planet_id, Names::ARMADE),
+                            self.ships_level.read((planet_id, Names::ARMADE)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Blaster => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Defences::blaster_requirements_check(dockyard_level, techs);
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().blaster
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .defences_level
+                        .write(
+                            (planet_id, Names::BLASTER),
+                            self.defences_level.read((planet_id, Names::BLASTER)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Beam => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Defences::beam_requirements_check(dockyard_level, techs);
+                    let cost = Defences::get_defences_cost(quantity, self.get_defences_cost().beam);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .defences_level
+                        .write(
+                            (planet_id, Names::BEAM),
+                            self.defences_level.read((planet_id, Names::BEAM)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Astral => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Defences::astral_launcher_requirements_check(dockyard_level, techs);
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().astral
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .defences_level
+                        .write(
+                            (planet_id, Names::ASTRAL),
+                            self.defences_level.read((planet_id, Names::ASTRAL)) + quantity
+                        );
+                    return cost;
+                },
+                BuildType::Plasma => {
+                    let techs = self.get_tech_levels(planet_id);
+                    Defences::plasma_beam_requirements_check(dockyard_level, techs);
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().plasma
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .defences_level
+                        .write(
+                            (planet_id, Names::PLASMA),
+                            self.defences_level.read((planet_id, Names::PLASMA)) + quantity
+                        );
+                    return cost;
+                },
+            }
+        }
+
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             let auction = LinearVRGDA {
                 target_price: FixedTrait::new(self.token_price.read(), false),
@@ -1588,7 +1397,8 @@ mod NoGame {
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
         }
 
-        fn calculate_energy_consumption(self: @ContractState, compounds: CompoundsLevels) -> u128 {
+        fn calculate_energy_consumption(self: @ContractState, planet_id: u16) -> u128 {
+            let compounds = self.get_compounds_levels(planet_id);
             Consumption::base(compounds.steel)
                 + Consumption::base(compounds.quartz)
                 + Consumption::base(compounds.tritium)
@@ -1728,18 +1538,18 @@ mod NoGame {
 
         fn get_tech_levels(self: @ContractState, planet_id: u16) -> TechLevels {
             TechLevels {
-                energy: self.energy_innovation_level.read(planet_id),
-                digital: self.digital_systems_level.read(planet_id),
-                beam: self.beam_technology_level.read(planet_id),
-                armour: self.armour_innovation_level.read(planet_id),
-                ion: self.ion_systems_level.read(planet_id),
-                plasma: self.plasma_engineering_level.read(planet_id),
-                weapons: self.weapons_development_level.read(planet_id),
-                shield: self.shield_tech_level.read(planet_id),
-                spacetime: self.spacetime_warp_level.read(planet_id),
-                combustion: self.combustive_engine_level.read(planet_id),
-                thrust: self.thrust_propulsion_level.read(planet_id),
-                warp: self.warp_drive_level.read(planet_id)
+                energy: self.techs_level.read((planet_id, Names::ENERGY_TECH)),
+                digital: self.techs_level.read((planet_id, Names::DIGITAL)),
+                beam: self.techs_level.read((planet_id, Names::BEAM_TECH)),
+                armour: self.techs_level.read((planet_id, Names::ARMOUR)),
+                ion: self.techs_level.read((planet_id, Names::ION)),
+                plasma: self.techs_level.read((planet_id, Names::PLASMA_TECH)),
+                weapons: self.techs_level.read((planet_id, Names::WEAPONS)),
+                shield: self.techs_level.read((planet_id, Names::SHIELD)),
+                spacetime: self.techs_level.read((planet_id, Names::SPACETIME)),
+                combustion: self.techs_level.read((planet_id, Names::COMBUSTION)),
+                thrust: self.techs_level.read((planet_id, Names::THRUST)),
+                warp: self.techs_level.read((planet_id, Names::WARP))
             }
         }
 
@@ -1779,85 +1589,90 @@ mod NoGame {
         }
 
         fn fleet_leave_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+            let fleet_levels = self.get_ships_levels(planet_id);
             if fleet.carrier > 0 {
                 self
-                    .carrier_available
-                    .write(planet_id, self.carrier_available.read(planet_id) - fleet.carrier);
+                    .ships_level
+                    .write((planet_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier);
             }
             if fleet.scraper > 0 {
                 self
-                    .scraper_available
-                    .write(planet_id, self.scraper_available.read(planet_id) - fleet.scraper);
+                    .ships_level
+                    .write((planet_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper);
             }
             if fleet.sparrow > 0 {
                 self
-                    .sparrow_available
-                    .write(planet_id, self.sparrow_available.read(planet_id) - fleet.sparrow);
+                    .ships_level
+                    .write((planet_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow);
             }
             if fleet.frigate > 0 {
                 self
-                    .frigate_available
-                    .write(planet_id, self.frigate_available.read(planet_id) - fleet.frigate);
+                    .ships_level
+                    .write((planet_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate);
             }
             if fleet.armade > 0 {
                 self
-                    .armade_available
-                    .write(planet_id, self.armade_available.read(planet_id) - fleet.armade);
+                    .ships_level
+                    .write((planet_id, Names::ARMADE), fleet_levels.armade - fleet.armade);
             }
         }
 
         fn fleet_return_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+            let fleet_levels = self.get_ships_levels(planet_id);
             if fleet.carrier > 0 {
                 self
-                    .carrier_available
-                    .write(planet_id, self.carrier_available.read(planet_id) + fleet.carrier);
+                    .ships_level
+                    .write((planet_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier);
             }
             if fleet.scraper > 0 {
                 self
-                    .scraper_available
-                    .write(planet_id, self.scraper_available.read(planet_id) + fleet.scraper);
+                    .ships_level
+                    .write((planet_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper);
             }
             if fleet.sparrow > 0 {
                 self
-                    .sparrow_available
-                    .write(planet_id, self.sparrow_available.read(planet_id) + fleet.sparrow);
+                    .ships_level
+                    .write((planet_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow);
             }
             if fleet.frigate > 0 {
                 self
-                    .frigate_available
-                    .write(planet_id, self.frigate_available.read(planet_id) + fleet.frigate);
+                    .ships_level
+                    .write((planet_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate);
             }
             if fleet.armade > 0 {
                 self
-                    .armade_available
-                    .write(planet_id, self.armade_available.read(planet_id) + fleet.armade);
+                    .ships_level
+                    .write((planet_id, Names::ARMADE), fleet_levels.armade + fleet.armade);
             }
         }
 
         fn check_enough_ships(self: @ContractState, planet_id: u16, fleet: Fleet) {
-            assert(self.carrier_available.read(planet_id) >= fleet.carrier, 'not enough carrier-');
-            assert(self.scraper_available.read(planet_id) >= fleet.scraper, 'not enough scrapers');
-            assert(self.sparrow_available.read(planet_id) >= fleet.sparrow, 'not enough sparrows');
-            assert(self.frigate_available.read(planet_id) >= fleet.frigate, 'not enough frigates');
-            assert(self.armade_available.read(planet_id) >= fleet.armade, 'not enough armades');
+            let ships_levels = self.get_ships_levels(planet_id);
+            assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
+            assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
+            assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
+            assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
+            assert(ships_levels.armade >= fleet.armade, 'not enough armades');
         }
 
-        fn update_fleet_levels_after_attack(ref self: ContractState, planet_id: u16, f: Fleet) {
-            self.carrier_available.write(planet_id, f.carrier);
-            self.scraper_available.write(planet_id, f.scraper);
-            self.sparrow_available.write(planet_id, f.sparrow);
-            self.frigate_available.write(planet_id, f.frigate);
-            self.armade_available.write(planet_id, f.armade);
+        fn update_defender_fleet_levels_after_attack(
+            ref self: ContractState, planet_id: u16, f: Fleet
+        ) {
+            self.ships_level.write((planet_id, Names::CARRIER), f.carrier);
+            self.ships_level.write((planet_id, Names::SCRAPER), f.scraper);
+            self.ships_level.write((planet_id, Names::SPARROW), f.sparrow);
+            self.ships_level.write((planet_id, Names::FRIGATE), f.frigate);
+            self.ships_level.write((planet_id, Names::ARMADE), f.armade);
         }
 
         fn update_defences_after_attack(
             ref self: ContractState, planet_id: u16, d: DefencesLevels
         ) {
-            self.celestia_available.write(planet_id, d.celestia);
-            self.blaster_available.write(planet_id, d.blaster);
-            self.beam_available.write(planet_id, d.beam);
-            self.astral_available.write(planet_id, d.astral);
-            self.plasma_available.write(planet_id, d.plasma);
+            self.defences_level.write((planet_id, Names::CELESTIA), d.celestia);
+            self.defences_level.write((planet_id, Names::BLASTER), d.blaster);
+            self.defences_level.write((planet_id, Names::BEAM), d.beam);
+            self.defences_level.write((planet_id, Names::ASTRAL), d.astral);
+            self.defences_level.write((planet_id, Names::PLASMA), d.plasma);
         }
 
         fn add_active_mission(

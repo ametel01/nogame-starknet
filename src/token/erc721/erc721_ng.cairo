@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod NGERC721 {
     use openzeppelin::introspection::src5::SRC5Component::InternalTrait;
-use starknet::ContractAddress;
+    use starknet::ContractAddress;
     use starknet::get_caller_address;
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
