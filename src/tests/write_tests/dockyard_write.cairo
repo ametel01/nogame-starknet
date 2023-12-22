@@ -8,11 +8,15 @@ use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTra
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
+    BuildType, UpgradeType
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
+use nogame::tests::utils::{
+    E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
+    advance_game_state
+};
 
 #[test]
 fn test_carrier_build() {
@@ -22,17 +26,10 @@ fn test_carrier_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(1);
-    dsp.game.dockyard_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.combustive_engine_upgrade(1);
-    dsp.game.combustive_engine_upgrade(1);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
 
-    dsp.game.carrier_build(10);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.carrier == 10, 'wrong carrier level');
 }
@@ -55,16 +52,12 @@ fn test_celestia_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.combustive_engine_upgrade(1);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
 
-    dsp.game.celestia_build(10);
-    let ships = dsp.game.get_ships_levels(1);
+    dsp.game.process_ship_build(BuildType::Celestia(()), 10);
+    let celestia = dsp.game.get_celestia_available(1);
+    assert!(celestia == 10, "wrong celestia amount");
 }
 
 #[test]
@@ -85,15 +78,9 @@ fn test_sparrow_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(1);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.combustive_engine_upgrade(1);
-
-    dsp.game.sparrow_build(10);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.process_ship_build(BuildType::Sparrow(()), 10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.sparrow == 10, 'wrong sparrow level');
 }
@@ -116,18 +103,10 @@ fn test_scraper_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(4);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
-    dsp.game.combustive_engine_upgrade(6);
-    dsp.game.lab_upgrade(5);
-    dsp.game.energy_innovation_upgrade(2);
-    dsp.game.shield_tech_upgrade(2);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
 
-    dsp.game.scraper_build(10);
+    dsp.game.process_ship_build(BuildType::Scraper(()), 10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.scraper == 10, 'wrong scraper level');
 }
@@ -155,17 +134,10 @@ fn test_frigate_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(5);
-    dsp.game.lab_upgrade(4);
-    dsp.game.energy_innovation_upgrade(4);
-    dsp.game.beam_technology_upgrade(5);
-    dsp.game.ion_systems_upgrade(2);
-    dsp.game.thrust_propulsion_upgrade(4);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
 
-    dsp.game.frigate_build(10);
+    dsp.game.process_ship_build(BuildType::Frigate(()), 10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.frigate == 10, 'wrong frigate level');
 }
@@ -193,17 +165,10 @@ fn test_armade_build() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.dockyard_upgrade(7);
-    dsp.game.lab_upgrade(7);
-    dsp.game.energy_innovation_upgrade(5);
-    dsp.game.shield_tech_upgrade(5);
-    dsp.game.spacetime_warp_upgrade(3);
-    dsp.game.warp_drive_upgrade(4);
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
 
-    dsp.game.armade_build(10);
+    dsp.game.process_ship_build(BuildType::Armade(()), 10);
     let ships = dsp.game.get_ships_levels(1);
     assert(ships.armade == 10, 'wrong armade level');
 }

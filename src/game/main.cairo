@@ -550,6 +550,7 @@ mod NoGame {
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
             self.active_missions_len.write(origin, active_missions - 1);
+
             self
                 .emit(
                     Event::DebrisCollected(
@@ -1090,7 +1091,7 @@ mod NoGame {
                         );
                     return cost;
                 },
-                UpgradeType::Thrusts => {
+                UpgradeType::Thrust => {
                     let lab_level = self.compounds_level.read((planet_id, Names::LAB));
                     let techs = self.get_tech_levels(planet_id);
                     Lab::thrust_propulsion_requirements_check(lab_level, techs);

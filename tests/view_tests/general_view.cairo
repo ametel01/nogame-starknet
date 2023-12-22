@@ -7,7 +7,7 @@ use snforge_std::{start_prank, start_warp, CheatTarget};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
-    Fleet
+    Fleet, BuildType
 };
 use tests::utils::{
     E18, HOUR, DAY, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game,
@@ -128,12 +128,12 @@ fn test_get_debris_field() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.carrier_build(100);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 100);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.astral_launcher_build(5);
+    dsp.game.process_defence_build(BuildType::Astral(()), 5);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     let mut fleet: Fleet = Default::default();

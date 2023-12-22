@@ -8,7 +8,8 @@ use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTra
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
+    UpgradeType
 };
 use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
@@ -32,12 +33,12 @@ fn test_digital_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 1);
 
-    dsp.game.digital_systems_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.digital == 1, 'wrong digital level');
 }
@@ -55,13 +56,13 @@ fn test_beam_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(2);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 1);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 2);
 
-    dsp.game.beam_technology_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::BeamTech(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.beam == 1, 'wrong beam level');
 }
@@ -84,12 +85,12 @@ fn test_armour_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(2);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 2);
 
-    dsp.game.armour_innovation_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Armour(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.armour == 1, 'wrong armour level');
 }
@@ -107,15 +108,13 @@ fn test_ion_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(4);
-    dsp.game.energy_innovation_upgrade(4);
-
-    dsp.game.beam_technology_upgrade(5);
-
-    dsp.game.ion_systems_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 4);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 4);
+    dsp.game.process_tech_upgrade(UpgradeType::BeamTech(()), 5);
+    dsp.game.process_tech_upgrade(UpgradeType::Ion(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.ion == 1, 'wrong ion level');
 }
@@ -143,15 +142,15 @@ fn test_plasma_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(4);
-    dsp.game.energy_innovation_upgrade(8);
-    dsp.game.beam_technology_upgrade(10);
-    dsp.game.ion_systems_upgrade(5);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 4);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 8);
+    dsp.game.process_tech_upgrade(UpgradeType::BeamTech(()), 10);
+    dsp.game.process_tech_upgrade(UpgradeType::Ion(()), 5);
 
-    dsp.game.plasma_engineering_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::PlasmaTech(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.plasma == 1, 'wrong plasma level');
 }
@@ -184,12 +183,12 @@ fn test_weapons_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(4);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 4);
 
-    dsp.game.weapons_development_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Weapons(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.weapons == 1, 'wrong weapons level');
 }
@@ -207,13 +206,13 @@ fn test_combustion_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(1);
-    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 1);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 1);
 
-    dsp.game.combustive_engine_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Combustion(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.combustion == 1, 'wrong combustion level');
 }
@@ -236,13 +235,13 @@ fn test_thrust_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(2);
-    dsp.game.energy_innovation_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 2);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 1);
 
-    dsp.game.thrust_propulsion_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Thrust(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.thrust == 1, 'wrong thrust level');
 }
@@ -265,15 +264,15 @@ fn test_warp_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(7);
-    dsp.game.energy_innovation_upgrade(5);
-    dsp.game.shield_tech_upgrade(5);
-    dsp.game.spacetime_warp_upgrade(3);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 7);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 5);
+    dsp.game.process_tech_upgrade(UpgradeType::Shield(()), 5);
+    dsp.game.process_tech_upgrade(UpgradeType::Spacetime(()), 3);
 
-    dsp.game.warp_drive_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Warp(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.warp == 1, 'wrong warp level');
 }
@@ -301,13 +300,13 @@ fn test_shield_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(6);
-    dsp.game.energy_innovation_upgrade(3);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 6);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 3);
 
-    dsp.game.shield_tech_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Shield(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.shield == 1, 'wrong shield level');
 }
@@ -330,14 +329,14 @@ fn test_spacetime_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
 
-    dsp.game.energy_plant_upgrade(1);
-    dsp.game.tritium_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::TritiumMine(()), 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.lab_upgrade(7);
-    dsp.game.energy_innovation_upgrade(5);
-    dsp.game.shield_tech_upgrade(5);
+    dsp.game.process_compound_upgrade(UpgradeType::Lab(()), 7);
+    dsp.game.process_tech_upgrade(UpgradeType::EnergyTech(()), 5);
+    dsp.game.process_tech_upgrade(UpgradeType::Shield(()), 5);
 
-    dsp.game.spacetime_warp_upgrade(1);
+    dsp.game.process_tech_upgrade(UpgradeType::Spacetime(()), 1);
     let techs = dsp.game.get_techs_levels(1);
     assert(techs.spacetime == 1, 'wrong spacetime level');
 }
