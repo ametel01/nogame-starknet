@@ -1,6 +1,7 @@
 #[starknet::contract]
 mod NGERC721 {
-    use starknet::ContractAddress;
+    use openzeppelin::introspection::src5::SRC5Component::InternalTrait;
+use starknet::ContractAddress;
     use starknet::get_caller_address;
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
@@ -10,6 +11,8 @@ mod NGERC721 {
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    const ERC721_NOGAME_ID: felt252 = 92143863346085371967962047053008161092;
 
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
 
@@ -49,6 +52,7 @@ mod NGERC721 {
         minter: ContractAddress,
         admin: ContractAddress
     ) {
+        self.src5.register_interface(ERC721_NOGAME_ID);
         self.erc721.initializer(name, symbol);
         self.minter.write(minter);
         self.admin.write(admin);
