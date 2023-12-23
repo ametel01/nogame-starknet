@@ -11,7 +11,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 

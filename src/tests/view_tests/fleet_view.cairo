@@ -10,8 +10,6 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
     Fleet
 };
-use nogame::token::erc20::interface::{IERC20NGDispatcher, IERC20NGDispatcherTrait};
-use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, init_game, set_up,
     build_basic_mines, advance_game_state
