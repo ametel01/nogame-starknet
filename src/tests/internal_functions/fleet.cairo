@@ -173,6 +173,9 @@ fn test_armade_speed() {
     assert(fleet::get_fleet_speed(fleet, techs) == 16000, 'wrong_speed');
     techs.spacetime = 9;
     assert(fleet::get_fleet_speed(fleet, techs) == 28000, 'wrong_speed');
+    techs.spacetime = 11;
+    fleet::get_fleet_speed(fleet, techs).print();
+    assert(fleet::get_fleet_speed(fleet, techs) == 28000, 'wrong_speed');
 }
 
 #[test]

@@ -28,6 +28,8 @@ mod NoGame {
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
+    use snforge_std::PrintTrait;
+
     #[storage]
     struct Storage {
         initialized: bool,
@@ -301,7 +303,7 @@ mod NoGame {
             let caller = get_caller_address();
             self._collect_resources(caller);
             let planet_id = self.get_owned_planet(caller);
-            let current_level = self.steel_mine_level.read(planet_id);
+            let current_level = self.tritium_mine_level.read(planet_id);
             let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
