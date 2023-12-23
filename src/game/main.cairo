@@ -2,12 +2,12 @@
 
 #[starknet::contract]
 mod NoGame {
-    use traits::DivRem;
     use starknet::{
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
         SyscallResultTrait, class_hash::ClassHash
     };
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
+    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
@@ -27,16 +27,15 @@ mod NoGame {
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
-    use snforge_std::PrintTrait;
 
-    use snforge_std::PrintTrait;
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+    impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         initialized: bool,
         is_testnet: bool,
         receiver: ContractAddress,
-        version: u8,
         token_price: u128,
         uni_speed: u128,
         // General.
@@ -46,7 +45,6 @@ mod NoGame {
         planet_debris_field: LegacyMap::<u16, Debris>,
         universe_start_time: u64,
         resources_spent: LegacyMap::<u16, u128>,
-        last_active: LegacyMap::<u16, u64>,
         resources_timer: LegacyMap::<u16, u64>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
@@ -66,6 +64,8 @@ mod NoGame {
         active_missions_len: LegacyMap<u16, usize>,
         hostile_missions: LegacyMap<(u16, u32), HostileMission>,
         hostile_missions_len: LegacyMap<u16, usize>,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage,
     }
 
     #[event]
@@ -79,7 +79,8 @@ mod NoGame {
         FleetSent: FleetSent,
         BattleReport: BattleReport,
         DebrisCollected: DebrisCollected,
-        Upgraded: Upgraded,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -119,11 +120,6 @@ mod NoGame {
         defence_name: felt252,
         quantity: u32,
         spent: ERC20s
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Upgraded {
-        implementation: ClassHash
     }
 
     #[derive(Drop, starknet::Event)]
@@ -193,14 +189,7 @@ mod NoGame {
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
-            assert(!impl_hash.is_zero(), 'Class hash cannot be zero');
-            starknet::replace_class_syscall(impl_hash).unwrap_syscall();
-            self.version.write(self.version.read() + 1);
-            self.emit(Event::Upgraded(Upgraded { implementation: impl_hash }))
-        }
-
-        fn version(self: @ContractState) -> u8 {
-            self.version.read()
+            self.upgradeable._upgrade(impl_hash)
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -242,8 +231,6 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
-            let new_level = current_level + quantity.try_into().expect('u32 into u8 failed');
-            self.steel_mine_level.write(planet_id, new_level);
             self
                 .emit(
                     CompoundSpent { planet_id: planet_id, compound_name: Names::STEEL, spent: cost }
@@ -256,8 +243,6 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
-            self.emit(TechSpent { planet_id: planet_id, tech_name: Names::STEEL, spent: cost })
         }
 
         fn process_ship_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -269,7 +254,6 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
         }
 
         fn process_defence_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -281,7 +265,6 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self.last_active.write(planet_id, get_block_timestamp());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -651,51 +634,6 @@ mod NoGame {
             }
         }
 
-        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
-            CompoundsLevels {
-                steel: self.compounds_level.read((planet_id, Names::STEEL)),
-                quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
-                tritium: self.compounds_level.read((planet_id, Names::TRITIUM)),
-                energy: self.compounds_level.read((planet_id, Names::ENERGY_PLANT)),
-                lab: self.compounds_level.read((planet_id, Names::LAB)),
-                dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
-            }
-        }
-
-        fn get_compounds_upgrade_cost(self: @ContractState, planet_id: u16) -> CompoundsCost {
-            let compounds = self.get_compounds_levels(planet_id);
-            let steel = CompoundCost::steel(compounds.steel, 1);
-            let quartz = CompoundCost::quartz(compounds.quartz, 1);
-            let tritium = CompoundCost::tritium(compounds.tritium, 1);
-            let energy = CompoundCost::energy(compounds.energy, 1);
-            let lab = CompoundCost::lab(compounds.lab, 1);
-            let dockyard = CompoundCost::dockyard(compounds.dockyard, 1);
-            CompoundsCost {
-                steel: steel,
-                quartz: quartz,
-                tritium: tritium,
-                energy: energy,
-                lab: lab,
-                dockyard: dockyard
-            }
-        }
-
-        fn get_energy_for_upgrade(self: @ContractState, planet_id: u16) -> EnergyCost {
-            let compounds = self.get_compounds_levels(planet_id);
-            let steel = Consumption::base(compounds.steel + 1) - Consumption::base(compounds.steel);
-            let quartz = Consumption::base(compounds.quartz + 1)
-                - Consumption::base(compounds.quartz);
-            let tritium = Consumption::tritium(compounds.tritium + 1)
-                - Consumption::tritium(compounds.tritium);
-
-            EnergyCost { steel: steel, quartz: quartz, tritium: tritium }
-        }
-
-        fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds = self.get_compounds_levels(planet_id);
-            Production::energy(compounds.energy + 1) - Production::energy(compounds.energy)
-        }
-
         fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
             let position = self.get_planet_position(planet_id);
             self.position_to_celestia_production(position.orbit)
@@ -806,6 +744,69 @@ mod NoGame {
             let speed = fleet::get_fleet_speed(fleet, techs);
             fleet::get_flight_time(speed, distance)
         }
+    }
+
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.compounds_level.read((planet_id, Names::STEEL)),
+                quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
+                tritium: self.compounds_level.read((planet_id, Names::TRITIUM)),
+                energy: self.compounds_level.read((planet_id, Names::ENERGY_PLANT)),
+                lab: self.compounds_level.read((planet_id, Names::LAB)),
+                dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
+            }
+        }
+
+        fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
+            Fleet {
+                carrier: self.ships_level.read((planet_id, Names::CARRIER)),
+                scraper: self.ships_level.read((planet_id, Names::SCRAPER)),
+                sparrow: self.ships_level.read((planet_id, Names::SPARROW)),
+                frigate: self.ships_level.read((planet_id, Names::FRIGATE)),
+                armade: self.ships_level.read((planet_id, Names::ARMADE)),
+            }
+        }
+
+        fn get_ships_cost(self: @ContractState) -> ShipsCost {
+            ShipsCost {
+                carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
+                celestia: ERC20s { steel: 0, quartz: 2000, tritium: 500 },
+                scraper: ERC20s { steel: 10000, quartz: 6000, tritium: 2000 },
+                sparrow: ERC20s { steel: 3000, quartz: 1000, tritium: 0 },
+                frigate: ERC20s { steel: 20000, quartz: 7000, tritium: 2000 },
+                armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 }
+            }
+        }
+
+        fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
+            self.defences_level.read((planet_id, Names::CELESTIA))
+        }
+
+        fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
+            DefencesLevels {
+                celestia: self.defences_level.read((planet_id, Names::CELESTIA)),
+                blaster: self.defences_level.read((planet_id, Names::BLASTER)),
+                beam: self.defences_level.read((planet_id, Names::BEAM)),
+                astral: self.defences_level.read((planet_id, Names::ASTRAL)),
+                plasma: self.defences_level.read((planet_id, Names::PLASMA)),
+            }
+        }
+
+        fn get_defences_cost(self: @ContractState) -> DefencesCost {
+            DefencesCost {
+                blaster: ERC20s { steel: 2000, quartz: 0, tritium: 0 },
+                beam: ERC20s { steel: 6000, quartz: 2000, tritium: 0 },
+                astral: ERC20s { steel: 20000, quartz: 15000, tritium: 2000 },
+                plasma: ERC20s { steel: 50000, quartz: 50000, tritium: 30000 },
+            }
+        }
+
+        fn get_planet_points(self: @ContractState, planet_id: u16) -> u128 {
+            self.resources_spent.read(planet_id) / 1000
+        }
 
         fn get_fuel_consumption(
             self: @ContractState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
@@ -813,7 +814,6 @@ mod NoGame {
             let distance = fleet::get_distance(origin, destination);
             fleet::get_fuel_consumption(fleet, distance)
         }
-    }
 
 
     #[generate_trait]
@@ -970,7 +970,6 @@ mod NoGame {
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self.update_planet_points(planet_id, cost);
-                    self.last_active.write(planet_id, get_block_timestamp());
                     self
                         .techs_level
                         .write(
@@ -1405,16 +1404,17 @@ mod NoGame {
         /// is then scaled based on available and required energy, and the result is returned
         /// as a `Resources` structure.
         fn calculate_production(self: @ContractState, planet_id: u16) -> ERC20s {
-            // let time_now = get_block_timestamp();
-            // let last_collection_time = self.resources_timer.read(planet_id);
-            // let time_elapsed = time_now - last_collection_time;
-            // let position = self.planet_position.read(planet_id);
-            // let temp = self.calculate_avg_temperature(position.orbit);
-            // let speed = self.uni_speed.read();
-            // let steel_available = Production::steel(mines_levels.steel)
-            //     * speed
-            //     * time_elapsed.into()
-            //     / HOUR.into();
+            let time_now = get_block_timestamp();
+            let last_collection_time = self.resources_timer.read(planet_id);
+            let time_elapsed = time_now - last_collection_time;
+            let mines_levels = self.get_compounds_levels(planet_id);
+            let position = self.planet_position.read(planet_id);
+            let temp = self.calculate_avg_temperature(position.orbit);
+            let speed = self.uni_speed.read();
+            let steel_available = Production::steel(mines_levels.steel)
+                * speed
+                * time_elapsed.into()
+                / HOUR.into();
 
             // let quartz_available = Production::quartz(mines_levels.quartz)
             //     * speed

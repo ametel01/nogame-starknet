@@ -59,7 +59,7 @@ fn set_up() -> Dispatchers {
     let calldata: Array<felt252> = array![];
     let _game = contract.deploy(@calldata).expect('failed nogame');
 
-    let contract = declare('NGERC721');
+    let contract = declare('ERC721NoGame');
     let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into(), DEPLOYER().into()];
     let _erc721 = contract.deploy(@calldata).expect('failed erc721');
 

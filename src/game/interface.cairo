@@ -13,7 +13,6 @@ trait INoGame<TState> {
         steel: ContractAddress,
         quartz: ContractAddress,
         tritium: ContractAddress,
-        // rand: ContractAddress,
         eth: ContractAddress,
         receiver: ContractAddress,
         uni_speed: u128,
@@ -22,7 +21,6 @@ trait INoGame<TState> {
     );
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
-    fn version(self: @TState) -> u8;
     // Write functions
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
@@ -49,12 +47,7 @@ trait INoGame<TState> {
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_planet_points(self: @TState, planet_id: u16) -> u128;
     fn get_energy_available(self: @TState, planet_id: u16) -> u128;
-    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
-    fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
-    fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
-    fn get_energy_gain_after_upgrade(self: @TState, planet_id: u16) -> u128;
     fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
     fn get_ships_cost(self: @TState) -> ShipsCost;
@@ -72,8 +65,5 @@ trait INoGame<TState> {
         fleet: Fleet,
         techs: TechLevels
     ) -> u64;
-    fn get_fuel_consumption(
-        self: @TState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
-    ) -> u128;
 }
 

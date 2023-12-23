@@ -9,7 +9,7 @@ edition = "2023_01"
 test = "snforge test"
 
 [dependencies]
-starknet = "2.4.1"
+starknet = "2.4.0"
 openzeppelin = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.8.0" }
 nogame_fixed = {git = "https://github.com/ametel01/nogame-fixed.git", rev="5317597"}
 
