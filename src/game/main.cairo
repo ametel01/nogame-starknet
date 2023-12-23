@@ -28,8 +28,6 @@ mod NoGame {
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
-    use snforge_std::PrintTrait;
-
     #[storage]
     struct Storage {
         initialized: bool,
