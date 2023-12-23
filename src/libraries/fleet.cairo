@@ -6,7 +6,6 @@ use nogame::libraries::types::{
 };
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame_fixed::f128::core::{exp, sqrt};
-use snforge_std::PrintTrait;
 
 #[inline(always)]
 fn CARRIER() -> Unit {
