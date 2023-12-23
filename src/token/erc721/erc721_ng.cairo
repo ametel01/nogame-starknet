@@ -1,23 +1,31 @@
 #[starknet::contract]
-mod NGERC721 {
+mod ERC721NoGame {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
     use openzeppelin::introspection::src5::SRC5Component;
+    use openzeppelin::access::ownable::OwnableComponent;
     use nogame::token::erc721::interface::IERC721NoGame;
 
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
-    // #[abi(embed_v0)]
+    const ERC721_NOGAME_ID: felt252 = 92143863346085371967962047053008161092;
+
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
 
-    // #[abi(embed_v0)]
     impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
 
-    impl InternalImpl = ERC721Component::InternalImpl<ContractState>;
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
+
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     #[abi(embed_v0)]
     impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
@@ -26,12 +34,13 @@ mod NGERC721 {
     struct Storage {
         tokens: LegacyMap<ContractAddress, u256>,
         minter: ContractAddress,
-        admin: ContractAddress,
         uri: LegacyMap<felt252, felt252>,
         #[substorage(v0)]
         erc721: ERC721Component::Storage,
         #[substorage(v0)]
-        src5: SRC5Component::Storage
+        src5: SRC5Component::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage
     }
 
     #[event]
@@ -40,7 +49,9 @@ mod NGERC721 {
         #[flat]
         ERC721Event: ERC721Component::Event,
         #[flat]
-        SRC5Event: SRC5Component::Event
+        SRC5Event: SRC5Component::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event
     }
 
     #[constructor]
@@ -49,11 +60,12 @@ mod NGERC721 {
         name: felt252,
         symbol: felt252,
         minter: ContractAddress,
-        admin: ContractAddress
+        owner: ContractAddress
     ) {
+        self.src5.register_interface(ERC721_NOGAME_ID);
         self.erc721.initializer(name, symbol);
         self.minter.write(minter);
-        self.admin.write(admin);
+        self.ownable.initializer(owner);
     }
 
     #[external(v0)]
@@ -127,7 +139,7 @@ mod NGERC721 {
         }
 
         fn set_base_uri(ref self: ContractState, mut base_uri: Span<felt252>) {
-            assert(get_caller_address() == self.admin.read(), 'erc721 caller not deployer');
+            self.ownable.assert_only_owner();
             // writing end of text
             self.uri.write(base_uri.len().into(), 0);
             loop {
@@ -266,4 +278,3 @@ mod NGERC721 {
         }
     }
 }
-

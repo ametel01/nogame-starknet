@@ -6,7 +6,7 @@ use nogame::tests::utils::{DEPLOYER, ACCOUNT1};
 
 #[test]
 fn test_token_uri() {
-    let contract = declare('NGERC721');
+    let contract = declare('ERC721NoGame');
     let calldata: Array<felt252> = array![
         'nogamenft', 'NGNFT', DEPLOYER().into(), DEPLOYER().into()
     ];
