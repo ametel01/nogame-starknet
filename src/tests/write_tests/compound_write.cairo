@@ -10,7 +10,10 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use nogame::tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines, advance_game_state};
+use nogame::tests::utils::{
+    E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
+    advance_game_state
+};
 
 #[test]
 fn test_steel_mine_upgrade() {
@@ -46,12 +49,12 @@ fn test_tritium_mine_upgrade() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);    
+    advance_game_state(dsp.game);
     let compounds = dsp.game.get_compounds_levels(1).tritium.print();
 
     dsp.game.tritium_mine_upgrade(8);
     let compounds = dsp.game.get_compounds_levels(1).tritium.print();
-    // assert(compounds.tritium == 1, 'wrong tritium level');
+// assert(compounds.tritium == 1, 'wrong tritium level');
 }
 
 #[test]

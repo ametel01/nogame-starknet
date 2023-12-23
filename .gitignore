@@ -16,3 +16,11 @@ testnet.json
 .snfoundry_cache/
 
 scripts/metadata/metadata/
+
+*.sh
+
+scripts/goerli/
+
+scripts/sepolia/
+
+scripts/
