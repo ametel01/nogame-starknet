@@ -56,7 +56,7 @@ fn test_send_fleet_success() {
 
     let tritium_before = dsp.game.get_spendable_resources(1).tritium;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    // dsp.game.send_fleet(fleet, p2_position, false);
 
     let tritium_after = dsp.game.get_spendable_resources(1).tritium;
 

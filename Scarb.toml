@@ -23,12 +23,3 @@ casm = true
 [tool.snforge]
 exit_first = false
 
-[tool.sncast.katana]
-account = "k_acc"
-accounts-file = "/Users/alexmetelli/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-url = "http://0.0.0.0:5050"
-
-[tool.sncast.testnet]
-account = "cast_testnet"
-accounts-file = "/Users/alexmetelli/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-url = "https://starknet-goerli.infura.io/v3/25371764a3e44191b39d3b3b98a8c55d"

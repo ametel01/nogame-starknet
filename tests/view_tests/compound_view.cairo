@@ -6,7 +6,7 @@ use snforge_std::{start_prank, start_warp, CheatTarget, PrintTrait};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::compounds::{Production, Compounds};
 use nogame::libraries::types::{CompoundsLevels, UpgradeType};
-use nogame::tests::utils::{
+use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,
     build_basic_mines
 };
