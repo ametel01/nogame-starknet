@@ -14,7 +14,7 @@ trait INoGame<TState> {
         quartz: ContractAddress,
         tritium: ContractAddress,
         eth: ContractAddress,
-        receiver: ContractAddress,
+        owner: ContractAddress,
         uni_speed: u128,
         token_price: u128,
         is_testnet: bool
@@ -37,7 +37,6 @@ trait INoGame<TState> {
     fn recall_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
-    fn get_receiver(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u16;

@@ -361,7 +361,7 @@ fn build_ships_array(
             n_ships -= 1;
             fleet.carrier -= 1;
         }
-        let a = 0;
+        continue;
     };
     array
 }

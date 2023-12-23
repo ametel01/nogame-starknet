@@ -1,12 +1,11 @@
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
-use snforge_std::PrintTrait;
-use snforge_std::{start_prank, start_warp, CheatTarget};
+use snforge_std::{start_prank, start_warp, CheatTarget, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::compounds::{Production, Compounds};
-use nogame::libraries::types::CompoundsLevels;
+use nogame::libraries::types::{CompoundsLevels, UpgradeType};
 use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,
     build_basic_mines
@@ -21,8 +20,7 @@ fn test_energy_available_positive() {
 
     build_basic_mines(dsp.game);
     let energy = dsp.game.get_energy_available(1);
-    energy.print();
-    assert(energy == 139, 'wrong pos energy');
+    assert!(energy == 139, "energy {} should be 33", energy);
 }
 
 #[test]
@@ -33,8 +31,8 @@ fn test_energy_available_negative() {
     dsp.game.generate_planet();
 
     assert(dsp.game.get_energy_available(1) == 0, 'wrong energy');
-    dsp.game.steel_mine_upgrade(1);
-    dsp.game.quartz_mine_upgrade(1);
+    dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
+    dsp.game.process_compound_upgrade(UpgradeType::QuartzMine(()), 1);
     let energy = dsp.game.get_energy_available(1);
 
     assert(energy == 0, 'wrong neg energy');

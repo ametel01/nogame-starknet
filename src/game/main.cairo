@@ -8,6 +8,8 @@ mod NoGame {
     };
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
@@ -30,6 +32,14 @@ mod NoGame {
 
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    component!(path: ReentrancyGuardComponent, storage: reentrancyguard, event: ReentrancyGuardEvent);
+    impl ReentrancyGuardInternalImpl = ReentrancyGuardComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
@@ -66,6 +76,10 @@ mod NoGame {
         hostile_missions_len: LegacyMap<u16, usize>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        reentrancyguard: ReentrancyGuardComponent::Storage
     }
 
     #[event]
@@ -80,7 +94,11 @@ mod NoGame {
         BattleReport: BattleReport,
         DebrisCollected: DebrisCollected,
         #[flat]
-        UpgradeableEvent: UpgradeableComponent::Event
+        UpgradeableEvent: UpgradeableComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        ReentrancyGuardEvent: ReentrancyGuardComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -169,7 +187,7 @@ mod NoGame {
             quartz: ContractAddress,
             tritium: ContractAddress,
             eth: ContractAddress,
-            receiver: ContractAddress,
+            owner: ContractAddress,
             uni_speed: u128,
             token_price: u128,
             is_testnet: bool,
@@ -199,7 +217,7 @@ mod NoGame {
             let caller = get_caller_address();
             let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
-            self.ETH.read().transferFrom(caller, self.receiver.read(), price);
+            self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets != MAX_NUMBER_OF_PLANETS, 'max number of planets');
             let token_id = number_of_planets + 1;
@@ -549,9 +567,6 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         View Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn get_receiver(self: @ContractState) -> ContractAddress {
-            self.receiver.read()
-        }
         fn get_token_addresses(self: @ContractState) -> Tokens {
             self.get_tokens_addresses()
         }
