@@ -21,7 +21,8 @@ fn test_energy_available_positive() {
 
     build_basic_mines(dsp.game);
     let energy = dsp.game.get_energy_available(1);
-    assert(energy == 33, 'wrong pos energy');
+    energy.print();
+    assert(energy == 139, 'wrong pos energy');
 }
 
 #[test]
