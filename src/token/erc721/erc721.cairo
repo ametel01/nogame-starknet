@@ -1,7 +1,19 @@
+#[starknet::interface]
+trait IERC721<TState> {
+    fn name(self: @TState) -> felt252;
+    fn symbol(self: @TState) -> felt252;
+    fn token_uri(self: @TState, token_id: u256) -> Array<felt252>;
+    fn mint(ref self: TState, token_id: u256);
+}
+
+#[starknet::interface]
+trait IERC721MetadataCamelOnly<TState> {
+    fn tokenURI(self: @TState, tokenId: u256) -> Array<felt252>;
+}
+
 #[starknet::contract]
-mod ERC721NoGame {
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
+mod ERC721 {
+    use starknet::{ContractAddress, get_caller_address};
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
     use openzeppelin::introspection::src5::SRC5Component;
@@ -11,15 +23,15 @@ mod ERC721NoGame {
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
-    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
     const ERC721_NOGAME_ID: felt252 =
         0x1e8208686f48fa69c89a47bbe7a99940495de8d5f238e7316fe57909b728d1a;
 
+    #[abi(embed_v0)]
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
-
+    #[abi(embed_v0)]
+    impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
     impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
-
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     #[abi(embed_v0)]
@@ -28,21 +40,12 @@ mod ERC721NoGame {
     impl SRC5CamelImpl = SRC5Component::SRC5CamelImpl<ContractState>;
     impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
 
-    #[abi(embed_v0)]
-    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
-    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
     #[storage]
     struct Storage {
-        tokens: LegacyMap<ContractAddress, u256>,
-        minter: ContractAddress,
-        uri: LegacyMap<felt252, felt252>,
         #[substorage(v0)]
         erc721: ERC721Component::Storage,
         #[substorage(v0)]
         src5: SRC5Component::Storage,
-        #[substorage(v0)]
-        ownable: OwnableComponent::Storage
     }
 
     #[event]
@@ -52,72 +55,16 @@ mod ERC721NoGame {
         ERC721Event: ERC721Component::Event,
         #[flat]
         SRC5Event: SRC5Component::Event,
-        #[flat]
-        OwnableEvent: OwnableComponent::Event
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        name: felt252,
-        symbol: felt252,
-        minter: ContractAddress,
-        owner: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, name: felt252, symbol: felt252,) {
         self.src5.register_interface(ERC721_NOGAME_ID);
         self.erc721.initializer(name, symbol);
-        self.minter.write(minter);
-        self.ownable.initializer(owner);
     }
 
     #[external(v0)]
-    impl ERC721NoGameImpl of IERC721NoGame<ContractState> {
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc721.balance_of(account)
-        }
-
-        fn owner_of(self: @ContractState, token_id: u256) -> ContractAddress {
-            self.erc721.owner_of(token_id)
-        }
-
-        fn safe_transfer_from(
-            ref self: ContractState,
-            from: ContractAddress,
-            to: ContractAddress,
-            token_id: u256,
-            data: Span<felt252>
-        ) {
-            self.erc721.safe_transfer_from(from, to, token_id, data);
-            self.tokens.write(to, token_id)
-        }
-
-        fn transfer_from(
-            ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256
-        ) {
-            self.erc721.transfer_from(from, to, token_id);
-            self.tokens.write(to, token_id)
-        }
-
-        fn approve(ref self: ContractState, to: ContractAddress, token_id: u256) {
-            self.erc721.approve(to, token_id);
-        }
-
-        fn set_approval_for_all(
-            ref self: ContractState, operator: ContractAddress, approved: bool
-        ) {
-            self.erc721.set_approval_for_all(operator, approved);
-        }
-
-        fn get_approved(self: @ContractState, token_id: u256) -> ContractAddress {
-            self.erc721.get_approved(token_id)
-        }
-
-        fn is_approved_for_all(
-            self: @ContractState, owner: ContractAddress, operator: ContractAddress
-        ) -> bool {
-            self.erc721.is_approved_for_all(owner, operator)
-        }
-
+    impl IERC721MetadataImpl of super::IERC721<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self.erc721.name()
         }
@@ -151,45 +98,13 @@ mod ERC721NoGame {
             output
         }
 
-        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc721.balance_of(account)
+        fn mint(ref self: ContractState, token_id: u256) {
+            self.erc721._mint(get_caller_address(), token_id);
         }
+    }
 
-        fn ownerOf(self: @ContractState, tokenId: u256) -> ContractAddress {
-            self.erc721.owner_of(tokenId)
-        }
-
-        fn safeTransferFrom(
-            ref self: ContractState,
-            from: ContractAddress,
-            to: ContractAddress,
-            tokenId: u256,
-            data: Span<felt252>
-        ) {
-            self.erc721.safe_transfer_from(from, to, tokenId, data);
-        }
-
-        fn transferFrom(
-            ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenId: u256
-        ) {
-            self.erc721.transfer_from(from, to, tokenId);
-            self.tokens.write(to, tokenId)
-        }
-
-        fn setApprovalForAll(ref self: ContractState, operator: ContractAddress, approved: bool) {
-            self.erc721.set_approval_for_all(operator, approved);
-        }
-
-        fn getApproved(self: @ContractState, tokenId: u256) -> ContractAddress {
-            self.erc721.get_approved(tokenId)
-        }
-
-        fn isApprovedForAll(
-            self: @ContractState, owner: ContractAddress, operator: ContractAddress
-        ) -> bool {
-            self.erc721.is_approved_for_all(owner, operator)
-        }
-
+    #[external(v0)]
+    impl ERC721MetadataCamelOnly of super::IERC721MetadataCamelOnly<ContractState> {
         fn tokenURI(self: @ContractState, tokenId: u256) -> Array<felt252> {
             let mut base = self.get_base_uri();
             let ten: NonZero<u256> = 10_u256.try_into().unwrap();
@@ -213,16 +128,6 @@ mod ERC721NoGame {
             output.append(111);
             output.append(110);
             output
-        }
-
-        fn token_of(self: @ContractState, address: ContractAddress) -> u256 {
-            self.tokens.read(address)
-        }
-
-        fn mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
-            assert(get_caller_address() == self.minter.read(), 'ERC721 caller not minter');
-            self.erc721._mint(to, token_id);
-            self.tokens.write(to, token_id);
         }
     }
 

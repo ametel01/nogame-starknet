@@ -15,7 +15,8 @@ mod ERC20NoGame {
     #[abi(embed_v0)]
     impl SafeAllowanceImpl = ERC20Component::SafeAllowanceImpl<ContractState>;
     #[abi(embed_v0)]
-    impl SafeAllowanceCamelImpl = ERC20Component::SafeAllowanceCamelImpl<ContractState>;
+    impl SafeAllowanceCamelImpl =
+        ERC20Component::SafeAllowanceCamelImpl<ContractState>;
     #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
     impl InternalImpl = ERC20Component::InternalImpl<ContractState>;
@@ -112,7 +113,7 @@ mod ERC20NoGame {
             );
             self.erc20.transfer_from(sender, recipient, amount)
         }
-        
+
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             self.ownable.assert_only_owner();
             self.erc20._mint(recipient, amount)
