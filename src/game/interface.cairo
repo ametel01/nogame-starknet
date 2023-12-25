@@ -72,7 +72,6 @@ trait INoGame<TState> {
     fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
     fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
-    fn get_last_active(self: @TState, planet_id: u16) -> u64;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
