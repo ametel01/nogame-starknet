@@ -10,7 +10,7 @@ use snforge_std::PrintTrait;
 
 #[inline(always)]
 fn CARRIER() -> Unit {
-    Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 5000, consumption: 10 }
+    Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 10000, consumption: 10 }
 }
 
 #[inline(always)]
