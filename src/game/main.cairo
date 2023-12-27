@@ -379,13 +379,14 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
+            let new_level = techs.energy + quantity.try_into().expect('u32 into u8 failed');
+            assert(new_level <= 3, 'testnet release max level is 3');
             Lab::energy_innovation_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().energy;
             let cost = Lab::get_tech_cost(techs.energy, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            let new_level = techs.energy + quantity.try_into().expect('u32 into u8 failed');
             self.energy_innovation_level.write(planet_id, new_level);
             self
                 .emit(
@@ -421,13 +422,14 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
+            let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
+            assert(new_level <= 3, 'testnet release max level is 3');
             Lab::beam_technology_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().beam;
             let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
-            let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
             self.beam_technology_level.write(planet_id, new_level);
             self
                 .emit(
@@ -525,6 +527,8 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
+            let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
+            assert(new_level <= 3, 'testnet release max level is 3');
             Lab::shield_tech_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().shield;
             let cost = Lab::get_tech_cost(techs.shield, quantity, base_cost);
@@ -567,6 +571,8 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
+            let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
+            assert(new_level <= 6, 'testnet release max level is 6');
             Lab::combustive_engine_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().combustion;
             let cost = Lab::get_tech_cost(techs.combustion, quantity, base_cost);
@@ -588,6 +594,8 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
+            let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
+            assert(new_level <= 4, 'testnet release max level is 4');
             Lab::thrust_propulsion_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().thrust;
             let cost = Lab::get_tech_cost(techs.thrust, quantity, base_cost);
