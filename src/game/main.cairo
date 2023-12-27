@@ -114,7 +114,7 @@ mod NoGame {
     struct CompoundSpent {
         planet_id: u16,
         compound_name: felt252,
-        new_level: u8,
+        quantity: u8,
         spent: ERC20s
     }
 
@@ -122,7 +122,7 @@ mod NoGame {
     struct TechSpent {
         planet_id: u16,
         tech_name: felt252,
-        new_level: u8,
+        quantity: u8,
         spent: ERC20s
     }
 
@@ -130,6 +130,7 @@ mod NoGame {
     struct FleetSpent {
         planet_id: u16,
         ship_name: felt252,
+        quantity: u32,
         spent: ERC20s
     }
 
@@ -137,6 +138,7 @@ mod NoGame {
     struct DefenceSpent {
         planet_id: u16,
         defence_name: felt252,
+        quantity: u32,
         spent: ERC20s
     }
 
@@ -268,7 +270,7 @@ mod NoGame {
             self
                 .emit(
                     CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::STEEL, new_level, spent: cost
+                        planet_id: planet_id, compound_name: Names::STEEL, quantity, spent: cost
                     }
                 );
         }
@@ -287,7 +289,7 @@ mod NoGame {
             self
                 .emit(
                     CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::QUARTZ, new_level, spent: cost
+                        planet_id: planet_id, compound_name: Names::QUARTZ, quantity, spent: cost
                     }
                 );
         }
@@ -305,7 +307,7 @@ mod NoGame {
             self
                 .emit(
                     CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::TRITIUM, new_level, spent: cost
+                        planet_id: planet_id, compound_name: Names::TRITIUM, quantity, spent: cost
                     }
                 );
         }
@@ -325,7 +327,7 @@ mod NoGame {
                     CompoundSpent {
                         planet_id: planet_id,
                         compound_name: Names::ENERGY_PLANT,
-                        new_level,
+                        quantity,
                         spent: cost
                     }
                 );
@@ -345,7 +347,7 @@ mod NoGame {
             self
                 .emit(
                     CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::DOCKYARD, new_level, spent: cost
+                        planet_id: planet_id, compound_name: Names::DOCKYARD, quantity, spent: cost
                     }
                 );
         }
@@ -363,7 +365,7 @@ mod NoGame {
             self
                 .emit(
                     CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::LAB, new_level, spent: cost
+                        planet_id: planet_id, compound_name: Names::LAB, quantity, spent: cost
                     }
                 );
         }
@@ -388,7 +390,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::ENERGY_TECH, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::ENERGY_TECH, quantity, spent: cost
                     }
                 );
         }
@@ -409,7 +411,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::DIGITAL, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::DIGITAL, quantity, spent: cost
                     }
                 );
         }
@@ -430,7 +432,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::BEAM_TECH, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::BEAM_TECH, quantity, spent: cost
                     }
                 );
         }
@@ -451,7 +453,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::ARMOUR, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::ARMOUR, quantity, spent: cost
                     }
                 );
         }
@@ -471,9 +473,7 @@ mod NoGame {
             self.ion_systems_level.write(planet_id, new_level);
             self
                 .emit(
-                    TechSpent {
-                        planet_id: planet_id, tech_name: Names::ION, new_level, spent: cost
-                    }
+                    TechSpent { planet_id: planet_id, tech_name: Names::ION, quantity, spent: cost }
                 );
         }
         fn plasma_engineering_upgrade(ref self: ContractState, quantity: u8) {
@@ -493,7 +493,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::PLASMA_TECH, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::PLASMA_TECH, quantity, spent: cost
                     }
                 );
         }
@@ -515,7 +515,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::WEAPONS, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::WEAPONS, quantity, spent: cost
                     }
                 );
         }
@@ -536,7 +536,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::SHIELD, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::SHIELD, quantity, spent: cost
                     }
                 );
         }
@@ -557,7 +557,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::SPACETIME, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::SPACETIME, quantity, spent: cost
                     }
                 );
         }
@@ -578,7 +578,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::COMBUSTION, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::COMBUSTION, quantity, spent: cost
                     }
                 );
         }
@@ -599,7 +599,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::THRUST, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::THRUST, quantity, spent: cost
                     }
                 );
         }
@@ -620,7 +620,7 @@ mod NoGame {
             self
                 .emit(
                     TechSpent {
-                        planet_id: planet_id, tech_name: Names::WARP, new_level, spent: cost
+                        planet_id: planet_id, tech_name: Names::WARP, quantity, spent: cost
                     }
                 );
         }
@@ -645,7 +645,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::CARRIER, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::CARRIER, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -666,7 +668,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::SCRAPER, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::SCRAPER, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -687,7 +691,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::CELESTIA, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::CELESTIA, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -708,7 +714,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::SPARROW, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::SPARROW, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -729,7 +737,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::FRIGATE, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::FRIGATE, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -750,7 +760,9 @@ mod NoGame {
             self
                 .emit(
                     Event::FleetSpent(
-                        FleetSpent { planet_id: planet_id, ship_name: Names::ARMADE, spent: cost }
+                        FleetSpent {
+                            planet_id: planet_id, ship_name: Names::ARMADE, quantity, spent: cost
+                        }
                     )
                 )
         }
@@ -776,7 +788,10 @@ mod NoGame {
                 .emit(
                     Event::DefenceSpent(
                         DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::BLASTER, spent: cost
+                            planet_id: planet_id,
+                            defence_name: Names::BLASTER,
+                            quantity,
+                            spent: cost
                         }
                     )
                 )
@@ -797,7 +812,7 @@ mod NoGame {
                 .emit(
                     Event::DefenceSpent(
                         DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::BEAM, spent: cost
+                            planet_id: planet_id, defence_name: Names::BEAM, quantity, spent: cost
                         }
                     )
                 )
@@ -820,7 +835,7 @@ mod NoGame {
                 .emit(
                     Event::DefenceSpent(
                         DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::ASTRAL, spent: cost
+                            planet_id: planet_id, defence_name: Names::ASTRAL, quantity, spent: cost
                         }
                     )
                 )
@@ -843,7 +858,7 @@ mod NoGame {
                 .emit(
                     Event::DefenceSpent(
                         DefenceSpent {
-                            planet_id: planet_id, defence_name: Names::PLASMA, spent: cost
+                            planet_id: planet_id, defence_name: Names::PLASMA, quantity, spent: cost
                         }
                     )
                 )
