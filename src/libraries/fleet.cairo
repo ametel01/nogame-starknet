@@ -116,6 +116,7 @@ fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
             break;
         }
 
+        rapid_fire(ref unit1, ref unit2);
         if unit1.weapon < unit2.shield / 100 {
             continue;
         } else if unit1.weapon < unit2.shield {
@@ -127,6 +128,7 @@ fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
             unit2.hull -= unit1.weapon - unit2.shield;
         }
 
+        rapid_fire(ref unit2, ref unit1);
         if unit2.weapon < unit1.shield / 100 {
             continue;
         } else if unit2.weapon < unit1.shield {
@@ -139,6 +141,12 @@ fn unit_combat(ref unit1: Unit, ref unit2: Unit) {
         }
         continue;
     };
+}
+
+fn rapid_fire(ref unit1: Unit, ref unit2: Unit) {
+    if unit1.id == 3 && unit2.id == 2 {
+        unit2.hull = 0
+    }
 }
 
 fn build_fleet_struct(ref a: Array<Unit>) -> (Fleet, DefencesLevels) {
@@ -493,8 +501,7 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
     let mut tritium_loaded = 0;
 
     // # Step 1: Load Metal
-    // metal_to_load = metal / 2
-    let mut steel_to_load = resources.steel / 2;
+    let mut steel_to_load = resources.steel;
     // if metal_to_load <= storage / 3:
     if steel_to_load <= storage / 3 {
         //     metal_loaded += metal_to_load
@@ -511,8 +518,7 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
     storage -= steel_loaded;
 
     // # Step 2: Load Crystal
-    // crystal_to_load = crystal / 2
-    let mut quartz_to_load = resources.quartz / 2;
+    let mut quartz_to_load = resources.quartz;
     // if crystal_to_load <= storage / 2:
     if quartz_to_load <= storage / 2 {
         //     crystal_loaded += crystal_to_load
@@ -530,8 +536,7 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
     storage -= quartz_loaded;
 
     // # Step 3: Load Deuterium
-    // deuterium_to_load = deuterium / 2
-    let tritium_to_load = resources.tritium / 2;
+    let tritium_to_load = resources.tritium;
     // if deuterium_to_load <= storage:
     if tritium_to_load <= storage {
         //     deuterium_loaded += deuterium_to_load

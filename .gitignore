@@ -24,3 +24,5 @@ scripts/goerli/
 scripts/sepolia/
 
 scripts/
+
+.vscode/

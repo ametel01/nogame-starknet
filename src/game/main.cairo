@@ -28,6 +28,8 @@ mod NoGame {
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
+    use snforge_std::PrintTrait;
+
     #[storage]
     struct Storage {
         initialized: bool,
@@ -1015,8 +1017,14 @@ mod NoGame {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
                 let spendable = self.get_spendable_resources(mission.destination);
+                let collectible = self.get_collectible_resources(mission.destination);
+                let mut available_to_loot: ERC20s = Default::default();
+                available_to_loot.steel = available_to_loot.steel + spendable.steel / 2;
+                available_to_loot.quartz =available_to_loot.quartz + spendable.quartz / 2;
+                available_to_loot.tritium = available_to_loot.tritium + spendable.tritium / 2;
+                available_to_loot =available_to_loot + collectible;
                 let storage = fleet::get_fleet_cargo_capacity(f1);
-                loot_amount = fleet::load_resources(spendable, storage);
+                loot_amount = fleet::load_resources(available_to_loot, storage);
                 self.resources_timer.write(mission.destination, time_now);
                 self
                     .pay_resources_erc20(
@@ -1036,6 +1044,8 @@ mod NoGame {
             self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
             self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
 
+            let active_missions = self.active_missions_len.read(origin);
+            self.active_missions_len.write(origin, active_missions - 1);
             self
                 .emit_battle_report(
                     time_now,
@@ -1181,17 +1191,14 @@ mod NoGame {
             let speed = self.uni_speed.read();
             let steel = Production::steel(self.steel_mine_level.read(planet_id))
                 * speed
-                * time_elapsed.into()
-                / HOUR.into();
+                * time_elapsed.into();
             let quartz = Production::quartz(self.quartz_mine_level.read(planet_id))
                 * speed
-                * time_elapsed.into()
-                / HOUR.into();
+                * time_elapsed.into();
             let tritium = Production::tritium(
                 self.tritium_mine_level.read(planet_id), temp, self.uni_speed.read()
             )
-                * time_elapsed.into()
-                / HOUR.into();
+                * time_elapsed.into();
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -1502,45 +1509,46 @@ mod NoGame {
         /// is then scaled based on available and required energy, and the result is returned
         /// as a `Resources` structure.
         fn calculate_production(self: @ContractState, planet_id: u16) -> ERC20s {
-            let time_now = get_block_timestamp();
-            let last_collection_time = self.resources_timer.read(planet_id);
-            let time_elapsed = time_now - last_collection_time;
+            // let time_now = get_block_timestamp();
+            // let last_collection_time = self.resources_timer.read(planet_id);
+            // let time_elapsed = time_now - last_collection_time;
+            // let position = self.planet_position.read(planet_id);
+            // let temp = self.calculate_avg_temperature(position.orbit);
+            // let speed = self.uni_speed.read();
+            // let steel_available = Production::steel(mines_levels.steel)
+            //     * speed
+            //     * time_elapsed.into()
+            //     / HOUR.into();
+
+            // let quartz_available = Production::quartz(mines_levels.quartz)
+            //     * speed
+            //     * time_elapsed.into()
+            //     / HOUR.into();
+
+            // let tritium_available = Production::tritium(mines_levels.tritium, temp, speed)
+            //     * time_elapsed.into()
+            //     / HOUR.into();
             let mines_levels = NoGame::get_compounds_levels(self, planet_id);
-            let position = self.planet_position.read(planet_id);
-            let temp = self.calculate_avg_temperature(position.orbit);
-            let speed = self.uni_speed.read();
-            let steel_available = Production::steel(mines_levels.steel)
-                * speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let quartz_available = Production::quartz(mines_levels.quartz)
-                * speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let tritium_available = Production::tritium(mines_levels.tritium, temp, speed)
-                * time_elapsed.into()
-                / HOUR.into();
+            let raw = self.get_collectible_resources(planet_id);
             let energy_available = Production::energy(mines_levels.energy);
             let energy_required = Consumption::base(mines_levels.steel)
                 + Consumption::base(mines_levels.quartz)
                 + Consumption::base(mines_levels.tritium);
             if energy_available < energy_required {
                 let _steel = Compounds::production_scaler(
-                    steel_available, energy_available, energy_required
+                    raw.steel / 3600, energy_available, energy_required
                 );
                 let _quartz = Compounds::production_scaler(
-                    quartz_available, energy_available, energy_required
+                    raw.quartz / 3600, energy_available, energy_required
                 );
                 let _tritium = Compounds::production_scaler(
-                    tritium_available, energy_available, energy_required
+                    raw.tritium / 3600, energy_available, energy_required
                 );
 
                 return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium, };
             }
 
-            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
+            ERC20s { steel: raw.steel / 3600, quartz: raw.quartz / 3600, tritium: raw.tritium / 3600}
         }
 
         fn calculate_energy_consumption(self: @ContractState, compounds: CompoundsLevels) -> u128 {

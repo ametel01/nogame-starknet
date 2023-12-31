@@ -120,7 +120,7 @@ impl Lab of LabTrait {
             spacetime: ERC20s { steel: 0, quartz: 4000, tritium: 2000 },
             combustion: ERC20s { steel: 400, quartz: 0, tritium: 600 },
             thrust: ERC20s { steel: 2000, quartz: 4000, tritium: 600 },
-            warp: ERC20s { steel: 10000, quartz: 2000, tritium: 6000 },
+            warp: ERC20s { steel: 10000, quartz: 20000, tritium: 6000 },
         }
     }
 }
