@@ -179,14 +179,21 @@ fn test_get_collectible_resources() {
 }
 
 #[test]
-#[fork(url: "https://starknet-sepolia.blastapi.io/e88cff07-b7b6-48d0-8be6-292f660dc735/rpc/v0_6", block_id: BlockId::Number(12196))]
+#[fork(
+    url: "https://starknet-sepolia.blastapi.io/e88cff07-b7b6-48d0-8be6-292f660dc735/rpc/v0_6",
+    block_id: BlockId::Number(12196)
+)]
 fn test_fork_get_collectible_resources() {
-    let contract_address = contract_address_const::<0x07287f2df129f8869638b5e7bf1b9e5961e57836f9762c8caa80e9e7831eeadc>();
-    let account = contract_address_const::<0x02e492bffa91eb61dbebb7b70c4520f9a1ec2a66ec8559a943a87d299b2782c7>();
-    let collectible = INoGameDispatcher{contract_address}.get_collectible_resources(1);
+    let contract_address = contract_address_const::<
+        0x07287f2df129f8869638b5e7bf1b9e5961e57836f9762c8caa80e9e7831eeadc
+    >();
+    let account = contract_address_const::<
+        0x02e492bffa91eb61dbebb7b70c4520f9a1ec2a66ec8559a943a87d299b2782c7
+    >();
+    let collectible = INoGameDispatcher { contract_address }.get_collectible_resources(1);
     collectible.print();
     start_prank(CheatTarget::One(contract_address), account);
-    let collectible = INoGameDispatcher{contract_address}.collect_resources();
+    let collectible = INoGameDispatcher { contract_address }.collect_resources();
 }
 
 #[test]

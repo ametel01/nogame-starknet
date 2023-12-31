@@ -1020,9 +1020,9 @@ mod NoGame {
                 let collectible = self.get_collectible_resources(mission.destination);
                 let mut available_to_loot: ERC20s = Default::default();
                 available_to_loot.steel = available_to_loot.steel + spendable.steel / 2;
-                available_to_loot.quartz =available_to_loot.quartz + spendable.quartz / 2;
+                available_to_loot.quartz = available_to_loot.quartz + spendable.quartz / 2;
                 available_to_loot.tritium = available_to_loot.tritium + spendable.tritium / 2;
-                available_to_loot =available_to_loot + collectible;
+                available_to_loot = available_to_loot + collectible;
                 let storage = fleet::get_fleet_cargo_capacity(f1);
                 loot_amount = fleet::load_resources(available_to_loot, storage);
                 self.resources_timer.write(mission.destination, time_now);
@@ -1548,7 +1548,9 @@ mod NoGame {
                 return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium, };
             }
 
-            ERC20s { steel: raw.steel / 3600, quartz: raw.quartz / 3600, tritium: raw.tritium / 3600}
+            ERC20s {
+                steel: raw.steel / 3600, quartz: raw.quartz / 3600, tritium: raw.tritium / 3600
+            }
         }
 
         fn calculate_energy_consumption(self: @ContractState, compounds: CompoundsLevels) -> u128 {

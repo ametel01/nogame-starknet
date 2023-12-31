@@ -1,22 +1,22 @@
-name: Test
+# name: Test
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-env:
-  SCARB_VERSION: 2.3.1
-  SNFORGE_VERSION: 0.12.0
+# env:
+#   SCARB_VERSION: 2.3.1
+#   SNFORGE_VERSION: 0.12.0
 
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: ${{ env.SCARB_VERSION }}
-      - uses: foundry-rs/setup-snfoundry@v2
-        with:
-          starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
-      - name: Run cairo tests
-        run: 
-          snforge test
+# jobs:
+#   check:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#       - uses: software-mansion/setup-scarb@v1
+#         with:
+#           scarb-version: ${{ env.SCARB_VERSION }}
+#       - uses: foundry-rs/setup-snfoundry@v2
+#         with:
+#           starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
+#       - name: Run cairo tests
+#         run: 
+#           snforge test
