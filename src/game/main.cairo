@@ -15,7 +15,7 @@ mod NoGame {
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names
+        DAY, HOUR, WEEK, Names
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -51,6 +51,7 @@ mod NoGame {
         tritium: IERC20NoGameDispatcher,
         ETH: IERC20CamelDispatcher,
         // Infrastructures.
+        last_active: LegacyMap::<u16, u64>,
         steel_mine_level: LegacyMap::<u16, u8>,
         quartz_mine_level: LegacyMap::<u16, u8>,
         tritium_mine_level: LegacyMap::<u16, u8>,
@@ -887,6 +888,8 @@ mod NoGame {
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
+            let time_now = get_block_timestamp();
+            let is_inactive = time_now - self.last_active.read(destination_id) > WEEK;
 
             if is_debris_collection {
                 assert(
@@ -901,9 +904,11 @@ mod NoGame {
                 );
             } else {
                 assert(destination_id != planet_id, 'cannot send to own planet');
-                assert(
-                    !self.is_noob_protected(planet_id, destination_id), 'noob protection active'
-                );
+                if !is_inactive {
+                    assert(
+                        !self.is_noob_protected(planet_id, destination_id), 'noob protection active'
+                    );
+                }
             }
 
             self.check_enough_ships(planet_id, f);
@@ -927,7 +932,6 @@ mod NoGame {
             self.pay_resources_erc20(caller, cost);
 
             // Write mission
-            let time_now = get_block_timestamp();
             let mut mission: Mission = Default::default();
             mission.time_start = time_now;
             mission.destination = self.get_position_slot_occupant(destination);
@@ -991,10 +995,11 @@ mod NoGame {
             let celestia_before = self.get_celestia_available(mission.destination);
 
             let time_since_arrived = time_now - mission.time_arrival;
+            time_since_arrived.print();
             let mut attacker_fleet: Fleet = mission.fleet;
 
-            if time_since_arrived > HOUR {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - HOUR);
+            if time_since_arrived > (2 * HOUR) {
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
                 attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
@@ -1071,6 +1076,8 @@ mod NoGame {
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.remove_hostile_mission(mission.destination, mission_id);
+            let active_missions = self.active_missions_len.read(origin);
+            self.active_missions_len.write(origin, active_missions - 1);
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -1087,8 +1094,8 @@ mod NoGame {
             let time_since_arrived = time_now - mission.time_arrival;
             let mut collector_fleet: Fleet = mission.fleet;
 
-            if time_since_arrived > HOUR {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - HOUR);
+            if time_since_arrived > (2 *  HOUR) {
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
                 collector_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
@@ -1666,6 +1673,7 @@ mod NoGame {
         /// * `spent`: A value of type `ERC20s` representing the resources spent, including steel and quartz.
         ///
         fn update_planet_points(ref self: ContractState, planet_id: u16, spent: ERC20s) {
+            self.last_active.write(planet_id, get_block_timestamp());
             self
                 .resources_spent
                 .write(

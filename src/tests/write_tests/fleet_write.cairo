@@ -1,4 +1,4 @@
-use starknet::info::{get_block_timestamp, get_contract_address};
+use starknet::info::{get_block_timestamp, get_contract_address, contract_address_const};
 
 use snforge_std::{
     declare, ContractClassTrait, PrintTrait, start_prank, start_warp, spy_events, SpyOn, EventSpy,
@@ -415,6 +415,24 @@ fn test_send_fleet_debris_fails_not_only_scrapers() {
 
     fleet.scraper = 1;
     dsp.game.send_fleet(fleet, p1_position, true);
+}
+
+#[test]
+#[fork(
+    url: "https://starknet-sepolia.blastapi.io/e88cff07-b7b6-48d0-8be6-292f660dc735/rpc/v0_6",
+    block_id: BlockId::Number(14102)
+)]
+fn test_attack_forked() {
+    let contract_address = contract_address_const::<
+        0x07287f2df129f8869638b5e7bf1b9e5961e57836f9762c8caa80e9e7831eeadc
+    >();
+    let account = contract_address_const::<
+        0x02e492bffa91eb61dbebb7b70c4520f9a1ec2a66ec8559a943a87d299b2782c7
+    >();
+    let game = INoGameDispatcher { contract_address }.get_collectible_resources(1);
+    collectible.print();
+    start_prank(CheatTarget::One(contract_address), account);
+    game.attack_planet(1);
 }
 
 #[test]

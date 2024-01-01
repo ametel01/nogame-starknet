@@ -13,8 +13,9 @@ const BANK_ADDRESS: felt252 =
 const _0_05: u128 = 922337203685477600;
 const PRICE: u128 = 221360928884514600;
 const PRECISION: u128 = 1_000_000_000_000_000_000;
-const DAY: u64 = 86400;
-const HOUR: u64 = 3600;
+const WEEK: u64 = 604_800;
+const DAY: u64 = 86_400;
+const HOUR: u64 = 3_600;
 
 #[derive(Copy, Drop, Serde)]
 struct Tokens {
