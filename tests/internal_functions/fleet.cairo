@@ -23,9 +23,7 @@ fn test_war_basic() {
     let mut defences: DefencesLevels = Default::default();
     defences.blaster = 2;
     defences.beam = 2;
-    let (res1, res2, def) = fleet::war(
-        attackers, techs, defenders, defences, Default::default()
-    );
+    let (res1, res2, def) = fleet::war(attackers, techs, defenders, defences, Default::default());
     res1.print();
     def.print();
 }

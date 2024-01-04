@@ -16,9 +16,6 @@ nogame_fixed = {git = "https://github.com/ametel01/nogame-fixed.git", rev="53175
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.12.0" }
 
-[scripts]
-test = "snforge test"
-
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "audited"
 sierra = true
