@@ -2,7 +2,7 @@ use core::result::ResultTrait;
 use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait, CheatTarget};
 
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use nogame::tests::utils::{DEPLOYER, ACCOUNT1};
+use tests::utils::{DEPLOYER, ACCOUNT1};
 
 #[test]
 fn test_token_uri() {

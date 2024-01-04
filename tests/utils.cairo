@@ -98,7 +98,8 @@ fn init_game(dsp: Dispatchers) {
             dsp.eth.contract_address,
             DEPLOYER(),
             1,
-            ONE
+            ONE,
+            false
         );
     start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());

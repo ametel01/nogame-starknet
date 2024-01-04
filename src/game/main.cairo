@@ -33,6 +33,7 @@ mod NoGame {
     #[storage]
     struct Storage {
         initialized: bool,
+        is_testnet: bool,
         receiver: ContractAddress,
         version: u8,
         token_price: u128,
@@ -196,23 +197,24 @@ mod NoGame {
             steel: ContractAddress,
             quartz: ContractAddress,
             tritium: ContractAddress,
-            // rand: ContractAddress,
             eth: ContractAddress,
             receiver: ContractAddress,
             uni_speed: u128,
             token_price: u128,
+            is_testnet: bool,
         ) {
-            // NOTE: uncomment the following after testing with katana.
-            assert(!self.initialized.read(), 'already initialized');
-            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
-            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
-            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
-            self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
-            self.receiver.write(receiver);
-            self.uni_speed.write(uni_speed);
-            self.initialized.write(true);
-            self.token_price.write(token_price);
+            self
+                .init(
+                    erc721,
+                    steel,
+                    quartz,
+                    tritium,
+                    eth,
+                    receiver,
+                    uni_speed,
+                    token_price,
+                    is_testnet
+                )
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
@@ -383,7 +385,9 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             let new_level = techs.energy + quantity.try_into().expect('u32 into u8 failed');
-            assert(new_level <= 3, 'testnet release max level is 3');
+            if self.is_testnet.read() {
+                assert(new_level <= 3, 'testnet release max level is 3');
+            }
             Lab::energy_innovation_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().energy;
             let cost = Lab::get_tech_cost(techs.energy, quantity, base_cost);
@@ -426,7 +430,8 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
-            assert(new_level <= 3, 'testnet release max level is 3');
+            if self.is_testnet.read() {
+            assert(new_level <= 3, 'testnet release max level is 3');}
             Lab::beam_technology_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().beam;
             let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
@@ -531,7 +536,8 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
-            assert(new_level <= 3, 'testnet release max level is 3');
+            if self.is_testnet.read() {
+            assert(new_level <= 3, 'testnet release max level is 3');}
             Lab::shield_tech_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().shield;
             let cost = Lab::get_tech_cost(techs.shield, quantity, base_cost);
@@ -575,7 +581,8 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
-            assert(new_level <= 6, 'testnet release max level is 6');
+            if self.is_testnet.read() {
+            assert(new_level <= 6, 'testnet release max level is 6');}
             Lab::combustive_engine_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().combustion;
             let cost = Lab::get_tech_cost(techs.combustion, quantity, base_cost);
@@ -598,7 +605,8 @@ mod NoGame {
             let lab_level = self.lab_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             let new_level = techs.beam + quantity.try_into().expect('u32 into u8 failed');
-            assert(new_level <= 4, 'testnet release max level is 4');
+            if self.is_testnet.read() {
+            assert(new_level <= 4, 'testnet release max level is 4');}
             Lab::thrust_propulsion_requirements_check(lab_level, techs);
             let base_cost: ERC20s = Lab::base_tech_costs().thrust;
             let cost = Lab::get_tech_cost(techs.thrust, quantity, base_cost);
@@ -995,7 +1003,6 @@ mod NoGame {
             let celestia_before = self.get_celestia_available(mission.destination);
 
             let time_since_arrived = time_now - mission.time_arrival;
-            time_since_arrived.print();
             let mut attacker_fleet: Fleet = mission.fleet;
 
             if time_since_arrived > (2 * HOUR) {
@@ -1016,6 +1023,7 @@ mod NoGame {
 
             self.update_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
+
             let mut loot_amount: ERC20s = Default::default();
 
             if f1.is_zero() {
@@ -1023,19 +1031,39 @@ mod NoGame {
             } else {
                 let spendable = self.get_spendable_resources(mission.destination);
                 let collectible = self.get_collectible_resources(mission.destination);
-                let mut available_to_loot: ERC20s = Default::default();
-                available_to_loot.steel = available_to_loot.steel + spendable.steel / 2;
-                available_to_loot.quartz = available_to_loot.quartz + spendable.quartz / 2;
-                available_to_loot.tritium = available_to_loot.tritium + spendable.tritium / 2;
-                available_to_loot = available_to_loot + collectible;
-                let storage = fleet::get_fleet_cargo_capacity(f1);
-                loot_amount = fleet::load_resources(available_to_loot, storage);
+                let mut loot_collectible: ERC20s = Default::default();
+                let mut storage = fleet::get_fleet_cargo_capacity(f1);
+                if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
+                    loot_amount = fleet::load_resources(collectible + spendable, storage);
+                    self.receive_resources_erc20(get_caller_address(), loot_amount);
+                } else {
+                    let loot_amount_collectible = fleet::load_resources(collectible, storage);
+                    let mut loot_amount_spendable: ERC20s = Default::default();
+                    loot_amount_spendable.steel = spendable.steel / 2;
+                    loot_amount_spendable.quartz = spendable.quartz / 2;
+                    loot_amount_spendable.tritium = spendable.tritium / 2;
+                    loot_amount_spendable =
+                        fleet::load_resources(
+                            loot_amount_spendable,
+                            storage
+                                - (loot_amount_collectible.steel
+                                    + loot_amount_collectible.quartz
+                                    + loot_amount_collectible.tritium)
+                        );
+                    loot_amount = loot_amount_collectible + loot_amount_spendable;
+
+                    self
+                        .pay_resources_erc20(
+                            self.erc721.read().ownerOf(mission.destination.into()),
+                            loot_amount_spendable
+                        );
+                    self
+                        .receive_resources_erc20(
+                            get_caller_address(), loot_amount_collectible + loot_amount_spendable
+                        );
+                }
+
                 self.resources_timer.write(mission.destination, time_now);
-                self
-                    .pay_resources_erc20(
-                        self.erc721.read().ownerOf(mission.destination.into()), loot_amount
-                    );
-                self.receive_resources_erc20(get_caller_address(), loot_amount);
                 self.fleet_return_planet(origin, f1);
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             }
@@ -1049,8 +1077,6 @@ mod NoGame {
             self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
             self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
 
-            let active_missions = self.active_missions_len.read(origin);
-            self.active_missions_len.write(origin, active_missions - 1);
             self
                 .emit_battle_report(
                     time_now,
@@ -1076,8 +1102,6 @@ mod NoGame {
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.remove_hostile_mission(mission.destination, mission_id);
-            let active_missions = self.active_missions_len.read(origin);
-            self.active_missions_len.write(origin, active_missions - 1);
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -1094,7 +1118,7 @@ mod NoGame {
             let time_since_arrived = time_now - mission.time_arrival;
             let mut collector_fleet: Fleet = mission.fleet;
 
-            if time_since_arrived > (2 *  HOUR) {
+            if time_since_arrived > (2 * HOUR) {
                 let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
                 collector_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
@@ -1271,15 +1295,6 @@ mod NoGame {
             self.position_to_celestia_production(position.orbit)
         }
 
-        fn get_techs_levels(self: @ContractState, planet_id: u16) -> TechLevels {
-            self.get_tech_levels(planet_id)
-        }
-
-        fn get_techs_upgrade_cost(self: @ContractState, planet_id: u16) -> TechsCost {
-            let techs = self.get_tech_levels(planet_id);
-            self.techs_cost(techs)
-        }
-
         fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
             Fleet {
                 carrier: self.carrier_available.read(planet_id),
@@ -1396,6 +1411,31 @@ mod NoGame {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn init(
+            ref self: ContractState,
+            erc721: ContractAddress,
+            steel: ContractAddress,
+            quartz: ContractAddress,
+            tritium: ContractAddress,
+            eth: ContractAddress,
+            receiver: ContractAddress,
+            uni_speed: u128,
+            token_price: u128,
+            is_testnet: bool
+        ) {
+            assert(!self.initialized.read(), 'already initialized');
+            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
+            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
+            self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
+            self.receiver.write(receiver);
+            self.uni_speed.write(uni_speed);
+            self.initialized.write(true);
+            self.token_price.write(token_price);
+            self.is_testnet.write(is_testnet);
+        }
+
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             let auction = LinearVRGDA {
                 target_price: FixedTrait::new(self.token_price.read(), false),
@@ -1713,41 +1753,6 @@ mod NoGame {
                 combustion: self.combustive_engine_level.read(planet_id),
                 thrust: self.thrust_propulsion_level.read(planet_id),
                 warp: self.warp_drive_level.read(planet_id)
-            }
-        }
-
-        fn techs_cost(self: @ContractState, techs: TechLevels) -> TechsCost {
-            let costs: TechsCost = Lab::base_tech_costs();
-            let energy = Lab::get_tech_cost(techs.energy, techs.energy + 1, costs.energy);
-            let digital = Lab::get_tech_cost(techs.digital, techs.digital + 1, costs.digital);
-            let beam = Lab::get_tech_cost(techs.beam, techs.beam + 1, costs.beam);
-            let ion = Lab::get_tech_cost(techs.ion, techs.ion + 1, costs.ion);
-            let plasma = Lab::get_tech_cost(techs.plasma, techs.plasma + 1, costs.plasma);
-            let spacetime = Lab::get_tech_cost(
-                techs.spacetime, techs.spacetime + 1, costs.spacetime
-            );
-            let combustion = Lab::get_tech_cost(
-                techs.combustion, techs.combustion + 1, costs.combustion
-            );
-            let thrust = Lab::get_tech_cost(techs.thrust, techs.thrust + 1, costs.thrust);
-            let warp = Lab::get_tech_cost(techs.warp, techs.warp + 1, costs.warp);
-            let armour = Lab::get_tech_cost(techs.armour, techs.armour + 1, costs.armour);
-            let weapons = Lab::get_tech_cost(techs.weapons, techs.weapons + 1, costs.weapons);
-            let shield = Lab::get_tech_cost(techs.shield, techs.shield + 1, costs.shield);
-
-            TechsCost {
-                energy: energy,
-                digital: digital,
-                beam: beam,
-                ion: ion,
-                plasma: plasma,
-                spacetime: spacetime,
-                combustion: combustion,
-                thrust: thrust,
-                warp: warp,
-                armour: armour,
-                weapons: weapons,
-                shield: shield
             }
         }
 

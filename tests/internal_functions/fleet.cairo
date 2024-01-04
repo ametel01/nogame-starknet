@@ -6,7 +6,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
 use nogame::libraries::fleet;
 
-use nogame::tests::utils::{
+use tests::utils::{
     ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
     warp_multiple
 };
@@ -14,11 +14,20 @@ use nogame::tests::utils::{
 #[test]
 fn test_war_basic() {
     let mut attackers: Fleet = Default::default();
+    attackers.sparrow = 35;
+    attackers.carrier = 5;
+    let mut techs: TechLevels = Default::default();
+    techs.armour = 3;
+    techs.weapons = 3;
     let mut defenders: Fleet = Default::default();
     let mut defences: DefencesLevels = Default::default();
+    defences.blaster = 2;
+    defences.beam = 2;
     let (res1, res2, def) = fleet::war(
-        attackers, Default::default(), defenders, defences, Default::default()
+        attackers, techs, defenders, defences, Default::default()
     );
+    res1.print();
+    def.print();
 }
 
 #[test]

@@ -18,6 +18,7 @@ trait INoGame<TState> {
         receiver: ContractAddress,
         uni_speed: u128,
         token_price: u128,
+        is_testnet: bool
     );
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
@@ -81,8 +82,6 @@ trait INoGame<TState> {
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
     fn get_energy_gain_after_upgrade(self: @TState, planet_id: u16) -> u128;
     fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
-    fn get_techs_levels(self: @TState, planet_id: u16) -> TechLevels;
-    fn get_techs_upgrade_cost(self: @TState, planet_id: u16) -> TechsCost;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
     fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_celestia_available(self: @TState, planet_id: u16) -> u32;

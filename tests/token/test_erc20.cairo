@@ -1,6 +1,6 @@
 use starknet::contract_address_const;
 
-use nogame::tests::utils::{DEPLOYER, ACCOUNT1, ETH_SUPPLY, E18};
+use tests::utils::{DEPLOYER, ACCOUNT1, ETH_SUPPLY, E18};
 use nogame::token::erc20::erc20::{ERC20};
 use openzeppelin::token::erc20::interface::{
     IERC20CamelDispatcher, IERC20CamelDispatcherTrait, IERC20MetadataDispatcher,

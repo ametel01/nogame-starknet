@@ -42,6 +42,21 @@ impl ERC20sAdd of Add<ERC20s> {
     }
 }
 
+impl ERC20sPartialOrd of PartialOrd<ERC20s> {
+    fn le(lhs: ERC20s, rhs: ERC20s) -> bool {
+        return (lhs.steel <= rhs.steel && lhs.quartz <= rhs.quartz && lhs.tritium <= rhs.tritium);
+    }
+    fn ge(lhs: ERC20s, rhs: ERC20s) -> bool {
+        return (lhs.steel >= rhs.steel && lhs.quartz >= rhs.quartz && lhs.tritium >= rhs.tritium);
+    }
+    fn lt(lhs: ERC20s, rhs: ERC20s) -> bool {
+        return (lhs.steel < rhs.steel && lhs.quartz < rhs.quartz && lhs.tritium < rhs.tritium);
+    }
+    fn gt(lhs: ERC20s, rhs: ERC20s) -> bool {
+        return (lhs.steel > rhs.steel && lhs.quartz > rhs.quartz && lhs.tritium > rhs.tritium);
+    }
+}
+
 fn erc20_mul(a: ERC20s, multiplicator: u128) -> ERC20s {
     ERC20s {
         steel: a.steel * multiplicator,

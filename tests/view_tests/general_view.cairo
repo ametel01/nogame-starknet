@@ -9,7 +9,7 @@ use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
     Fleet
 };
-use nogame::tests::utils::{
+use tests::utils::{
     E18, HOUR, DAY, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game,
     set_up, DEPLOYER, build_basic_mines, advance_game_state, warp_multiple,
 };

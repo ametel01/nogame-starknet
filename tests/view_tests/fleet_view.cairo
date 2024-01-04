@@ -1,16 +1,14 @@
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
-use snforge_std::PrintTrait;
-
-use snforge_std::{start_prank, start_warp, CheatTarget};
+use snforge_std::{start_prank, start_warp, CheatTarget, PrintTrait};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
     Fleet
 };
-use nogame::tests::utils::{
+use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, init_game, set_up,
     build_basic_mines, advance_game_state
 };
@@ -154,6 +152,7 @@ fn test_get_active_missions() {
 
     dsp.game.recall_fleet(1);
     let mut missions = dsp.game.get_active_missions(1);
+    missions.len().print();
     assert(missions.len() == 2, 'wrong assert #11');
 
     assert(*missions.at(0).id == 2, 'wrong assert #12');
