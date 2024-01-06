@@ -6,7 +6,6 @@ use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
-use snforge_std::PrintTrait;
 
 #[inline(always)]
 fn CARRIER() -> Unit {

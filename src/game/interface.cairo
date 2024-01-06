@@ -22,8 +22,9 @@ trait INoGame<TState> {
     );
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
-    fn version(self: @TState) -> u8;
     // Write functions
+    fn generate_mint_key(ref self: TState, secret: felt252);
+    fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
     fn steel_mine_upgrade(ref self: TState, quantity: u8);
@@ -77,29 +78,16 @@ trait INoGame<TState> {
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
     fn get_energy_available(self: @TState, planet_id: u16) -> u128;
-    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
     fn get_compounds_upgrade_cost(self: @TState, planet_id: u16) -> CompoundsCost;
     fn get_energy_for_upgrade(self: @TState, planet_id: u16) -> EnergyCost;
     fn get_energy_gain_after_upgrade(self: @TState, planet_id: u16) -> u128;
     fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
-    fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
-    fn get_defences_cost(self: @TState) -> DefencesCost;
     fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
     fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
     fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
-    fn get_travel_time(
-        self: @TState,
-        origin: PlanetPosition,
-        destination: PlanetPosition,
-        fleet: Fleet,
-        techs: TechLevels
-    ) -> u64;
-    fn get_fuel_consumption(
-        self: @TState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
-    ) -> u128;
 }
 

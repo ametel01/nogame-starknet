@@ -7,6 +7,7 @@ mod NoGame {
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
         SyscallResultTrait, class_hash::ClassHash
     };
+    use core::poseidon::poseidon_hash_span;
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
 
@@ -27,8 +28,6 @@ mod NoGame {
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
-
-    use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {
@@ -51,7 +50,8 @@ mod NoGame {
         quartz: IERC20NoGameDispatcher,
         tritium: IERC20NoGameDispatcher,
         ETH: IERC20CamelDispatcher,
-        // Infrastructures.
+
+        pioneer_nft_key: LegacyMap<ContractAddress, felt252>,
         last_active: LegacyMap::<u16, u64>,
         steel_mine_level: LegacyMap::<u16, u8>,
         quartz_mine_level: LegacyMap::<u16, u8>,
@@ -218,19 +218,29 @@ mod NoGame {
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            assert(get_caller_address() == self.receiver.read(), 'caller is not admin');
             assert(!impl_hash.is_zero(), 'Class hash cannot be zero');
             starknet::replace_class_syscall(impl_hash).unwrap_syscall();
             self.version.write(self.version.read() + 1);
             self.emit(Event::Upgraded(Upgraded { implementation: impl_hash }))
         }
 
-        fn version(self: @ContractState) -> u8 {
-            self.version.read()
-        }
-
         /////////////////////////////////////////////////////////////////////
         //                         Planet Functions                                
         /////////////////////////////////////////////////////////////////////
+        fn generate_mint_key(ref self: ContractState, secret: felt252) {
+            let caller = get_caller_address();
+            let planet_id = self.get_owned_planet(caller);
+            assert(self.get_planet_points(planet_id) > 100, 'insufficient points');
+            let params: Span<felt252> = array![planet_id.into(), caller.into(), secret].span();
+            let hash = poseidon_hash_span(params);
+            self.pioneer_nft_key.write(caller, hash);
+        }
+
+        fn get_mint_key(self: @ContractState, account: ContractAddress) -> felt252 {
+            self.pioneer_nft_key.read(account)
+        }
+
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
             let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
@@ -654,7 +664,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::carrier_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).carrier);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().carrier);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -677,7 +687,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::scraper_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).scraper);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().scraper);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -700,7 +710,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::celestia_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).celestia);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().celestia);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -723,7 +733,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::sparrow_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).sparrow);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().sparrow);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -746,7 +756,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::frigate_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).frigate);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().frigate);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -769,7 +779,7 @@ mod NoGame {
             let dockyard_level = self.dockyard_level.read(planet_id);
             let techs = self.get_tech_levels(planet_id);
             Dockyard::armade_requirements_check(dockyard_level, techs);
-            let cost = Dockyard::get_ships_cost(quantity, NoGame::get_ships_cost(@self).armade);
+            let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().armade);
             self.check_enough_resources(caller, cost);
             self.pay_resources_erc20(caller, cost);
             self.update_planet_points(planet_id, cost);
@@ -929,7 +939,7 @@ mod NoGame {
             let travel_time = fleet::get_flight_time(speed, distance);
 
             // Check numeber of mission
-            let active_missions = self.active_missions_len.read(planet_id);
+            let active_missions = self.get_active_missions(planet_id).len();
             assert(active_missions < techs.digital.into() + 1, 'max active missions');
 
             // Pay for fuel
@@ -1234,7 +1244,7 @@ mod NoGame {
         }
 
         fn get_energy_available(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
+            let compounds_levels = self.get_compounds_levels(planet_id);
             let gross_production = Production::energy(compounds_levels.energy);
             let celestia_production = (self.celestia_available.read(planet_id).into() * 15);
             let energy_required = (self.calculate_energy_consumption(compounds_levels));
@@ -1243,17 +1253,6 @@ mod NoGame {
             } else {
                 return gross_production + celestia_production - energy_required;
             }
-        }
-
-        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
-            (CompoundsLevels {
-                steel: self.steel_mine_level.read(planet_id),
-                quartz: self.quartz_mine_level.read(planet_id),
-                tritium: self.tritium_mine_level.read(planet_id),
-                energy: self.energy_plant_level.read(planet_id),
-                lab: self.lab_level.read(planet_id),
-                dockyard: self.dockyard_level.read(planet_id)
-            })
         }
 
         fn get_compounds_upgrade_cost(self: @ContractState, planet_id: u16) -> CompoundsCost {
@@ -1285,7 +1284,7 @@ mod NoGame {
         }
 
         fn get_energy_gain_after_upgrade(self: @ContractState, planet_id: u16) -> u128 {
-            let compounds_levels = NoGame::get_compounds_levels(self, planet_id);
+            let compounds_levels = self.get_compounds_levels(planet_id);
             Production::energy(compounds_levels.energy + 1)
                 - Production::energy(compounds_levels.energy)
         }
@@ -1305,21 +1304,6 @@ mod NoGame {
             }
         }
 
-        fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
-            self.celestia_available.read(planet_id)
-        }
-
-        fn get_ships_cost(self: @ContractState) -> ShipsCost {
-            ShipsCost {
-                carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
-                celestia: ERC20s { steel: 0, quartz: 2000, tritium: 500 },
-                scraper: ERC20s { steel: 10000, quartz: 6000, tritium: 2000 },
-                sparrow: ERC20s { steel: 3000, quartz: 1000, tritium: 0 },
-                frigate: ERC20s { steel: 20000, quartz: 7000, tritium: 2000 },
-                armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 }
-            }
-        }
-
         fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
             DefencesLevels {
                 celestia: self.celestia_available.read(planet_id),
@@ -1330,13 +1314,8 @@ mod NoGame {
             }
         }
 
-        fn get_defences_cost(self: @ContractState) -> DefencesCost {
-            DefencesCost {
-                blaster: ERC20s { steel: 2000, quartz: 0, tritium: 0 },
-                beam: ERC20s { steel: 6000, quartz: 2000, tritium: 0 },
-                astral: ERC20s { steel: 20000, quartz: 15000, tritium: 2000 },
-                plasma: ERC20s { steel: 50000, quartz: 50000, tritium: 30000 },
-            }
+        fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
+            self.celestia_available.read(planet_id)
         }
 
         fn is_noob_protected(self: @ContractState, planet1_id: u16, planet2_id: u16) -> bool {
@@ -1386,27 +1365,6 @@ mod NoGame {
             };
             arr
         }
-
-        fn get_travel_time(
-            self: @ContractState,
-            origin: PlanetPosition,
-            destination: PlanetPosition,
-            fleet: Fleet,
-            techs: TechLevels
-        ) -> u64 {
-            let destination_id = self.position_to_planet.read(destination);
-            assert(!destination_id.is_zero(), 'no planet at destination');
-            let distance = fleet::get_distance(origin, destination);
-            let speed = fleet::get_fleet_speed(fleet, techs);
-            fleet::get_flight_time(speed, distance)
-        }
-
-        fn get_fuel_consumption(
-            self: @ContractState, origin: PlanetPosition, destination: PlanetPosition, fleet: Fleet
-        ) -> u128 {
-            let distance = fleet::get_distance(origin, destination);
-            fleet::get_fuel_consumption(fleet, distance)
-        }
     }
 
     #[generate_trait]
@@ -1434,6 +1392,37 @@ mod NoGame {
             self.initialized.write(true);
             self.token_price.write(token_price);
             self.is_testnet.write(is_testnet);
+        }
+
+        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.steel_mine_level.read(planet_id),
+                quartz: self.quartz_mine_level.read(planet_id),
+                tritium: self.tritium_mine_level.read(planet_id),
+                energy: self.energy_plant_level.read(planet_id),
+                lab: self.lab_level.read(planet_id),
+                dockyard: self.dockyard_level.read(planet_id)
+            }
+        }
+
+        fn get_ships_cost(self: @ContractState) -> ShipsCost {
+            ShipsCost {
+                carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
+                celestia: ERC20s { steel: 0, quartz: 2000, tritium: 500 },
+                scraper: ERC20s { steel: 10000, quartz: 6000, tritium: 2000 },
+                sparrow: ERC20s { steel: 3000, quartz: 1000, tritium: 0 },
+                frigate: ERC20s { steel: 20000, quartz: 7000, tritium: 2000 },
+                armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 }
+            }
+        }
+
+        fn get_defences_cost(self: @ContractState) -> DefencesCost {
+            DefencesCost {
+                blaster: ERC20s { steel: 2000, quartz: 0, tritium: 0 },
+                beam: ERC20s { steel: 6000, quartz: 2000, tritium: 0 },
+                astral: ERC20s { steel: 20000, quartz: 15000, tritium: 2000 },
+                plasma: ERC20s { steel: 50000, quartz: 50000, tritium: 30000 },
+            }
         }
 
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
@@ -1575,7 +1564,7 @@ mod NoGame {
             // let tritium_available = Production::tritium(mines_levels.tritium, temp, speed)
             //     * time_elapsed.into()
             //     / HOUR.into();
-            let mines_levels = NoGame::get_compounds_levels(self, planet_id);
+            let mines_levels = self.get_compounds_levels(planet_id);
             let raw = self.get_collectible_resources(planet_id);
             let energy_available = Production::energy(mines_levels.energy);
             let energy_required = Consumption::base(mines_levels.steel)

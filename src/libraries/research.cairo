@@ -2,8 +2,6 @@ use core::traits::Into;
 use nogame::libraries::math::pow;
 use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
 
-use snforge_std::PrintTrait;
-
 #[generate_trait]
 impl Lab of LabTrait {
     fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
