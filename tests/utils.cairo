@@ -5,7 +5,7 @@ use starknet::{
 };
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
-use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::PRICE;
