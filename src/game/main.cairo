@@ -9,7 +9,7 @@ mod NoGame {
     };
     use core::poseidon::poseidon_hash_span;
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
- use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
