@@ -152,7 +152,6 @@ fn test_get_active_missions() {
 
     dsp.game.recall_fleet(1);
     let mut missions = dsp.game.get_active_missions(1);
-    missions.len().print();
     assert(missions.len() == 2, 'wrong assert #11');
 
     assert(*missions.at(0).id == 2, 'wrong assert #12');
@@ -190,90 +189,3 @@ fn test_get_active_missions() {
     assert(missions.len() == 0, 'wrong assert #27');
 }
 
-#[test]
-fn test_get_travel_time() {
-    let dsp = set_up();
-    init_game(dsp);
-
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.generate_planet();
-
-    let p1 = dsp.game.get_planet_position(1);
-    let p2 = dsp.game.get_planet_position(2);
-
-    let mut f1: Fleet = Default::default();
-    f1.carrier = 1;
-    let mut f2: Fleet = Default::default();
-    f2.scraper = 1;
-    let mut f3: Fleet = Default::default();
-    f3.sparrow = 1;
-    let mut f4: Fleet = Default::default();
-    f4.frigate = 1;
-    let mut f4: Fleet = Default::default();
-    f4.frigate = 1;
-    let mut f5: Fleet = Default::default();
-    f5.armade = 1;
-
-    let mut techs: TechLevels = Default::default();
-    techs.thrust = 4;
-    techs.spacetime = 3;
-
-    let t1 = dsp.game.get_travel_time(p1, p2, f1, Default::default());
-    assert(t1 == 12812, 'wrong assert #1');
-
-    let t2 = dsp.game.get_travel_time(p1, p2, f2, Default::default());
-    assert(t2 == 20252, 'wrong assert #2');
-
-    let t3 = dsp.game.get_travel_time(p1, p2, f3, Default::default());
-    assert(t3 == 8107, 'wrong assert #3');
-
-    let t4 = dsp.game.get_travel_time(p1, p2, f4, techs);
-    assert(t4 == 7401, 'wrong assert #4');
-
-    let t5 = dsp.game.get_travel_time(p1, p2, f5, techs);
-    assert(t5 == 9062, 'wrong assert #5');
-}
-
-#[test]
-fn test_get_fuel_consumption() {
-    let dsp = set_up();
-    init_game(dsp);
-
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.generate_planet();
-
-    let p1 = dsp.game.get_planet_position(1);
-    let p2 = dsp.game.get_planet_position(2);
-
-    let mut f1: Fleet = Default::default();
-    f1.carrier = 1;
-    let mut f2: Fleet = Default::default();
-    f2.scraper = 1;
-    let mut f3: Fleet = Default::default();
-    f3.sparrow = 1;
-    let mut f4: Fleet = Default::default();
-    f4.frigate = 1;
-    let mut f4: Fleet = Default::default();
-    f4.frigate = 1;
-    let mut f5: Fleet = Default::default();
-    f5.armade = 1;
-
-    let c1 = dsp.game.get_fuel_consumption(p1, p2, f1);
-    assert(c1 == 1, 'wrong assert #1');
-
-    let c2 = dsp.game.get_fuel_consumption(p1, p2, f2);
-    assert(c2 == 57, 'wrong assert #2');
-
-    let c3 = dsp.game.get_fuel_consumption(p1, p2, f3);
-    assert(c3 == 3, 'wrong assert #3');
-
-    let c4 = dsp.game.get_fuel_consumption(p1, p2, f4);
-    assert(c4 == 57, 'wrong assert #4');
-
-    let c5 = dsp.game.get_fuel_consumption(p1, p2, f5);
-    assert(c5 == 95, 'wrong assert #5');
-}

@@ -20,7 +20,7 @@ fn test_get_receiver() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-// assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
+    assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
 }
 
 #[test]
@@ -161,7 +161,6 @@ fn test_get_spendable_resources() {
     assert(spendable.tritium == 100, 'wrong spendable ');
 }
 
-
 #[test]
 fn test_get_collectible_resources() {
     let dsp = set_up();
@@ -172,28 +171,9 @@ fn test_get_collectible_resources() {
 
     start_warp(CheatTarget::All, get_block_timestamp() + HOUR / 6);
     let collectible = dsp.game.get_collectible_resources(1);
-    collectible.print();
-// assert(collectible.steel == 30, 'wrong collectible ');
-// assert(collectible.quartz == 30, 'wrong collectible ');
-// assert(collectible.tritium == 0, 'wrong collectible ');
-}
-
-#[test]
-#[fork(
-    url: "https://starknet-sepolia.blastapi.io/e88cff07-b7b6-48d0-8be6-292f660dc735/rpc/v0_6",
-    block_id: BlockId::Number(12196)
-)]
-fn test_fork_get_collectible_resources() {
-    let contract_address = contract_address_const::<
-        0x07287f2df129f8869638b5e7bf1b9e5961e57836f9762c8caa80e9e7831eeadc
-    >();
-    let account = contract_address_const::<
-        0x02e492bffa91eb61dbebb7b70c4520f9a1ec2a66ec8559a943a87d299b2782c7
-    >();
-    let collectible = INoGameDispatcher { contract_address }.get_collectible_resources(1);
-    collectible.print();
-    start_prank(CheatTarget::One(contract_address), account);
-    let collectible = INoGameDispatcher { contract_address }.collect_resources();
+    assert(collectible.steel == 117629, 'wrong collectible ');
+    assert(collectible.quartz == 78643, 'wrong collectible ');
+    assert(collectible.tritium == 30919, 'wrong collectible ');
 }
 
 #[test]
@@ -214,3 +194,4 @@ fn test_get_planet_points() {
     (dsp.game.get_planet_points(2) == 5, 'wrong points 5');
     (dsp.game.get_planet_points(3) == 972, 'wrong points 972');
 }
+

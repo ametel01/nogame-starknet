@@ -99,9 +99,6 @@ fn test_beam_build_fails_beam_tech_level() { // TODO
     assert(0 == 0, 'todo');
 }
 
-fn test_astral_build() {
-    let dsp = set_up();
-    init_game(dsp);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();

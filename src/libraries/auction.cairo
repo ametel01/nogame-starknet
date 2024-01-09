@@ -1,4 +1,3 @@
-// use nogame_fixed::f128::math::core::{ln, abs, exp};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128};
 use nogame_fixed::f128::core::{abs, exp, ln};
 

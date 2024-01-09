@@ -1,11 +1,10 @@
-use core::array::ArrayTrait;
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::core::{exp, sqrt};
 
 use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
-use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
-use nogame_fixed::f128::core::{exp, sqrt};
 
 #[inline(always)]
 fn CARRIER() -> Unit {
@@ -24,7 +23,7 @@ fn SPARROW() -> Unit {
 
 #[inline(always)]
 fn FRIGATE() -> Unit {
-    Unit { id: 3, weapon: 400, shield: 100, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
+    Unit { id: 3, weapon: 400, shield: 150, hull: 8000, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 #[inline(always)]
@@ -41,22 +40,22 @@ fn CELESTIA() -> Unit {
 
 #[inline(always)]
 fn BLASTER() -> Unit {
-    Unit { id: 6, weapon: 125, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 6, weapon: 175, shield: 20, hull: 750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn BEAM() -> Unit {
-    Unit { id: 7, weapon: 250, shield: 100, hull: 2000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 7, weapon: 350, shield: 100, hull: 2500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn ASTRAL() -> Unit {
-    Unit { id: 8, weapon: 1100, shield: 200, hull: 8750, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 8, weapon: 800, shield: 200, hull: 7750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn PLASMA() -> Unit {
-    Unit { id: 9, weapon: 2000, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 9, weapon: 900, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
 }
 
 
@@ -429,6 +428,7 @@ fn get_flight_time(speed: u32, distance: u32) -> u64 {
     let res = ten + multiplier * sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
     (res.mag / ONE).try_into().expect('get flight time failed')
 }
+
 
 #[inline(always)]
 fn get_unit_consumption(ship: Unit, distance: u32) -> u128 {

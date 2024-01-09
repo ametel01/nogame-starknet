@@ -22,6 +22,8 @@ trait INoGame<TState> {
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
     // Write functions
+    fn generate_mint_key(ref self: TState, secret: felt252);
+    fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
     fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
@@ -32,7 +34,6 @@ trait INoGame<TState> {
     fn send_fleet(
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
     );
-    // fn dock_fleet(ref self: TState, mission_id: u8);
     fn attack_planet(ref self: TState, mission_id: usize);
     fn recall_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
@@ -46,23 +47,13 @@ trait INoGame<TState> {
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
-    fn get_energy_available(self: @TState, planet_id: u16) -> u128;
-    fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
+    fn get_planet_points(self: @TState, planet_id: u16) -> u128;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
-    fn get_ships_cost(self: @TState) -> ShipsCost;
     fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
-    fn get_defences_cost(self: @TState) -> DefencesCost;
     fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
     fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
     fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
-    fn get_travel_time(
-        self: @TState,
-        origin: PlanetPosition,
-        destination: PlanetPosition,
-        fleet: Fleet,
-        techs: TechLevels
-    ) -> u64;
 }
 
