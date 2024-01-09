@@ -24,7 +24,7 @@ fn SPARROW() -> Unit {
 
 #[inline(always)]
 fn FRIGATE() -> Unit {
-    Unit { id: 3, weapon: 400, shield: 100, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
+    Unit { id: 3, weapon: 400, shield: 150, hull: 8000, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 #[inline(always)]
@@ -41,22 +41,22 @@ fn CELESTIA() -> Unit {
 
 #[inline(always)]
 fn BLASTER() -> Unit {
-    Unit { id: 6, weapon: 125, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 6, weapon: 175, shield: 20, hull: 750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn BEAM() -> Unit {
-    Unit { id: 7, weapon: 250, shield: 100, hull: 2000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 7, weapon: 350, shield: 100, hull: 2500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn ASTRAL() -> Unit {
-    Unit { id: 8, weapon: 1100, shield: 200, hull: 8750, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 8, weapon: 800, shield: 200, hull: 7750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn PLASMA() -> Unit {
-    Unit { id: 9, weapon: 2000, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 9, weapon: 900, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
 }
 
 

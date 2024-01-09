@@ -148,26 +148,29 @@ fn test_deploy_and_init() {
 // - tritium_mine: 7
 // - energy_plant: 8
 fn build_basic_mines(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 2);
-    game.energy_plant_upgrade(8);
-    game.steel_mine_upgrade(3);
+    game.energy_plant_upgrade(1);
+    game.steel_mine_upgrade(2);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.energy_plant_upgrade(1);
+    game.steel_mine_upgrade(2);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.energy_plant_upgrade(2);
     game.quartz_mine_upgrade(4);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.energy_plant_upgrade(4);
     game.tritium_mine_upgrade(6);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + WEEK * 4);
 }
 
 fn advance_game_state(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + 2 * YEAR);
     game.dockyard_upgrade(8); // dockyard #8
     game.lab_upgrade(7); // lab #7
     game.energy_innovation_upgrade(8); // energy #8
     game.combustive_engine_upgrade(6); // combustive #6
     game.beam_technology_upgrade(10); // beam 10
     game.shield_tech_upgrade(5); // shield #5
-    game.spacetime_warp_upgrade(3); // spacetime #3
-    game.warp_drive_upgrade(4); // warp #4
-    game.ion_systems_upgrade(5); // ion #5
     game.thrust_propulsion_upgrade(4); // impulse #4
-    game.plasma_engineering_upgrade(7); // plasma #7
     game.weapons_development_upgrade(3); // weapons #3
 }
 
