@@ -36,7 +36,6 @@ fn test_war_sparrow_vs_carrier() {
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
-
 }
 
 #[test]

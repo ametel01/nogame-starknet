@@ -9,7 +9,10 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up, build_basic_mines, advance_game_state};
+use tests::utils::{
+    E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up, build_basic_mines,
+    advance_game_state
+};
 use nogame::game::main::NoGame;
 
 #[test]
@@ -29,7 +32,7 @@ fn test_get_ships_levels() {
 
 #[test]
 fn test_get_ships_cost() {
-    let mut state = NoGame::contract_state_for_testing(); 
+    let mut state = NoGame::contract_state_for_testing();
 
     let ships = NoGame::InternalImpl::get_ships_cost(@state);
     assert(ships.carrier.steel == 2000 && ships.carrier.quartz == 2000, 'wrong carrier`');
@@ -51,7 +54,7 @@ fn test_get_ships_cost() {
 }
 
 #[test]
-fn test_get_celestia_available() { 
+fn test_get_celestia_available() {
     let dsp = set_up();
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
@@ -63,5 +66,4 @@ fn test_get_celestia_available() {
     let celestia = dsp.game.get_celestia_available(1);
     assert(celestia == 10, 'wrong celestia');
 }
-
 

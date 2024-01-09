@@ -21,14 +21,14 @@ use nogame::game::main::NoGame::lab_levelContractMemberStateTrait;
 
 #[test]
 fn test_get_compounds_levels() {
-    let mut state = NoGame::contract_state_for_testing();        // <--- Ad. 3
-    state.steel_mine_level.write(1,1);
-    state.quartz_mine_level.write(1,2);
-    state.tritium_mine_level.write(1,3);
-    state.energy_plant_level.write(1,4);
-    state.dockyard_level.write(1,5);
-    state.lab_level.write(1,6);
-    
+    let mut state = NoGame::contract_state_for_testing(); // <--- Ad. 3
+    state.steel_mine_level.write(1, 1);
+    state.quartz_mine_level.write(1, 2);
+    state.tritium_mine_level.write(1, 3);
+    state.energy_plant_level.write(1, 4);
+    state.dockyard_level.write(1, 5);
+    state.lab_level.write(1, 6);
+
     let compounds = NoGame::InternalImpl::get_compounds_levels(@state, 1); // <--- Ad. 2
 
     assert(compounds.steel == 1, 'wrong steel lev');
@@ -41,7 +41,7 @@ fn test_get_compounds_levels() {
 
 #[test]
 fn test_get_compounds_upgrade_cost() {
-    let mut state = NoGame::contract_state_for_testing(); 
+    let mut state = NoGame::contract_state_for_testing();
 
     let costs = NoGame::InternalImpl::get_compounds_upgrade_cost(@state, 1);
     assert(costs.steel.steel == 60 && costs.steel.quartz == 15, 'wrong steel cost');
@@ -59,6 +59,4 @@ fn test_get_compounds_upgrade_cost() {
         'wrong dockyard cost'
     );
 }
-
-
 

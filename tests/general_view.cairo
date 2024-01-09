@@ -20,7 +20,7 @@ fn test_get_receiver() {
     init_game(dsp);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
+    assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
 }
 
 #[test]
@@ -171,9 +171,9 @@ fn test_get_collectible_resources() {
 
     start_warp(CheatTarget::All, get_block_timestamp() + HOUR / 6);
     let collectible = dsp.game.get_collectible_resources(1);
-assert(collectible.steel == 117629, 'wrong collectible ');
-assert(collectible.quartz == 78643, 'wrong collectible ');
-assert(collectible.tritium == 30919, 'wrong collectible ');
+    assert(collectible.steel == 117629, 'wrong collectible ');
+    assert(collectible.quartz == 78643, 'wrong collectible ');
+    assert(collectible.tritium == 30919, 'wrong collectible ');
 }
 
 #[test]
@@ -194,5 +194,4 @@ fn test_get_planet_points() {
     (dsp.game.get_planet_points(2) == 5, 'wrong points 5');
     (dsp.game.get_planet_points(3) == 972, 'wrong points 972');
 }
-
 

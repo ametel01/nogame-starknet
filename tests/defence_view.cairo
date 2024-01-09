@@ -28,7 +28,7 @@ fn test_get_defences_levels() {
 
 #[test]
 fn test_get_defences_cost() {
-    let mut state = NoGame::contract_state_for_testing(); 
+    let mut state = NoGame::contract_state_for_testing();
 
     let def = NoGame::InternalImpl::get_defences_cost(@state);
     assert(def.blaster.steel == 2000, 'wrong blaster');
@@ -42,5 +42,4 @@ fn test_get_defences_cost() {
         'wrong plasma'
     );
 }
-
 

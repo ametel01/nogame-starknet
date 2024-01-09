@@ -189,6 +189,3 @@ fn test_get_active_missions() {
     assert(missions.len() == 0, 'wrong assert #27');
 }
 
-
-
-

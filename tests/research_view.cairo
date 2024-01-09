@@ -17,9 +17,9 @@ use nogame::game::main::NoGame::thrust_propulsion_levelContractMemberStateTrait;
 
 #[test]
 fn test_get_tech_levels() {
-    let mut state = NoGame::contract_state_for_testing();        // <--- Ad. 3
-    state.energy_innovation_level.write(1,10);
-    state.thrust_propulsion_level.write(1,20);
+    let mut state = NoGame::contract_state_for_testing(); // <--- Ad. 3
+    state.energy_innovation_level.write(1, 10);
+    state.thrust_propulsion_level.write(1, 20);
 
     let techs = NoGame::InternalImpl::get_tech_levels(@state, 1);
     assert(techs.energy == 10, 'wrong level');
@@ -35,5 +35,4 @@ fn test_get_tech_levels() {
     assert(techs.thrust == 20, 'wrong level');
     assert(techs.warp == 0, 'wrong level');
 }
-
 

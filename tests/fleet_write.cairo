@@ -613,4 +613,3 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     dsp.game.recall_fleet(2);
 }
 
-
