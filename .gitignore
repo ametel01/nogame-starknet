@@ -15,7 +15,7 @@ testnet.json
 
 .snfoundry_cache/
 
-scripts/metadata/metadata/
+scripts/
 
 *.sh
 

@@ -1,5 +1,3 @@
-use snforge_std::PrintTrait;
-
 use nogame::libraries::math::BitShift;
 
 #[test]

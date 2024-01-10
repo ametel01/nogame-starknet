@@ -23,7 +23,7 @@ fn test_token_uri() {
         if i == token_uri.len() {
             break;
         }
-        (*token_uri.at(i)).print();
+        (*token_uri.at(i));
         i += 1;
     }
 }

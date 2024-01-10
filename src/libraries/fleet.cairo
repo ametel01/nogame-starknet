@@ -1,12 +1,10 @@
-use core::array::ArrayTrait;
-use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128};
-use cubit::f64::types::fixed::{FixedTrait as FixedU64, ONE};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame_fixed::f128::core::{exp, sqrt};
 
 use nogame::libraries::{math, dockyard::Dockyard};
 use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
-use snforge_std::PrintTrait;
 
 #[inline(always)]
 fn CARRIER() -> Unit {
@@ -25,7 +23,7 @@ fn SPARROW() -> Unit {
 
 #[inline(always)]
 fn FRIGATE() -> Unit {
-    Unit { id: 3, weapon: 400, shield: 100, hull: 6750, speed: 15000, cargo: 800, consumption: 300 }
+    Unit { id: 3, weapon: 400, shield: 150, hull: 8000, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 #[inline(always)]
@@ -42,22 +40,22 @@ fn CELESTIA() -> Unit {
 
 #[inline(always)]
 fn BLASTER() -> Unit {
-    Unit { id: 6, weapon: 125, shield: 20, hull: 500, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 6, weapon: 175, shield: 20, hull: 750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn BEAM() -> Unit {
-    Unit { id: 7, weapon: 250, shield: 100, hull: 2000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 7, weapon: 350, shield: 100, hull: 2500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn ASTRAL() -> Unit {
-    Unit { id: 8, weapon: 1100, shield: 200, hull: 8750, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 8, weapon: 800, shield: 200, hull: 7750, speed: 0, cargo: 0, consumption: 0 }
 }
 
 #[inline(always)]
 fn PLASMA() -> Unit {
-    Unit { id: 9, weapon: 2000, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
+    Unit { id: 9, weapon: 900, shield: 300, hull: 20000, speed: 0, cargo: 0, consumption: 0 }
 }
 
 
@@ -362,7 +360,7 @@ fn build_ships_array(
             n_ships -= 1;
             fleet.carrier -= 1;
         }
-        let a = 0;
+        continue;
     };
     array
 }
@@ -423,14 +421,14 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
 #[inline(always)]
 // TODO: implement speed modifier.
 fn get_flight_time(speed: u32, distance: u32) -> u64 {
-    let f_speed = FixedU64::new_unscaled(speed.into(), false);
-    let f_distance = FixedU64::new_unscaled(distance.into(), false);
-    let multiplier = FixedU64::new_unscaled(3500, false);
-    let ten = FixedU64::new_unscaled(10, false);
-    let res = ten
-        + multiplier * FixedU64::sqrt(FixedU64::new_unscaled(10, false) * f_distance / f_speed);
-    res.mag / ONE
+    let f_speed = FixedTrait::new_unscaled(speed.into(), false);
+    let f_distance = FixedTrait::new_unscaled(distance.into(), false);
+    let multiplier = FixedTrait::new_unscaled(3500, false);
+    let ten = FixedTrait::new_unscaled(10, false);
+    let res = ten + multiplier * sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
+    (res.mag / ONE).try_into().expect('get flight time failed')
 }
+
 
 #[inline(always)]
 fn get_unit_consumption(ship: Unit, distance: u32) -> u128 {
@@ -617,14 +615,14 @@ const _0_02: u128 = 368934881474191000;
 // loss = 100 * (1 - math.exp(-k * time_seconds / 60))
 fn calculate_fleet_loss(time_seconds: u64) -> u32 {
     ((FixedTrait::new_unscaled(100_u128, false)
-        * (FixedTrait::new(ONE_u128, false)
+        * (FixedTrait::new(ONE, false)
             - FixedTrait::exp(
                 FixedTrait::new(_0_02, true)
                     * FixedTrait::new_unscaled(time_seconds.into(), false)
                     / FixedTrait::new_unscaled(60, false)
             )))
         .mag
-        / ONE_u128)
+        / ONE)
         .try_into()
         .expect('fleet loss calc failed')
 }
