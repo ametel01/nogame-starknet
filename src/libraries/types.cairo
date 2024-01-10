@@ -435,6 +435,47 @@ impl MissionPrint of PrintTrait<Mission> {
     }
 }
 
+#[derive(Drop, Serde)]
+enum UpgradeType {
+    SteelMine,
+    QuartzMine,
+    TritiumMine,
+    EnergyPlant,
+    Lab,
+    Dockyard,
+    EnergyTech,
+    Digital,
+    BeamTech,
+    Armour,
+    Ion,
+    PlasmaTech,
+    Weapons,
+    Shield,
+    Spacetime,
+    Combustion,
+    Thrust,
+    Warp
+}
+
+
+trait UpgradeTrait<TState, UpgradeType> {
+    fn upgrade(ref self: TState, component: UpgradeType, planet_id: u16) -> ERC20s;
+}
+
+#[derive(Drop, Serde)]
+enum BuildType {
+    Carrier,
+    Scraper,
+    Celestia,
+    Sparrow,
+    Frigate,
+    Armade,
+    Blaster,
+    Beam,
+    Astral,
+    Plasma
+}
+
 mod Names {
     const STEEL: felt252 = 1;
     const QUARTZ: felt252 = 2;

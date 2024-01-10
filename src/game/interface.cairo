@@ -2,7 +2,7 @@ use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    HostileMission
+    HostileMission, UpgradeType, BuildType
 };
 
 #[starknet::interface]
@@ -13,9 +13,8 @@ trait INoGame<TState> {
         steel: ContractAddress,
         quartz: ContractAddress,
         tritium: ContractAddress,
-        // rand: ContractAddress,
         eth: ContractAddress,
-        receiver: ContractAddress,
+        owner: ContractAddress,
         uni_speed: u128,
         token_price: u128,
         is_testnet: bool
@@ -27,29 +26,10 @@ trait INoGame<TState> {
     fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
-    fn steel_mine_upgrade(ref self: TState, quantity: u8);
-    fn quartz_mine_upgrade(ref self: TState, quantity: u8);
-    fn tritium_mine_upgrade(ref self: TState, quantity: u8);
-    fn energy_plant_upgrade(ref self: TState, quantity: u8);
-    fn dockyard_upgrade(ref self: TState, quantity: u8);
-    fn lab_upgrade(ref self: TState, quantity: u8);
-    // Techs functions
-    fn energy_innovation_upgrade(ref self: TState, quantity: u8);
-    fn digital_systems_upgrade(ref self: TState, quantity: u8);
-    fn beam_technology_upgrade(ref self: TState, quantity: u8);
-    fn armour_innovation_upgrade(ref self: TState, quantity: u8);
-    fn weapons_development_upgrade(ref self: TState, quantity: u8);
-    fn shield_tech_upgrade(ref self: TState, quantity: u8);
-    fn combustive_engine_upgrade(ref self: TState, quantity: u8);
-    fn thrust_propulsion_upgrade(ref self: TState, quantity: u8);
-    // Dockyard functions
-    fn carrier_build(ref self: TState, quantity: u32);
-    fn scraper_build(ref self: TState, quantity: u32);
-    fn celestia_build(ref self: TState, quantity: u32);
-    fn sparrow_build(ref self: TState, quantity: u32);
-    // Defences functions
-    fn blaster_build(ref self: TState, quantity: u32);
-    fn beam_build(ref self: TState, quantity: u32);
+    fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
+    fn process_tech_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
+    fn process_ship_build(ref self: TState, component: BuildType, quantity: u32);
+    fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
     // Fleet functions
     fn send_fleet(
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
@@ -58,7 +38,6 @@ trait INoGame<TState> {
     fn recall_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
-    fn get_receiver(self: @TState) -> ContractAddress;
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u16;

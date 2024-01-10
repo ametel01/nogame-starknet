@@ -8,18 +8,17 @@ use snforge_std::{start_prank, start_warp, CheatTarget};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::game::main::NoGame;
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost, Names
 };
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
 
-use nogame::game::main::NoGame::energy_innovation_levelContractMemberStateTrait;
-use nogame::game::main::NoGame::thrust_propulsion_levelContractMemberStateTrait;
+use nogame::game::main::NoGame::techs_levelContractMemberStateTrait;
 
 #[test]
 fn test_get_tech_levels() {
     let mut state = NoGame::contract_state_for_testing(); // <--- Ad. 3
-    state.energy_innovation_level.write(1, 10);
-    state.thrust_propulsion_level.write(1, 20);
+    state.techs_level.write((1,Names::ENERGY_TECH), 10);
+    state.techs_level.write((1, Names::THRUST), 20);
 
     let techs = NoGame::InternalImpl::get_tech_levels(@state, 1);
     assert(techs.energy == 10, 'wrong level');

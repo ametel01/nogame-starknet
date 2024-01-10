@@ -16,6 +16,7 @@ starknet = "2.4.3"
 [scripts]
 test = "snforge test"
 declare = "sh scripts/sepolia/declare.sh"
+deploy = "sh scripts/sepolia/deploy.sh"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "audited"
@@ -25,7 +26,3 @@ casm = true
 [tool.snforge]
 exit_first = false
 
-[tool.sncast.goerli]
-account = "scripts/goerli/goerli-account.json"
-accounts-file = "/Users/alexmetelli/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-url = "https://starknet-goerli.infura.io/v3/25371764a3e44191b39d3b3b98a8c55d"
