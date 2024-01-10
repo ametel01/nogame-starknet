@@ -13,7 +13,7 @@ use nogame::libraries::types::{
 };
 
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use nogame::tests::utils::{
+use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
     YEAR, warp_multiple, advance_game_state
 };
@@ -95,15 +95,9 @@ fn test_beam_build_fails_energy_tech_level() {
 }
 
 #[test]
-fn test_beam_build_fails_beam_tech_level() { // TODO
+fn test_astral_build_fails_beam_tech_level() { 
+   // TODO
     assert(0 == 0, 'todo');
-}
-
-
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-
-    dsp.game.process_defence_build(BuildType::Astral(()), 2);
 }
 
 #[test]
@@ -126,6 +120,7 @@ fn test_astral_build_fails_shield_tech_level() { // TODO
     assert(0 == 0, 'todo');
 }
 
+#[test]
 fn test_plasma_build() {
     let dsp = set_up();
     init_game(dsp);

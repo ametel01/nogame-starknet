@@ -15,15 +15,6 @@ use tests::utils::{
 };
 
 #[test]
-fn test_get_receiver() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    assert(dsp.game.get_receiver() == DEPLOYER(), 'owner is not deployer');
-}
-
-#[test]
 fn test_get_current_planet_price() {
     let dsp = set_up();
     init_game(dsp);
@@ -171,9 +162,9 @@ fn test_get_collectible_resources() {
 
     start_warp(CheatTarget::All, get_block_timestamp() + HOUR / 6);
     let collectible = dsp.game.get_collectible_resources(1);
-    assert(collectible.steel == 117629, 'wrong collectible ');
-    assert(collectible.quartz == 78643, 'wrong collectible ');
-    assert(collectible.tritium == 30919, 'wrong collectible ');
+    assert(collectible.steel == 19, 'wrong collectible ');
+    assert(collectible.quartz == 19, 'wrong collectible ');
+    assert(collectible.tritium == 7, 'wrong collectible ');
 }
 
 #[test]

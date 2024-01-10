@@ -4,12 +4,12 @@ use starknet::{
     get_caller_address, class_hash::ClassHash
 };
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::PRICE;
+use nogame::libraries::types::{PRICE, UpgradeType, BuildType};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
+use nogame::token::erc20::erc20_ng::ERC20NoGame;
 use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
@@ -148,30 +148,27 @@ fn test_deploy_and_init() {
 // - tritium_mine: 7
 // - energy_plant: 8
 fn build_basic_mines(game: INoGameDispatcher) {
-    game.energy_plant_upgrade(1);
-    game.steel_mine_upgrade(2);
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
-    game.energy_plant_upgrade(1);
-    game.steel_mine_upgrade(2);
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
-    game.energy_plant_upgrade(2);
-    game.quartz_mine_upgrade(4);
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
-    game.energy_plant_upgrade(4);
-    game.tritium_mine_upgrade(6);
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + WEEK * 4);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 2);
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 8);
+    game.process_compound_upgrade(UpgradeType::SteelMine(()), 3);
+    game.process_compound_upgrade(UpgradeType::QuartzMine(()), 4);
+    game.process_compound_upgrade(UpgradeType::TritiumMine(()), 6);
 }
 
 fn advance_game_state(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + 2 * YEAR);
-    game.dockyard_upgrade(8); // dockyard #8
-    game.lab_upgrade(7); // lab #7
-    game.energy_innovation_upgrade(8); // energy #8
-    game.combustive_engine_upgrade(6); // combustive #6
-    game.beam_technology_upgrade(10); // beam 10
-    game.shield_tech_upgrade(5); // shield #5
-    game.thrust_propulsion_upgrade(4); // impulse #4
-    game.weapons_development_upgrade(3); // weapons #3
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
+    game.process_compound_upgrade(UpgradeType::Dockyard(()), 8);
+    game.process_compound_upgrade(UpgradeType::Lab(()), 7);
+    game.process_tech_upgrade(UpgradeType::EnergyTech(()), 8);
+    game.process_tech_upgrade(UpgradeType::Combustion(()), 6);
+    game.process_tech_upgrade(UpgradeType::BeamTech(()), 10);
+    game.process_tech_upgrade(UpgradeType::Shield(()), 5);
+    game.process_tech_upgrade(UpgradeType::Spacetime(()), 3);
+    game.process_tech_upgrade(UpgradeType::Warp(()), 4);
+    game.process_tech_upgrade(UpgradeType::Ion(()), 5);
+    game.process_tech_upgrade(UpgradeType::Thrust(()), 4);
+    game.process_tech_upgrade(UpgradeType::PlasmaTech(()), 7);
+    game.process_tech_upgrade(UpgradeType::Weapons(()), 3);
 }
 
 
@@ -183,4 +180,3 @@ fn warp_multiple(a: ContractAddress, b: ContractAddress, time: u64) {
 fn declare_upgradable() -> ClassHash {
     declare('NoGameUpgraded').class_hash
 }
-

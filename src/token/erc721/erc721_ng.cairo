@@ -22,12 +22,6 @@ mod ERC721NoGame {
 
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
-    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
-
-    #[abi(embed_v0)]
-    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
-    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
     #[abi(embed_v0)]
     impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
     #[abi(embed_v0)]
@@ -438,5 +432,3 @@ mod ERC721NoGame {
 //                 }
 //             };
 //         }
-
-

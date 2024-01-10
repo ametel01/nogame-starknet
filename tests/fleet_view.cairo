@@ -1,13 +1,16 @@
 use starknet::testing::cheatcode;
 use starknet::info::get_contract_address;
 use starknet::{ContractAddress, contract_address_const};
-use snforge_std::{start_prank, start_warp, CheatTarget, PrintTrait};
+use snforge_std::PrintTrait;
+
+use snforge_std::{start_prank, start_warp, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
-    Fleet
+    Fleet, BuildType, UpgradeType
 };
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, init_game, set_up,
     build_basic_mines, advance_game_state
@@ -54,9 +57,9 @@ fn test_get_hostile_missions() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(4);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 4);
 
-    dsp.game.carrier_build(5);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 5);
 
     let p2_position = dsp.game.get_planet_position(2);
 
@@ -123,9 +126,9 @@ fn test_get_active_missions() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
-    dsp.game.digital_systems_upgrade(4);
+    dsp.game.process_tech_upgrade(UpgradeType::Digital(()), 4);
 
-    dsp.game.carrier_build(5);
+    dsp.game.process_ship_build(BuildType::Carrier(()), 5);
 
     let p2_position = dsp.game.get_planet_position(2);
 
