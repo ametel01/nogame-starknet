@@ -31,6 +31,6 @@ NoGame StarkNet is a sophisticated blockchain-based gaming application, leveragi
 ## License
 
 
-This project is under the [MIT License](LICENSE).
+This project is under the [CC BY-NC-SA License](LICENSE).
 
 </div>
