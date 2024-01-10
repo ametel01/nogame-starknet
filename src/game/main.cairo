@@ -210,7 +210,7 @@ mod NoGame {
         fn generate_mint_key(ref self: ContractState, secret: felt252) {
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
-            assert(self.get_planet_points(planet_id) > 100, 'insufficient points');
+            assert(self.get_planet_points(planet_id) > 300, 'insufficient points');
             let params: Span<felt252> = array![planet_id.into(), caller.into(), secret].span();
             let hash = poseidon_hash_span(params);
             self.pioneer_nft_key.write(caller, hash);
@@ -394,7 +394,7 @@ mod NoGame {
                         )
                     );
             }
-
+            self.last_active.write(planet_id, time_now);
             // Write new fleet levels
             self.fleet_leave_planet(planet_id, f);
         }
@@ -475,7 +475,6 @@ mod NoGame {
                             get_caller_address(), loot_amount_collectible + loot_amount_spendable
                         );
                 }
-
                 self.resources_timer.write(mission.destination, time_now);
                 self.fleet_return_planet(origin, f1);
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
@@ -489,6 +488,7 @@ mod NoGame {
 
             self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
             self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
+            self.last_active.write(origin, time_now);
 
             self
                 .emit_battle_report(
@@ -515,6 +515,7 @@ mod NoGame {
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.remove_hostile_mission(mission.destination, mission_id);
+            self.last_active.write(origin, get_block_timestamp());
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -562,6 +563,7 @@ mod NoGame {
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
             self.active_missions_len.write(origin, active_missions - 1);
+            self.last_active.write(origin, time_now);
 
             self
                 .emit(
@@ -611,6 +613,38 @@ mod NoGame {
 
         fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u16 {
             self.position_to_planet.read(position)
+        }
+
+        fn get_last_active(self: @ContractState, planet_id: u16) -> u64 {
+            self.last_active.read(planet_id)
+        }
+
+        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.compounds_level.read((planet_id, Names::STEEL)),
+                quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
+                tritium: self.compounds_level.read((planet_id, Names::TRITIUM)),
+                energy: self.compounds_level.read((planet_id, Names::ENERGY_PLANT)),
+                lab: self.compounds_level.read((planet_id, Names::LAB)),
+                dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
+            }
+        }
+
+        fn get_tech_levels(self: @ContractState, planet_id: u16) -> TechLevels {
+            TechLevels {
+                energy: self.techs_level.read((planet_id, Names::ENERGY_TECH)),
+                digital: self.techs_level.read((planet_id, Names::DIGITAL)),
+                beam: self.techs_level.read((planet_id, Names::BEAM_TECH)),
+                armour: self.techs_level.read((planet_id, Names::ARMOUR)),
+                ion: self.techs_level.read((planet_id, Names::ION)),
+                plasma: self.techs_level.read((planet_id, Names::PLASMA_TECH)),
+                weapons: self.techs_level.read((planet_id, Names::WEAPONS)),
+                shield: self.techs_level.read((planet_id, Names::SHIELD)),
+                spacetime: self.techs_level.read((planet_id, Names::SPACETIME)),
+                combustion: self.techs_level.read((planet_id, Names::COMBUSTION)),
+                thrust: self.techs_level.read((planet_id, Names::THRUST)),
+                warp: self.techs_level.read((planet_id, Names::WARP))
+            }
         }
 
         fn get_debris_field(self: @ContractState, planet_id: u16) -> Debris {
@@ -726,7 +760,7 @@ mod NoGame {
             self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
             self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
-            self.receiver.write(receiver);
+            self.ownable.initializer(receiver);
             self.uni_speed.write(uni_speed);
             self.initialized.write(true);
             self.token_price.write(token_price);
@@ -884,34 +918,6 @@ mod NoGame {
             get_block_timestamp() - self.resources_timer.read(planet_id)
         }
 
-        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
-            CompoundsLevels {
-                steel: self.compounds_level.read((planet_id, Names::STEEL)),
-                quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
-                tritium: self.compounds_level.read((planet_id, Names::TRITIUM)),
-                energy: self.compounds_level.read((planet_id, Names::ENERGY_PLANT)),
-                lab: self.compounds_level.read((planet_id, Names::LAB)),
-                dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
-            }
-        }
-
-        fn get_tech_levels(self: @ContractState, planet_id: u16) -> TechLevels {
-            TechLevels {
-                energy: self.techs_level.read((planet_id, Names::ENERGY_TECH)),
-                digital: self.techs_level.read((planet_id, Names::DIGITAL)),
-                beam: self.techs_level.read((planet_id, Names::BEAM_TECH)),
-                armour: self.techs_level.read((planet_id, Names::ARMOUR)),
-                ion: self.techs_level.read((planet_id, Names::ION)),
-                plasma: self.techs_level.read((planet_id, Names::PLASMA_TECH)),
-                weapons: self.techs_level.read((planet_id, Names::WEAPONS)),
-                shield: self.techs_level.read((planet_id, Names::SHIELD)),
-                spacetime: self.techs_level.read((planet_id, Names::SPACETIME)),
-                combustion: self.techs_level.read((planet_id, Names::COMBUSTION)),
-                thrust: self.techs_level.read((planet_id, Names::THRUST)),
-                warp: self.techs_level.read((planet_id, Names::WARP))
-            }
-        }
-
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
             ShipsCost {
                 carrier: ERC20s { steel: 2000, quartz: 2000, tritium: 0 },
@@ -923,7 +929,7 @@ mod NoGame {
             }
         }
 
-         fn get_defences_cost(self: @ContractState) -> DefencesCost {
+        fn get_defences_cost(self: @ContractState) -> DefencesCost {
             DefencesCost {
                 blaster: ERC20s { steel: 2000, quartz: 0, tritium: 0 },
                 beam: ERC20s { steel: 6000, quartz: 2000, tritium: 0 },
@@ -1703,7 +1709,6 @@ mod NoGame {
                 },
             }
         }
-
     }
 }
 

@@ -6,12 +6,14 @@ mod ERC721NoGame {
     use openzeppelin::token::erc721::erc721::ERC721Component;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
     use nogame::token::erc721::interface::IERC721NoGame;
 
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
     const ERC721_NOGAME_ID: felt252 =
         0x1e8208686f48fa69c89a47bbe7a99940495de8d5f238e7316fe57909b728d1a;
@@ -32,6 +34,8 @@ mod ERC721NoGame {
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
+    impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
     #[storage]
     struct Storage {
         tokens: LegacyMap<ContractAddress, u256>,
@@ -42,7 +46,9 @@ mod ERC721NoGame {
         #[substorage(v0)]
         src5: SRC5Component::Storage,
         #[substorage(v0)]
-        ownable: OwnableComponent::Storage
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage,
     }
 
     #[event]
@@ -53,7 +59,9 @@ mod ERC721NoGame {
         #[flat]
         SRC5Event: SRC5Component::Event,
         #[flat]
-        OwnableEvent: OwnableComponent::Event
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event,
     }
 
     #[constructor]
@@ -319,116 +327,62 @@ mod ERC721NoGame {
 
         fn get_base_uri(self: @ContractState) -> Array<felt252> {
             array![
-                104,
-                116,
-                116,
-                112,
-                115,
-                58,
-                47,
-                47,
-                112,
-                105,
-                110,
-                107,
-                45,
-                99,
-                97,
-                112,
-                97,
-                98,
-                108,
-                101,
-                45,
-                115,
-                110,
-                97,
-                107,
-                101,
-                45,
-                57,
-                54,
-                52,
-                46,
-                109,
-                121,
-                112,
-                105,
-                110,
-                97,
-                116,
-                97,
-                46,
-                99,
-                108,
-                111,
-                117,
-                100,
-                47,
                 105,
                 112,
                 102,
                 115,
+                58,
+                47,
                 47,
                 81,
                 109,
-                98,
-                55,
-                81,
-                107,
-                86,
-                98,
-                70,
-                53,
-                113,
-                104,
                 80,
-                103,
-                107,
-                121,
-                66,
-                65,
                 74,
-                101,
-                90,
-                83,
-                105,
-                82,
-                55,
-                107,
-                53,
-                65,
-                112,
-                111,
-                80,
-                50,
-                50,
-                72,
-                121,
-                50,
-                99,
-                75,
-                117,
-                97,
+                113,
                 69,
+                54,
+                81,
+                116,
+                80,
+                120,
+                56,
+                52,
+                102,
+                120,
+                54,
+                90,
+                82,
                 84,
-                97,
-                118,
+                49,
                 72,
-                103,
+                69,
+                51,
+                66,
+                100,
+                50,
+                107,
+                83,
+                52,
+                115,
+                49,
+                57,
+                68,
+                110,
+                74,
+                49,
+                109,
+                70,
+                71,
+                100,
+                110,
+                84,
+                110,
+                56,
+                71,
+                97,
                 47
             ]
         }
     }
 }
-// fn set_base_uri(ref self: ContractState, mut base_uri: Span<felt252>) {
-//             self.ownable.assert_only_owner();
-//             // writing end of text
-//             self.uri.write(base_uri.len().into(), 0);
-//             loop {
-//                 match base_uri.pop_back() {
-//                     Option::Some(value) => { self.uri.write(base_uri.len().into(), *value); },
-//                     Option::None => { break; }
-//                 }
-//             };
-//         }
+

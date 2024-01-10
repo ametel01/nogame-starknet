@@ -95,8 +95,8 @@ fn test_beam_build_fails_energy_tech_level() {
 }
 
 #[test]
-fn test_astral_build_fails_beam_tech_level() { 
-   // TODO
+fn test_astral_build_fails_beam_tech_level() {
+    // TODO
     assert(0 == 0, 'todo');
 }
 

@@ -44,6 +44,9 @@ trait INoGame<TState> {
     fn get_generated_planets_positions(self: @TState) -> Array<PlanetPosition>;
     fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
     fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
+    fn get_last_active(self: @TState, planet_id: u16) -> u64;
+    fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
+    fn get_tech_levels(self: @TState, planet_id: u16) -> TechLevels;
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;

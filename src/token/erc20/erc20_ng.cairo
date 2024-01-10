@@ -27,7 +27,6 @@ mod ERC20NoGame {
 
     #[storage]
     struct Storage {
-        nft: IERC721NoGameDispatcher,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
         #[substorage(v0)]
@@ -45,15 +44,10 @@ mod ERC20NoGame {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState,
-        name: felt252,
-        symbol: felt252,
-        owner: ContractAddress,
-        nft_address: ContractAddress
+        ref self: ContractState, name: felt252, symbol: felt252, owner: ContractAddress,
     ) {
         self.erc20.initializer(name, symbol);
         self.ownable.initializer(owner);
-        self.nft.write(IERC721NoGameDispatcher { contract_address: nft_address });
     }
 
     #[external(v0)]
@@ -73,9 +67,6 @@ mod ERC20NoGame {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            assert(
-                !self.nft.read().balance_of(recipient).is_zero(), 'recipient is not planet owner'
-            );
             self.erc20.transfer(recipient, amount)
         }
 
@@ -85,9 +76,6 @@ mod ERC20NoGame {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            assert(
-                !self.nft.read().balance_of(recipient).is_zero(), 'recipient is not planet owner'
-            );
             self.erc20.transfer_from(sender, recipient, amount)
         }
 
@@ -108,9 +96,6 @@ mod ERC20NoGame {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            assert(
-                !self.nft.read().balance_of(recipient).is_zero(), 'recipient is not planet owner'
-            );
             self.erc20.transfer_from(sender, recipient, amount)
         }
 

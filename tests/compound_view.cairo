@@ -16,22 +16,16 @@ use nogame::game::main::NoGame::compounds_levelContractMemberStateTrait;
 
 #[test]
 fn test_get_compounds_levels() {
-    let mut state = NoGame::contract_state_for_testing(); // <--- Ad. 3
-    state.compounds_level.write((1, Names::STEEL), 1);
-    state.compounds_level.write((1, Names::QUARTZ),2);
-    state.compounds_level.write((1, Names::TRITIUM),3);
-    state.compounds_level.write((1, Names::ENERGY_PLANT),4);
-    state.compounds_level.write((1, Names::DOCKYARD),5);
-    state.compounds_level.write((1,Names::LAB), 6);
+    let dsp = set_up();
+    init_game(dsp);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
 
-    let compounds = NoGame::InternalImpl::get_compounds_levels(@state, 1); // <--- Ad. 2
-
-    assert(compounds.steel == 1, 'wrong steel lev');
-    assert(compounds.quartz == 2, 'wrong quartz lev');
-    assert(compounds.tritium == 3, 'wrong quartz lev');
-    assert(compounds.energy == 4, 'wrong energy lev');
-    assert(compounds.dockyard == 5, 'wrong dockyard lev');
-    assert(compounds.lab == 6, 'wrong lab lev');
+    let compounds = dsp.game.get_compounds_levels(1);
+    assert(compounds.steel == 0, 'wrong steel lev');
+    assert(compounds.quartz == 0, 'wrong quartz lev');
+    assert(compounds.tritium == 0, 'wrong quartz lev');
+    assert(compounds.energy == 0, 'wrong energy lev');
+    assert(compounds.lab == 0, 'wrong energy lev');
+    assert(compounds.dockyard == 0, 'wrong energy lev');
 }
-
-

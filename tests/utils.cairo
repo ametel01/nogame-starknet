@@ -63,13 +63,13 @@ fn set_up() -> Dispatchers {
     let _erc721 = contract.deploy(@calldata).expect('failed erc721');
 
     let contract = declare('ERC20NoGame');
-    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into(), _erc721.into()];
+    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into()];
     let _steel = contract.deploy(@calldata).expect('failed steel');
 
-    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into(), _erc721.into()];
+    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into()];
     let _quartz = contract.deploy(@calldata).expect('failed quartz');
 
-    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into(), _erc721.into()];
+    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into()];
     let _tritium = contract.deploy(@calldata).expect('failed tritium');
 
     let contract = declare('ERC20');
