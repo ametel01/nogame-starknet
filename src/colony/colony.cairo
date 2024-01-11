@@ -1,12 +1,12 @@
-use nogame::libraries::types::{PlanetPosition, UpgradeType, ERC20s};
+use nogame::libraries::types::{PlanetPosition, ColonyUpgradeType, ERC20s};
 
 #[starknet::interface]
 trait INoGameColony<TState> {
     fn generate_colony(ref self: TState, planet_id: u16);
     fn process_compound_upgrade(
-        ref self: TState, planet_id: u16, colony_id: u8, name: UpgradeType, quantity: u8
+        ref self: TState, planet_id: u16, colony_id: u8, name: ColonyUpgradeType, quantity: u8
     );
-    fn get_colony_resources(self: @TState, planet_id: u16 ,colony_id: u8) -> ERC20s;
+    fn get_colony_resources(self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8) -> ERC20s;
 }
 
 mod ResourceName {
@@ -18,9 +18,9 @@ mod ResourceName {
 #[starknet::component]
 mod NoGameColony {
     use starknet::{get_block_timestamp, get_caller_address};
-    use nogame::libraries::types::{PlanetPosition, Names, UpgradeType, ERC20s, CompoundsLevels};
+    use nogame::libraries::types::{PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType};
     use nogame::colony::positions;
-    use nogame::libraries::compounds::CompoundCost;
+    use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
     use super::ResourceName;
 
     #[storage]
@@ -49,16 +49,17 @@ mod NoGameColony {
             ref self: ComponentState<TContractState>,
             planet_id: u16,
             colony_id: u8,
-            name: UpgradeType,
+            name: ColonyUpgradeType,
             quantity: u8
         ) {
             let caller = get_caller_address();
-            // self._collect_resources(caller);
             let cost = self.upgrade_component(planet_id, colony_id, name, quantity);
         }
 
-        fn get_colony_resources(self: @ComponentState<TContractState>, planet_id: u16 ,colony_id: u8) -> ERC20s {
-            let steel = self.
+        fn get_colony_resources(
+            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+        ) -> ERC20s {
+            self.calculate_production(uni_speed, planet_id, colony_id)
         }
     }
 
@@ -66,106 +67,106 @@ mod NoGameColony {
     impl InternalImpl<
         TContractState, +HasComponent<TContractState>
     > of InternalTrait<TContractState> {
-        fn check_enough_resources(planet_id: u16, colony_id: u8, cost: ERC20s) {
-            let re
-        }
         fn upgrade_component(
             ref self: ComponentState<TContractState>,
             planet_id: u16,
             colony_id: u8,
-            component: UpgradeType,
+            component: ColonyUpgradeType,
             quantity: u8
-        ) -> ERC20s {
+        ) {
             match component {
-                UpgradeType::SteelMine => {
-                    let current_level = self.colony_compounds.read((planet_id, colony_id, Names::STEEL));
-                    let cost: ERC20s = CompoundCost::steel(current_level, quantity);
-                    self.check_enough_resources(caller, cost);
+                ColonyUpgradeType::SteelMine => {
+                    let current_level = self
+                        .colony_compounds
+                        .read((planet_id, colony_id, Names::STEEL));
                     self
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::STEEL),
                             current_level + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
-                UpgradeType::QuartzMine => {
-                    let current_level = self.compounds_level.read((planet_id, Names::QUARTZ));
-                    let cost: ERC20s = CompoundCost::quartz(current_level, quantity);
-                    self.check_enough_resources(caller, cost);
-                    self.pay_resources_erc20(caller, cost);
+                ColonyUpgradeType::QuartzMine => {
+                    let current_level = self
+                        .colony_compounds
+                        .read((planet_id, colony_id, Names::QUARTZ));
                     self
-                        .compounds_level
+                        .colony_compounds
                         .write(
-                            (planet_id, Names::QUARTZ),
+                            (planet_id, colony_id, Names::QUARTZ),
                             current_level + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
-                UpgradeType::TritiumMine => {
-                    let current_level = self.compounds_level.read((planet_id, Names::TRITIUM));
-                    let cost: ERC20s = CompoundCost::tritium(current_level, quantity);
-                    self.check_enough_resources(caller, cost);
-                    self.pay_resources_erc20(caller, cost);
+                ColonyUpgradeType::TritiumMine => {
+                    let current_level = self
+                        .colony_compounds
+                        .read((planet_id, colony_id, Names::TRITIUM));
                     self
-                        .compounds_level
+                        .colony_compounds
                         .write(
-                            (planet_id, Names::TRITIUM),
+                            (planet_id, colony_id, Names::TRITIUM),
                             current_level + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
-                UpgradeType::EnergyPlant => {
-                    let current_level = self.compounds_level.read((planet_id, Names::ENERGY_PLANT));
-                    let cost: ERC20s = CompoundCost::energy(current_level, quantity);
-                    self.check_enough_resources(caller, cost);
-                    self.pay_resources_erc20(caller, cost);
+                ColonyUpgradeType::EnergyPlant => {
+                    let current_level = self
+                        .colony_compounds
+                        .read((planet_id, colony_id, Names::ENERGY_PLANT));
                     self
-                        .compounds_level
+                        .colony_compounds
                         .write(
-                            (planet_id, Names::ENERGY_PLANT),
+                            (planet_id, colony_id, Names::ENERGY_PLANT),
                             current_level + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
-                UpgradeType::Dockyard => {
-                    let current_level = self.compounds_level.read((planet_id, Names::DOCKYARD));
-                    let cost: ERC20s = CompoundCost::dockyard(current_level, quantity);
-                    self.check_enough_resources(caller, cost);
+                ColonyUpgradeType::Dockyard => {
+                    let current_level = self
+                        .colony_compounds
+                        .read((planet_id, colony_id, Names::DOCKYARD));
                     self
-                        .compounds_level
+                        .colony_compounds
                         .write(
-                            (planet_id, Names::DOCKYARD),
+                            (planet_id, colony_id, Names::DOCKYARD),
                             current_level + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
             }
         }
 
-        fn get_coumpounds_levels(self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8) -> CompoundsLevels {
-            CompoundsLevels {steel: self.colony_compounds.read(planet_id, colony_id, Names::STEEL), quartz:self.colony_compounds.read(planet_id, colony_id, Names::QUARTZ), tritium: self.colony_compounds.read(planet_id, colony_id, Names::TRITIUM), D }
+
+        fn get_coumpounds_levels(
+            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+        ) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
+                quartz: self.colony_compounds.read((planet_id, colony_id, Names::QUARTZ)),
+                tritium: self.colony_compounds.read((planet_id, colony_id, Names::TRITIUM)),
+                energy: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
+                lab: 0,
+                dockyard: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
+            }
         }
 
-        fn calculate_production(self: @ContractState, planet_id: u16) -> ERC20s {
+        fn calculate_production(
+            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+        ) -> ERC20s {
             let time_now = get_block_timestamp();
-            let last_collection_time = self.resources_timer.read(planet_id);
+            let last_collection_time = self.colony_resource_timer.read((planet_id, colony_id));
             let time_elapsed = time_now - last_collection_time;
-            let mines_levels = self.get_compounds_levels(planet_id);
-            let position = self.planet_position.read(planet_id);
+            let mines_levels = self.get_coumpounds_levels(planet_id, colony_id);
+            let position = self.colony_position.read((planet_id, colony_id));
             let temp = self.calculate_avg_temperature(position.orbit);
-            let speed = self.uni_speed.read();
             let steel_available = Production::steel(mines_levels.steel)
-                * speed
+                * uni_speed
                 * time_elapsed.into()
                 / HOUR.into();
 
             let quartz_available = Production::quartz(mines_levels.quartz)
-                * speed
+                * uni_speed
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let tritium_available = Production::tritium(mines_levels.tritium, temp, speed)
+            let tritium_available = Production::tritium(mines_levels.tritium, temp, uni_speed)
                 * time_elapsed.into()
                 / HOUR.into();
             let energy_available = Production::energy(mines_levels.energy);
@@ -187,6 +188,38 @@ mod NoGameColony {
             }
 
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
+        }
+
+        fn calculate_avg_temperature(self: @ComponentState<TContractState>, orbit: u8) -> u16 {
+            if orbit == 1 {
+                return 230;
+            }
+            if orbit == 2 {
+                return 170;
+            }
+            if orbit == 3 {
+                return 120;
+            }
+            if orbit == 4 {
+                return 70;
+            }
+            if orbit == 5 {
+                return 60;
+            }
+            if orbit == 6 {
+                return 50;
+            }
+            if orbit == 7 {
+                return 40;
+            }
+            if orbit == 8 {
+                return 40;
+            }
+            if orbit == 9 {
+                return 20;
+            } else {
+                return 10;
+            }
         }
     }
 }

@@ -546,3 +546,13 @@ struct SimulationResult {
     astral: u32,
     plasma: u32,
 }
+
+
+#[derive(Drop, Serde)]
+enum ColonyUpgradeType {
+    SteelMine,
+    QuartzMine,
+    TritiumMine,
+    EnergyPlant,
+    Dockyard,
+}
