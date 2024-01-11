@@ -6,7 +6,9 @@ trait INoGameColony<TState> {
     fn process_compound_upgrade(
         ref self: TState, planet_id: u16, colony_id: u8, name: ColonyUpgradeType, quantity: u8
     );
-    fn get_colony_resources(self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8) -> ERC20s;
+    fn get_colony_resources(
+        self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8
+    ) -> ERC20s;
 }
 
 mod ResourceName {
@@ -18,7 +20,9 @@ mod ResourceName {
 #[starknet::component]
 mod NoGameColony {
     use starknet::{get_block_timestamp, get_caller_address};
-    use nogame::libraries::types::{PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType};
+    use nogame::libraries::types::{
+        PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType
+    };
     use nogame::colony::positions;
     use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
     use super::ResourceName;
@@ -52,7 +56,6 @@ mod NoGameColony {
             name: ColonyUpgradeType,
             quantity: u8
         ) {
-            let caller = get_caller_address();
             let cost = self.upgrade_component(planet_id, colony_id, name, quantity);
         }
 
