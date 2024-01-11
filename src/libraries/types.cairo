@@ -506,3 +506,13 @@ mod Names {
     const ASTRAL: felt252 = 27;
     const PLASMA: felt252 = 28;
 }
+
+
+#[derive(Drop, Serde)]
+enum ColonyUpgradeType {
+    SteelMine,
+    QuartzMine,
+    TritiumMine,
+    EnergyPlant,
+    Dockyard,
+}
