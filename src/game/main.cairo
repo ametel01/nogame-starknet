@@ -271,6 +271,12 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
+            self
+                .emit(
+                    TechSpent {
+                        planet_id: planet_id, tech_name: Names::STEEL, quantity, spent: cost
+                    }
+                )
         }
 
         fn process_ship_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -282,6 +288,12 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
+            self
+                .emit(
+                    FleetSpent {
+                        planet_id: planet_id, ship_name: Names::STEEL, quantity, spent: cost
+                    }
+                )
         }
 
         fn process_defence_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -293,6 +305,12 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
+            self
+                .emit(
+                    DefenceSpent {
+                        planet_id: planet_id, defence_name: Names::STEEL, quantity, spent: cost
+                    }
+                )
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -679,6 +697,11 @@ mod NoGame {
 
         fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
             self.defences_level.read((planet_id, Names::CELESTIA))
+        }
+
+        fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
+            let position = self.get_planet_position(planet_id);
+            self.position_to_celestia_production(position.orbit)
         }
 
         fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
