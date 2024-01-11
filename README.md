@@ -14,15 +14,43 @@ NoGame StarkNet is a sophisticated blockchain-based gaming application, leveragi
 
 ---
 
-## Repository Structure
+### 2024 Q1-Q2: Preparation and Expansion Phase
+- [ ] **Technical Optimization & Testing (Q1-Q2)**
+   - Continue testing on SN Sepolia testnet.
+   - Optimize game mechanics and server stability.
 
-- 📄 **`deployed_contracts.txt`** - Record of deployed contracts on StarkNet.
-- 🛠 **`scripts/`** - Deployment and testing scripts for StarkNet contracts.
-- 🧱 **`src/`** - Source code for StarkNet contracts and libraries.
-  - **`game/`** - Smart contracts for the game's core logic.
-  - **`libraries/`** - Custom Cairo libraries, e.g., `auction.cairo`, `fleet.cairo`.
-  - 🧪 **`tests/`** - Test cases for contracts and libraries.
-  - **`token/`** - ERC20 and ERC721 token implementations.
+- [ ] **Add New Features (Q1-Q2)**
+   - Implement colonies.
+   - Expand technology, ships and defences range.
+   - Implement an offchain battle simulator.
+
+- [ ] **EIP4844 and Volition Integration (Q1-Q2)**
+   - Prepare for the implementation of EIP4844 and Volition.
+   - Adjust backend for new technologies.
+   - Plan for cost-effective transaction model.
+
+### 2024 Q2-Q3: Mainnet Launch and Marketing
+- [ ] **Mainnet Deployment (Q2)**
+   - Launch the stable version on StarkNet's mainnet.
+
+- [ ] **Marketing and Community Building (Q2-Q3)**
+   - Launch marketing campaign.
+   - Engage with the community.
+   - Release tutorials and guides.
+
+### 2024 Q3-Q4: Game Development and Expansion
+- [ ] **New Features and Updates (Q3-Q4)**
+   - Introduce new game elements.
+   - Deploy a new universe each quarter of a year.
+
+- [ ] **Resource and Economy Balancing (Q3-Q4)**
+   - Implement a DEX or leverage existing ones to enable resources market.
+
+- [ ] **Cross-Platform Integration (Q4)**
+   - Start a migration on a dedicated L3.
+   - Integrate with mobile if Starknet infra will be ready.
+
+
 
 </div>
 
