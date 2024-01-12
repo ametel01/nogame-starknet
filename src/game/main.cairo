@@ -1,23 +1,27 @@
 // TODOS: 
 #[starknet::contract]
 mod NoGame {
+    use nogame::colony::colony::IColonyView;
+    use nogame::colony::colony::IColonyWrite;
     use starknet::{
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
         SyscallResultTrait, class_hash::ClassHash
     };
     use core::poseidon::poseidon_hash_span;
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
+    // Components
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
-    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+    use nogame::colony::colony::ColonyComponent;
 
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
     use nogame::game::interface::INoGame;
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names, UpgradeType, BuildType, WEEK
+        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, ColonyUpgradeType, ColonyBuildType
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -42,6 +46,12 @@ mod NoGame {
         path: ReentrancyGuardComponent, storage: reentrancyguard, event: ReentrancyGuardEvent
     );
     impl ReentrancyGuardInternalImpl = ReentrancyGuardComponent::InternalImpl<ContractState>;
+
+    component!(path: ColonyComponent, storage: colony, event: ColonyEvent);
+    #[abi(embed_v0)]
+    impl ColonyViewImpl = ColonyComponent::ColonyView<ContractState>;
+    impl ColonyWriteImpl = ColonyComponent::ColonyWrite<ContractState>;
+    impl ColonyInternalImpl = ColonyComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
@@ -79,7 +89,9 @@ mod NoGame {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
-        reentrancyguard: ReentrancyGuardComponent::Storage
+        reentrancyguard: ReentrancyGuardComponent::Storage,
+        #[substorage(v0)]
+        colony: ColonyComponent::Storage
     }
 
     #[event]
@@ -98,7 +110,9 @@ mod NoGame {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
-        ReentrancyGuardEvent: ReentrancyGuardComponent::Event
+        ReentrancyGuardEvent: ReentrancyGuardComponent::Event,
+        #[flat]
+        ColonyEvent: ColonyComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -111,7 +125,6 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct CompoundSpent {
         planet_id: u16,
-        compound_name: felt252,
         quantity: u8,
         spent: ERC20s
     }
@@ -119,7 +132,6 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct TechSpent {
         planet_id: u16,
-        tech_name: felt252,
         quantity: u8,
         spent: ERC20s
     }
@@ -127,7 +139,6 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct FleetSpent {
         planet_id: u16,
-        ship_name: felt252,
         quantity: u32,
         spent: ERC20s
     }
@@ -135,7 +146,6 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct DefenceSpent {
         planet_id: u16,
-        defence_name: felt252,
         quantity: u32,
         spent: ERC20s
     }
@@ -244,8 +254,35 @@ mod NoGame {
                 );
         }
 
+        fn generate_colony(ref self: ContractState, price: u256) {
+            let caller = get_caller_address();
+            let planet_id = self.get_owned_planet(caller);
+            self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
+            let (colony_id, colony_position) = self.colony.generate_colony(planet_id);
+            self
+                .emit(
+                    Event::PlanetGenerated(
+                        PlanetGenerated {
+                            id: ((planet_id * 100) + colony_id.into()),
+                            position: colony_position,
+                            account: caller
+                        }
+                    )
+                );
+        }
+
         fn collect_resources(ref self: ContractState) {
             self._collect_resources(get_caller_address());
+        }
+
+        fn collect_colony_resources(ref self: ContractState, colony_id: u8) {
+            let caller = get_caller_address();
+            let planet_id = self.get_owned_planet(caller);
+            assert(!planet_id.is_zero(), 'planet does not exist');
+            let speed = self.uni_speed.read();
+            let production = self.colony.collect_colony_resources(speed, planet_id, colony_id);
+            self.receive_resources_erc20(caller, production);
+            self.resources_timer.write(planet_id, get_block_timestamp());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -257,12 +294,7 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self
-                .emit(
-                    CompoundSpent {
-                        planet_id: planet_id, compound_name: Names::STEEL, quantity, spent: cost
-                    }
-                )
+            self.emit(CompoundSpent { planet_id: planet_id, quantity, spent: cost })
         }
 
         fn process_tech_upgrade(ref self: ContractState, component: UpgradeType, quantity: u8) {
@@ -271,12 +303,7 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self
-                .emit(
-                    TechSpent {
-                        planet_id: planet_id, tech_name: Names::STEEL, quantity, spent: cost
-                    }
-                )
+            self.emit(TechSpent { planet_id, quantity, spent: cost })
         }
 
         fn process_ship_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -288,12 +315,7 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self
-                .emit(
-                    FleetSpent {
-                        planet_id: planet_id, ship_name: Names::STEEL, quantity, spent: cost
-                    }
-                )
+            self.emit(FleetSpent { planet_id, quantity, spent: cost })
         }
 
         fn process_defence_build(ref self: ContractState, component: BuildType, quantity: u32) {
@@ -305,12 +327,32 @@ mod NoGame {
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             self.update_planet_points(planet_id, cost);
-            self
-                .emit(
-                    DefenceSpent {
-                        planet_id: planet_id, defence_name: Names::STEEL, quantity, spent: cost
-                    }
-                )
+            self.emit(DefenceSpent { planet_id, quantity, spent: cost })
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        //                         Colony Functions                                
+        /////////////////////////////////////////////////////////////////////
+        fn process_colony_compound_upgrade(
+            ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+        ) {
+            let caller = get_caller_address();
+            self._collect_resources(caller);
+            let planet_id = self.get_owned_planet(caller);
+            let cost = self.upgrade_colony_component(caller, planet_id, colony_id, name, quantity);
+            self.update_planet_points(planet_id, cost);
+            self.emit(CompoundSpent { planet_id, quantity, spent: cost })
+        }
+
+        fn process_colony_unit_build(
+            ref self: ContractState, colony_id: u8, name: ColonyBuildType, quantity: u32,
+        ) {
+            let caller = get_caller_address();
+            self._collect_resources(caller);
+            let planet_id = self.get_owned_planet(caller);
+            let cost = self.build_colony_component(caller, planet_id, colony_id, name, quantity);
+            self.update_planet_points(planet_id, cost);
+            self.emit(DefenceSpent { planet_id, quantity, spent: cost })
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -637,6 +679,12 @@ mod NoGame {
             self.last_active.read(planet_id)
         }
 
+        fn get_planet_colonies(
+            self: @ContractState, planet_id: u16
+        ) -> Array<(u8, PlanetPosition)> {
+            self.colony.get_colonies_for_planet(planet_id)
+        }
+
         fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
             CompoundsLevels {
                 steel: self.compounds_level.read((planet_id, Names::STEEL)),
@@ -646,6 +694,12 @@ mod NoGame {
                 lab: self.compounds_level.read((planet_id, Names::LAB)),
                 dockyard: self.compounds_level.read((planet_id, Names::DOCKYARD))
             }
+        }
+
+        fn get_colony_compounds(
+            self: @ContractState, planet_id: u16, colony_id: u8
+        ) -> CompoundsLevels {
+            self.colony.get_colony_coumpounds(planet_id, colony_id)
         }
 
         fn get_tech_levels(self: @ContractState, planet_id: u16) -> TechLevels {
@@ -823,7 +877,6 @@ mod NoGame {
         }
 
         fn _collect_resources(ref self: ContractState, caller: ContractAddress) {
-            let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
             assert(!planet_id.is_zero(), 'planet does not exist');
             let production = self.calculate_production(planet_id);
@@ -1727,6 +1780,172 @@ mod NoGame {
                         .write(
                             (planet_id, Names::PLASMA),
                             self.defences_level.read((planet_id, Names::PLASMA)) + quantity
+                        );
+                    return cost;
+                },
+            }
+        }
+
+        fn upgrade_colony_component(
+            ref self: ContractState,
+            caller: ContractAddress,
+            planet_id: u16,
+            colony_id: u8,
+            component: ColonyUpgradeType,
+            quantity: u8
+        ) -> ERC20s {
+            let levels = self.colony.get_colony_coumpounds(planet_id, colony_id);
+            match component {
+                ColonyUpgradeType::SteelMine => {
+                    let cost: ERC20s = CompoundCost::steel(levels.steel, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_compound_upgrade(
+                            planet_id, colony_id, ColonyUpgradeType::SteelMine, quantity
+                        );
+                    return cost;
+                },
+                ColonyUpgradeType::QuartzMine => {
+                    let cost: ERC20s = CompoundCost::quartz(levels.quartz, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_compound_upgrade(
+                            planet_id, colony_id, ColonyUpgradeType::QuartzMine, quantity
+                        );
+                    return cost;
+                },
+                ColonyUpgradeType::TritiumMine => {
+                    let cost: ERC20s = CompoundCost::tritium(levels.tritium, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_compound_upgrade(
+                            planet_id, colony_id, ColonyUpgradeType::TritiumMine, quantity
+                        );
+                    return cost;
+                },
+                ColonyUpgradeType::EnergyPlant => {
+                    let cost: ERC20s = CompoundCost::energy(levels.energy, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_compound_upgrade(
+                            planet_id, colony_id, ColonyUpgradeType::EnergyPlant, quantity
+                        );
+                    return cost;
+                },
+                ColonyUpgradeType::Dockyard => {
+                    let cost: ERC20s = CompoundCost::dockyard(levels.dockyard, quantity);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_compound_upgrade(
+                            planet_id, colony_id, ColonyUpgradeType::Dockyard, quantity
+                        );
+                    return cost;
+                },
+            }
+        }
+
+        fn build_colony_component(
+            ref self: ContractState,
+            caller: ContractAddress,
+            planet_id: u16,
+            colony_id: u8,
+            component: ColonyBuildType,
+            quantity: u32
+        ) -> ERC20s {
+            let levels = self.colony.get_colony_defences(planet_id, colony_id);
+            let techs = self.get_tech_levels(planet_id);
+            let is_testnet = self.is_testnet.read();
+            match component {
+                ColonyBuildType::Celestia => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().celestia
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Celestia,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Blaster => {
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().blaster
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Blaster,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Beam => {
+                    let cost = Defences::get_defences_cost(quantity, self.get_defences_cost().beam);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id, colony_id, techs, ColonyBuildType::Beam, quantity, is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Astral => {
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().astral
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Astral,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Plasma => {
+                    let cost = Defences::get_defences_cost(
+                        quantity, self.get_defences_cost().plasma
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Plasma,
+                            quantity,
+                            is_testnet
                         );
                     return cost;
                 },

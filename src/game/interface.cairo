@@ -2,7 +2,7 @@ use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    HostileMission, UpgradeType, BuildType
+    HostileMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
 };
 
 #[starknet::interface]
@@ -25,11 +25,19 @@ trait INoGame<TState> {
     fn generate_mint_key(ref self: TState, secret: felt252);
     fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
+    fn generate_colony(ref self: TState, price: u256);
     fn collect_resources(ref self: TState);
+    fn collect_colony_resources(ref self: TState, colony_id: u8);
     fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
     fn process_tech_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
     fn process_ship_build(ref self: TState, component: BuildType, quantity: u32);
     fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
+    fn process_colony_compound_upgrade(
+        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+    );
+    fn process_colony_unit_build(
+        ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
+    );
     // Fleet functions
     fn send_fleet(
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
@@ -45,7 +53,9 @@ trait INoGame<TState> {
     fn get_planet_position(self: @TState, planet_id: u16) -> PlanetPosition;
     fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u16;
     fn get_last_active(self: @TState, planet_id: u16) -> u64;
+    fn get_planet_colonies(self: @TState, planet_id: u16) -> Array<(u8, PlanetPosition)>;
     fn get_compounds_levels(self: @TState, planet_id: u16) -> CompoundsLevels;
+    fn get_colony_compounds(self: @TState, planet_id: u16, colony_id: u8) -> CompoundsLevels;
     fn get_tech_levels(self: @TState, planet_id: u16) -> TechLevels;
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
