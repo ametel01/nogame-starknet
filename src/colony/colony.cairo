@@ -1,12 +1,33 @@
-use nogame::libraries::types::{PlanetPosition, ColonyUpgradeType, ERC20s};
+use nogame::libraries::types::{
+    PlanetPosition, ColonyUpgradeType, ERC20s, ColonyBuildType, TechLevels, CompoundsLevels,
+    ShipsLevels, DefencesLevels
+};
 
 #[starknet::interface]
-trait INoGameColony<TState> {
-    fn generate_colony(ref self: TState, planet_id: u16);
-    fn process_compound_upgrade(
+trait IColonyWrite<TState> {
+    fn generate_colony(ref self: TState, planet_id: u16) -> (u8, PlanetPosition);
+    fn collect_colony_resources(
+        ref self: TState, uni_speed: u128, planet_id: u16, colony_id: u8
+    ) -> ERC20s;
+    fn process_colony_compound_upgrade(
         ref self: TState, planet_id: u16, colony_id: u8, name: ColonyUpgradeType, quantity: u8
     );
-    fn get_colony_resources(self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8) -> ERC20s;
+    fn process_colony_unit_build(
+        ref self: TState,
+        planet_id: u16,
+        colony_id: u8,
+        techs: TechLevels,
+        name: ColonyBuildType,
+        quantity: u32,
+        is_testnet: bool
+    );
+}
+
+#[starknet::interface]
+trait IColonyView<TState> {
+    fn get_colonies_for_planet(self: @TState, planet_id: u16) -> Array<(u8, PlanetPosition)>;
+    fn get_colony_coumpounds(self: @TState, planet_id: u16, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_defences(self: @TState, planet_id: u16, colony_id: u8) -> DefencesLevels;
 }
 
 mod ResourceName {
@@ -16,50 +37,143 @@ mod ResourceName {
 }
 
 #[starknet::component]
-mod NoGameColony {
+mod ColonyComponent {
     use starknet::{get_block_timestamp, get_caller_address};
-    use nogame::libraries::types::{PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType};
+    use nogame::libraries::types::{
+        PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
+        TechLevels, ShipsLevels, DefencesLevels
+    };
     use nogame::colony::positions;
     use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
+    use nogame::libraries::defences::{Defences};
+    use nogame::libraries::dockyard::{Dockyard};
     use super::ResourceName;
+
+    use snforge_std::PrintTrait;
 
     #[storage]
     struct Storage {
         colony_count: usize,
         planet_colonies_count: LegacyMap::<u16, u8>,
         colony_position: LegacyMap::<(u16, u8), PlanetPosition>,
+        position_to_colony: LegacyMap::<PlanetPosition, (u16, u8)>,
         colony_resource_timer: LegacyMap<(u16, u8), u64>,
         colony_compounds: LegacyMap::<(u16, u8, felt252), u8>,
         colony_ships: LegacyMap::<(u16, u8, felt252), u32>,
+        colony_defences: LegacyMap::<(u16, u8, felt252), u32>,
     }
 
-    #[embeddable_as(NoGameColonyImpl)]
-    impl NoGameColony<
+    #[embeddable_as(ColonyWrite)]
+    impl ColonyWriteImpl<
         TContractState, +HasComponent<TContractState>
-    > of super::INoGameColony<ComponentState<TContractState>> {
-        fn generate_colony(ref self: ComponentState<TContractState>, planet_id: u16) {
-            let colony_count = self.colony_count.read();
-            let position = positions::get_colony_position(colony_count);
+    > of super::IColonyWrite<ComponentState<TContractState>> {
+        fn generate_colony(
+            ref self: ComponentState<TContractState>, planet_id: u16
+        ) -> (u8, PlanetPosition) {
+            let current_count = self.colony_count.read();
+            let position = positions::get_colony_position(current_count);
             let colony_id = self.planet_colonies_count.read(planet_id) + 1;
             self.colony_position.write((planet_id, colony_id), position);
+            self.position_to_colony.write(position, (planet_id, colony_id));
+            self.planet_colonies_count.write(planet_id, colony_id);
             self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
+            self.colony_count.write(current_count + 1);
+            (colony_id, position)
         }
 
-        fn process_compound_upgrade(
+        fn collect_colony_resources(
+            ref self: ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+        ) -> ERC20s {
+            assert!(
+                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                "NoGameColony: colony {} not present for planet {}",
+                colony_id,
+                planet_id
+            );
+            let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
+            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
+
+            production
+        }
+
+        fn process_colony_compound_upgrade(
             ref self: ComponentState<TContractState>,
             planet_id: u16,
             colony_id: u8,
             name: ColonyUpgradeType,
             quantity: u8
         ) {
-            let caller = get_caller_address();
-            let cost = self.upgrade_component(planet_id, colony_id, name, quantity);
+            assert!(
+                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                "NoGameColony: colony {} not present for planet {}",
+                colony_id,
+                planet_id
+            );
+            self.upgrade_component(planet_id, colony_id, name, quantity);
         }
 
-        fn get_colony_resources(
-            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
-        ) -> ERC20s {
-            self.calculate_production(uni_speed, planet_id, colony_id)
+        fn process_colony_unit_build(
+            ref self: ComponentState<TContractState>,
+            planet_id: u16,
+            colony_id: u8,
+            techs: TechLevels,
+            name: ColonyBuildType,
+            quantity: u32,
+            is_testnet: bool
+        ) {
+            assert!(
+                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                "NoGameColony: colony {} not present for planet {}",
+                colony_id,
+                planet_id
+            );
+            self.build_component(planet_id, colony_id, techs, name, quantity, is_testnet);
+        }
+    }
+
+    #[embeddable_as(ColonyView)]
+    impl ColonyViewImpl<
+        TContractState, +HasComponent<TContractState>
+    > of super::IColonyView<ComponentState<TContractState>> {
+        fn get_colonies_for_planet(
+            self: @ComponentState<TContractState>, planet_id: u16
+        ) -> Array<(u8, PlanetPosition)> {
+            let mut arr: Array<(u8, PlanetPosition)> = array![];
+            let mut i = 1;
+            loop {
+                let colony_position = self.colony_position.read((planet_id, i));
+                if colony_position.is_zero() {
+                    break;
+                }
+                arr.append((i, colony_position));
+                i += 1;
+            };
+            arr
+        }
+
+        fn get_colony_coumpounds(
+            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+        ) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
+                quartz: self.colony_compounds.read((planet_id, colony_id, Names::QUARTZ)),
+                tritium: self.colony_compounds.read((planet_id, colony_id, Names::TRITIUM)),
+                energy: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
+                lab: 0,
+                dockyard: self.colony_compounds.read((planet_id, colony_id, Names::DOCKYARD)),
+            }
+        }
+
+        fn get_colony_defences(
+            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+        ) -> DefencesLevels {
+            DefencesLevels {
+                celestia: self.colony_defences.read((planet_id, colony_id, Names::CELESTIA)),
+                blaster: self.colony_defences.read((planet_id, colony_id, Names::BLASTER)),
+                beam: self.colony_defences.read((planet_id, colony_id, Names::BEAM)),
+                astral: self.colony_defences.read((planet_id, colony_id, Names::ASTRAL)),
+                plasma: self.colony_defences.read((planet_id, colony_id, Names::PLASMA)),
+            }
         }
     }
 
@@ -133,6 +247,72 @@ mod NoGameColony {
             }
         }
 
+        fn build_component(
+            ref self: ComponentState<TContractState>,
+            planet_id: u16,
+            colony_id: u8,
+            techs: TechLevels,
+            component: ColonyBuildType,
+            quantity: u32,
+            is_tesnet: bool,
+        ) {
+            let dockyard_level = self
+                .colony_compounds
+                .read((planet_id, colony_id, Names::DOCKYARD));
+            match component {
+                ColonyBuildType::Celestia => {
+                    Dockyard::celestia_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::CELESTIA),
+                            self.colony_ships.read((planet_id, colony_id, Names::CELESTIA))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Blaster => {
+                    Defences::blaster_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_defences
+                        .write(
+                            (planet_id, colony_id, Names::BLASTER),
+                            self.colony_defences.read((planet_id, colony_id, Names::BLASTER))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Beam => {
+                    Defences::beam_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_defences
+                        .write(
+                            (planet_id, colony_id, Names::BEAM),
+                            self.colony_defences.read((planet_id, colony_id, Names::BEAM))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Astral => {
+                    Defences::astral_launcher_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_defences
+                        .write(
+                            (planet_id, colony_id, Names::ASTRAL),
+                            self.colony_defences.read((planet_id, colony_id, Names::ASTRAL))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Plasma => {
+                    Defences::plasma_beam_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_defences
+                        .write(
+                            (planet_id, colony_id, Names::PLASMA),
+                            self.colony_defences.read((planet_id, colony_id, Names::PLASMA))
+                                + quantity
+                        );
+                },
+            }
+        }
+
 
         fn get_coumpounds_levels(
             self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
@@ -147,7 +327,7 @@ mod NoGameColony {
             }
         }
 
-        fn calculate_production(
+        fn calculate_colony_production(
             self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
         ) -> ERC20s {
             let time_now = get_block_timestamp();

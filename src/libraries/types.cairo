@@ -547,12 +547,20 @@ struct SimulationResult {
     plasma: u32,
 }
 
-
-#[derive(Drop, Serde)]
+#[derive(Copy, Drop, Serde)]
 enum ColonyUpgradeType {
     SteelMine,
     QuartzMine,
     TritiumMine,
     EnergyPlant,
     Dockyard,
+}
+
+#[derive(Copy, Drop, Serde)]
+enum ColonyBuildType {
+    Celestia,
+    Blaster,
+    Beam,
+    Astral,
+    Plasma
 }

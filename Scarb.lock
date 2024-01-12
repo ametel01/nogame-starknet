@@ -18,7 +18,7 @@ source = "git+https://github.com/ametel01/nogame-fixed.git?rev=5317597#5317597d4
 [[package]]
 name = "openzeppelin"
 version = "0.8.0"
-source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.8.0#c23e8e96de60e6e3159b1ff8591a1187269c0eb7"
+source = "git+https://github.com/openzeppelin/cairo-contracts?rev=4f90c23#4f90c23d1d73a7ce38ca9aa8d308aabf82d122a1"
 
 [[package]]
 name = "snforge_std"

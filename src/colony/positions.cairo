@@ -1503,5 +1503,5 @@ fn get_colony_position(colony_id: usize) -> PlanetPosition {
         PlanetPosition { system: 171, orbit: 1 },
         PlanetPosition { system: 176, orbit: 2 },
     ];
-    return *positions_array.at((colony_id - 1));
+    return *positions_array.at((colony_id));
 }
