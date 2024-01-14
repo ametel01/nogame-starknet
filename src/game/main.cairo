@@ -622,7 +622,6 @@ mod NoGame {
                 );
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             let active_missions = self.active_missions_len.read(origin);
-            self.active_missions_len.write(origin, active_missions - 1);
             self.last_active.write(origin, time_now);
 
             self
