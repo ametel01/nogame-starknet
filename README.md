@@ -4,7 +4,8 @@
 ![Build](https://github.com/ametel01/nogame-starknet/actions/workflows/scarb.yml/badge.svg?style=for-the-badge&logo=github)
 ![Tests](https://github.com/ametel01/nogame-starknet/actions/workflows/test.yml/badge.svg?style=for-the-badge&logo=github)
 
-#Space themed MMORPG running on Starknet
+
+## Space themed MMORPG running on Starknet
 
 NoGame StarkNet is a sophisticated blockchain-based gaming application, leveraging StarkNet's technology for secure and efficient in-game transactions. This repository includes smart contracts, deployment scripts, and utilities for the StarkNet ecosystem.
 
