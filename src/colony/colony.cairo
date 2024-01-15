@@ -21,6 +21,9 @@ trait IColonyWrite<TState> {
         quantity: u32,
         is_testnet: bool
     );
+    fn get_colony_resources(
+        self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8
+    ) -> ERC20s;
 }
 
 #[starknet::interface]
@@ -128,6 +131,12 @@ mod ColonyComponent {
                 planet_id
             );
             self.build_component(planet_id, colony_id, techs, name, quantity, is_testnet);
+        }
+
+        fn get_colony_resources(
+            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+        ) -> ERC20s {
+            self.calculate_colony_production(uni_speed, planet_id, colony_id)
         }
     }
 
