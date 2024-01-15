@@ -60,6 +60,7 @@ trait INoGame<TState> {
     fn get_debris_field(self: @TState, planet_id: u16) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u16) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u16) -> ERC20s;
+    fn get_colony_collectible_resources(self: @TState, planet_id: u16, colony_id: u8) -> ERC20s;
     fn get_planet_points(self: @TState, planet_id: u16) -> u128;
     fn get_ships_levels(self: @TState, planet_id: u16) -> Fleet;
     fn get_celestia_available(self: @TState, planet_id: u16) -> u32;

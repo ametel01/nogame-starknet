@@ -738,6 +738,13 @@ mod NoGame {
             self.calculate_production(planet_id)
         }
 
+        fn get_colony_collectible_resources(
+            self: @ContractState, planet_id: u16, colony_id: u8
+        ) -> ERC20s {
+            let uni_speed = self.uni_speed.read();
+            self.colony.get_colony_resources(uni_speed, planet_id, colony_id)
+        }
+
         fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
             Fleet {
                 carrier: self.ships_level.read((planet_id, Names::CARRIER)),

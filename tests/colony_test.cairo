@@ -3,7 +3,7 @@ use tests::utils::{
     warp_multiple, Dispatchers, E18
 };
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{ColonyUpgradeType, ColonyBuildType};
+use nogame::libraries::types::{ColonyUpgradeType, ColonyBuildType, ColonyBuildType, DefencesLevels, CompoundsLevels};
 use snforge_std::{start_prank, CheatTarget, PrintTrait};
 
 #[test]
@@ -39,8 +39,45 @@ fn test_process_colony_compound_upgrade() {
     build_basic_mines(dsp.game);
     advance_game_state(dsp.game);
 
+    let mut expected_compounds: CompoundsLevels = Default::default();
+    expected_compounds.steel = 1; 
+    expected_compounds.quartz = 2; 
+    expected_compounds.tritium = 3; 
+    expected_compounds.energy = 4; 
+    expected_compounds.dockyard = 1; 
+
     dsp.game.generate_colony(0);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
-    let colony_compounds = dsp.game.get_colony_compounds(1, 1);
-    colony_compounds.print();
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::TritiumMine, 3);
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::EnergyPlant, 4);
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 1);
+    let colony1_compounds = dsp.game.get_colony_compounds(1, 1);
+    assert(colony1_coumpounds == expected_compounds, 'wrong c1 compounds');
+
+    dsp.game.generate_colony(0);
+    dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::SteelMine, 1);
+    dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::QuartzMine, 2);
+    dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::TritiumMine, 3);
+    dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::EnergyPlant, 4);
+    dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::Dockyard, 1);
+    let colony2_compounds = dsp.game.get_colony_compounds(1, 2);
+    assert(colony2_coumpounds == expected_compounds, 'wrong c2 compounds');
+}
+
+#[test]
+fn process_colony_unit_build_test() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    let mut expected: DefencesLevels = 
+
+    dsp.game.generate_colony(0);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 2);
+    let actual
 }
