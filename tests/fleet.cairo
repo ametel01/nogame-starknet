@@ -3,7 +3,9 @@ use starknet::info::get_block_timestamp;
 use snforge_std::{declare, ContractClassTrait, PrintTrait, start_prank, start_warp};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels};
+use nogame::libraries::types::{
+    Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels, Debris
+};
 use nogame::libraries::fleet;
 
 use tests::utils::{
@@ -390,4 +392,15 @@ fn test_decay_fleet() {
     let res = fleet::decay_fleet(fleet, 65);
     let res = fleet::decay_fleet(fleet, 85);
     let res = fleet::decay_fleet(fleet, 95);
+}
+
+#[test]
+fn test_load_resources() {
+    let mut resources: ERC20s = Default::default();
+    resources.steel = 100_000;
+    resources.quartz = 100_000;
+    resources.tritium = 100_000;
+    let storage = 30_000;
+    let loaded = fleet::load_resources(resources, storage);
+    loaded.print();
 }
