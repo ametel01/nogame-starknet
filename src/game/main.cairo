@@ -55,6 +55,9 @@ mod NoGame {
     impl ColonyWriteImpl = ColonyComponent::ColonyWrite<ContractState>;
     impl ColonyInternalImpl = ColonyComponent::InternalImpl<ContractState>;
 
+    use snforge_std::PrintTrait;
+
+
     #[storage]
     struct Storage {
         initialized: bool,
@@ -268,14 +271,16 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
             let (colony_id, colony_position) = self.colony.generate_colony(planet_id);
+            let id = ((planet_id * 100) + colony_id.into());
+            self.planet_position.write(id, colony_position);
+            id.print();
+            colony_position.print();
+            self.position_to_planet.write(colony_position, id);
+            self.number_of_planets.write(self.number_of_planets.read() + 1);
             self
                 .emit(
                     Event::PlanetGenerated(
-                        PlanetGenerated {
-                            id: ((planet_id * 100) + colony_id.into()),
-                            position: colony_position,
-                            account: caller
-                        }
+                        PlanetGenerated { id, position: colony_position, account: caller }
                     )
                 );
         }
@@ -772,6 +777,12 @@ mod NoGame {
                 astral: self.defences_level.read((planet_id, Names::ASTRAL)),
                 plasma: self.defences_level.read((planet_id, Names::PLASMA)),
             }
+        }
+
+        fn get_colony_defences_levels(
+            self: @ContractState, planet_id: u16, colony_id: u8
+        ) -> DefencesLevels {
+            self.colony.get_colony_defences(planet_id, colony_id)
         }
 
         fn is_noob_protected(self: @ContractState, planet1_id: u16, planet2_id: u16) -> bool {

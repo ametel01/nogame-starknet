@@ -66,6 +66,7 @@ trait INoGame<TState> {
     fn get_celestia_available(self: @TState, planet_id: u16) -> u32;
     fn get_celestia_production(self: @TState, planet_id: u16) -> u16;
     fn get_defences_levels(self: @TState, planet_id: u16) -> DefencesLevels;
+    fn get_colony_defences_levels(self: @TState, planet_id: u16, colony_id: u8) -> DefencesLevels;
     fn is_noob_protected(self: @TState, planet1_id: u16, planet2_id: u16) -> bool;
     fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
     fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
