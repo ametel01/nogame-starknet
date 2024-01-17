@@ -72,7 +72,7 @@ impl ERC20Print of PrintTrait<ERC20s> {
     }
 }
 
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Default, Drop, PartialEq, Serde)]
 struct CompoundsLevels {
     steel: u8,
     quartz: u8,
