@@ -1,3 +1,4 @@
+use snforge_std::PrintTrait;
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 use nogame_fixed::f128::core::{exp, sqrt};
 
@@ -558,92 +559,37 @@ fn get_debris(f_before: Fleet, f_after: Fleet, celestia: u32) -> Debris {
 
 
 fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
-    // metal_loaded, crystal_loaded, deuterium_loaded = 0, 0, 0
     let mut steel_loaded = 0;
     let mut quartz_loaded = 0;
     let mut tritium_loaded = 0;
 
-    // # Step 1: Load Metal
-    let mut steel_to_load = resources.steel;
-    // if metal_to_load <= storage / 3:
-    if steel_to_load <= storage / 3 {
-        //     metal_loaded += metal_to_load
-        steel_loaded += steel_to_load;
-        //     metal -= metal_to_load
-        resources.steel -= steel_to_load
-    } else {
-        //     metal_loaded += storage / 3
-        steel_loaded += storage / 3;
-        //     metal -= storage / 3
-        resources.steel -= storage / 3;
-    }
-    // storage -= metal_loaded
-    storage -= steel_loaded;
-
-    // # Step 2: Load Crystal
-    let mut quartz_to_load = resources.quartz;
-    // if crystal_to_load <= storage / 2:
-    if quartz_to_load <= storage / 2 {
-        //     crystal_loaded += crystal_to_load
-        quartz_loaded += quartz_to_load;
-        //     crystal -= crystal_to_load
-        resources.quartz -= quartz_to_load;
-    // else:
-    } else {
-        //     crystal_loaded += storage / 2
-        quartz_loaded += storage / 2;
-        //     crystal -= storage / 2
-        resources.quartz -= storage / 2;
-    }
-    // storage -= crystal_loaded
-    storage -= quartz_loaded;
-
-    // # Step 3: Load Deuterium
-    let tritium_to_load = resources.tritium;
-    // if deuterium_to_load <= storage:
-    if tritium_to_load <= storage {
-        //     deuterium_loaded += deuterium_to_load
-        tritium_loaded += tritium_to_load;
-        //     deuterium -= deuterium_to_load
-        resources.tritium -= tritium_to_load;
-    // else:
-    } else {
-        //     deuterium_loaded += storage
-        tritium_loaded += storage;
-        //     deuterium -= storage
-        resources.tritium -= storage;
-    }
-    // storage -= deuterium_loaded
-    storage -= tritium_loaded;
-
-    // # Step 4: Load remaining Metal if space is available
-    // if storage > 0:
-    if storage > 0 {
-        //     metal_to_load = min(metal, storage / 2)
-        steel_to_load = math::min(resources.steel, storage / 2);
-        //     metal_loaded += metal_to_load
-        steel_loaded += steel_to_load;
-        //     metal -= metal_to_load
+    loop {
+        if storage.is_zero() || resources.is_zero() {
+            break;
+        }
+        let steel_to_load = min(storage / 3, resources.steel);
+        let quartz__to_load = min(storage / 3, resources.quartz);
+        let tritium_to_load = min(storage / 3, resources.tritium);
+        if (steel_to_load + quartz__to_load + tritium_to_load).is_zero() {
+            break;
+        }
+        storage -= (steel_to_load + quartz__to_load + tritium_to_load);
         resources.steel -= steel_to_load;
-        //     storage -= metal_to_load
-        storage -= steel_to_load;
-    }
+        resources.quartz -= quartz__to_load;  
+        resources.tritium -= tritium_to_load;
+        steel_loaded += steel_to_load;
+        quartz_loaded += quartz__to_load;
+        tritium_loaded += tritium_to_load;
+    };
 
-    // # Step 5: Load remaining Crystal if space is available
-    // if storage > 0:
-    if storage > 0 {
-        //     crystal_to_load = min(crystal, storage)
-        quartz_to_load = math::min(resources.quartz, storage);
-        //     crystal_loaded += crystal_to_load
-        quartz_loaded += quartz_to_load;
-        //     crystal -= crystal_to_load
-        resources.quartz -= quartz_to_load;
-        //     storage -= crystal_to_load
-        storage -= quartz_to_load;
-    }
-    ERC20s { steel: steel_loaded, quartz: quartz_loaded, tritium: tritium_loaded }
-// return metal_loaded, crystal_loaded, deuterium_loaded, storage
+    ERC20s { steel: steel_loaded, quartz: quartz_loaded, tritium: tritium_loaded, }
+}
 
+fn min(a: u128, b: u128) -> u128 {
+    if a < b {
+        return a;
+    }
+    b
 }
 
 #[inline(always)]
