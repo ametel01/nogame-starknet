@@ -2,7 +2,7 @@ use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    HostileMission, UpgradeType, BuildType
+    HostileMission, UpgradeType, BuildType, SimulationResult
 };
 
 #[starknet::interface]
@@ -59,5 +59,8 @@ trait INoGame<TState> {
     fn get_mission_details(self: @TState, planet_id: u16, mission_id: usize) -> Mission;
     fn get_hostile_missions(self: @TState, planet_id: u16) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u16) -> Array<Mission>;
+    fn simulate_attack(
+        self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: DefencesLevels
+    ) -> SimulationResult;
 }
 

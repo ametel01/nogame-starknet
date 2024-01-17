@@ -506,3 +506,22 @@ mod Names {
     const ASTRAL: felt252 = 27;
     const PLASMA: felt252 = 28;
 }
+
+#[derive(Default, Drop, Copy, PartialEq, Serde)]
+struct SimulationResult {
+    attacker_carrier: u32,
+    attacker_scraper: u32,
+    attacker_sparrow: u32,
+    attacker_frigate: u32,
+    attacker_armade: u32,
+    defender_carrier: u32,
+    defender_scraper: u32,
+    defender_sparrow: u32,
+    defender_frigate: u32,
+    defender_armade: u32,
+    celestia: u32,
+    blaster: u32,
+    beam: u32,
+    astral: u32,
+    plasma: u32,
+}

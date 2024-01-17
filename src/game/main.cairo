@@ -17,7 +17,7 @@ mod NoGame {
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names, UpgradeType, BuildType, WEEK
+        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -91,6 +91,7 @@ mod NoGame {
         FleetSpent: FleetSpent,
         DefenceSpent: DefenceSpent,
         FleetSent: FleetSent,
+        FleetReturn: FleetReturn,
         BattleReport: BattleReport,
         DebrisCollected: DebrisCollected,
         #[flat]
@@ -142,12 +143,18 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct FleetSent {
-        time: u64,
         origin: u16,
         destination: u16,
         mission_type: felt252,
+        fleet: Fleet,
     }
 
+    #[derive(Drop, starknet::Event)]
+    struct FleetReturn {
+        docked_at: u16,
+        mission_type: felt252,
+        fleet: Fleet,
+    }
 
     #[derive(Drop, starknet::Event)]
     struct BattleReport {
@@ -168,7 +175,7 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct DebrisCollected {
-        time: u64,
+        planet_id: u16,
         debris_field_id: u16,
         amount: Debris,
     }
@@ -382,10 +389,10 @@ mod NoGame {
                     .emit(
                         Event::FleetSent(
                             FleetSent {
-                                time: time_now,
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'debris collection'
+                                mission_type: 'debris collection',
+                                fleet: f,
                             }
                         )
                     );
@@ -404,10 +411,10 @@ mod NoGame {
                     .emit(
                         Event::FleetSent(
                             FleetSent {
-                                time: time_now,
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'attack'
+                                mission_type: 'attack',
+                                fleet: f,
                             }
                         )
                     );
@@ -508,6 +515,8 @@ mod NoGame {
             self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
             self.last_active.write(origin, time_now);
 
+            self.emit(FleetReturn { docked_at: origin, mission_type: 'attack', fleet: f1 });
+
             self
                 .emit_battle_report(
                     time_now,
@@ -534,6 +543,12 @@ mod NoGame {
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.remove_hostile_mission(mission.destination, mission_id);
             self.last_active.write(origin, get_block_timestamp());
+            let mission_type = if mission.is_debris {
+                'debris collection'
+            } else {
+                'attack'
+            };
+            self.emit(FleetReturn { docked_at: origin, mission_type, fleet: mission.fleet });
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -584,9 +599,14 @@ mod NoGame {
 
             self
                 .emit(
+                    FleetReturn { docked_at: origin, mission_type: 'debris', fleet: mission.fleet }
+                );
+
+            self
+                .emit(
                     Event::DebrisCollected(
                         DebrisCollected {
-                            time: time_now,
+                            planet_id: origin,
                             debris_field_id: mission.destination,
                             amount: collectible_debris,
                         }
@@ -760,6 +780,36 @@ mod NoGame {
             };
             arr
         }
+
+        fn simulate_attack(
+            self: @ContractState,
+            attacker_fleet: Fleet,
+            defender_fleet: Fleet,
+            defences: DefencesLevels
+        ) -> SimulationResult {
+            let techs: TechLevels = Default::default();
+            let (f1, f2, d) = fleet::war(attacker_fleet, techs, defender_fleet, defences, techs);
+            let attacker_loss = self.calculate_fleet_loss(attacker_fleet, f1);
+            let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
+            let defences_loss = self.calculate_defences_loss(defences, d);
+            SimulationResult {
+                attacker_carrier: attacker_loss.carrier,
+                attacker_scraper: attacker_loss.scraper,
+                attacker_sparrow: attacker_loss.sparrow,
+                attacker_frigate: attacker_loss.frigate,
+                attacker_armade: attacker_loss.armade,
+                defender_carrier: defender_loss.carrier,
+                defender_scraper: defender_loss.scraper,
+                defender_sparrow: defender_loss.sparrow,
+                defender_frigate: defender_loss.frigate,
+                defender_armade: defender_loss.armade,
+                celestia: defences_loss.celestia,
+                blaster: defences_loss.blaster,
+                beam: defences_loss.beam,
+                astral: defences_loss.astral,
+                plasma: defences_loss.plasma
+            }
+        }
     }
 
     #[generate_trait]
@@ -863,10 +913,13 @@ mod NoGame {
                 * time_elapsed.into()
                 / HOUR.into();
             let energy_available = Production::energy(mines_levels.energy);
+            let celestia_production = self.get_celestia_production(planet_id);
+            let celestia_available = self.get_celestia_available(planet_id);
             let energy_required = Consumption::base(mines_levels.steel)
                 + Consumption::base(mines_levels.quartz)
                 + Consumption::base(mines_levels.tritium);
-            if energy_available < energy_required {
+            if energy_available
+                + (celestia_production.into() * celestia_available).into() < energy_required {
                 let _steel = Compounds::production_scaler(
                     steel_available, energy_available, energy_required
                 );

@@ -266,102 +266,167 @@ fn build_ships_array(
 ) -> Array<Unit> {
     let mut array: Array<Unit> = array![];
     let mut n_ships = calculate_number_of_ships(fleet, defences);
-    loop {
-        if n_ships == 0 {
-            break;
-        }
-        if defences.plasma > 0 {
-            let mut defence = PLASMA();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
+    if defences.plasma > 0 {
+        let mut defence = PLASMA();
+        defence.weapon += defence.weapon * techs.weapons.into() / 10;
+        defence.shield += defence.shield * techs.shield.into() / 10;
+        defence.hull += defence.hull * techs.armour.into() / 10;
+        let mut i = defences.plasma;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(defence);
-            n_ships -= 1;
-            defences.plasma -= 1;
-        }
-        if fleet.armade > 0 {
-            let mut ship = ARMADE();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= defences.plasma;
+        defences.plasma = 0;
+    }
+    if fleet.armade > 0 {
+        let mut ship = ARMADE();
+        ship.weapon += ship.weapon * techs.weapons.into() / 10;
+        ship.shield += ship.shield * techs.shield.into() / 10;
+        ship.hull += ship.hull * techs.armour.into() / 10;
+        let mut i = fleet.armade;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(ship);
-            n_ships -= 1;
-            fleet.armade -= 1;
-        }
-        if defences.astral > 0 {
-            let mut defence = ASTRAL();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= fleet.armade;
+        fleet.armade = 0;
+    }
+    if defences.astral > 0 {
+        let mut defence = ASTRAL();
+        defence.weapon += defence.weapon * techs.weapons.into() / 10;
+        defence.shield += defence.shield * techs.shield.into() / 10;
+        defence.hull += defence.hull * techs.armour.into() / 10;
+        let mut i = defences.astral;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(defence);
-            n_ships -= 1;
-            defences.astral -= 1;
-        }
-        if fleet.frigate > 0 {
-            let mut ship = FRIGATE();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= defences.astral;
+        defences.astral = 0;
+    }
+    if fleet.frigate > 0 {
+        let mut ship = FRIGATE();
+        ship.weapon += ship.weapon * techs.weapons.into() / 10;
+        ship.shield += ship.shield * techs.shield.into() / 10;
+        ship.hull += ship.hull * techs.armour.into() / 10;
+        let mut i = fleet.frigate;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(ship);
-            n_ships -= 1;
-            fleet.frigate -= 1;
-        }
-        if defences.beam > 0 {
-            let mut defence = BEAM();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= fleet.frigate;
+        fleet.frigate = 0;
+    }
+    if defences.beam > 0 {
+        let mut defence = BEAM();
+        defence.weapon += defence.weapon * techs.weapons.into() / 10;
+        defence.shield += defence.shield * techs.shield.into() / 10;
+        defence.hull += defence.hull * techs.armour.into() / 10;
+        let mut i = defences.beam;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(defence);
-            n_ships -= 1;
-            defences.beam -= 1;
-        }
-        if fleet.sparrow > 0 {
-            let mut ship = SPARROW();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= defences.beam;
+        defences.beam = 0;
+    }
+    if fleet.sparrow > 0 {
+        let mut ship = SPARROW();
+        ship.weapon += ship.weapon * techs.weapons.into() / 10;
+        ship.shield += ship.shield * techs.shield.into() / 10;
+        ship.hull += ship.hull * techs.armour.into() / 10;
+        let mut i = fleet.sparrow;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(ship);
-            n_ships -= 1;
-            fleet.sparrow -= 1;
-        }
-        if defences.blaster > 0 {
-            let mut defence = BLASTER();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= fleet.sparrow;
+        fleet.sparrow = 0;
+    }
+    if defences.blaster > 0 {
+        let mut defence = BLASTER();
+        defence.weapon += defence.weapon * techs.weapons.into() / 10;
+        defence.shield += defence.shield * techs.shield.into() / 10;
+        defence.hull += defence.hull * techs.armour.into() / 10;
+        let mut i = defences.blaster;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(defence);
-            n_ships -= 1;
-            defences.blaster -= 1;
-        }
-        if fleet.scraper > 0 {
-            let mut ship = SCRAPER();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= defences.blaster;
+        defences.blaster = 0;
+    }
+    if fleet.scraper > 0 {
+        let mut ship = SCRAPER();
+        ship.weapon += ship.weapon * techs.weapons.into() / 10;
+        ship.shield += ship.shield * techs.shield.into() / 10;
+        ship.hull += ship.hull * techs.armour.into() / 10;
+        let mut i = fleet.scraper;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(ship);
-            n_ships -= 1;
-            fleet.scraper -= 1;
-        }
-        if defences.celestia > 0 {
-            let mut defence = CELESTIA();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= fleet.scraper;
+        fleet.scraper = 0;
+    }
+    if defences.celestia > 0 {
+        let mut defence = CELESTIA();
+        defence.weapon += defence.weapon * techs.weapons.into() / 10;
+        defence.shield += defence.shield * techs.shield.into() / 10;
+        defence.hull += defence.hull * techs.armour.into() / 10;
+        let mut i = defences.celestia;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(defence);
-            n_ships -= 1;
-            defences.celestia -= 1;
-        }
-        if fleet.carrier > 0 {
-            let mut ship = CARRIER();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
+            i -= 1;
+        };
+        n_ships -= defences.celestia;
+        defences.celestia = 0;
+    }
+    if fleet.carrier > 0 {
+        let mut ship = CARRIER();
+        ship.weapon += ship.weapon * techs.weapons.into() / 10;
+        ship.shield += ship.shield * techs.shield.into() / 10;
+        ship.hull += ship.hull * techs.armour.into() / 10;
+        let mut i = fleet.carrier;
+        loop {
+            if i == 0 {
+                break;
+            }
             array.append(ship);
-            n_ships -= 1;
-            fleet.carrier -= 1;
-        }
-        continue;
-    };
+            i -= 1;
+        };
+        n_ships -= fleet.carrier;
+        fleet.carrier = 0;
+    }
+
     array
 }
 
