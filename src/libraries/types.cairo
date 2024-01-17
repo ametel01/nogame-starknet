@@ -1,4 +1,4 @@
-use integer::u128_overflowing_add;
+use integer::{u128_overflowing_add, u128_overflowing_sub};
 use starknet::ContractAddress;
 
 use snforge_std::PrintTrait;
@@ -37,6 +37,15 @@ impl ERC20sAdd of Add<ERC20s> {
             steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
             quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow'),
             tritium: u128_overflowing_add(lhs.tritium, rhs.tritium).expect('u128_add Overflow'),
+        }
+    }
+}
+impl ERC20sSub of Sub<ERC20s> {
+    fn sub(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
+        ERC20s {
+            steel: u128_overflowing_sub(lhs.steel, rhs.steel).expect('u128_sub Overflow'),
+            quartz: u128_overflowing_sub(lhs.quartz, rhs.quartz).expect('u128_sub Overflow'),
+            tritium: u128_overflowing_sub(lhs.tritium, rhs.tritium).expect('u128_sub Overflow'),
         }
     }
 }

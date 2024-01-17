@@ -575,7 +575,7 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
         }
         storage -= (steel_to_load + quartz__to_load + tritium_to_load);
         resources.steel -= steel_to_load;
-        resources.quartz -= quartz__to_load;  
+        resources.quartz -= quartz__to_load;
         resources.tritium -= tritium_to_load;
         steel_loaded += steel_to_load;
         quartz_loaded += quartz__to_load;

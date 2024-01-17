@@ -474,9 +474,7 @@ mod NoGame {
                     self.receive_resources_erc20(get_caller_address(), loot_amount);
                 } else {
                     let loot_amount_collectible = fleet::load_resources(collectible, storage);
-                    // loot_amount_collectible.print();
                     let mut loot_amount_spendable: ERC20s = Default::default();
-                    // loot_amount_spendable.print();
                     loot_amount_spendable.steel = spendable.steel / 2;
                     loot_amount_spendable.quartz = spendable.quartz / 2;
                     loot_amount_spendable.tritium = spendable.tritium / 2;
@@ -587,6 +585,7 @@ mod NoGame {
             };
 
             self.receive_resources_erc20(caller, erc20);
+
             self
                 .ships_level
                 .write(
