@@ -1,7 +1,7 @@
 use starknet::info::{get_block_timestamp, get_contract_address};
 
 use snforge_std::{
-    declare, ContractClassTrait, PrintTrait, start_prank, start_warp, spy_events, SpyOn, EventSpy,
+    PrintTrait, declare, ContractClassTrait, start_prank, start_warp, spy_events, SpyOn, EventSpy,
     EventAssertions, EventFetcher, event_name_hash, Event, CheatTarget
 };
 
@@ -15,7 +15,7 @@ use nogame::libraries::fleet;
 
 use tests::utils::{
     ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
-    warp_multiple, Dispatchers
+    warp_multiple, Dispatchers, DAY
 };
 
 #[test]
@@ -556,6 +556,48 @@ fn test_attack_planet_fails_destination_not_reached() {
 }
 
 #[test]
+fn test_attack_planet_loot_amount() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.generate_planet();
+    build_mines(dsp.game);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    build_mines(dsp.game);
+    // dsp.game.process_compound_upgrade(UpgradeType::QuartzMine(()), 6);
+    // dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 5);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.process_compound_upgrade(UpgradeType::QuartzMine(()), 6);
+    dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 7);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.process_ship_build(BuildType::Carrier(()), 5);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.carrier = 1;
+
+    let p2_position = dsp.game.get_planet_position(2);
+    dsp.game.send_fleet(fleet_a, p2_position, false);
+
+    let collectible_before = dsp.game.get_collectible_resources(2);
+    let spendable_before = dsp.game.get_spendable_resources(2);
+    // spendable_before.print();
+    let attacker_spendable_before = dsp.game.get_spendable_resources(1);
+    // attacker_spendable_before.print();
+
+    let mission = dsp.game.get_mission_details(1, 1);
+    warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
+
+    let spendable_after = dsp.game.get_spendable_resources(2);
+    let attacker_spendable_after = dsp.game.get_spendable_resources(1);
+
+    (attacker_spendable_after - attacker_spendable_before).print();
+// (spendable_before - spendable_after).print();
+}
+
+#[test]
 fn test_recall_fleet() {
     let dsp = set_up();
     init_game(dsp);
@@ -609,4 +651,30 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     dsp.game.send_fleet(fleet_a, p2_position, false);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.game.recall_fleet(2);
+}
+
+
+fn build_mines(game: INoGameDispatcher) {
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 2);
+    game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
+    game.process_compound_upgrade(UpgradeType::QuartzMine(()), 1);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 2);
+    game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
+    game.process_compound_upgrade(UpgradeType::QuartzMine(()), 1);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 2);
+    game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
+    game.process_compound_upgrade(UpgradeType::QuartzMine(()), 1);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 2);
+    game.process_compound_upgrade(UpgradeType::TritiumMine(()), 2);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 1);
+    game.process_compound_upgrade(UpgradeType::TritiumMine(()), 2);
+    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + 4 * DAY);
+    game.process_compound_upgrade(UpgradeType::Lab(()), 1);
+    game.process_tech_upgrade(UpgradeType::EnergyTech(()), 1);
+    game.process_tech_upgrade(UpgradeType::Combustion(()), 2);
+    game.process_compound_upgrade(UpgradeType::Dockyard(()), 2);
 }

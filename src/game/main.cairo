@@ -30,6 +30,8 @@ mod NoGame {
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
 
+    use snforge_std::PrintTrait;
+
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
@@ -459,49 +461,28 @@ mod NoGame {
 
             self.update_defender_fleet_levels_after_attack(mission.destination, f2);
             self.update_defences_after_attack(mission.destination, d);
-
             let mut loot_amount: ERC20s = Default::default();
 
             if f1.is_zero() {
                 self.active_missions.write((origin, mission_id), Zeroable::zero());
             } else {
-                let spendable = self.get_spendable_resources(mission.destination);
-                let collectible = self.get_collectible_resources(mission.destination);
-                let mut loot_collectible: ERC20s = Default::default();
-                let mut storage = fleet::get_fleet_cargo_capacity(f1);
-                if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
-                    loot_amount = fleet::load_resources(collectible + spendable, storage);
-                    self.receive_resources_erc20(get_caller_address(), loot_amount);
-                } else {
-                    let loot_amount_collectible = fleet::load_resources(collectible, storage);
-                    let mut loot_amount_spendable: ERC20s = Default::default();
-                    loot_amount_spendable.steel = spendable.steel / 2;
-                    loot_amount_spendable.quartz = spendable.quartz / 2;
-                    loot_amount_spendable.tritium = spendable.tritium / 2;
-                    loot_amount_spendable =
-                        fleet::load_resources(
-                            loot_amount_spendable,
-                            storage
-                                - (loot_amount_collectible.steel
-                                    + loot_amount_collectible.quartz
-                                    + loot_amount_collectible.tritium)
-                        );
-                    loot_amount = loot_amount_collectible + loot_amount_spendable;
+                let (loot_amount_spendable, loot_amount_collectible) = self
+                    .calculate_loot_amount(mission.destination, f1);
+                loot_amount = loot_amount_collectible + loot_amount_spendable;
 
-                    self
-                        .pay_resources_erc20(
-                            self.erc721.read().ownerOf(mission.destination.into()),
-                            loot_amount_spendable
-                        );
-                    self
-                        .receive_resources_erc20(
-                            get_caller_address(), loot_amount_collectible + loot_amount_spendable
-                        );
-                }
-                self.resources_timer.write(mission.destination, time_now);
-                self.fleet_return_planet(origin, f1);
-                self.active_missions.write((origin, mission_id), Zeroable::zero());
+                self
+                    .pay_resources_erc20(
+                        self.erc721.read().ownerOf(mission.destination.into()),
+                        loot_amount_spendable
+                    );
+                self
+                    .receive_resources_erc20(
+                        get_caller_address(), loot_amount_collectible + loot_amount_spendable
+                    );
             }
+            self.resources_timer.write(mission.destination, time_now);
+            self.fleet_return_planet(origin, f1);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
 
             self.remove_hostile_mission(mission.destination, mission_id);
 
@@ -836,6 +817,41 @@ mod NoGame {
             self.initialized.write(true);
             self.token_price.write(token_price);
             self.is_testnet.write(is_testnet);
+        }
+
+        fn calculate_loot_amount(
+            self: @ContractState, destination_id: u16, attacker_fleet: Fleet
+        ) -> (ERC20s, ERC20s) {
+            let mut loot_amount: ERC20s = Default::default();
+            let mut loot_collectible: ERC20s = Default::default();
+            let mut loot_spendable: ERC20s = Default::default();
+            let mut storage = fleet::get_fleet_cargo_capacity(attacker_fleet);
+            let mut spendable: ERC20s = Default::default();
+            let mut collectible: ERC20s = Default::default();
+
+            spendable = self.get_spendable_resources(destination_id);
+            collectible = self.get_collectible_resources(destination_id);
+
+            if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
+                loot_collectible = fleet::load_resources(collectible + spendable, storage);
+            } else {
+                loot_collectible = fleet::load_resources(collectible, storage);
+
+                if !spendable.is_zero() {
+                    loot_spendable.steel = spendable.steel / 2;
+                    loot_spendable.quartz = spendable.quartz / 2;
+                    loot_spendable.tritium = spendable.tritium / 2;
+                    loot_spendable =
+                        fleet::load_resources(
+                            loot_spendable,
+                            storage
+                                - (loot_collectible.steel
+                                    + loot_collectible.quartz
+                                    + loot_collectible.tritium)
+                        );
+                }
+            }
+            return (loot_spendable, loot_collectible);
         }
 
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
