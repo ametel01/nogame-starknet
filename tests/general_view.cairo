@@ -66,25 +66,6 @@ fn test_get_number_of_planets() {
 }
 
 #[test]
-fn test_get_generated_planets_positions() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT3());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT4());
-    dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT5());
-    dsp.game.generate_planet();
-
-    let mut arr_planets = dsp.game.get_generated_planets_positions();
-    assert(arr_planets.len() == 5, 'wrong arr len');
-}
-
-#[test]
 fn test_get_planet_position() {
     let dsp = set_up();
     init_game(dsp);

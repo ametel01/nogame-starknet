@@ -804,7 +804,7 @@ mod Production {
         ];
         *costs.at(level.into())
     }
-    fn tritium(current_level: u8, avg_temp: u16, uni_speed: u128) -> u128 {
+    fn tritium(current_level: u8, avg_temp: u32, uni_speed: u128) -> u128 {
         let base: u256 = 10;
         let raw_production = (base
             * current_level.into()
