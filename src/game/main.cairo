@@ -64,12 +64,14 @@ mod NoGame {
         token_price: u128,
         uni_speed: u128,
         // General.
-        number_of_planets: u16,
-        planet_position: LegacyMap::<u16, PlanetPosition>,
-        position_to_planet: LegacyMap::<PlanetPosition, u16>,
-        planet_debris_field: LegacyMap::<u16, Debris>,
+        number_of_planets: u32,
+        planet_position: LegacyMap::<u32, PlanetPosition>,
+        position_to_planet: LegacyMap::<PlanetPosition, u32>,
+        planet_debris_field: LegacyMap::<u32, Debris>,
         universe_start_time: u64,
-        resources_spent: LegacyMap::<u16, u128>,
+        resources_spent: LegacyMap::<u32, u128>,
+        // mapping colony_planet_id to mother planet id
+        colony_owner: LegacyMap::<u32, u32>,
         // Tokens.
         erc721: IERC721NoGameDispatcher,
         steel: IERC20NoGameDispatcher,
@@ -77,16 +79,16 @@ mod NoGame {
         tritium: IERC20NoGameDispatcher,
         ETH: IERC20CamelDispatcher,
         pioneer_nft_key: LegacyMap<ContractAddress, felt252>,
-        resources_timer: LegacyMap::<u16, u64>,
-        last_active: LegacyMap::<u16, u64>,
-        compounds_level: LegacyMap::<(u16, felt252), u8>,
-        techs_level: LegacyMap::<(u16, felt252), u8>,
-        ships_level: LegacyMap::<(u16, felt252), u32>,
-        defences_level: LegacyMap::<(u16, felt252), u32>,
-        active_missions: LegacyMap::<(u16, u32), Mission>,
-        active_missions_len: LegacyMap<u16, usize>,
-        hostile_missions: LegacyMap<(u16, u32), HostileMission>,
-        hostile_missions_len: LegacyMap<u16, usize>,
+        resources_timer: LegacyMap::<u32, u64>,
+        last_active: LegacyMap::<u32, u64>,
+        compounds_level: LegacyMap::<(u32, felt252), u8>,
+        techs_level: LegacyMap::<(u32, felt252), u8>,
+        ships_level: LegacyMap::<(u32, felt252), u32>,
+        defences_level: LegacyMap::<(u32, felt252), u32>,
+        active_missions: LegacyMap::<(u32, u32), Mission>,
+        active_missions_len: LegacyMap<u32, usize>,
+        hostile_missions: LegacyMap<(u32, u32), HostileMission>,
+        hostile_missions_len: LegacyMap<u32, usize>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         #[substorage(v0)]
@@ -120,35 +122,35 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct PlanetGenerated {
-        id: u16,
+        id: u32,
         position: PlanetPosition,
         account: ContractAddress,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CompoundSpent {
-        planet_id: u16,
+        planet_id: u32,
         quantity: u8,
         spent: ERC20s
     }
 
     #[derive(Drop, starknet::Event)]
     struct TechSpent {
-        planet_id: u16,
+        planet_id: u32,
         quantity: u8,
         spent: ERC20s
     }
 
     #[derive(Drop, starknet::Event)]
     struct FleetSpent {
-        planet_id: u16,
+        planet_id: u32,
         quantity: u32,
         spent: ERC20s
     }
 
     #[derive(Drop, starknet::Event)]
     struct DefenceSpent {
-        planet_id: u16,
+        planet_id: u32,
         quantity: u32,
         spent: ERC20s
     }
@@ -156,8 +158,8 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct FleetSent {
         time: u64,
-        origin: u16,
-        destination: u16,
+        origin: u32,
+        destination: u32,
         mission_type: felt252,
     }
 
@@ -165,11 +167,11 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct BattleReport {
         time: u64,
-        attacker: u16,
+        attacker: u32,
         attacker_position: PlanetPosition,
         attacker_initial_fleet: Fleet,
         attacker_fleet_loss: Fleet,
-        defender: u16,
+        defender: u32,
         defender_position: PlanetPosition,
         defender_initial_fleet: Fleet,
         defender_fleet_loss: Fleet,
@@ -182,7 +184,7 @@ mod NoGame {
     #[derive(Drop, starknet::Event)]
     struct DebrisCollected {
         time: u64,
-        debris_field_id: u16,
+        debris_field_id: u32,
         amount: Debris,
     }
 
@@ -262,12 +264,11 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
             let (colony_id, colony_position) = self.colony.generate_colony(planet_id);
-            let id = ((planet_id * 100) + colony_id.into());
+            let id = ((planet_id * 1000) + colony_id.into());
             self.planet_position.write(id, colony_position);
-            id.print();
-            colony_position.print();
             self.position_to_planet.write(colony_position, id);
             self.number_of_planets.write(self.number_of_planets.read() + 1);
+            self.colony_owner.write(id, planet_id);
             self
                 .emit(
                     Event::PlanetGenerated(
@@ -464,6 +465,7 @@ mod NoGame {
             self.fleet_leave_planet(planet_id, f);
         }
 
+
         fn attack_planet(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
             let origin = self.get_owned_planet(caller);
@@ -472,11 +474,21 @@ mod NoGame {
             assert(mission.destination != origin, 'cannot attack own planet');
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
-            let defender_fleet = self.get_ships_levels(mission.destination);
-            let defences = self.get_defences_levels(mission.destination);
-            let t1 = self.get_tech_levels(origin);
-            let t2 = self.get_tech_levels(mission.destination);
-            let celestia_before = self.get_celestia_available(mission.destination);
+            let is_colony = mission.destination > 1000;
+            let colony_mother_planet = if is_colony {
+                self.colony_owner.read(mission.destination)
+            } else {
+                0
+            };
+            let colony_id = if is_colony {
+                (mission.destination - colony_mother_planet * 1000).try_into().unwrap()
+            } else {
+                0
+            };
+
+            let mut t1 = self.get_tech_levels(origin);
+            let (defender_fleet, defences, t2, celestia_before) = self
+                .get_fleet_and_defences_before_battle(mission.destination);
 
             let time_since_arrived = time_now - mission.time_arrival;
             let mut attacker_fleet: Fleet = mission.fleet;
@@ -497,53 +509,28 @@ mod NoGame {
                 .planet_debris_field
                 .write(mission.destination, current_debries_field + total_debris);
 
-            self.update_defender_fleet_levels_after_attack(mission.destination, f2);
-            self.update_defences_after_attack(mission.destination, d);
-
-            let mut loot_amount: ERC20s = Default::default();
-
-            if f1.is_zero() {
-                self.active_missions.write((origin, mission_id), Zeroable::zero());
+            if is_colony {
+                self.colony.update_defences_after_attack(colony_mother_planet, colony_id, d);
             } else {
-                let spendable = self.get_spendable_resources(mission.destination);
-                let collectible = self.get_collectible_resources(mission.destination);
-                let mut loot_collectible: ERC20s = Default::default();
-                let mut storage = fleet::get_fleet_cargo_capacity(f1);
-                if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
-                    loot_amount = fleet::load_resources(collectible + spendable, storage);
-                    self.receive_resources_erc20(get_caller_address(), loot_amount);
-                } else {
-                    let loot_amount_collectible = fleet::load_resources(collectible, storage);
-                    // loot_amount_collectible.print();
-                    let mut loot_amount_spendable: ERC20s = Default::default();
-                    // loot_amount_spendable.print();
-                    loot_amount_spendable.steel = spendable.steel / 2;
-                    loot_amount_spendable.quartz = spendable.quartz / 2;
-                    loot_amount_spendable.tritium = spendable.tritium / 2;
-                    loot_amount_spendable =
-                        fleet::load_resources(
-                            loot_amount_spendable,
-                            storage
-                                - (loot_amount_collectible.steel
-                                    + loot_amount_collectible.quartz
-                                    + loot_amount_collectible.tritium)
-                        );
-                    loot_amount = loot_amount_collectible + loot_amount_spendable;
-
-                    self
-                        .pay_resources_erc20(
-                            self.erc721.read().ownerOf(mission.destination.into()),
-                            loot_amount_spendable
-                        );
-                    self
-                        .receive_resources_erc20(
-                            get_caller_address(), loot_amount_collectible + loot_amount_spendable
-                        );
-                }
-                self.resources_timer.write(mission.destination, time_now);
-                self.fleet_return_planet(origin, f1);
-                self.active_missions.write((origin, mission_id), Zeroable::zero());
+                self.update_defender_fleet_levels_after_attack(mission.destination, f2);
+                self.update_defences_after_attack(mission.destination, d);
             }
+
+            let (loot_spendable, loot_collectible) = self
+                .calculate_loot_amount(mission.destination, f1);
+            let total_loot = loot_spendable + loot_collectible;
+
+            self.process_loot_payment(mission.destination, loot_spendable);
+            self.receive_resources_erc20(get_caller_address(), total_loot);
+
+            if is_colony {
+                self.colony.reset_resource_timer(colony_mother_planet, colony_id)
+            } else {
+                self.resources_timer.write(mission.destination, time_now);
+            }
+
+            self.fleet_return_planet(origin, f1);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
 
             self.remove_hostile_mission(mission.destination, mission_id);
 
@@ -552,9 +539,12 @@ mod NoGame {
             let defences_loss = self.calculate_defences_loss(defences, d);
 
             self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
-            self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
+            if is_colony {
+                self.update_points_after_attack(colony_mother_planet, defender_loss, defences_loss);
+            } else {
+                self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
+            }
             self.last_active.write(origin, time_now);
-
             self
                 .emit_battle_report(
                     time_now,
@@ -568,7 +558,7 @@ mod NoGame {
                     defender_loss,
                     defences,
                     defences_loss,
-                    loot_amount,
+                    total_loot,
                     total_debris
                 );
         }
@@ -653,43 +643,29 @@ mod NoGame {
             self.get_planet_price(time_elapsed)
         }
 
-        fn get_number_of_planets(self: @ContractState) -> u16 {
+        fn get_number_of_planets(self: @ContractState) -> u32 {
             self.number_of_planets.read()
         }
 
-        fn get_generated_planets_positions(self: @ContractState) -> Array<PlanetPosition> {
-            let mut arr: Array<PlanetPosition> = array![];
-            let mut i = self.get_number_of_planets();
-            loop {
-                if i.is_zero() {
-                    break;
-                }
-                let position = self.get_planet_position(i);
-                arr.append(position);
-                i -= 1;
-            };
-            arr
-        }
-
-        fn get_planet_position(self: @ContractState, planet_id: u16) -> PlanetPosition {
+        fn get_planet_position(self: @ContractState, planet_id: u32) -> PlanetPosition {
             self.planet_position.read(planet_id)
         }
 
-        fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u16 {
+        fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u32 {
             self.position_to_planet.read(position)
         }
 
-        fn get_last_active(self: @ContractState, planet_id: u16) -> u64 {
+        fn get_last_active(self: @ContractState, planet_id: u32) -> u64 {
             self.last_active.read(planet_id)
         }
 
         fn get_planet_colonies(
-            self: @ContractState, planet_id: u16
+            self: @ContractState, planet_id: u32
         ) -> Array<(u8, PlanetPosition)> {
             self.colony.get_colonies_for_planet(planet_id)
         }
 
-        fn get_compounds_levels(self: @ContractState, planet_id: u16) -> CompoundsLevels {
+        fn get_compounds_levels(self: @ContractState, planet_id: u32) -> CompoundsLevels {
             CompoundsLevels {
                 steel: self.compounds_level.read((planet_id, Names::STEEL)),
                 quartz: self.compounds_level.read((planet_id, Names::QUARTZ)),
@@ -701,12 +677,12 @@ mod NoGame {
         }
 
         fn get_colony_compounds(
-            self: @ContractState, planet_id: u16, colony_id: u8
+            self: @ContractState, planet_id: u32, colony_id: u8
         ) -> CompoundsLevels {
             self.colony.get_colony_coumpounds(planet_id, colony_id)
         }
 
-        fn get_tech_levels(self: @ContractState, planet_id: u16) -> TechLevels {
+        fn get_tech_levels(self: @ContractState, planet_id: u32) -> TechLevels {
             TechLevels {
                 energy: self.techs_level.read((planet_id, Names::ENERGY_TECH)),
                 digital: self.techs_level.read((planet_id, Names::DIGITAL)),
@@ -723,15 +699,15 @@ mod NoGame {
             }
         }
 
-        fn get_debris_field(self: @ContractState, planet_id: u16) -> Debris {
+        fn get_debris_field(self: @ContractState, planet_id: u32) -> Debris {
             self.planet_debris_field.read(planet_id)
         }
 
-        fn get_planet_points(self: @ContractState, planet_id: u16) -> u128 {
+        fn get_planet_points(self: @ContractState, planet_id: u32) -> u128 {
             self.resources_spent.read(planet_id) / 1000
         }
 
-        fn get_spendable_resources(self: @ContractState, planet_id: u16) -> ERC20s {
+        fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
             let planet_owner = self.erc721.read().ownerOf(planet_id.into());
             let steel = self.steel.read().balance_of(planet_owner).low / E18;
             let quartz = self.quartz.read().balance_of(planet_owner).low / E18;
@@ -739,18 +715,18 @@ mod NoGame {
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
-        fn get_collectible_resources(self: @ContractState, planet_id: u16) -> ERC20s {
+        fn get_collectible_resources(self: @ContractState, planet_id: u32) -> ERC20s {
             self.calculate_production(planet_id)
         }
 
         fn get_colony_collectible_resources(
-            self: @ContractState, planet_id: u16, colony_id: u8
+            self: @ContractState, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             let uni_speed = self.uni_speed.read();
             self.colony.get_colony_resources(uni_speed, planet_id, colony_id)
         }
 
-        fn get_ships_levels(self: @ContractState, planet_id: u16) -> Fleet {
+        fn get_ships_levels(self: @ContractState, planet_id: u32) -> Fleet {
             Fleet {
                 carrier: self.ships_level.read((planet_id, Names::CARRIER)),
                 scraper: self.ships_level.read((planet_id, Names::SCRAPER)),
@@ -760,16 +736,16 @@ mod NoGame {
             }
         }
 
-        fn get_celestia_available(self: @ContractState, planet_id: u16) -> u32 {
+        fn get_celestia_available(self: @ContractState, planet_id: u32) -> u32 {
             self.defences_level.read((planet_id, Names::CELESTIA))
         }
 
-        fn get_celestia_production(self: @ContractState, planet_id: u16) -> u16 {
+        fn get_celestia_production(self: @ContractState, planet_id: u32) -> u32 {
             let position = self.get_planet_position(planet_id);
             self.position_to_celestia_production(position.orbit)
         }
 
-        fn get_defences_levels(self: @ContractState, planet_id: u16) -> DefencesLevels {
+        fn get_defences_levels(self: @ContractState, planet_id: u32) -> DefencesLevels {
             DefencesLevels {
                 celestia: self.defences_level.read((planet_id, Names::CELESTIA)),
                 blaster: self.defences_level.read((planet_id, Names::BLASTER)),
@@ -780,12 +756,12 @@ mod NoGame {
         }
 
         fn get_colony_defences_levels(
-            self: @ContractState, planet_id: u16, colony_id: u8
+            self: @ContractState, planet_id: u32, colony_id: u8
         ) -> DefencesLevels {
             self.colony.get_colony_defences(planet_id, colony_id)
         }
 
-        fn is_noob_protected(self: @ContractState, planet1_id: u16, planet2_id: u16) -> bool {
+        fn is_noob_protected(self: @ContractState, planet1_id: u32, planet2_id: u32) -> bool {
             let p1_points = self.get_planet_points(planet1_id);
             let p2_points = self.get_planet_points(planet2_id);
             if p1_points > p2_points {
@@ -795,11 +771,11 @@ mod NoGame {
             }
         }
 
-        fn get_mission_details(self: @ContractState, planet_id: u16, mission_id: usize) -> Mission {
+        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
             self.active_missions.read((planet_id, mission_id))
         }
 
-        fn get_active_missions(self: @ContractState, planet_id: u16) -> Array<Mission> {
+        fn get_active_missions(self: @ContractState, planet_id: u32) -> Array<Mission> {
             let mut arr: Array<Mission> = array![];
             let len = self.active_missions_len.read(planet_id);
             let mut i = 1;
@@ -816,7 +792,7 @@ mod NoGame {
             arr
         }
 
-        fn get_hostile_missions(self: @ContractState, planet_id: u16) -> Array<HostileMission> {
+        fn get_hostile_missions(self: @ContractState, planet_id: u32) -> Array<HostileMission> {
             let mut arr: Array<HostileMission> = array![];
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
@@ -861,6 +837,88 @@ mod NoGame {
             self.is_testnet.write(is_testnet);
         }
 
+        fn process_loot_payment(
+            ref self: ContractState, destination_id: u32, loot_spendable: ERC20s,
+        ) {
+            if destination_id > 1000 {
+                let colony_mother_planet = self.colony_owner.read(destination_id);
+                let planet_owner = self.erc721.read().ownerOf(colony_mother_planet.into());
+                self.pay_resources_erc20(planet_owner, loot_spendable);
+            } else {
+                self
+                    .pay_resources_erc20(
+                        self.erc721.read().ownerOf(destination_id.into()), loot_spendable
+                    );
+            }
+        }
+
+        fn get_fleet_and_defences_before_battle(
+            self: @ContractState, planet_id: u32
+        ) -> (Fleet, DefencesLevels, TechLevels, u32) {
+            let mut fleet: Fleet = Default::default();
+            let mut defences: DefencesLevels = Default::default();
+            let mut techs: TechLevels = Default::default();
+            let mut celestia = 0;
+            if planet_id > 1000 {
+                let colony_mother_planet = self.colony_owner.read(planet_id);
+                defences = self
+                    .get_colony_defences_levels(
+                        colony_mother_planet,
+                        (planet_id - colony_mother_planet * 1000).try_into().unwrap()
+                    );
+                techs = self.get_tech_levels(colony_mother_planet);
+                celestia = defences.celestia;
+            } else {
+                fleet = self.get_ships_levels(planet_id);
+                defences = self.get_defences_levels(planet_id);
+                techs = self.get_tech_levels(planet_id);
+                celestia = self.get_celestia_available(planet_id);
+            }
+            (fleet, defences, techs, celestia)
+        }
+
+        fn calculate_loot_amount(
+            self: @ContractState, destination_id: u32, attacker_fleet: Fleet
+        ) -> (ERC20s, ERC20s) {
+            let mut loot_amount: ERC20s = Default::default();
+            let mut loot_collectible: ERC20s = Default::default();
+            let mut loot_spendable: ERC20s = Default::default();
+            let mut storage = fleet::get_fleet_cargo_capacity(attacker_fleet);
+            let mut spendable: ERC20s = Default::default();
+            let mut collectible: ERC20s = Default::default();
+
+            if destination_id > 1000 {
+                let mother_planet = self.colony_owner.read(destination_id);
+                let uni_speed = self.uni_speed.read();
+                let colony_id: u8 = (destination_id - mother_planet * 1000).try_into().unwrap();
+                collectible = self.colony.get_colony_resources(uni_speed, mother_planet, colony_id);
+            } else {
+                spendable = self.get_spendable_resources(destination_id);
+                collectible = self.get_collectible_resources(destination_id);
+            }
+
+            if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
+                loot_collectible = fleet::load_resources(collectible + spendable, storage);
+            } else {
+                loot_collectible = fleet::load_resources(collectible, storage);
+
+                if !spendable.is_zero() {
+                    loot_spendable.steel = spendable.steel / 2;
+                    loot_spendable.quartz = spendable.quartz / 2;
+                    loot_spendable.tritium = spendable.tritium / 2;
+                    loot_spendable =
+                        fleet::load_resources(
+                            loot_spendable,
+                            storage
+                                - (loot_collectible.steel
+                                    + loot_collectible.quartz
+                                    + loot_collectible.tritium)
+                        );
+                }
+            }
+            return (loot_spendable, loot_collectible);
+        }
+
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             let auction = LinearVRGDA {
                 target_price: FixedTrait::new(self.token_price.read(), false),
@@ -879,7 +937,7 @@ mod NoGame {
         }
 
         #[inline(always)]
-        fn get_position_from_raw(self: @ContractState, raw_position: u16) -> PlanetPosition {
+        fn get_position_from_raw(self: @ContractState, raw_position: u32) -> PlanetPosition {
             PlanetPosition {
                 system: (raw_position / 10).try_into().unwrap(),
                 orbit: (raw_position % 10).try_into().unwrap()
@@ -888,7 +946,7 @@ mod NoGame {
 
 
         #[inline(always)]
-        fn get_owned_planet(self: @ContractState, caller: ContractAddress) -> u16 {
+        fn get_owned_planet(self: @ContractState, caller: ContractAddress) -> u32 {
             let planet_id = self.erc721.read().token_of(caller);
             planet_id.low.try_into().unwrap()
         }
@@ -912,7 +970,7 @@ mod NoGame {
             }
         }
 
-        fn calculate_production(self: @ContractState, planet_id: u16) -> ERC20s {
+        fn calculate_production(self: @ContractState, planet_id: u32) -> ERC20s {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
@@ -954,7 +1012,7 @@ mod NoGame {
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
         }
 
-        fn calculate_energy_consumption(self: @ContractState, planet_id: u16) -> u128 {
+        fn calculate_energy_consumption(self: @ContractState, planet_id: u32) -> u128 {
             let compounds = self.get_compounds_levels(planet_id);
             Consumption::base(compounds.steel)
                 + Consumption::base(compounds.quartz)
@@ -998,7 +1056,7 @@ mod NoGame {
             }
         }
 
-        fn update_planet_points(ref self: ContractState, planet_id: u16, spent: ERC20s) {
+        fn update_planet_points(ref self: ContractState, planet_id: u32, spent: ERC20s) {
             self.last_active.write(planet_id, get_block_timestamp());
             self
                 .resources_spent
@@ -1007,7 +1065,7 @@ mod NoGame {
                 );
         }
 
-        fn time_since_last_collection(self: @ContractState, planet_id: u16) -> u64 {
+        fn time_since_last_collection(self: @ContractState, planet_id: u32) -> u64 {
             get_block_timestamp() - self.resources_timer.read(planet_id)
         }
 
@@ -1031,7 +1089,7 @@ mod NoGame {
             }
         }
 
-        fn fleet_leave_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+        fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             let fleet_levels = self.get_ships_levels(planet_id);
             if fleet.carrier > 0 {
                 self
@@ -1060,7 +1118,7 @@ mod NoGame {
             }
         }
 
-        fn fleet_return_planet(ref self: ContractState, planet_id: u16, fleet: Fleet) {
+        fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             let fleet_levels = self.get_ships_levels(planet_id);
             if fleet.carrier > 0 {
                 self
@@ -1089,7 +1147,7 @@ mod NoGame {
             }
         }
 
-        fn check_enough_ships(self: @ContractState, planet_id: u16, fleet: Fleet) {
+        fn check_enough_ships(self: @ContractState, planet_id: u32, fleet: Fleet) {
             let ships_levels = self.get_ships_levels(planet_id);
             assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
             assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
@@ -1099,7 +1157,7 @@ mod NoGame {
         }
 
         fn update_defender_fleet_levels_after_attack(
-            ref self: ContractState, planet_id: u16, f: Fleet
+            ref self: ContractState, planet_id: u32, f: Fleet
         ) {
             self.ships_level.write((planet_id, Names::CARRIER), f.carrier);
             self.ships_level.write((planet_id, Names::SCRAPER), f.scraper);
@@ -1109,7 +1167,7 @@ mod NoGame {
         }
 
         fn update_defences_after_attack(
-            ref self: ContractState, planet_id: u16, d: DefencesLevels
+            ref self: ContractState, planet_id: u32, d: DefencesLevels
         ) {
             self.defences_level.write((planet_id, Names::CELESTIA), d.celestia);
             self.defences_level.write((planet_id, Names::BLASTER), d.blaster);
@@ -1119,7 +1177,7 @@ mod NoGame {
         }
 
         fn add_active_mission(
-            ref self: ContractState, planet_id: u16, mut mission: Mission
+            ref self: ContractState, planet_id: u32, mut mission: Mission
         ) -> usize {
             let len = self.active_missions_len.read(planet_id);
             let mut i = 1;
@@ -1141,7 +1199,7 @@ mod NoGame {
             i
         }
 
-        fn add_hostile_mission(ref self: ContractState, planet_id: u16, mission: HostileMission) {
+        fn add_hostile_mission(ref self: ContractState, planet_id: u32, mission: HostileMission) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1159,7 +1217,7 @@ mod NoGame {
             };
         }
 
-        fn remove_hostile_mission(ref self: ContractState, planet_id: u16, id_to_remove: usize) {
+        fn remove_hostile_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1175,7 +1233,7 @@ mod NoGame {
             }
         }
 
-        fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u16 {
+        fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u32 {
             if orbit == 1 {
                 return 48;
             }
@@ -1207,7 +1265,7 @@ mod NoGame {
             }
         }
 
-        fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u16 {
+        fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u32 {
             if orbit == 1 {
                 return 230;
             }
@@ -1264,11 +1322,11 @@ mod NoGame {
         fn emit_battle_report(
             ref self: ContractState,
             time: u64,
-            attacker: u16,
+            attacker: u32,
             attacker_position: PlanetPosition,
             attacker_initial_fleet: Fleet,
             attacker_fleet_loss: Fleet,
-            defender: u16,
+            defender: u32,
             defender_position: PlanetPosition,
             defender_initial_fleet: Fleet,
             defender_fleet_loss: Fleet,
@@ -1300,7 +1358,7 @@ mod NoGame {
         }
 
         fn update_points_after_attack(
-            ref self: ContractState, planet_id: u16, fleet: Fleet, defences: DefencesLevels
+            ref self: ContractState, planet_id: u32, fleet: Fleet, defences: DefencesLevels
         ) {
             if fleet.is_zero() && defences.is_zero() {
                 return;
@@ -1355,7 +1413,7 @@ mod NoGame {
         fn upgrade_component(
             ref self: ContractState,
             caller: ContractAddress,
-            planet_id: u16,
+            planet_id: u32,
             component: UpgradeType,
             quantity: u8
         ) -> ERC20s {
@@ -1642,7 +1700,7 @@ mod NoGame {
         fn build_component(
             ref self: ContractState,
             caller: ContractAddress,
-            planet_id: u16,
+            planet_id: u32,
             dockyard_level: u8,
             techs: TechLevels,
             component: BuildType,
@@ -1806,7 +1864,7 @@ mod NoGame {
         fn upgrade_colony_component(
             ref self: ContractState,
             caller: ContractAddress,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             component: ColonyUpgradeType,
             quantity: u8
@@ -1874,7 +1932,7 @@ mod NoGame {
         fn build_colony_component(
             ref self: ContractState,
             caller: ContractAddress,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             component: ColonyBuildType,
             quantity: u32

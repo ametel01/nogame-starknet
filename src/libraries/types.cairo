@@ -1,10 +1,10 @@
-use integer::u128_overflowing_add;
+use integer::{u128_overflowing_add, u128_overflowing_sub};
 use starknet::ContractAddress;
 
 use snforge_std::PrintTrait;
 
 const E18: u128 = 1000000000000000000;
-const MAX_NUMBER_OF_PLANETS: u16 = 500;
+const MAX_NUMBER_OF_PLANETS: u32 = 500;
 const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
 const BANK_ADDRESS: felt252 =
@@ -31,12 +31,33 @@ struct ERC20s {
     tritium: u128,
 }
 
+impl ERC20LevelsZeroable of Zeroable<ERC20s> {
+    fn zero() -> ERC20s {
+        ERC20s { steel: 0, quartz: 0, tritium: 0 }
+    }
+    fn is_zero(self: ERC20s) -> bool {
+        self.steel == 0 && self.quartz == 0 && self.tritium == 0
+    }
+    fn is_non_zero(self: ERC20s) -> bool {
+        !self.is_zero()
+    }
+}
+
 impl ERC20sAdd of Add<ERC20s> {
     fn add(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
         ERC20s {
             steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
             quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow'),
             tritium: u128_overflowing_add(lhs.tritium, rhs.tritium).expect('u128_add Overflow'),
+        }
+    }
+}
+impl ERC20sSub of Sub<ERC20s> {
+    fn sub(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
+        ERC20s {
+            steel: u128_overflowing_sub(lhs.steel, rhs.steel).expect('u128_sub Overflow'),
+            quartz: u128_overflowing_sub(lhs.quartz, rhs.quartz).expect('u128_sub Overflow'),
+            tritium: u128_overflowing_sub(lhs.tritium, rhs.tritium).expect('u128_sub Overflow'),
         }
     }
 }
@@ -234,7 +255,7 @@ struct EnergyCost {
 
 #[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store, Hash)]
 struct PlanetPosition {
-    system: u16,
+    system: u32,
     orbit: u8,
 }
 
@@ -361,7 +382,7 @@ impl PrintUnit of PrintTrait<Unit> {
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct HostileMission {
-    origin: u16,
+    origin: u32,
     id_at_origin: usize,
     time_arrival: u64,
     number_of_ships: u32,
@@ -395,9 +416,9 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
-    id: u16,
+    id: u32,
     time_start: u64,
-    destination: u16,
+    destination: u32,
     time_arrival: u64,
     fleet: Fleet,
     is_debris: bool,
@@ -459,7 +480,7 @@ enum UpgradeType {
 
 
 trait UpgradeTrait<TState, UpgradeType> {
-    fn upgrade(ref self: TState, component: UpgradeType, planet_id: u16) -> ERC20s;
+    fn upgrade(ref self: TState, component: UpgradeType, planet_id: u32) -> ERC20s;
 }
 
 #[derive(Drop, Serde)]

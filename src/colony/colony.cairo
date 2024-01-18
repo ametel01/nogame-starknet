@@ -5,16 +5,16 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait IColonyWrite<TState> {
-    fn generate_colony(ref self: TState, planet_id: u16) -> (u8, PlanetPosition);
+    fn generate_colony(ref self: TState, planet_id: u32) -> (u8, PlanetPosition);
     fn collect_colony_resources(
-        ref self: TState, uni_speed: u128, planet_id: u16, colony_id: u8
+        ref self: TState, uni_speed: u128, planet_id: u32, colony_id: u8
     ) -> ERC20s;
     fn process_colony_compound_upgrade(
-        ref self: TState, planet_id: u16, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+        ref self: TState, planet_id: u32, colony_id: u8, name: ColonyUpgradeType, quantity: u8
     );
     fn process_colony_unit_build(
         ref self: TState,
-        planet_id: u16,
+        planet_id: u32,
         colony_id: u8,
         techs: TechLevels,
         name: ColonyBuildType,
@@ -22,15 +22,15 @@ trait IColonyWrite<TState> {
         is_testnet: bool
     );
     fn get_colony_resources(
-        self: @TState, uni_speed: u128, planet_id: u16, colony_id: u8
+        self: @TState, uni_speed: u128, planet_id: u32, colony_id: u8
     ) -> ERC20s;
 }
 
 #[starknet::interface]
 trait IColonyView<TState> {
-    fn get_colonies_for_planet(self: @TState, planet_id: u16) -> Array<(u8, PlanetPosition)>;
-    fn get_colony_coumpounds(self: @TState, planet_id: u16, colony_id: u8) -> CompoundsLevels;
-    fn get_colony_defences(self: @TState, planet_id: u16, colony_id: u8) -> DefencesLevels;
+    fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
+    fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
 }
 
 mod ResourceName {
@@ -57,13 +57,13 @@ mod ColonyComponent {
     #[storage]
     struct Storage {
         colony_count: usize,
-        planet_colonies_count: LegacyMap::<u16, u8>,
-        colony_position: LegacyMap::<(u16, u8), PlanetPosition>,
-        position_to_colony: LegacyMap::<PlanetPosition, (u16, u8)>,
-        colony_resource_timer: LegacyMap<(u16, u8), u64>,
-        colony_compounds: LegacyMap::<(u16, u8, felt252), u8>,
-        colony_ships: LegacyMap::<(u16, u8, felt252), u32>,
-        colony_defences: LegacyMap::<(u16, u8, felt252), u32>,
+        planet_colonies_count: LegacyMap::<u32, u8>,
+        colony_position: LegacyMap::<(u32, u8), PlanetPosition>,
+        position_to_colony: LegacyMap::<PlanetPosition, (u32, u8)>,
+        colony_resource_timer: LegacyMap<(u32, u8), u64>,
+        colony_compounds: LegacyMap::<(u32, u8, felt252), u8>,
+        colony_ships: LegacyMap::<(u32, u8, felt252), u32>,
+        colony_defences: LegacyMap::<(u32, u8, felt252), u32>,
     }
 
     #[embeddable_as(ColonyWrite)]
@@ -71,7 +71,7 @@ mod ColonyComponent {
         TContractState, +HasComponent<TContractState>
     > of super::IColonyWrite<ComponentState<TContractState>> {
         fn generate_colony(
-            ref self: ComponentState<TContractState>, planet_id: u16
+            ref self: ComponentState<TContractState>, planet_id: u32
         ) -> (u8, PlanetPosition) {
             let current_count = self.colony_count.read();
             let position = positions::get_colony_position(current_count);
@@ -85,7 +85,7 @@ mod ColonyComponent {
         }
 
         fn collect_colony_resources(
-            ref self: ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+            ref self: ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             assert!(
                 !self.colony_position.read((planet_id, colony_id)).is_zero(),
@@ -101,7 +101,7 @@ mod ColonyComponent {
 
         fn process_colony_compound_upgrade(
             ref self: ComponentState<TContractState>,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             name: ColonyUpgradeType,
             quantity: u8
@@ -117,7 +117,7 @@ mod ColonyComponent {
 
         fn process_colony_unit_build(
             ref self: ComponentState<TContractState>,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             techs: TechLevels,
             name: ColonyBuildType,
@@ -134,8 +134,11 @@ mod ColonyComponent {
         }
 
         fn get_colony_resources(
-            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
+            if self.colony_position.read((planet_id, colony_id)).is_zero() {
+                return Zeroable::zero();
+            }
             self.calculate_colony_production(uni_speed, planet_id, colony_id)
         }
     }
@@ -145,7 +148,7 @@ mod ColonyComponent {
         TContractState, +HasComponent<TContractState>
     > of super::IColonyView<ComponentState<TContractState>> {
         fn get_colonies_for_planet(
-            self: @ComponentState<TContractState>, planet_id: u16
+            self: @ComponentState<TContractState>, planet_id: u32
         ) -> Array<(u8, PlanetPosition)> {
             let mut arr: Array<(u8, PlanetPosition)> = array![];
             let mut i = 1;
@@ -161,7 +164,7 @@ mod ColonyComponent {
         }
 
         fn get_colony_coumpounds(
-            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
         ) -> CompoundsLevels {
             CompoundsLevels {
                 steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
@@ -174,7 +177,7 @@ mod ColonyComponent {
         }
 
         fn get_colony_defences(
-            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
         ) -> DefencesLevels {
             DefencesLevels {
                 celestia: self.colony_defences.read((planet_id, colony_id, Names::CELESTIA)),
@@ -190,9 +193,28 @@ mod ColonyComponent {
     impl InternalImpl<
         TContractState, +HasComponent<TContractState>
     > of InternalTrait<TContractState> {
+        fn reset_resource_timer(
+            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8
+        ) {
+            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
+        }
+
+        fn update_defences_after_attack(
+            ref self: ComponentState<TContractState>,
+            planet_id: u32,
+            colony_id: u8,
+            d: DefencesLevels
+        ) {
+            self.colony_defences.write((planet_id, colony_id, Names::CELESTIA), d.celestia);
+            self.colony_defences.write((planet_id, colony_id, Names::BLASTER), d.blaster);
+            self.colony_defences.write((planet_id, colony_id, Names::BEAM), d.beam);
+            self.colony_defences.write((planet_id, colony_id, Names::ASTRAL), d.astral);
+            self.colony_defences.write((planet_id, colony_id, Names::PLASMA), d.plasma);
+        }
+
         fn upgrade_component(
             ref self: ComponentState<TContractState>,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             component: ColonyUpgradeType,
             quantity: u8
@@ -258,7 +280,7 @@ mod ColonyComponent {
 
         fn build_component(
             ref self: ComponentState<TContractState>,
-            planet_id: u16,
+            planet_id: u32,
             colony_id: u8,
             techs: TechLevels,
             component: ColonyBuildType,
@@ -324,7 +346,7 @@ mod ColonyComponent {
 
 
         fn get_coumpounds_levels(
-            self: @ComponentState<TContractState>, planet_id: u16, colony_id: u8
+            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
         ) -> CompoundsLevels {
             CompoundsLevels {
                 steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
@@ -337,7 +359,7 @@ mod ColonyComponent {
         }
 
         fn calculate_colony_production(
-            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u16, colony_id: u8
+            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             let time_now = get_block_timestamp();
             let last_collection_time = self.colony_resource_timer.read((planet_id, colony_id));
@@ -379,7 +401,7 @@ mod ColonyComponent {
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
         }
 
-        fn calculate_avg_temperature(self: @ComponentState<TContractState>, orbit: u8) -> u16 {
+        fn calculate_avg_temperature(self: @ComponentState<TContractState>, orbit: u8) -> u32 {
             if orbit == 1 {
                 return 230;
             }
