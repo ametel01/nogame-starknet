@@ -1,9 +1,9 @@
-name: Build
+name: Format
 
 on: [push, pull_request]
 
 env:
-  SCARB_VERSION: 2.4.3
+  SCARB_VERSION: 2.4.4
 
 jobs:
   check:
@@ -14,8 +14,4 @@ jobs:
         with:
           scarb-version: ${{ env.SCARB_VERSION }}
       - name: Check cairo format
-        run: |
-          scarb fmt --check
-      - name: Build cairo programs
-        run: |
-          scarb build
+        run: scarb fmt --check

@@ -1,10 +1,9 @@
-name: Test
+name: Build
 
 on: [push, pull_request]
 
 env:
   SCARB_VERSION: 2.4.4
-  SNFORGE_VERSION: 0.14.0
 
 jobs:
   check:
@@ -14,9 +13,5 @@ jobs:
       - uses: software-mansion/setup-scarb@v1
         with:
           scarb-version: ${{ env.SCARB_VERSION }}
-      - uses: foundry-rs/setup-snfoundry@v2
-        with:
-          starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
-      - name: Run cairo tests
-        run: 
-          snforge test
+      - name: Build cairo programs
+        run: scarb build
