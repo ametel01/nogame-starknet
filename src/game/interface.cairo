@@ -25,19 +25,11 @@ trait INoGame<TState> {
     fn generate_mint_key(ref self: TState, secret: felt252);
     fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
-    fn generate_colony(ref self: TState, price: u256);
     fn collect_resources(ref self: TState);
-    fn collect_colony_resources(ref self: TState, colony_id: u8);
     fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
     fn process_tech_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
     fn process_ship_build(ref self: TState, component: BuildType, quantity: u32);
     fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
-    fn process_colony_compound_upgrade(
-        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
-    );
-    fn process_colony_unit_build(
-        ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
-    );
     // Fleet functions
     fn send_fleet(
         ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
@@ -49,26 +41,35 @@ trait INoGame<TState> {
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u32;
+    fn get_planet_points(self: @TState, planet_id: u32) -> u128;
     fn get_planet_position(self: @TState, planet_id: u32) -> PlanetPosition;
     fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u32;
     fn get_last_active(self: @TState, planet_id: u32) -> u64;
-    fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
-    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
     fn get_debris_field(self: @TState, planet_id: u32) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
-    fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
-    fn get_planet_points(self: @TState, planet_id: u32) -> u128;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
     fn get_celestia_available(self: @TState, planet_id: u32) -> u32;
     fn get_celestia_production(self: @TState, planet_id: u32) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u32) -> DefencesLevels;
-    fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
     fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
     fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
     fn get_hostile_missions(self: @TState, planet_id: u32) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
+    // Colony
+    fn generate_colony(ref self: TState, price: u256);
+    fn collect_colony_resources(ref self: TState, colony_id: u8);
+    fn process_colony_compound_upgrade(
+        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+    );
+    fn process_colony_unit_build(
+        ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
+    );
+    fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
+    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
+    fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
 }
 
