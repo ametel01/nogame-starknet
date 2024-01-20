@@ -149,6 +149,7 @@ struct TechLevels {
     combustion: u8,
     thrust: u8,
     warp: u8,
+    exocraft: u8,
 }
 
 impl TechLevelsPrint of PrintTrait<TechLevels> {
@@ -182,6 +183,7 @@ struct TechsCost {
     combustion: ERC20s,
     thrust: ERC20s,
     warp: ERC20s,
+    exocraft: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -475,7 +477,8 @@ enum UpgradeType {
     Spacetime,
     Combustion,
     Thrust,
-    Warp
+    Warp,
+    Exocraft,
 }
 
 
@@ -526,6 +529,7 @@ mod Names {
     const BEAM: felt252 = 26;
     const ASTRAL: felt252 = 27;
     const PLASMA: felt252 = 28;
+    const EXOCRAFT: felt252 = 29;
 }
 
 

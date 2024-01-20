@@ -695,7 +695,8 @@ mod NoGame {
                 spacetime: self.techs_level.read((planet_id, Names::SPACETIME)),
                 combustion: self.techs_level.read((planet_id, Names::COMBUSTION)),
                 thrust: self.techs_level.read((planet_id, Names::THRUST)),
-                warp: self.techs_level.read((planet_id, Names::WARP))
+                warp: self.techs_level.read((planet_id, Names::WARP)),
+                exocraft: self.techs_level.read((planet_id, Names::EXOCRAFT)),
             }
         }
 
@@ -1691,6 +1692,22 @@ mod NoGame {
                         .write(
                             (planet_id, Names::WARP),
                             techs.warp + quantity.try_into().expect('u32 into u8 failed')
+                        );
+                    return cost;
+                },
+                UpgradeType::Exocraft => {
+                    let lab_level = self.compounds_level.read((planet_id, Names::LAB));
+                    let techs = self.get_tech_levels(planet_id);
+                    Lab::exocraft_requirements_check(lab_level, techs);
+                    let base_cost: ERC20s = Lab::base_tech_costs().exocraft;
+                    let cost = Lab::get_tech_cost(techs.exocraft, quantity, base_cost);
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .techs_level
+                        .write(
+                            (planet_id, Names::EXOCRAFT),
+                            techs.exocraft + quantity.try_into().expect('u32 into u8 failed')
                         );
                     return cost;
                 },
