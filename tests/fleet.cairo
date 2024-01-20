@@ -16,8 +16,8 @@ use tests::utils::{
 #[test]
 fn test_war_basic() {
     let mut attackers: Fleet = Default::default();
-    attackers.sparrow = 20000;
-    attackers.carrier = 25000;
+    attackers.sparrow = 200;
+    attackers.carrier = 250;
     // attackers.frigate = 1;
     // attackers.armade = 10;   
     let mut techs: TechLevels = Default::default();
@@ -28,8 +28,8 @@ fn test_war_basic() {
     // defenders.carrier = 0;
     // defenders.frigate = 4;
     let mut defences: DefencesLevels = Default::default();
-    defences.blaster = 20000;
-    defences.beam = 2000;
+    defences.blaster = 200;
+    defences.beam = 200;
     // defences.astral = 10;    
     let (res1, res2, def) = fleet::war(attackers, techs, defenders, defences, Default::default());
     res1.print();

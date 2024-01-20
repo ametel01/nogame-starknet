@@ -1497,7 +1497,7 @@ mod NoGame {
                         .techs_level
                         .write(
                             (planet_id, Names::ARMOUR),
-                            techs.beam + quantity.try_into().expect('u32 into u8 failed')
+                            techs.armour + quantity.try_into().expect('u32 into u8 failed')
                         );
                     return cost;
                 },
