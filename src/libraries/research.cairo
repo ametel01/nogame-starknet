@@ -105,6 +105,12 @@ impl Lab of LabTrait {
     }
 
     #[inline(always)]
+    fn exocraft_requirements_check(lab_level: u8, techs: TechLevels) {
+        assert(lab_level >= 3, 'Lab 3 required');
+        assert(techs.thrust >= 3, 'Thrust prop 3 required')
+    }
+
+    #[inline(always)]
     fn base_tech_costs() -> TechsCost {
         TechsCost {
             energy: ERC20s { steel: 0, quartz: 800, tritium: 400 },
@@ -119,6 +125,7 @@ impl Lab of LabTrait {
             combustion: ERC20s { steel: 400, quartz: 0, tritium: 600 },
             thrust: ERC20s { steel: 2000, quartz: 4000, tritium: 600 },
             warp: ERC20s { steel: 10000, quartz: 20000, tritium: 6000 },
+            exocraft: ERC20s { steel: 4000, quartz: 8000, tritium: 4000 },
         }
     }
 }
