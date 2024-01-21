@@ -195,7 +195,7 @@ struct TechsCost {
     combustion: ERC20s,
     thrust: ERC20s,
     warp: ERC20s,
-    exocraft: ERC20s,
+// exocraft: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]

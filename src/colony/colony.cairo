@@ -6,7 +6,7 @@ use nogame::libraries::types::{
 #[starknet::interface]
 trait IColonyWrite<TState> {
     fn generate_colony(ref self: TState, planet_id: u32) -> (u8, PlanetPosition);
-    fn collect_colony_resources(
+    fn collect_resources(
         ref self: TState, uni_speed: u128, planet_id: u32, colony_id: u8
     ) -> ERC20s;
     fn process_colony_compound_upgrade(
@@ -84,7 +84,7 @@ mod ColonyComponent {
             (colony_id, position)
         }
 
-        fn collect_colony_resources(
+        fn collect_resources(
             ref self: ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             assert!(
@@ -342,6 +342,10 @@ mod ColonyComponent {
                         );
                 },
             }
+        }
+
+        fn get_planet_colony_count(self: @ComponentState<TContractState>, planet_id: u32) -> u8 {
+            self.planet_colonies_count.read(planet_id)
         }
 
 
