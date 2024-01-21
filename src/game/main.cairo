@@ -55,9 +55,6 @@ mod NoGame {
     impl ColonyWriteImpl = ColonyComponent::ColonyWrite<ContractState>;
     impl ColonyInternalImpl = ColonyComponent::InternalImpl<ContractState>;
 
-    use snforge_std::PrintTrait;
-
-
     #[storage]
     struct Storage {
         initialized: bool,
@@ -160,7 +157,6 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct FleetSent {
-        time: u64,
         origin: u32,
         destination: u32,
         mission_type: felt252,
@@ -169,7 +165,7 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct FleetReturn {
-        docked_at: u16,
+        docked_at: u32,
         mission_type: felt252,
         fleet: Fleet,
     }
@@ -193,7 +189,7 @@ mod NoGame {
 
     #[derive(Drop, starknet::Event)]
     struct DebrisCollected {
-        time: u64,
+        planet_id: u32,
         debris_field_id: u32,
         amount: Debris,
     }
@@ -520,7 +516,7 @@ mod NoGame {
             let mut attacker_fleet: Fleet = mission.fleet;
 
             if time_since_arrived > (2 * HOUR) {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (HOUR));
                 attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 

@@ -73,5 +73,8 @@ trait INoGame<TState> {
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
     fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
+    fn simulate_attack(
+        self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: DefencesLevels
+    ) -> SimulationResult;
 }
 

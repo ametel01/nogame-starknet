@@ -93,19 +93,7 @@ impl ERC20Print of PrintTrait<ERC20s> {
     }
 }
 
-impl ERC20sZeroable of Zeroable<ERC20s> {
-    fn zero() -> ERC20s {
-        ERC20s { steel: 0, quartz: 0, tritium: 0 }
-    }
-    fn is_zero(self: ERC20s) -> bool {
-        self.steel == 0 && self.quartz == 0 && self.tritium == 0
-    }
-    fn is_non_zero(self: ERC20s) -> bool {
-        !self.is_zero()
-    }
-}
-
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct CompoundsLevels {
     steel: u8,
     quartz: u8,
