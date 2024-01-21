@@ -59,7 +59,7 @@ trait INoGame<TState> {
     fn get_hostile_missions(self: @TState, planet_id: u32) -> Array<HostileMission>;
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
     // Colony
-    fn generate_colony(ref self: TState, price: u256);
+    fn generate_colony(ref self: TState);
     fn collect_colony_resources(ref self: TState, colony_id: u8);
     fn process_colony_compound_upgrade(
         ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
@@ -68,6 +68,7 @@ trait INoGame<TState> {
         ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
     );
     fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
+    fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
     fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;

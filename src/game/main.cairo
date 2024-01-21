@@ -259,10 +259,26 @@ mod NoGame {
                 );
         }
 
-        fn generate_colony(ref self: ContractState, price: u256) {
+        fn generate_colony(ref self: ContractState) {
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
-            self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
+            let exo_tech = self.techs_level.read((planet_id, Names::EXOCRAFT));
+            let max_colonies = if exo_tech % 2 == 1 {
+                exo_tech / 2 + 1
+            } else {
+                exo_tech / 2
+            };
+            let current_colonies = self.colony.get_planet_colony_count(planet_id);
+            assert!(
+                current_colonies < max_colonies,
+                "NoGame: max colonies {} reached, upgrade Exocraft tech to increase max colonies",
+                max_colonies
+            );
+            let price: u256 = 0;
+            if !price.is_zero() {
+                self.ETH.read().transferFrom(caller, self.ownable.owner(), price);
+            }
+
             let (colony_id, colony_position) = self.colony.generate_colony(planet_id);
             let id = ((planet_id * 1000) + colony_id.into());
             self.planet_position.write(id, colony_position);
@@ -286,7 +302,7 @@ mod NoGame {
             let planet_id = self.get_owned_planet(caller);
             assert(!planet_id.is_zero(), 'planet does not exist');
             let speed = self.uni_speed.read();
-            let production = self.colony.collect_colony_resources(speed, planet_id, colony_id);
+            let production = self.colony.collect_resources(speed, planet_id, colony_id);
             self.receive_resources_erc20(caller, production);
             self.resources_timer.write(planet_id, get_block_timestamp());
         }
@@ -343,7 +359,7 @@ mod NoGame {
             ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
         ) {
             let caller = get_caller_address();
-            self._collect_resources(caller);
+            self.collect_colony_resources(colony_id);
             let planet_id = self.get_owned_planet(caller);
             let cost = self.upgrade_colony_component(caller, planet_id, colony_id, name, quantity);
             self.update_planet_points(planet_id, cost);
@@ -354,7 +370,7 @@ mod NoGame {
             ref self: ContractState, colony_id: u8, name: ColonyBuildType, quantity: u32,
         ) {
             let caller = get_caller_address();
-            self._collect_resources(caller);
+            self.collect_colony_resources(colony_id);
             let planet_id = self.get_owned_planet(caller);
             let cost = self.build_colony_component(caller, planet_id, colony_id, name, quantity);
             self.update_planet_points(planet_id, cost);
@@ -657,6 +673,10 @@ mod NoGame {
 
         fn get_last_active(self: @ContractState, planet_id: u32) -> u64 {
             self.last_active.read(planet_id)
+        }
+
+        fn get_planet_colonies_count(self: @ContractState, planet_id: u32) -> u8 {
+            self.colony.get_planet_colony_count(planet_id)
         }
 
         fn get_planet_colonies(
@@ -1699,8 +1719,7 @@ mod NoGame {
                     let lab_level = self.compounds_level.read((planet_id, Names::LAB));
                     let techs = self.get_tech_levels(planet_id);
                     Lab::exocraft_requirements_check(lab_level, techs);
-                    let base_cost: ERC20s = Lab::base_tech_costs().exocraft;
-                    let cost = Lab::get_tech_cost(techs.exocraft, quantity, base_cost);
+                    let cost = Lab::exocraft_cost(techs.exocraft, quantity);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
