@@ -311,7 +311,6 @@ mod NoGame {
             let speed = self.uni_speed.read();
             let production = self.colony.collect_resources(speed, planet_id, colony_id);
             self.receive_resources_erc20(caller, production);
-            self.resources_timer.write(planet_id, get_block_timestamp());
         }
 
         /////////////////////////////////////////////////////////////////////
