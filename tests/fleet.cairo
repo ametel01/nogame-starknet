@@ -394,10 +394,15 @@ fn test_decay_fleet() {
     fleet.armade = 2;
 
     let res = fleet::decay_fleet(fleet, 5);
+    res.print();
     let res = fleet::decay_fleet(fleet, 25);
+    res.print();
     let res = fleet::decay_fleet(fleet, 65);
+    res.print();
     let res = fleet::decay_fleet(fleet, 85);
+    res.print();
     let res = fleet::decay_fleet(fleet, 95);
+    res.print();
 }
 
 #[test]
