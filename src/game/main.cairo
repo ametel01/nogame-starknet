@@ -470,7 +470,13 @@ mod NoGame {
                 hostile_mission
                     .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
 
-                self.add_hostile_mission(destination_id, hostile_mission);
+                let is_colony = mission.destination > 1000;
+                let target_planet = if is_colony {
+                    self.colony_owner.read(mission.destination)
+                } else {
+                    mission.destination
+                };
+                self.add_hostile_mission(target_planet, hostile_mission);
                 self
                     .emit(
                         Event::FleetSent(
@@ -561,7 +567,12 @@ mod NoGame {
             self.fleet_return_planet(origin, f1);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
 
-            self.remove_hostile_mission(mission.destination, mission_id);
+            if is_colony {
+                self.remove_hostile_mission(colony_mother_planet, mission_id);
+            } else {
+                self.remove_hostile_mission(mission.destination, mission_id);
+            }
+            self.remove_hostile_mission(colony_mother_planet, mission_id);
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
             let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
@@ -690,10 +701,6 @@ mod NoGame {
 
         fn get_planet_position(self: @ContractState, planet_id: u32) -> PlanetPosition {
             self.planet_position.read(planet_id)
-        }
-
-        fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u32 {
-            self.position_to_planet.read(position)
         }
 
         fn get_last_active(self: @ContractState, planet_id: u32) -> u64 {
@@ -915,6 +922,10 @@ mod NoGame {
             self.initialized.write(true);
             self.token_price.write(token_price);
             self.is_testnet.write(is_testnet);
+        }
+
+        fn get_position_slot_occupant(self: @ContractState, position: PlanetPosition) -> u32 {
+            self.position_to_planet.read(position)
         }
 
         fn process_loot_payment(

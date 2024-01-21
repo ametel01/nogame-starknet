@@ -39,10 +39,9 @@ fn test_generate_colony() {
     assert(id == 2 && position.system == 182 && position.orbit == 2, 'wrong assert 2');
     let (id, position) = *colonies.at(2);
     assert(id == 3 && position.system == 69 && position.orbit == 8, 'wrong assert 3');
-
-    assert(dsp.game.get_position_slot_occupant(position_a) == 1001, 'wrong assert 4');
-    assert(dsp.game.get_position_slot_occupant(position_b) == 1002, 'wrong assert 5');
-    assert(dsp.game.get_position_slot_occupant(position_c) == 1003, 'wrong assert 6');
+// assert(dsp.game.get_position_slot_occupant(position_a) == 1001, 'wrong assert 4');
+// assert(dsp.game.get_position_slot_occupant(position_b) == 1002, 'wrong assert 5');
+// assert(dsp.game.get_position_slot_occupant(position_c) == 1003, 'wrong assert 6');
 }
 
 #[test]

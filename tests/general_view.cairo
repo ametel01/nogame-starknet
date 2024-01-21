@@ -75,17 +75,6 @@ fn test_get_planet_position() {
 }
 
 #[test]
-fn test_get_position_slot_occupant() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-
-    let position = dsp.game.get_planet_position(1);
-    assert(dsp.game.get_position_slot_occupant(position) == 1, 'wrong assert #1');
-}
-
-#[test]
 fn test_get_debris_field() {
     let dsp = set_up();
     init_game(dsp);

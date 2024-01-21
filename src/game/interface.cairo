@@ -43,7 +43,6 @@ trait INoGame<TState> {
     fn get_number_of_planets(self: @TState) -> u32;
     fn get_planet_points(self: @TState, planet_id: u32) -> u128;
     fn get_planet_position(self: @TState, planet_id: u32) -> PlanetPosition;
-    fn get_position_slot_occupant(self: @TState, position: PlanetPosition) -> u32;
     fn get_last_active(self: @TState, planet_id: u32) -> u64;
     fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
