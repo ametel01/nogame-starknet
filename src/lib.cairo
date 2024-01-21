@@ -4,6 +4,16 @@ use starknet::{
 };
 use integer::BoundedInt;
 
+mod game {
+    mod main;
+    mod interface;
+}
+
+mod colony {
+    mod colony;
+    mod positions;
+}
+
 mod libraries {
     mod auction;
     mod compounds;
@@ -14,12 +24,6 @@ mod libraries {
     mod research;
     mod types;
     mod positions;
-}
-
-
-mod game {
-    mod main;
-    mod interface;
 }
 
 mod token {

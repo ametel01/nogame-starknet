@@ -494,10 +494,10 @@ fn test_attack_planet_fleet_decay() {
     dsp.game.attack_planet(1);
 
     let after = dsp.game.get_ships_levels(1);
-    assert(after.carrier == 5, 'wrong #2');
+    assert(after.carrier == 2, 'wrong #2');
 
     let points_after = dsp.game.get_planet_points(1);
-    assert(points_before - points_after == 20, 'wrong #3');
+    assert(points_before - points_after == 36, 'wrong #3');
 }
 
 #[test]

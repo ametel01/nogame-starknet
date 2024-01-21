@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 use snforge_std::PrintTrait;
 
 const E18: u128 = 1000000000000000000;
-const MAX_NUMBER_OF_PLANETS: u16 = 500;
+const MAX_NUMBER_OF_PLANETS: u32 = 500;
 const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
 const BANK_ADDRESS: felt252 =
@@ -29,6 +29,18 @@ struct ERC20s {
     steel: u128,
     quartz: u128,
     tritium: u128,
+}
+
+impl ERC20LevelsZeroable of Zeroable<ERC20s> {
+    fn zero() -> ERC20s {
+        ERC20s { steel: 0, quartz: 0, tritium: 0 }
+    }
+    fn is_zero(self: ERC20s) -> bool {
+        self.steel == 0 && self.quartz == 0 && self.tritium == 0
+    }
+    fn is_non_zero(self: ERC20s) -> bool {
+        !self.is_zero()
+    }
 }
 
 impl ERC20sAdd of Add<ERC20s> {
@@ -81,19 +93,7 @@ impl ERC20Print of PrintTrait<ERC20s> {
     }
 }
 
-impl ERC20sZeroable of Zeroable<ERC20s> {
-    fn zero() -> ERC20s {
-        ERC20s { steel: 0, quartz: 0, tritium: 0 }
-    }
-    fn is_zero(self: ERC20s) -> bool {
-        self.steel == 0 && self.quartz == 0 && self.tritium == 0
-    }
-    fn is_non_zero(self: ERC20s) -> bool {
-        !self.is_zero()
-    }
-}
-
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct CompoundsLevels {
     steel: u8,
     quartz: u8,
@@ -149,6 +149,7 @@ struct TechLevels {
     combustion: u8,
     thrust: u8,
     warp: u8,
+    exocraft: u8,
 }
 
 impl TechLevelsPrint of PrintTrait<TechLevels> {
@@ -182,6 +183,7 @@ struct TechsCost {
     combustion: ERC20s,
     thrust: ERC20s,
     warp: ERC20s,
+// exocraft: ERC20s,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -255,7 +257,7 @@ struct EnergyCost {
 
 #[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store, Hash)]
 struct PlanetPosition {
-    system: u16,
+    system: u32,
     orbit: u8,
 }
 
@@ -382,7 +384,7 @@ impl PrintUnit of PrintTrait<Unit> {
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct HostileMission {
-    origin: u16,
+    origin: u32,
     id_at_origin: usize,
     time_arrival: u64,
     number_of_ships: u32,
@@ -416,9 +418,9 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
-    id: u16,
+    id: u32,
     time_start: u64,
-    destination: u16,
+    destination: u32,
     time_arrival: u64,
     fleet: Fleet,
     is_debris: bool,
@@ -475,12 +477,13 @@ enum UpgradeType {
     Spacetime,
     Combustion,
     Thrust,
-    Warp
+    Warp,
+    Exocraft,
 }
 
 
 trait UpgradeTrait<TState, UpgradeType> {
-    fn upgrade(ref self: TState, component: UpgradeType, planet_id: u16) -> ERC20s;
+    fn upgrade(ref self: TState, component: UpgradeType, planet_id: u32) -> ERC20s;
 }
 
 #[derive(Drop, Serde)]
@@ -526,6 +529,7 @@ mod Names {
     const BEAM: felt252 = 26;
     const ASTRAL: felt252 = 27;
     const PLASMA: felt252 = 28;
+    const EXOCRAFT: felt252 = 29;
 }
 
 #[derive(Default, Drop, Copy, PartialEq, Serde)]
@@ -545,4 +549,22 @@ struct SimulationResult {
     beam: u32,
     astral: u32,
     plasma: u32,
+}
+
+#[derive(Copy, Drop, Serde)]
+enum ColonyUpgradeType {
+    SteelMine,
+    QuartzMine,
+    TritiumMine,
+    EnergyPlant,
+    Dockyard,
+}
+
+#[derive(Copy, Drop, Serde)]
+enum ColonyBuildType {
+    Celestia,
+    Blaster,
+    Beam,
+    Astral,
+    Plasma
 }
