@@ -21,7 +21,8 @@ mod NoGame {
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType, ColonyBuildType
+        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
+        ColonyBuildType
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;

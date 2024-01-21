@@ -1,8 +1,8 @@
 use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
-    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission, SimulationResult,
-    HostileMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
+    ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
+    SimulationResult, HostileMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
 };
 
 #[starknet::interface]
