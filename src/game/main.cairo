@@ -703,6 +703,10 @@ mod NoGame {
             self.last_active.read(planet_id)
         }
 
+        fn get_colony_mother_planet(self: @ContractState, colony_planet_id: u32) -> u32 {
+            self.colony_owner.read(colony_planet_id)
+        }
+
         fn get_planet_colonies_count(self: @ContractState, planet_id: u32) -> u8 {
             self.colony.get_planet_colony_count(planet_id)
         }

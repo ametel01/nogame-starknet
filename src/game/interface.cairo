@@ -67,6 +67,7 @@ trait INoGame<TState> {
     fn process_colony_unit_build(
         ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
     );
+    fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
     fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
