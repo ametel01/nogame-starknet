@@ -1623,7 +1623,6 @@ mod NoGame {
                     let cost = Lab::get_tech_cost(techs.beam, quantity, base_cost);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.update_planet_points(planet_id, cost);
                     self
                         .techs_level
                         .write(
