@@ -20,13 +20,13 @@ fn test_generate_colony() {
     advance_game_state(dsp.game);
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     let colonies = dsp.game.get_planet_colonies(1);
 
     let position_a = PlanetPosition { system: 188, orbit: 10 };
@@ -63,7 +63,7 @@ fn test_process_colony_compound_upgrade() {
     expected_compounds.dockyard = 1;
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::TritiumMine, 3);
@@ -73,7 +73,7 @@ fn test_process_colony_compound_upgrade() {
     assert(colony1_compounds == expected_compounds, 'wrong c1 compounds');
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::QuartzMine, 2);
     dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::TritiumMine, 3);
@@ -97,7 +97,7 @@ fn process_colony_unit_build_test() {
     expected.blaster = 2;
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 1);
     dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 2);
     let actual = dsp.game.get_colony_defences_levels(1, 1);
@@ -115,7 +115,7 @@ fn test_collect_colony_resources() {
     advance_game_state(dsp.game);
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::TritiumMine, 3);
@@ -154,7 +154,7 @@ fn test_attack_colony() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony(0);
+    dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::EnergyPlant, 4);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
