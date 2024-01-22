@@ -388,6 +388,7 @@ struct HostileMission {
     id_at_origin: usize,
     time_arrival: u64,
     number_of_ships: u32,
+    destination: u32,
 }
 
 impl HostileMissionPrint of PrintTrait<HostileMission> {
@@ -406,6 +407,7 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
             id_at_origin: Zeroable::zero(),
             time_arrival: Zeroable::zero(),
             number_of_ships: Zeroable::zero(),
+            destination: Zeroable::zero(),
         }
     }
     fn is_zero(self: HostileMission) -> bool {

@@ -45,6 +45,73 @@ fn test_generate_colony() {
 }
 
 #[test]
+fn test_collect_resources_all_planets() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
+    dsp.game.generate_colony();
+
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
+    dsp.game.generate_colony();
+
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
+    dsp.game.generate_colony();
+
+    start_warp(CheatTarget::One(dsp.game.contract_address), starknet::get_block_timestamp() + YEAR);
+    let planet_collectible = dsp.game.get_collectible_resources(1);
+    let colony1_collectible = dsp.game.get_colony_collectible_resources(1, 1);
+    let colony2_collectible = dsp.game.get_colony_collectible_resources(1, 2);
+    let colony3_collectible = dsp.game.get_colony_collectible_resources(1, 3);
+    let planet_spendable = dsp.game.get_spendable_resources(1);
+    dsp.game.collect_resources();
+    let planet_spendable_after = dsp.game.get_spendable_resources(1);
+    assert(
+        planet_spendable_after == planet_spendable
+            + planet_collectible
+            + colony1_collectible
+            + colony2_collectible
+            + colony3_collectible,
+        'wrong planet spendable'
+    );
+}
+
+#[test]
+fn test_send_fleet_to_colony() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
+    dsp.game.generate_colony();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    dsp.game.process_ship_build(BuildType::Carrier(()), 1);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    let mut p2_position: PlanetPosition = Default::default();
+    p2_position.system = 188;
+    p2_position.orbit = 10;
+    dsp.game.send_fleet(fleet, p2_position, false);
+    let hostile_mission = dsp.game.get_hostile_missions(2);
+    assert((*hostile_mission.at(0)).destination == 2001, 'wrong hostile mission');
+}
+
+#[test]
 fn test_process_colony_compound_upgrade() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);

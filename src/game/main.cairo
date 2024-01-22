@@ -301,6 +301,22 @@ mod NoGame {
         }
 
         fn collect_resources(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = self.get_owned_planet(caller);
+            let colonies = self.get_planet_colonies(planet_id);
+            let speed = self.uni_speed.read();
+            let mut i = 1;
+            let colonies_len = colonies.len();
+            let mut total_production: ERC20s = Default::default();
+            loop {
+                if colonies_len.is_zero() || i > colonies_len {
+                    break;
+                }
+                let production = self.colony.collect_resources(speed, planet_id, i.try_into().unwrap());
+                total_production = total_production + production;
+                i += 1;
+            };
+            self.receive_resources_erc20(caller, total_production);
             self._collect_resources(get_caller_address());
         }
 
@@ -468,7 +484,7 @@ mod NoGame {
                 hostile_mission.time_arrival = mission.time_arrival;
                 hostile_mission
                     .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
-
+                hostile_mission.destination = destination_id;
                 let is_colony = mission.destination > 1000;
                 let target_planet = if is_colony {
                     self.colony_owner.read(mission.destination)
@@ -522,7 +538,7 @@ mod NoGame {
             let mut attacker_fleet: Fleet = mission.fleet;
 
             if time_since_arrived > (2 * HOUR) {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (HOUR));
+                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
                 attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 

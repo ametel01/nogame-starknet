@@ -320,12 +320,11 @@ fn test_collect_debris_fleet_decay() {
     assert(dsp.game.get_ships_levels(1).scraper == 5, 'wrong scraper back');
 
     let resources_after = dsp.game.get_spendable_resources(1);
-
-    assert(resources_after.steel == resources_before.steel + 50000, 'wrong steel collected');
-    assert(resources_after.quartz == resources_before.quartz + 50000, 'wrong quartz collected');
+    assert(resources_after.steel == resources_before.steel + 49333, 'wrong steel collected');
+    assert(resources_after.quartz == resources_before.quartz + 49333, 'wrong quartz collected');
     let debris_after_collection = dsp.game.get_debris_field(2);
-    assert(debris_after_collection.steel == debris.steel - 50000, 'wrong steel after');
-    assert(debris_after_collection.quartz == debris.quartz - 50000, 'wrong quartz after');
+    assert(debris_after_collection.steel == debris.steel - 49333, 'wrong steel after');
+    assert(debris_after_collection.quartz == debris.quartz - 49333, 'wrong quartz after');
 }
 
 #[test]
@@ -494,10 +493,10 @@ fn test_attack_planet_fleet_decay() {
     dsp.game.attack_planet(1);
 
     let after = dsp.game.get_ships_levels(1);
-    assert(after.carrier == 2, 'wrong #2');
+    assert(after.carrier == 5, 'wrong #2');
 
     let points_after = dsp.game.get_planet_points(1);
-    assert(points_before - points_after == 36, 'wrong #3');
+    assert(points_before - points_after == 20, 'wrong #3');
 }
 
 #[test]

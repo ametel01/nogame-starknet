@@ -20,7 +20,7 @@ fn test_war_basic() {
     attackers.scraper = 15;
     attackers.carrier = 35;
     attackers.frigate = 10;
-    attackers.armade = 10;   
+    attackers.armade = 10;
     let mut techs: TechLevels = Default::default();
     // techs.armour = 3;
     // techs.weapons = 3;
