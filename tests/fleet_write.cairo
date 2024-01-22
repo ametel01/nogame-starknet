@@ -56,7 +56,7 @@ fn test_send_fleet_success() {
 
     let tritium_before = dsp.game.get_spendable_resources(1).tritium;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 
     let tritium_after = dsp.game.get_spendable_resources(1).tritium;
 
@@ -101,7 +101,7 @@ fn test_send_fleet_fails_no_planet_at_destination() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn test_send_fleet_fails_origin_is_destination() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p1_position, false);
+    dsp.game.send_fleet(fleet, p1_position, false, 100);
 }
 
 #[test]
@@ -151,7 +151,7 @@ fn test_send_fleet_fails_noob_protection() {
     dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 }
 
 #[test]
@@ -177,8 +177,8 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 5;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 }
 
 #[test]
@@ -204,7 +204,7 @@ fn test_collect_debris_success() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 5;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
@@ -212,7 +212,7 @@ fn test_collect_debris_success() {
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 1;
     let debris = dsp.game.get_debris_field(2);
-    dsp.game.send_fleet(fleet, p2_position, true);
+    dsp.game.send_fleet(fleet, p2_position, true, 100);
     let missions = dsp.game.get_active_missions(1);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
@@ -253,7 +253,7 @@ fn test_collect_debris_own_planet() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
@@ -262,7 +262,7 @@ fn test_collect_debris_own_planet() {
     fleet.scraper = 1;
     let debris = dsp.game.get_debris_field(2);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.send_fleet(fleet, p2_position, true);
+    dsp.game.send_fleet(fleet, p2_position, true, 100);
     let missions = dsp.game.get_active_missions(2);
     let mission = dsp.game.get_mission_details(2, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
@@ -301,7 +301,7 @@ fn test_collect_debris_fleet_decay() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 100;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
@@ -309,7 +309,7 @@ fn test_collect_debris_fleet_decay() {
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 10;
     let debris = dsp.game.get_debris_field(2);
-    dsp.game.send_fleet(fleet, p2_position, true);
+    dsp.game.send_fleet(fleet, p2_position, true, 100);
     let missions = dsp.game.get_active_missions(1);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 9000);
@@ -350,7 +350,7 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 1;
 
-    dsp.game.send_fleet(fleet, p2_position, true);
+    dsp.game.send_fleet(fleet, p2_position, true, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.collect_debris(2);
@@ -379,12 +379,12 @@ fn test_send_fleet_debris_fails_no_scrapers() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p1_position, false);
+    dsp.game.send_fleet(fleet, p1_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
 
-    dsp.game.send_fleet(fleet, p1_position, true);
+    dsp.game.send_fleet(fleet, p1_position, true, 100);
 }
 
 #[test]
@@ -411,13 +411,13 @@ fn test_send_fleet_debris_fails_not_only_scrapers() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p1_position, false);
+    dsp.game.send_fleet(fleet, p1_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.game.attack_planet(1);
 
     fleet.scraper = 1;
-    dsp.game.send_fleet(fleet, p1_position, true);
+    dsp.game.send_fleet(fleet, p1_position, true, 100);
 }
 
 #[test]
@@ -443,7 +443,7 @@ fn test_attack_planet() {
     let mut fleet_a: Fleet = Default::default();
     let fleet_b: Fleet = Zeroable::zero();
     fleet_a.armade = 10;
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
 
@@ -479,7 +479,7 @@ fn test_attack_planet_fleet_decay() {
     let mut fleet_a: Fleet = Default::default();
     let fleet_b: Fleet = Zeroable::zero();
     fleet_a.carrier = 10;
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
 
     // warping 2100 seconds over an hour to create fleet decay
@@ -521,7 +521,7 @@ fn test_attack_planet_fails_empty_mission() {
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
 
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
 
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
@@ -548,7 +548,7 @@ fn test_attack_planet_fails_destination_not_reached() {
     fleet_a.sparrow = 1;
 
     let p2_position = dsp.game.get_planet_position(2);
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
 
     let mission = dsp.game.get_mission_details(1, 1);
     dsp.game.attack_planet(1)
@@ -577,7 +577,7 @@ fn test_attack_planet_loot_amount() {
     fleet_a.carrier = 1;
 
     let p2_position = dsp.game.get_planet_position(2);
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
 
     let collectible_before = dsp.game.get_collectible_resources(2);
     let spendable_before = dsp.game.get_spendable_resources(2);
@@ -616,7 +616,7 @@ fn test_recall_fleet() {
     fleet_a.sparrow = 1;
 
     let p2_position = dsp.game.get_planet_position(2);
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.game.recall_fleet(1);
     let fleet_after = dsp.game.get_ships_levels(1);
@@ -647,7 +647,7 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     fleet_a.sparrow = 1;
 
     let p2_position = dsp.game.get_planet_position(2);
-    dsp.game.send_fleet(fleet_a, p2_position, false);
+    dsp.game.send_fleet(fleet_a, p2_position, false, 100);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.game.recall_fleet(2);
 }

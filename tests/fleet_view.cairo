@@ -66,9 +66,9 @@ fn test_get_hostile_missions() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
-    dsp.game.send_fleet(fleet, p2_position, false);
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 
     let mut missions = dsp.game.get_hostile_missions(2);
     assert(missions.len() == 3, 'wrong missions len #1');
@@ -93,7 +93,7 @@ fn test_get_hostile_missions() {
     assert(*missions.at(0).origin == 1, 'wrong origin #14');
     assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #15');
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let mut missions = dsp.game.get_hostile_missions(2);
     assert(missions.len() == 2, 'wrong missions len 2 #16');
     assert(*missions.at(0).origin == 1, 'wrong origin #17');
@@ -135,9 +135,9 @@ fn test_get_active_missions() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 1;
 
-    dsp.game.send_fleet(fleet, p2_position, false);
-    dsp.game.send_fleet(fleet, p2_position, false);
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
 
     let mut missions = dsp.game.get_active_missions(1);
     assert(missions.len() == 3, 'wrong assert #1');
@@ -170,7 +170,7 @@ fn test_get_active_missions() {
     assert(*missions.at(0).id == 2, 'wrong assert #17');
     assert(*missions.at(0).is_debris == false, 'wrong assert #18');
 
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let mut missions = dsp.game.get_active_missions(1);
     assert(missions.len() == 2, 'wrong assert #19');
 

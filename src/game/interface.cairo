@@ -32,7 +32,11 @@ trait INoGame<TState> {
     fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
     // Fleet functions
     fn send_fleet(
-        ref self: TState, f: Fleet, destination: PlanetPosition, is_debris_collection: bool
+        ref self: TState,
+        f: Fleet,
+        destination: PlanetPosition,
+        is_debris_collection: bool,
+        speed_modifier: u32
     );
     fn attack_planet(ref self: TState, mission_id: usize);
     fn recall_fleet(ref self: TState, mission_id: usize);

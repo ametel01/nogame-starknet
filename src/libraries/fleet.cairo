@@ -423,12 +423,15 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
 
 #[inline(always)]
 // TODO: implement speed modifier.
-fn get_flight_time(speed: u32, distance: u32) -> u64 {
+fn get_flight_time(speed: u32, distance: u32, speed_percentage: u32) -> u64 {
     let f_speed = FixedTrait::new_unscaled(speed.into(), false);
     let f_distance = FixedTrait::new_unscaled(distance.into(), false);
     let multiplier = FixedTrait::new_unscaled(3500, false);
     let ten = FixedTrait::new_unscaled(10, false);
     let res = ten + multiplier * sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
+    let speed_percentage = FixedTrait::new_unscaled(speed_percentage.into(), false)
+        / FixedTrait::new_unscaled(100, false);
+    let res = res * speed_percentage;
     (res.mag / ONE).try_into().expect('get flight time failed')
 }
 

@@ -106,7 +106,7 @@ fn test_send_fleet_to_colony() {
     let mut p2_position: PlanetPosition = Default::default();
     p2_position.system = 188;
     p2_position.orbit = 10;
-    dsp.game.send_fleet(fleet, p2_position, false);
+    dsp.game.send_fleet(fleet, p2_position, false, 100);
     let hostile_mission = dsp.game.get_hostile_missions(2);
     assert((*hostile_mission.at(0)).destination == 2001, 'wrong hostile mission');
 }
@@ -237,7 +237,7 @@ fn test_attack_colony() {
         starknet::get_contract_address(),
         starknet::get_block_timestamp() + DAY * 7
     );
-    dsp.game.send_fleet(fleet_a, colony_position, false);
+    dsp.game.send_fleet(fleet_a, colony_position, false, 100);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(
         dsp.game.contract_address, starknet::get_contract_address(), mission.time_arrival + 1

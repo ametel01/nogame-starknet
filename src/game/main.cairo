@@ -408,7 +408,8 @@ mod NoGame {
             ref self: ContractState,
             f: Fleet,
             destination: PlanetPosition,
-            is_debris_collection: bool
+            is_debris_collection: bool,
+            speed_modifier: u32,
         ) {
             let destination_id = self.position_to_planet.read(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
@@ -443,14 +444,16 @@ mod NoGame {
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
             let speed = fleet::get_fleet_speed(f, techs);
-            let travel_time = fleet::get_flight_time(speed, distance);
+            let travel_time = fleet::get_flight_time(speed, distance, speed_modifier);
 
             // Check numeber of mission
             let active_missions = self.get_active_missions(planet_id).len();
             assert(active_missions < techs.digital.into() + 1, 'max active missions');
 
             // Pay for fuel
-            let consumption = fleet::get_fuel_consumption(f, distance);
+            let consumption = fleet::get_fuel_consumption(f, distance)
+                * 100
+                / speed_modifier.into();
             let mut cost: ERC20s = Default::default();
             cost.tritium = consumption;
             self.check_enough_resources(caller, cost);
@@ -1491,20 +1494,6 @@ mod NoGame {
                     planet_id,
                     self.resources_spent.read(planet_id) - (ships_points + defences_points)
                 );
-        }
-
-        fn get_travel_time(
-            self: @ContractState,
-            origin: PlanetPosition,
-            destination: PlanetPosition,
-            fleet: Fleet,
-            techs: TechLevels
-        ) -> u64 {
-            let destination_id = self.position_to_planet.read(destination);
-            assert(!destination_id.is_zero(), 'no planet at destination');
-            let distance = fleet::get_distance(origin, destination);
-            let speed = fleet::get_fleet_speed(fleet, techs);
-            fleet::get_flight_time(speed, distance)
         }
 
         fn get_fuel_consumption(
