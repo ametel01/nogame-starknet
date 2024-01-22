@@ -92,8 +92,8 @@ fn war(
             defenders.append(u2);
         }
     };
-    let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers);
-    let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref defenders);
+    let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers, a_techs);
+    let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref defenders, d_techs);
     (attacker_fleet_struct, defender_fleet_struct, defences_struct)
 }
 
@@ -130,7 +130,7 @@ fn rapid_fire(ref unit1: Unit, ref unit2: Unit) {
     }
 }
 
-fn build_fleet_struct(ref a: Array<Unit>) -> (Fleet, DefencesLevels) {
+fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, DefencesLevels) {
     let mut fleet: Fleet = Default::default();
     let mut d: DefencesLevels = Default::default();
     loop {
@@ -140,94 +140,67 @@ fn build_fleet_struct(ref a: Array<Unit>) -> (Fleet, DefencesLevels) {
         let u = a.pop_front().unwrap();
         if u.id == 0 {
             if u.hull > 0 {
-                fleet.carrier += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                fleet.carrier += unit_count;
             }
         }
         if u.id == 1 {
             if u.hull > 0 {
-                fleet.scraper += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                fleet.scraper += unit_count;
             }
         }
         if u.id == 2 {
             if u.hull > 0 {
-                fleet.sparrow += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                fleet.sparrow += unit_count;
             }
         }
         if u.id == 3 {
             if u.hull > 0 {
-                fleet.frigate += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                fleet.frigate += unit_count;
             }
         }
         if u.id == 4 {
             if u.hull > 0 {
-                fleet.armade += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                fleet.armade += unit_count;
             }
         }
         if u.id == 5 {
             if u.hull > 0 {
-                d.celestia += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                d.celestia += unit_count;
             }
         }
         if u.id == 6 {
             if u.hull > 0 {
-                d.blaster += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                d.blaster += unit_count;
             }
         }
         if u.id == 7 {
             if u.hull > 0 {
-                d.beam += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                d.beam += unit_count;
             }
         }
         if u.id == 8 {
             if u.hull > 0 {
-                d.astral += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                d.astral += unit_count;
             }
         }
         if u.id == 9 {
             if u.hull > 0 {
-                d.plasma += 1;
+                let unit_count = get_number_of_units_from_blob(u, techs);
+                d.plasma += unit_count;
             }
         }
         continue;
     };
     (fleet, d)
-}
-
-fn build_defences_struct(ref a: Array<Unit>) -> DefencesLevels {
-    let mut d: DefencesLevels = Default::default();
-    loop {
-        if a.len().is_zero() {
-            break;
-        }
-        let u = a.pop_front().unwrap();
-        if u.id == 5 {
-            if u.hull > 0 {
-                d.celestia += 1;
-            }
-        }
-        if u.id == 6 {
-            if u.hull > 0 {
-                d.blaster += 1;
-            }
-        }
-        if u.id == 7 {
-            if u.hull > 0 {
-                d.beam += 1;
-            }
-        }
-        if u.id == 8 {
-            if u.hull > 0 {
-                d.astral += 1;
-            }
-        }
-        if u.id == 9 {
-            if u.hull > 0 {
-                d.plasma += 1;
-            }
-        }
-        continue;
-    };
-    d
 }
 
 #[inline(always)]
@@ -248,104 +221,151 @@ fn build_ships_array(
     mut fleet: Fleet, mut defences: DefencesLevels, techs: TechLevels
 ) -> Array<Unit> {
     let mut array: Array<Unit> = array![];
-    let mut n_ships = calculate_number_of_ships(fleet, defences);
-    loop {
-        if n_ships.is_zero() {
-            break;
-        }
-        if defences.plasma > 0 {
-            let mut defence = PLASMA();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
-            array.append(defence);
-            n_ships -= 1;
-            defences.plasma -= 1;
-        }
-        if fleet.armade > 0 {
-            let mut ship = ARMADE();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
-            array.append(ship);
-            n_ships -= 1;
-            fleet.armade -= 1;
-        }
-        if defences.astral > 0 {
-            let mut defence = ASTRAL();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
-            array.append(defence);
-            n_ships -= 1;
-            defences.astral -= 1;
-        }
-        if fleet.frigate > 0 {
-            let mut ship = FRIGATE();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
-            array.append(ship);
-            n_ships -= 1;
-            fleet.frigate -= 1;
-        }
-        if defences.beam > 0 {
-            let mut defence = BEAM();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
-            array.append(defence);
-            n_ships -= 1;
-            defences.beam -= 1;
-        }
-        if fleet.sparrow > 0 {
-            let mut ship = SPARROW();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
-            array.append(ship);
-            n_ships -= 1;
-            fleet.sparrow -= 1;
-        }
-        if defences.blaster > 0 {
-            let mut defence = BLASTER();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
-            array.append(defence);
-            n_ships -= 1;
-            defences.blaster -= 1;
-        }
-        if fleet.scraper > 0 {
-            let mut ship = SCRAPER();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
-            array.append(ship);
-            n_ships -= 1;
-            fleet.scraper -= 1;
-        }
-        if defences.celestia > 0 {
-            let mut defence = CELESTIA();
-            defence.weapon += defence.weapon * techs.weapons.into() / 10;
-            defence.shield += defence.shield * techs.shield.into() / 10;
-            defence.hull += defence.hull * techs.armour.into() / 10;
-            array.append(defence);
-            n_ships -= 1;
-            defences.celestia -= 1;
-        }
-        if fleet.carrier > 0 {
-            let mut ship = CARRIER();
-            ship.weapon += ship.weapon * techs.weapons.into() / 10;
-            ship.shield += ship.shield * techs.shield.into() / 10;
-            ship.hull += ship.hull * techs.armour.into() / 10;
-            array.append(ship);
-            n_ships -= 1;
-            fleet.carrier -= 1;
-        }
-    };
+
+    if defences.plasma > 0 {
+        let mut defence = PLASMA();
+        add_techs(ref defence, techs);
+        defence.hull *= defences.plasma;
+        defence.shield *= defences.plasma;
+        defence.weapon *= defences.plasma;
+        array.append(defence);
+    }
+    if fleet.armade > 0 {
+        let mut ship = ARMADE();
+        add_techs(ref ship, techs);
+        let mut units: Unit = Default::default();
+        ship.hull *= fleet.armade;
+        ship.shield *= fleet.armade;
+        ship.weapon *= fleet.armade;
+        array.append(ship);
+    }
+    if defences.astral > 0 {
+        let mut defence = ASTRAL();
+        add_techs(ref defence, techs);
+        defence.hull *= defences.astral;
+        defence.shield *= defences.astral;
+        defence.weapon *= defences.astral;
+        array.append(defence)
+    }
+    if fleet.frigate > 0 {
+        let mut ship = FRIGATE();
+        add_techs(ref ship, techs);
+        let mut units: Unit = Default::default();
+        ship.hull *= fleet.frigate;
+        ship.shield *= fleet.frigate;
+        ship.weapon *= fleet.frigate;
+        array.append(ship);
+    }
+    if defences.beam > 0 {
+        let mut defence = BEAM();
+        add_techs(ref defence, techs);
+        defence.hull *= defences.beam;
+        defence.shield *= defences.beam;
+        defence.weapon *= defences.beam;
+        array.append(defence);
+    }
+    if fleet.sparrow > 0 {
+        let mut ship = SPARROW();
+        add_techs(ref ship, techs);
+        let mut units: Unit = Default::default();
+        ship.hull *= fleet.sparrow;
+        ship.shield *= fleet.sparrow;
+        ship.weapon *= fleet.sparrow;
+        array.append(ship);
+    }
+    if defences.blaster > 0 {
+        let mut defence = BLASTER();
+        add_techs(ref defence, techs);
+        defence.hull *= defences.blaster;
+        defence.shield *= defences.blaster;
+        defence.weapon *= defences.blaster;
+        array.append(defence);
+    }
+    if fleet.scraper > 0 {
+        let mut ship = SCRAPER();
+        add_techs(ref ship, techs);
+        let mut units: Unit = Default::default();
+        ship.hull *= fleet.scraper;
+        ship.shield *= fleet.scraper;
+        ship.weapon *= fleet.scraper;
+        array.append(ship);
+    }
+    if defences.celestia > 0 {
+        let mut defence = CELESTIA();
+        add_techs(ref defence, techs);
+        defence.hull *= defences.celestia;
+        defence.shield *= defences.celestia;
+        defence.weapon *= defences.celestia;
+        array.append(defence);
+    }
+    if fleet.carrier > 0 {
+        let mut ship = CARRIER();
+        add_techs(ref ship, techs);
+        ship.hull = fleet.carrier;
+        ship.shield = fleet.carrier;
+        ship.weapon = fleet.carrier;
+        array.append(ship);
+    }
 
     array
+}
+
+fn add_techs(ref unit: Unit, techs: TechLevels) {
+    unit.weapon += unit.weapon * techs.weapons.into() / 10;
+    unit.shield += unit.shield * techs.shield.into() / 10;
+    unit.hull += unit.hull * techs.armour.into() / 10;
+}
+
+fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
+    if blob.id == 0 {
+        let mut base_unit = CARRIER();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 1 {
+        let mut base_unit = SCRAPER();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 2 {
+        let mut base_unit = SPARROW();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 3 {
+        let mut base_unit = FRIGATE();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 4 {
+        let mut base_unit = ARMADE();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 5 {
+        let mut base_unit = CELESTIA();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 6 {
+        let mut base_unit = BLASTER();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 7 {
+        let mut base_unit = BEAM();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
+    if blob.id == 8 {
+        let mut base_unit = ASTRAL();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    } else {
+        let mut base_unit = PLASMA();
+        add_techs(ref base_unit, techs);
+        return blob.hull / base_unit.hull;
+    }
 }
 
 #[inline(always)]
