@@ -312,7 +312,9 @@ mod NoGame {
                 if colonies_len.is_zero() || i > colonies_len {
                     break;
                 }
-                let production = self.colony.collect_resources(speed, planet_id, i.try_into().unwrap());
+                let production = self
+                    .colony
+                    .collect_resources(speed, planet_id, i.try_into().unwrap());
                 total_production = total_production + production;
                 i += 1;
             };
