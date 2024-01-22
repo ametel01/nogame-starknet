@@ -547,8 +547,6 @@ mod NoGame {
             let (loot_spendable, loot_collectible) = self
                 .calculate_loot_amount(mission.destination, f1);
             let total_loot = loot_spendable + loot_collectible;
-            self.update_defender_fleet_levels_after_attack(mission.destination, f2);
-            self.update_defences_after_attack(mission.destination, d);
             let mut loot_amount: ERC20s = Default::default();
 
             self.process_loot_payment(mission.destination, loot_spendable);
@@ -559,10 +557,6 @@ mod NoGame {
             } else {
                 self.resources_timer.write(mission.destination, time_now);
             }
-            self.resources_timer.write(mission.destination, time_now);
-            self.fleet_return_planet(origin, f1);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
-
             self.fleet_return_planet(origin, f1);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
 
@@ -571,7 +565,6 @@ mod NoGame {
             } else {
                 self.remove_hostile_mission(mission.destination, mission_id);
             }
-            self.remove_hostile_mission(colony_mother_planet, mission_id);
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
             let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
