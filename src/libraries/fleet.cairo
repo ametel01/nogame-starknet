@@ -301,9 +301,9 @@ fn build_ships_array(
     if fleet.carrier > 0 {
         let mut ship = CARRIER();
         add_techs(ref ship, techs);
-        ship.hull = fleet.carrier;
-        ship.shield = fleet.carrier;
-        ship.weapon = fleet.carrier;
+        ship.hull *= fleet.carrier;
+        ship.shield *= fleet.carrier;
+        ship.weapon *= fleet.carrier;
         array.append(ship);
     }
 
