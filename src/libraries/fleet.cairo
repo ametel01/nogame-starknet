@@ -431,7 +431,7 @@ fn get_flight_time(speed: u32, distance: u32, speed_percentage: u32) -> u64 {
     let res = ten + multiplier * sqrt(FixedTrait::new_unscaled(10, false) * f_distance / f_speed);
     let speed_percentage = FixedTrait::new_unscaled(speed_percentage.into(), false)
         / FixedTrait::new_unscaled(100, false);
-    let res = res * speed_percentage;
+    let res = res / speed_percentage;
     (res.mag / ONE).try_into().expect('get flight time failed')
 }
 

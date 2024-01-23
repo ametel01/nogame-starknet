@@ -155,6 +155,37 @@ fn test_send_fleet_fails_noob_protection() {
 }
 
 #[test]
+fn test_send_speed_modifier() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    dsp.game.process_ship_build(BuildType::Carrier(()), 10);
+
+    let p2_position = dsp.game.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 5;
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 1);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.send_fleet(fleet, p2_position, false, 50);
+    let mission = dsp.game.get_mission_details(1, 1);
+    (mission.time_arrival - get_block_timestamp()).print();
+}
+
+#[test]
 #[should_panic(expected: ('max active missions',))]
 fn test_send_fleet_fails_not_enough_fleet_slots() {
     let dsp = set_up();
