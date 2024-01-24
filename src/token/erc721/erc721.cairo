@@ -63,7 +63,7 @@ mod ERC721 {
         self.erc721.initializer(name, symbol);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl IERC721MetadataImpl of super::IERC721<ContractState> {
         fn name(self: @ContractState) -> felt252 {
             self.erc721.name()
@@ -103,7 +103,7 @@ mod ERC721 {
         }
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl ERC721MetadataCamelOnly of super::IERC721MetadataCamelOnly<ContractState> {
         fn tokenURI(self: @ContractState, tokenId: u256) -> Array<felt252> {
             let mut base = self.get_base_uri();

@@ -78,7 +78,7 @@ mod ERC721NoGame {
         self.ownable.initializer(owner);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl ERC721NoGameImpl of IERC721NoGame<ContractState> {
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
             self.erc721.balance_of(account)

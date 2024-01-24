@@ -43,20 +43,6 @@ fn test_get_current_planet_price() {
 }
 
 #[test]
-fn test_get_token_addresses() {
-    let dsp = set_up();
-    init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-
-    let tokens = dsp.game.get_token_addresses();
-    assert(tokens.erc721 == dsp.erc721.contract_address, 'wrong address');
-    assert(tokens.steel == dsp.steel.contract_address, 'wrong address');
-    assert(tokens.quartz == dsp.quartz.contract_address, 'wrong address');
-    assert(tokens.tritium == dsp.tritium.contract_address, 'wrong address');
-}
-
-#[test]
 fn test_get_number_of_planets() {
     let dsp = set_up();
     init_game(dsp);

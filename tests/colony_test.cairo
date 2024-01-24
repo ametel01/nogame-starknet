@@ -5,7 +5,7 @@ use tests::utils::{
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, DefencesLevels,
-    CompoundsLevels, DAY, PlanetPosition
+    CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris
 };
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
 
@@ -150,7 +150,7 @@ fn test_process_colony_compound_upgrade() {
 }
 
 #[test]
-fn process_colony_unit_build_test() {
+fn process_colony_unit_build_defences_test() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
 
@@ -160,14 +160,51 @@ fn process_colony_unit_build_test() {
     advance_game_state(dsp.game);
 
     let mut expected: DefencesLevels = Default::default();
-    expected.blaster = 2;
+    expected.blaster = 1;
+    expected.beam = 1;
+    expected.astral = 1;
+    expected.plasma = 1;
+    expected.celestia = 1;
 
     dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
-    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 1);
-    dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 2);
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Beam, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Astral, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Plasma, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Celestia, 1);
     let actual = dsp.game.get_colony_defences_levels(1, 1);
     assert(actual == expected, 'wrong c1 defences');
+}
+
+#[test]
+fn process_colony_unit_build_fleet_test() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    let mut expected: ShipsLevels = Default::default();
+    expected.carrier = 1;
+    expected.scraper = 1;
+    expected.sparrow = 1;
+    expected.frigate = 1;
+    expected.armade = 1;
+
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
+    dsp.game.generate_colony();
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Scraper, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Sparrow, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Frigate, 1);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Armade, 1);
+    let actual = dsp.game.get_colony_ships_levels(1, 1);
+    assert(actual == expected, 'wrong c1 ships');
 }
 
 #[test]
@@ -243,11 +280,23 @@ fn test_attack_colony() {
         dsp.game.contract_address, starknet::get_contract_address(), mission.time_arrival + 1
     );
     let colony_resources = dsp.game.get_colony_collectible_resources(2, 1);
-    colony_resources.print();
     let attacker_resources = dsp.game.get_spendable_resources(1);
     dsp.game.attack_planet(1);
     let attacker_resources_after = dsp.game.get_spendable_resources(1);
     let colony_resources_after = dsp.game.get_colony_collectible_resources(2, 1);
-    (attacker_resources_after - attacker_resources).print();
-    dsp.game.get_debris_field(2001).print();
+
+    let mut expected_attacker_resources: ERC20s = Default::default();
+    expected_attacker_resources.steel = 5657;
+    expected_attacker_resources.quartz = 8228;
+    expected_attacker_resources.tritium = 2399;
+
+    let mut expected_debris: Debris = Default::default();
+    expected_debris.steel = 666;
+    expected_debris.quartz = 666;
+
+    assert(
+        (attacker_resources_after - attacker_resources) == expected_attacker_resources,
+        'wrong attacker resources'
+    );
+    assert(dsp.game.get_debris_field(2001) == expected_debris, 'wrong debris');
 }

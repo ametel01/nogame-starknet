@@ -42,7 +42,6 @@ trait INoGame<TState> {
     fn recall_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
-    fn get_token_addresses(self: @TState) -> Tokens;
     fn get_current_planet_price(self: @TState) -> u128;
     fn get_number_of_planets(self: @TState) -> u32;
     fn get_planet_points(self: @TState, planet_id: u32) -> u128;
@@ -55,7 +54,6 @@ trait INoGame<TState> {
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
     fn get_celestia_available(self: @TState, planet_id: u32) -> u32;
-    fn get_celestia_production(self: @TState, planet_id: u32) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u32) -> DefencesLevels;
     fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
     fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
@@ -73,8 +71,9 @@ trait INoGame<TState> {
     fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
     fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
-    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
+    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_ships_levels(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
     fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: DefencesLevels

@@ -70,7 +70,6 @@ fn test_send_fleet_success() {
     let distance = fleet::get_distance(p1_position, p2_position);
 
     let fuel_consumption = fleet::get_fuel_consumption(fleet, distance);
-    fuel_consumption.print();
 
     assert(tritium_after == tritium_before - fuel_consumption, 'wrong fuel consumption');
 
@@ -182,7 +181,7 @@ fn test_send_speed_modifier() {
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.send_fleet(fleet, p2_position, false, 50);
     let mission = dsp.game.get_mission_details(1, 1);
-    (mission.time_arrival - get_block_timestamp()).print();
+    assert((mission.time_arrival - get_block_timestamp()) == 18125, 'wrong time arrival');
 }
 
 #[test]
@@ -597,8 +596,7 @@ fn test_attack_planet_loot_amount() {
     build_mines(dsp.game);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     build_mines(dsp.game);
-    // dsp.game.process_compound_upgrade(UpgradeType::QuartzMine(()), 6);
-    // dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 5);
+
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.process_compound_upgrade(UpgradeType::QuartzMine(()), 6);
     dsp.game.process_compound_upgrade(UpgradeType::SteelMine(()), 7);
@@ -612,9 +610,7 @@ fn test_attack_planet_loot_amount() {
 
     let collectible_before = dsp.game.get_collectible_resources(2);
     let spendable_before = dsp.game.get_spendable_resources(2);
-    // spendable_before.print();
     let attacker_spendable_before = dsp.game.get_spendable_resources(1);
-    // attacker_spendable_before.print();
 
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(dsp.game.contract_address, get_contract_address(), mission.time_arrival + 1);
@@ -622,9 +618,14 @@ fn test_attack_planet_loot_amount() {
 
     let spendable_after = dsp.game.get_spendable_resources(2);
     let attacker_spendable_after = dsp.game.get_spendable_resources(1);
+    let mut expected: ERC20s = Default::default();
+    expected.steel = 4281;
+    expected.quartz = 3360;
+    expected.tritium = 2359;
 
-    (attacker_spendable_after - attacker_spendable_before).print();
-// (spendable_before - spendable_after).print();
+    assert(
+        (attacker_spendable_after - attacker_spendable_before) == expected, 'wrong attacker loot'
+    );
 }
 
 #[test]

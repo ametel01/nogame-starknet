@@ -200,7 +200,7 @@ mod NoGame {
         self.universe_start_time.write(get_block_timestamp());
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl NoGame of INoGame<ContractState> {
         fn initializer(
             ref self: ContractState,
@@ -568,7 +568,6 @@ mod NoGame {
             let (loot_spendable, loot_collectible) = self
                 .calculate_loot_amount(mission.destination, f1);
             let total_loot = loot_spendable + loot_collectible;
-            let mut loot_amount: ERC20s = Default::default();
 
             self.process_loot_payment(mission.destination, loot_spendable);
             self.receive_resources_erc20(get_caller_address(), total_loot);
@@ -676,7 +675,6 @@ mod NoGame {
                     self.ships_level.read((origin, Names::SCRAPER)) + collector_fleet.scraper
                 );
             self.active_missions.write((origin, mission_id), Zeroable::zero());
-            let active_missions = self.active_missions_len.read(origin);
             self.last_active.write(origin, time_now);
 
             self
@@ -699,10 +697,6 @@ mod NoGame {
         /////////////////////////////////////////////////////////////////////
         //                         View Functions                                
         /////////////////////////////////////////////////////////////////////
-        fn get_token_addresses(self: @ContractState) -> Tokens {
-            self.get_tokens_addresses()
-        }
-
         fn get_current_planet_price(self: @ContractState) -> u128 {
             let time_elapsed = (get_block_timestamp() - self.universe_start_time.read()) / DAY;
             self.get_planet_price(time_elapsed)
@@ -806,13 +800,14 @@ mod NoGame {
             }
         }
 
-        fn get_celestia_available(self: @ContractState, planet_id: u32) -> u32 {
-            self.defences_level.read((planet_id, Names::CELESTIA))
+        fn get_colony_ships_levels(
+            self: @ContractState, planet_id: u32, colony_id: u8
+        ) -> ShipsLevels {
+            self.colony.get_colony_ships(planet_id, colony_id)
         }
 
-        fn get_celestia_production(self: @ContractState, planet_id: u32) -> u32 {
-            let position = self.get_planet_position(planet_id);
-            self.position_to_celestia_production(position.orbit)
+        fn get_celestia_available(self: @ContractState, planet_id: u32) -> u32 {
+            self.defences_level.read((planet_id, Names::CELESTIA))
         }
 
         fn get_defences_levels(self: @ContractState, planet_id: u32) -> DefencesLevels {
@@ -956,6 +951,11 @@ mod NoGame {
             }
         }
 
+        fn get_celestia_production(self: @ContractState, planet_id: u32) -> u32 {
+            let position = self.get_planet_position(planet_id);
+            self.position_to_celestia_production(position.orbit)
+        }
+
         fn get_fleet_and_defences_before_battle(
             self: @ContractState, planet_id: u32
         ) -> (Fleet, DefencesLevels, TechLevels, u32) {
@@ -984,7 +984,6 @@ mod NoGame {
         fn calculate_loot_amount(
             self: @ContractState, destination_id: u32, attacker_fleet: Fleet
         ) -> (ERC20s, ERC20s) {
-            let mut loot_amount: ERC20s = Default::default();
             let mut loot_collectible: ERC20s = Default::default();
             let mut loot_spendable: ERC20s = Default::default();
             let mut storage = fleet::get_fleet_cargo_capacity(attacker_fleet);
@@ -1040,16 +1039,6 @@ mod NoGame {
                 / ONE
         }
 
-        #[inline(always)]
-        fn get_position_from_raw(self: @ContractState, raw_position: u32) -> PlanetPosition {
-            PlanetPosition {
-                system: (raw_position / 10).try_into().unwrap(),
-                orbit: (raw_position % 10).try_into().unwrap()
-            }
-        }
-
-
-        #[inline(always)]
         fn get_owned_planet(self: @ContractState, caller: ContractAddress) -> u32 {
             let planet_id = self.erc721.read().token_of(caller);
             planet_id.low.try_into().unwrap()
@@ -1119,14 +1108,6 @@ mod NoGame {
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
         }
 
-        fn calculate_energy_consumption(self: @ContractState, planet_id: u32) -> u128 {
-            let compounds = self.get_compounds_levels(planet_id);
-            Consumption::base(compounds.steel)
-                + Consumption::base(compounds.quartz)
-                + Consumption::base(compounds.tritium)
-        }
-
-
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: ERC20s) {
             self.steel.read().mint(to, (amounts.steel * E18).into());
             self.quartz.read().mint(to, (amounts.quartz * E18).into());
@@ -1139,28 +1120,11 @@ mod NoGame {
             self.tritium.read().burn(account, (amounts.tritium * E18).into());
         }
 
-        fn receive_loot_erc20(
-            self: @ContractState, from: ContractAddress, to: ContractAddress, amounts: ERC20s
-        ) {
-            self.steel.read().transfer_from(from, to, (amounts.steel * E18).into());
-            self.quartz.read().transfer_from(from, to, (amounts.quartz * E18).into());
-            self.tritium.read().transfer_from(from, to, (amounts.tritium * E18).into());
-        }
-
         fn check_enough_resources(self: @ContractState, caller: ContractAddress, amounts: ERC20s) {
             let available: ERC20s = self.get_erc20s_available(caller);
             assert(amounts.steel <= available.steel / E18, 'Not enough steel');
             assert(amounts.quartz <= available.quartz / E18, 'Not enough quartz');
             assert(amounts.tritium <= available.tritium / E18, 'Not enough tritium');
-        }
-
-        fn get_tokens_addresses(self: @ContractState) -> Tokens {
-            Tokens {
-                erc721: self.erc721.read().contract_address,
-                steel: self.steel.read().contract_address,
-                quartz: self.quartz.read().contract_address,
-                tritium: self.tritium.read().contract_address
-            }
         }
 
         fn update_planet_points(ref self: ContractState, planet_id: u32, spent: ERC20s) {
@@ -1170,10 +1134,6 @@ mod NoGame {
                 .write(
                     planet_id, self.resources_spent.read(planet_id) + spent.steel + spent.quartz
                 );
-        }
-
-        fn time_since_last_collection(self: @ContractState, planet_id: u32) -> u64 {
-            get_block_timestamp() - self.resources_timer.read(planet_id)
         }
 
         fn get_ships_cost(self: @ContractState) -> ShipsCost {
@@ -2044,10 +2004,99 @@ mod NoGame {
             component: ColonyBuildType,
             quantity: u32
         ) -> ERC20s {
-            let levels = self.colony.get_colony_defences(planet_id, colony_id);
             let techs = self.get_tech_levels(planet_id);
             let is_testnet = self.is_testnet.read();
             match component {
+                ColonyBuildType::Carrier => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().carrier
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Carrier,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Scraper => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().scraper
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Scraper,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Sparrow => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().sparrow
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Sparrow,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Frigate => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().frigate
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Frigate,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Armade => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().armade
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Armade,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
                 ColonyBuildType::Celestia => {
                     let cost: ERC20s = Dockyard::get_ships_cost(
                         quantity, self.get_ships_cost().celestia

@@ -33,9 +33,6 @@ fn test_war_basic() {
     // defences.beam = 1;
     // defences.astral = 10;    
     let (res1, res2, def) = fleet::war(attackers, techs, defenders, defences, Default::default());
-    res1.print();
-    res2.print();
-    def.print();
 }
 
 #[test]
@@ -415,15 +412,10 @@ fn test_decay_fleet() {
     fleet.armade = 2;
 
     let res = fleet::decay_fleet(fleet, 5);
-    res.print();
     let res = fleet::decay_fleet(fleet, 25);
-    res.print();
     let res = fleet::decay_fleet(fleet, 65);
-    res.print();
     let res = fleet::decay_fleet(fleet, 85);
-    res.print();
     let res = fleet::decay_fleet(fleet, 95);
-    res.print();
 }
 
 #[test]
@@ -434,5 +426,4 @@ fn test_load_resources() {
     resources.tritium = 100_000;
     let storage = 30_000;
     let loaded = fleet::load_resources(resources, storage);
-    loaded.print();
 }
