@@ -186,7 +186,7 @@ struct TechsCost {
 // exocraft: ERC20s,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Default, Drop, PartialEq, Serde)]
 struct ShipsLevels {
     carrier: u32,
     scraper: u32,
@@ -564,6 +564,11 @@ enum ColonyUpgradeType {
 
 #[derive(Copy, Drop, Serde)]
 enum ColonyBuildType {
+    Carrier,
+    Scraper,
+    Sparrow,
+    Frigate,
+    Armade,
     Celestia,
     Blaster,
     Beam,

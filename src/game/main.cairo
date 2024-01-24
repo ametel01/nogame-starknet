@@ -804,6 +804,12 @@ mod NoGame {
             }
         }
 
+        fn get_colony_ships_levels(
+            self: @ContractState, planet_id: u32, colony_id: u8
+        ) -> ShipsLevels {
+            self.colony.get_colony_ships(planet_id, colony_id)
+        }
+
         fn get_celestia_available(self: @ContractState, planet_id: u32) -> u32 {
             self.defences_level.read((planet_id, Names::CELESTIA))
         }
@@ -2044,6 +2050,96 @@ mod NoGame {
             let techs = self.get_tech_levels(planet_id);
             let is_testnet = self.is_testnet.read();
             match component {
+                ColonyBuildType::Carrier => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().carrier
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Carrier,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Scraper => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().scraper
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Scraper,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Sparrow => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().sparrow
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Sparrow,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Frigate => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().frigate
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Frigate,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
+                ColonyBuildType::Armade => {
+                    let cost: ERC20s = Dockyard::get_ships_cost(
+                        quantity, self.get_ships_cost().armade
+                    );
+                    self.check_enough_resources(caller, cost);
+                    self.pay_resources_erc20(caller, cost);
+                    self
+                        .colony
+                        .process_colony_unit_build(
+                            planet_id,
+                            colony_id,
+                            techs,
+                            ColonyBuildType::Armade,
+                            quantity,
+                            is_testnet
+                        );
+                    return cost;
+                },
                 ColonyBuildType::Celestia => {
                     let cost: ERC20s = Dockyard::get_ships_cost(
                         quantity, self.get_ships_cost().celestia

@@ -5,7 +5,7 @@ use tests::utils::{
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, DefencesLevels,
-    CompoundsLevels, DAY, PlanetPosition
+    CompoundsLevels, DAY, PlanetPosition, ShipsLevels
 };
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
 
@@ -150,7 +150,7 @@ fn test_process_colony_compound_upgrade() {
 }
 
 #[test]
-fn process_colony_unit_build_test() {
+fn process_colony_unit_build_defences_test() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
 
@@ -168,6 +168,27 @@ fn process_colony_unit_build_test() {
     dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 2);
     let actual = dsp.game.get_colony_defences_levels(1, 1);
     assert(actual == expected, 'wrong c1 defences');
+}
+
+#[test]
+fn process_colony_unit_build_fleet_test() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    build_basic_mines(dsp.game);
+    advance_game_state(dsp.game);
+
+    let mut expected: ShipsLevels = Default::default();
+    expected.carrier = 1;
+
+    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
+    dsp.game.generate_colony();
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
+    let actual = dsp.game.get_colony_ships_levels(1, 1);
+    assert(actual == expected, 'wrong c1 ships');
 }
 
 #[test]

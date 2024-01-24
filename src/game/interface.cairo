@@ -73,8 +73,9 @@ trait INoGame<TState> {
     fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
     fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
-    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
+    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_ships_levels(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
     fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: DefencesLevels

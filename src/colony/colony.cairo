@@ -30,6 +30,7 @@ trait IColonyWrite<TState> {
 trait IColonyView<TState> {
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
     fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
 }
 
@@ -176,6 +177,18 @@ mod ColonyComponent {
             }
         }
 
+        fn get_colony_ships(
+            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
+        ) -> ShipsLevels {
+            ShipsLevels {
+                carrier: self.colony_ships.read((planet_id, colony_id, Names::CARRIER)),
+                scraper: self.colony_ships.read((planet_id, colony_id, Names::SCRAPER)),
+                sparrow: self.colony_ships.read((planet_id, colony_id, Names::SPARROW)),
+                frigate: self.colony_ships.read((planet_id, colony_id, Names::FRIGATE)),
+                armade: self.colony_ships.read((planet_id, colony_id, Names::ARMADE)),
+            }
+        }
+
         fn get_colony_defences(
             self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
         ) -> DefencesLevels {
@@ -291,6 +304,55 @@ mod ColonyComponent {
                 .colony_compounds
                 .read((planet_id, colony_id, Names::DOCKYARD));
             match component {
+                ColonyBuildType::Carrier => {
+                    Dockyard::carrier_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::CARRIER),
+                            self.colony_ships.read((planet_id, colony_id, Names::CARRIER))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Scraper => {
+                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::SCRAPER),
+                            self.colony_ships.read((planet_id, colony_id, Names::SCRAPER))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Sparrow => {
+                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::SPARROW),
+                            self.colony_ships.read((planet_id, colony_id, Names::SPARROW))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Frigate => {
+                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::FRIGATE),
+                            self.colony_ships.read((planet_id, colony_id, Names::FRIGATE))
+                                + quantity
+                        );
+                },
+                ColonyBuildType::Armade => {
+                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    self
+                        .colony_ships
+                        .write(
+                            (planet_id, colony_id, Names::ARMADE),
+                            self.colony_ships.read((planet_id, colony_id, Names::ARMADE)) + quantity
+                        );
+                },
                 ColonyBuildType::Celestia => {
                     Dockyard::celestia_requirements_check(dockyard_level, techs);
                     self
