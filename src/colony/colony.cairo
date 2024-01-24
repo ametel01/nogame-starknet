@@ -356,10 +356,10 @@ mod ColonyComponent {
                 ColonyBuildType::Celestia => {
                     Dockyard::celestia_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
+                        .colony_defences
                         .write(
                             (planet_id, colony_id, Names::CELESTIA),
-                            self.colony_ships.read((planet_id, colony_id, Names::CELESTIA))
+                            self.colony_defences.read((planet_id, colony_id, Names::CELESTIA))
                                 + quantity
                         );
                 },
