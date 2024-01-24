@@ -50,7 +50,7 @@ mod ERC20NoGame {
         self.ownable.initializer(owner);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl ERC20NoGameImpl of IERC20NoGame<ContractState> {
         fn total_supply(self: @ContractState) -> u256 {
             self.erc20.total_supply()

@@ -233,7 +233,6 @@ fn build_ships_array(
     if fleet.armade > 0 {
         let mut ship = ARMADE();
         add_techs(ref ship, techs);
-        let mut units: Unit = Default::default();
         ship.hull *= fleet.armade;
         ship.shield *= fleet.armade;
         ship.weapon *= fleet.armade;
@@ -250,7 +249,6 @@ fn build_ships_array(
     if fleet.frigate > 0 {
         let mut ship = FRIGATE();
         add_techs(ref ship, techs);
-        let mut units: Unit = Default::default();
         ship.hull *= fleet.frigate;
         ship.shield *= fleet.frigate;
         ship.weapon *= fleet.frigate;
@@ -267,7 +265,6 @@ fn build_ships_array(
     if fleet.sparrow > 0 {
         let mut ship = SPARROW();
         add_techs(ref ship, techs);
-        let mut units: Unit = Default::default();
         ship.hull *= fleet.sparrow;
         ship.shield *= fleet.sparrow;
         ship.weapon *= fleet.sparrow;
@@ -284,7 +281,6 @@ fn build_ships_array(
     if fleet.scraper > 0 {
         let mut ship = SCRAPER();
         add_techs(ref ship, techs);
-        let mut units: Unit = Default::default();
         ship.hull *= fleet.scraper;
         ship.shield *= fleet.scraper;
         ship.weapon *= fleet.scraper;

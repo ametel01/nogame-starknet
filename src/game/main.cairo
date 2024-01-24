@@ -200,7 +200,7 @@ mod NoGame {
         self.universe_start_time.write(get_block_timestamp());
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl NoGame of INoGame<ContractState> {
         fn initializer(
             ref self: ContractState,
@@ -568,7 +568,6 @@ mod NoGame {
             let (loot_spendable, loot_collectible) = self
                 .calculate_loot_amount(mission.destination, f1);
             let total_loot = loot_spendable + loot_collectible;
-            let mut loot_amount: ERC20s = Default::default();
 
             self.process_loot_payment(mission.destination, loot_spendable);
             self.receive_resources_erc20(get_caller_address(), total_loot);
@@ -676,7 +675,6 @@ mod NoGame {
                     self.ships_level.read((origin, Names::SCRAPER)) + collector_fleet.scraper
                 );
             self.active_missions.write((origin, mission_id), Zeroable::zero());
-            let active_missions = self.active_missions_len.read(origin);
             self.last_active.write(origin, time_now);
 
             self
@@ -984,7 +982,6 @@ mod NoGame {
         fn calculate_loot_amount(
             self: @ContractState, destination_id: u32, attacker_fleet: Fleet
         ) -> (ERC20s, ERC20s) {
-            let mut loot_amount: ERC20s = Default::default();
             let mut loot_collectible: ERC20s = Default::default();
             let mut loot_spendable: ERC20s = Default::default();
             let mut storage = fleet::get_fleet_cargo_capacity(attacker_fleet);
@@ -2044,7 +2041,6 @@ mod NoGame {
             component: ColonyBuildType,
             quantity: u32
         ) -> ERC20s {
-            let levels = self.colony.get_colony_defences(planet_id, colony_id);
             let techs = self.get_tech_levels(planet_id);
             let is_testnet = self.is_testnet.read();
             match component {
