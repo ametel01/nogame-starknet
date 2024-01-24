@@ -20,9 +20,9 @@ mod NoGame {
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
-        PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
-        ColonyBuildType
+        PlanetPosition, Debris, Mission, IncomingMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05,
+        PRICE, DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
+        ColonyBuildType, MissionCategory
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -87,7 +87,7 @@ mod NoGame {
         defences_level: LegacyMap::<(u32, felt252), u32>,
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
-        hostile_missions: LegacyMap<(u32, u32), HostileMission>,
+        hostile_missions: LegacyMap<(u32, u32), IncomingMission>,
         hostile_missions_len: LegacyMap<u32, usize>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
@@ -160,14 +160,14 @@ mod NoGame {
     struct FleetSent {
         origin: u32,
         destination: u32,
-        mission_type: felt252,
+        mission_type: u8,
         fleet: Fleet,
     }
 
     #[derive(Drop, starknet::Event)]
     struct FleetReturn {
         docked_at: u32,
-        mission_type: felt252,
+        mission_type: u8,
         fleet: Fleet,
     }
 
@@ -409,15 +409,22 @@ mod NoGame {
             f: Fleet,
             destination: PlanetPosition,
             is_debris_collection: bool,
+            mission_type: u8,
             speed_modifier: u32,
         ) {
             let destination_id = self.position_to_planet.read(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
+
+            if destination_id > 500 && mission_type == MissionCategory::TRANSPORT {
+                assert(
+                    self.get_colony_mother_planet(destination_id) == planet_id, 'not your colony'
+                );
+            }
             let time_now = get_block_timestamp();
             let is_inactive = time_now - self.last_active.read(destination_id) > WEEK;
-            if is_debris_collection {
+            if mission_type == MissionCategory::DEBRIS {
                 assert(
                     !self.planet_debris_field.read(destination_id).is_zero(), 'empty debris fiels'
                 );
@@ -466,8 +473,8 @@ mod NoGame {
             mission.time_arrival = time_now + travel_time;
             mission.fleet = f;
 
-            if is_debris_collection {
-                mission.is_debris = true;
+            if mission_type == MissionCategory::DEBRIS {
+                mission.category = MissionCategory::DEBRIS;
                 self.add_active_mission(planet_id, mission);
                 self
                     .emit(
@@ -475,15 +482,29 @@ mod NoGame {
                             FleetSent {
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'debris collection',
+                                mission_type: MissionCategory::DEBRIS,
+                                fleet: f,
+                            }
+                        )
+                    );
+            } else if mission_type == MissionCategory::TRANSPORT {
+                mission.category = MissionCategory::TRANSPORT;
+                self.add_active_mission(planet_id, mission);
+                self
+                    .emit(
+                        Event::FleetSent(
+                            FleetSent {
+                                origin: planet_id,
+                                destination: destination_id,
+                                mission_type: MissionCategory::TRANSPORT,
                                 fleet: f,
                             }
                         )
                     );
             } else {
                 let id = self.add_active_mission(planet_id, mission);
-                mission.is_debris = false;
-                let mut hostile_mission: HostileMission = Default::default();
+                mission.category = MissionCategory::ATTACK;
+                let mut hostile_mission: IncomingMission = Default::default();
                 hostile_mission.origin = planet_id;
                 hostile_mission.id_at_origin = id;
                 hostile_mission.time_arrival = mission.time_arrival;
@@ -496,14 +517,14 @@ mod NoGame {
                 } else {
                     mission.destination
                 };
-                self.add_hostile_mission(target_planet, hostile_mission);
+                self.add_incoming_mission(target_planet, hostile_mission);
                 self
                     .emit(
                         Event::FleetSent(
                             FleetSent {
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'attack',
+                                mission_type: MissionCategory::ATTACK,
                                 fleet: f,
                             }
                         )
@@ -520,6 +541,7 @@ mod NoGame {
             let origin = self.get_owned_planet(caller);
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
+            assert(mission.category == MissionCategory::ATTACK, 'not an attack mission');
             assert(mission.destination != origin, 'cannot attack own planet');
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
@@ -581,9 +603,9 @@ mod NoGame {
             self.active_missions.write((origin, mission_id), Zeroable::zero());
 
             if is_colony {
-                self.remove_hostile_mission(colony_mother_planet, mission_id);
+                self.remove_incoming_mission(colony_mother_planet, mission_id);
             } else {
-                self.remove_hostile_mission(mission.destination, mission_id);
+                self.remove_incoming_mission(mission.destination, mission_id);
             }
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
@@ -621,14 +643,30 @@ mod NoGame {
             assert(!mission.is_zero(), 'no fleet to recall');
             self.fleet_return_planet(origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
-            self.remove_hostile_mission(mission.destination, mission_id);
+            self.remove_incoming_mission(mission.destination, mission_id);
             self.last_active.write(origin, get_block_timestamp());
-            let mission_type = if mission.is_debris {
-                'debris collection'
-            } else {
-                'attack'
-            };
-            self.emit(FleetReturn { docked_at: origin, mission_type, fleet: mission.fleet });
+            self
+                .emit(
+                    FleetReturn {
+                        docked_at: origin, mission_type: mission.category, fleet: mission.fleet
+                    }
+                );
+        }
+
+        fn dock_fleet(ref self: ContractState, mission_id: usize) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mission = self.active_missions.read((origin, mission_id));
+            assert(mission.category == MissionCategory::TRANSPORT, 'not a transport mission');
+            assert(!mission.is_zero(), 'no fleet to dock');
+            self.fleet_return_planet(mission.destination, mission.fleet);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.last_active.write(origin, get_block_timestamp());
+            self
+                .emit(
+                    FleetReturn {
+                        docked_at: origin, mission_type: mission.category, fleet: mission.fleet
+                    }
+                );
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -637,7 +675,7 @@ mod NoGame {
 
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
-            assert(mission.is_debris, 'not a debris mission');
+            assert(mission.category == MissionCategory::DEBRIS, 'not a debris mission');
 
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
@@ -679,7 +717,11 @@ mod NoGame {
 
             self
                 .emit(
-                    FleetReturn { docked_at: origin, mission_type: 'debris', fleet: mission.fleet }
+                    FleetReturn {
+                        docked_at: origin,
+                        mission_type: MissionCategory::DEBRIS,
+                        fleet: mission.fleet
+                    }
                 );
 
             self
@@ -866,8 +908,8 @@ mod NoGame {
             arr
         }
 
-        fn get_hostile_missions(self: @ContractState, planet_id: u32) -> Array<HostileMission> {
-            let mut arr: Array<HostileMission> = array![];
+        fn get_hostile_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
+            let mut arr: Array<IncomingMission> = array![];
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1309,7 +1351,7 @@ mod NoGame {
             i
         }
 
-        fn add_hostile_mission(ref self: ContractState, planet_id: u32, mission: HostileMission) {
+        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1327,7 +1369,7 @@ mod NoGame {
             };
         }
 
-        fn remove_hostile_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
+        fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
