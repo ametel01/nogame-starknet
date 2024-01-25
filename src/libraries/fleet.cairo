@@ -7,63 +7,53 @@ use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
 };
 
-#[inline(always)]
 fn CARRIER() -> Unit {
     Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 10000, consumption: 10 }
 }
 
-#[inline(always)]
 fn SCRAPER() -> Unit {
     Unit { id: 1, weapon: 50, shield: 10, hull: 4000, speed: 2000, cargo: 20000, consumption: 300 }
 }
 
 // weapon: 20, shield: 500, hull: 5
 // 5_000
-#[inline(always)]
 fn SPARROW() -> Unit {
     Unit { id: 2, weapon: 250, shield: 10, hull: 1000, speed: 12500, cargo: 50, consumption: 20 }
 }
 
 // 34_000
-#[inline(always)]
 fn FRIGATE() -> Unit {
     Unit { id: 3, weapon: 1700, shield: 70, hull: 6900, speed: 15000, cargo: 800, consumption: 300 }
 }
 
 // 75000
-#[inline(always)]
 fn ARMADE() -> Unit {
     Unit {
         id: 4, weapon: 3750, shield: 150, hull: 15000, speed: 10000, cargo: 1500, consumption: 500
     }
 }
 
-#[inline(always)]
 fn CELESTIA() -> Unit {
     Unit { id: 5, weapon: 1, shield: 1, hull: 500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 // weapon: 16, shield: 400, hull: 4
 // 2_000
-#[inline(always)]
 fn BLASTER() -> Unit {
     Unit { id: 6, weapon: 125, shield: 5, hull: 500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 // 10_000
-#[inline(always)]
 fn BEAM() -> Unit {
     Unit { id: 7, weapon: 625, shield: 25, hull: 2500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 // 50_000
-#[inline(always)]
 fn ASTRAL() -> Unit {
     Unit { id: 8, weapon: 3125, shield: 125, hull: 12500, speed: 0, cargo: 0, consumption: 0 }
 }
 
 // 150_000
-#[inline(always)]
 fn PLASMA() -> Unit {
     Unit { id: 9, weapon: 9375, shield: 375, hull: 37500, speed: 0, cargo: 0, consumption: 0 }
 }
@@ -201,20 +191,6 @@ fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, Defences
         continue;
     };
     (fleet, d)
-}
-
-#[inline(always)]
-fn calculate_number_of_ships(fleet: Fleet, defences: DefencesLevels) -> u32 {
-    fleet.carrier
-        + fleet.scraper
-        + fleet.sparrow
-        + fleet.frigate
-        + fleet.armade
-        + defences.celestia
-        + defences.blaster
-        + defences.beam
-        + defences.astral
-        + defences.plasma
 }
 
 fn build_ships_array(
@@ -364,7 +340,6 @@ fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
     }
 }
 
-#[inline(always)]
 fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
     let mut min_speed = 4294967295;
     let combustion: u32 = techs.combustion.into();
@@ -417,7 +392,6 @@ fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
     min_speed
 }
 
-#[inline(always)]
 // TODO: implement speed modifier.
 fn get_flight_time(speed: u32, distance: u32, speed_percentage: u32) -> u64 {
     let f_speed = FixedTrait::new_unscaled(speed.into(), false);
@@ -432,7 +406,6 @@ fn get_flight_time(speed: u32, distance: u32, speed_percentage: u32) -> u64 {
 }
 
 
-#[inline(always)]
 fn get_unit_consumption(ship: Unit, distance: u32) -> u128 {
     // TODO: when speed variation is available tweak this formula
     // https://ogame.fandom.com/wiki/Fuel_Consumption?so=search
@@ -447,7 +420,6 @@ fn get_fuel_consumption(f: Fleet, distance: u32) -> u128 {
         + f.armade.into() * get_unit_consumption(ARMADE(), distance)
 }
 
-#[inline(always)]
 fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
     if start.system == end.system && start.orbit == end.orbit {
         return 5;
@@ -471,7 +443,6 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
     }
 }
 
-#[inline(always)]
 fn get_debris(f_before: Fleet, f_after: Fleet, celestia: u32) -> Debris {
     let mut debris: Debris = Default::default();
     let costs = Dockyard::get_ships_unit_cost();
@@ -528,7 +499,6 @@ fn min(a: u128, b: u128) -> u128 {
     b
 }
 
-#[inline(always)]
 fn get_fleet_cargo_capacity(f: Fleet) -> u128 {
     (CARRIER().cargo * f.carrier
         + SCRAPER().cargo * f.scraper
@@ -582,4 +552,17 @@ fn decay_fleet(fleet: Fleet, decay_amount: u32) -> Fleet {
     res.frigate = fleet.frigate * (100 - decay_amount) / 100;
     res.armade = fleet.armade * (100 - decay_amount) / 100;
     res
+}
+
+fn calculate_number_of_ships(fleet: Fleet, defences: DefencesLevels) -> u32 {
+    fleet.carrier
+        + fleet.scraper
+        + fleet.sparrow
+        + fleet.frigate
+        + fleet.armade
+        + defences.celestia
+        + defences.blaster
+        + defences.beam
+        + defences.astral
+        + defences.plasma
 }

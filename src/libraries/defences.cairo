@@ -10,19 +10,16 @@ impl Defences of DefencesTrait {
         }
     }
 
-    #[inline(always)]
     fn blaster_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 1, 'dockyard 1 required');
     }
 
-    #[inline(always)]
     fn beam_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 2, 'dockyard 2 required');
         assert(techs.energy >= 2, 'energy innovation 2 required');
         assert(techs.beam >= 3, 'beam technology 3 required');
     }
 
-    #[inline(always)]
     fn astral_launcher_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 6, 'dockyard 6 required');
         assert(techs.energy >= 6, 'energy innovation 6 required');
@@ -30,7 +27,6 @@ impl Defences of DefencesTrait {
         assert(techs.shield >= 1, 'shield tech 1 required')
     }
 
-    #[inline(always)]
     fn plasma_beam_requirements_check(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 8, 'dockyard 8 required');
         assert(techs.plasma >= 7, 'plasma engineering 7 required');
