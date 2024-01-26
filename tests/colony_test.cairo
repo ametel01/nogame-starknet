@@ -1,11 +1,10 @@
 use tests::utils::{
-    ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
-    warp_multiple, Dispatchers, E18
+    ACCOUNT1, ACCOUNT2, set_up, init_game, YEAR, warp_multiple, Dispatchers, E18, init_storage
 };
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, DefencesLevels,
-    CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris
+    CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris, MissionCategory
 };
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
 
@@ -16,16 +15,9 @@ fn test_generate_colony() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
-
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
+    init_storage(dsp, 1);
     dsp.game.generate_colony();
-
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
     dsp.game.generate_colony();
-
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
     dsp.game.generate_colony();
     let colonies = dsp.game.get_planet_colonies(1);
 
@@ -51,16 +43,10 @@ fn test_collect_resources_all_planets() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
-
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
     dsp.game.generate_colony();
-
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
     dsp.game.generate_colony();
 
     start_warp(CheatTarget::One(dsp.game.contract_address), starknet::get_block_timestamp() + YEAR);
@@ -88,16 +74,9 @@ fn test_send_fleet_to_colony() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
-    dsp.game.generate_colony();
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
+    dsp.game.generate_colony();
     dsp.game.process_ship_build(BuildType::Carrier(()), 1);
 
     let mut fleet: Fleet = Default::default();
@@ -106,9 +85,74 @@ fn test_send_fleet_to_colony() {
     let mut p2_position: PlanetPosition = Default::default();
     p2_position.system = 188;
     p2_position.orbit = 10;
-    dsp.game.send_fleet(fleet, p2_position, false, 100);
-    let hostile_mission = dsp.game.get_hostile_missions(2);
-    assert((*hostile_mission.at(0)).destination == 2001, 'wrong hostile mission');
+    dsp.game.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 0);
+    let missions = dsp.game.get_active_missions(1);
+    let mission = *missions.at(0);
+    assert(mission.destination == 1001, 'wrong hostile mission');
+    assert(mission.category == MissionCategory::TRANSPORT, 'wrong hostile mission');
+    start_warp(CheatTarget::One(dsp.game.contract_address), mission.time_arrival + 1);
+    dsp.game.dock_fleet(1);
+    assert(dsp.game.get_colony_ships_levels(1, 1).carrier == 1, 'wrong colony ships levels');
+}
+
+#[test]
+fn test_send_fleet_from_colony() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    init_storage(dsp, 1);
+    dsp.game.generate_colony();
+
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    let mut p2_position: PlanetPosition = dsp.game.get_planet_position(1);
+    dsp.game.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 1);
+    let missions = dsp.game.get_active_missions(1);
+    let mission = *missions.at(0);
+    assert(mission.destination == 1, 'wrong mission destination');
+    assert(mission.category == MissionCategory::TRANSPORT, 'wrong mission category');
+    start_warp(CheatTarget::One(dsp.game.contract_address), mission.time_arrival + 1);
+    dsp.game.dock_fleet(1);
+    assert(dsp.game.get_ships_levels(1).carrier == 1, 'wrong ships levels');
+    assert(dsp.game.get_colony_ships_levels(1, 1).carrier == 0, 'wrong colony ships levels');
+}
+
+#[test]
+fn test_attack_from_colony() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_planet();
+    init_storage(dsp, 1);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
+    dsp.game.generate_planet();
+    init_storage(dsp, 2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    let p2_position = dsp.game.get_planet_position(2);
+
+    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
+    dsp.game.generate_colony();
+    dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
+    dsp.game.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
+
+    dsp.game.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 1);
+    let missions = dsp.game.get_active_missions(1);
+    let mission = *missions.at(0);
+    assert(mission.destination == 2, 'wrong mission destination');
+    assert(mission.category == MissionCategory::ATTACK, 'wrong mission category');
+    start_warp(CheatTarget::One(dsp.game.contract_address), mission.time_arrival + 1);
+    dsp.game.attack_planet(1);
 }
 
 #[test]
@@ -118,8 +162,7 @@ fn test_process_colony_compound_upgrade() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
     let mut expected_compounds: CompoundsLevels = Default::default();
     expected_compounds.steel = 1;
@@ -128,7 +171,6 @@ fn test_process_colony_compound_upgrade() {
     expected_compounds.energy = 4;
     expected_compounds.dockyard = 1;
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
@@ -138,7 +180,6 @@ fn test_process_colony_compound_upgrade() {
     let colony1_compounds = dsp.game.get_colony_compounds(1, 1);
     assert(colony1_compounds == expected_compounds, 'wrong c1 compounds');
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 2);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(2, ColonyUpgradeType::QuartzMine, 2);
@@ -156,8 +197,7 @@ fn process_colony_unit_build_defences_test() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
     let mut expected: DefencesLevels = Default::default();
     expected.blaster = 1;
@@ -166,7 +206,6 @@ fn process_colony_unit_build_defences_test() {
     expected.plasma = 1;
     expected.celestia = 1;
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
     dsp.game.process_colony_unit_build(1, ColonyBuildType::Blaster, 1);
@@ -185,17 +224,15 @@ fn process_colony_unit_build_fleet_test() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
-    let mut expected: ShipsLevels = Default::default();
+    let mut expected: Fleet = Default::default();
     expected.carrier = 1;
     expected.scraper = 1;
     expected.sparrow = 1;
     expected.frigate = 1;
     expected.armade = 1;
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
     dsp.game.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
@@ -214,10 +251,8 @@ fn test_collect_colony_resources() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
@@ -248,15 +283,13 @@ fn test_attack_colony() {
     dsp.game.generate_planet();
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
     dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 2);
+
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
     dsp.game.process_ship_build(BuildType::Carrier(()), 10);
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
 
-    dsp.game.process_tech_upgrade(UpgradeType::Exocraft(()), 1);
     dsp.game.generate_colony();
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::EnergyPlant, 4);
     dsp.game.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
@@ -274,7 +307,7 @@ fn test_attack_colony() {
         starknet::get_contract_address(),
         starknet::get_block_timestamp() + DAY * 7
     );
-    dsp.game.send_fleet(fleet_a, colony_position, false, 100);
+    dsp.game.send_fleet(fleet_a, colony_position, MissionCategory::ATTACK, 100, 0);
     let mission = dsp.game.get_mission_details(1, 1);
     warp_multiple(
         dsp.game.contract_address, starknet::get_contract_address(), mission.time_arrival + 1

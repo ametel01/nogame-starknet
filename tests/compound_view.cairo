@@ -9,7 +9,6 @@ use nogame::libraries::compounds::{Production, Compounds};
 use nogame::libraries::types::{CompoundsLevels, Names};
 use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game, set_up,
-    build_basic_mines
 };
 use nogame::game::main::NoGame;
 use nogame::game::main::NoGame::compounds_levelContractMemberStateTrait;

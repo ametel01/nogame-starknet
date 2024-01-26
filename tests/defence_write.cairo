@@ -15,7 +15,7 @@ use nogame::libraries::types::{
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
-    YEAR, warp_multiple, advance_game_state
+    YEAR, warp_multiple, init_storage,
 };
 
 #[test]
@@ -56,10 +56,7 @@ fn test_beam_build() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
-
-    build_basic_mines(dsp.game);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
 
     dsp.game.process_defence_build(BuildType::Beam(()), 10);
     let def = dsp.game.get_defences_levels(1);
@@ -127,14 +124,11 @@ fn test_plasma_build() {
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     dsp.game.generate_planet();
+    init_storage(dsp, 1);
 
-    build_basic_mines(dsp.game);
-    start_warp(CheatTarget::All, HOUR * 2400000);
-    advance_game_state(dsp.game);
-
-    dsp.game.process_defence_build(BuildType::Plasma(()), 10);
+    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
     let def = dsp.game.get_defences_levels(1);
-    assert(def.plasma == 10, 'wrong plasma level');
+    assert(def.plasma == 1, 'wrong plasma level');
 }
 
 #[test]

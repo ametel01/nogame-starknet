@@ -1,6 +1,6 @@
 use nogame::libraries::types::{
-    PlanetPosition, ColonyUpgradeType, ERC20s, ColonyBuildType, TechLevels, CompoundsLevels,
-    ShipsLevels, DefencesLevels
+    PlanetPosition, ColonyUpgradeType, ERC20s, ColonyBuildType, TechLevels, CompoundsLevels, Fleet,
+    DefencesLevels
 };
 
 #[starknet::interface]
@@ -30,7 +30,7 @@ trait IColonyWrite<TState> {
 trait IColonyView<TState> {
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
-    fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
+    fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
     fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
 }
 
@@ -45,7 +45,7 @@ mod ColonyComponent {
     use starknet::{get_block_timestamp, get_caller_address};
     use nogame::libraries::types::{
         PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
-        TechLevels, ShipsLevels, DefencesLevels
+        TechLevels, ShipsLevels, DefencesLevels, Fleet
     };
     use nogame::colony::positions;
     use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
@@ -179,8 +179,8 @@ mod ColonyComponent {
 
         fn get_colony_ships(
             self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> ShipsLevels {
-            ShipsLevels {
+        ) -> Fleet {
+            Fleet {
                 carrier: self.colony_ships.read((planet_id, colony_id, Names::CARRIER)),
                 scraper: self.colony_ships.read((planet_id, colony_id, Names::SCRAPER)),
                 sparrow: self.colony_ships.read((planet_id, colony_id, Names::SPARROW)),
@@ -496,6 +496,88 @@ mod ColonyComponent {
                 return 20;
             } else {
                 return 10;
+            }
+        }
+
+        fn fleet_arrives(
+            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, fleet: Fleet
+        ) {
+            let fleet_levels = self.get_colony_ships(planet_id, colony_id);
+            if fleet.carrier > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier
+                    );
+            }
+            if fleet.scraper > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper
+                    );
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow
+                    );
+            }
+            if fleet.frigate > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate
+                    );
+            }
+            if fleet.armade > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::ARMADE), fleet_levels.armade + fleet.armade
+                    );
+            }
+        }
+
+        fn fleet_leaves(
+            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, fleet: Fleet
+        ) {
+            let fleet_levels = self.get_colony_ships(planet_id, colony_id);
+            if fleet.carrier > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier
+                    );
+            }
+            if fleet.scraper > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper
+                    );
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow
+                    );
+            }
+            if fleet.frigate > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate
+                    );
+            }
+            if fleet.armade > 0 {
+                self
+                    .colony_ships
+                    .write(
+                        (planet_id, colony_id, Names::ARMADE), fleet_levels.armade - fleet.armade
+                    );
             }
         }
     }

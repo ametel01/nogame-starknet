@@ -7,11 +7,11 @@ use snforge_std::{start_prank, start_warp, CheatTarget};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
-    Fleet, BuildType
+    Fleet, BuildType, MissionCategory
 };
 use tests::utils::{
     E18, HOUR, DAY, Dispatchers, ACCOUNT1, ACCOUNT2, ACCOUNT3, ACCOUNT4, ACCOUNT5, init_game,
-    set_up, DEPLOYER, build_basic_mines, advance_game_state, warp_multiple,
+    set_up, DEPLOYER, warp_multiple, advance_game_state, build_basic_mines, init_storage
 };
 
 #[test]
@@ -73,20 +73,18 @@ fn test_get_debris_field() {
     assert(dsp.game.get_debris_field(2).is_zero(), 'wrong debris field');
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 1);
     dsp.game.process_ship_build(BuildType::Carrier(()), 100);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT2());
-    build_basic_mines(dsp.game);
-    advance_game_state(dsp.game);
+    init_storage(dsp, 2);
     dsp.game.process_defence_build(BuildType::Astral(()), 5);
 
     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
     let mut fleet: Fleet = Default::default();
     let position = dsp.game.get_planet_position(2);
     fleet.carrier = 100;
-    dsp.game.send_fleet(fleet, position, false, 100);
+    dsp.game.send_fleet(fleet, position, MissionCategory::ATTACK, 100, 0);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + DAY);
     dsp.game.attack_planet(1);
 
