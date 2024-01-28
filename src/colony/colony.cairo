@@ -446,19 +446,29 @@ mod ColonyComponent {
             let tritium_available = Production::tritium(mines_levels.tritium, temp, uni_speed)
                 * time_elapsed.into()
                 / HOUR.into();
+
+            let colony_position = self.colony_position.read((planet_id, colony_id));
+            let celestia_production = self.position_to_celestia_production(colony_position.orbit);
+            let celestia_production: u128 = self
+                .get_colony_defences(planet_id, colony_id)
+                .celestia
+                .into()
+                * celestia_production;
             let energy_available = Production::energy(mines_levels.energy);
             let energy_required = Consumption::base(mines_levels.steel)
                 + Consumption::base(mines_levels.quartz)
                 + Consumption::base(mines_levels.tritium);
-            if energy_available < energy_required {
+            let total_production = energy_available + celestia_production;
+
+            if total_production < energy_required {
                 let _steel = Compounds::production_scaler(
-                    steel_available, energy_available, energy_required
+                    steel_available, total_production, energy_required
                 );
                 let _quartz = Compounds::production_scaler(
-                    quartz_available, energy_available, energy_required
+                    quartz_available, total_production, energy_required
                 );
                 let _tritium = Compounds::production_scaler(
-                    tritium_available, energy_available, energy_required
+                    tritium_available, total_production, energy_required
                 );
 
                 return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium, };
@@ -578,6 +588,40 @@ mod ColonyComponent {
                     .write(
                         (planet_id, colony_id, Names::ARMADE), fleet_levels.armade - fleet.armade
                     );
+            }
+        }
+
+        fn position_to_celestia_production(
+            self: @ComponentState<TContractState>, orbit: u8
+        ) -> u128 {
+            if orbit == 1 {
+                return 48;
+            }
+            if orbit == 2 {
+                return 41;
+            }
+            if orbit == 3 {
+                return 36;
+            }
+            if orbit == 4 {
+                return 32;
+            }
+            if orbit == 5 {
+                return 27;
+            }
+            if orbit == 6 {
+                return 24;
+            }
+            if orbit == 7 {
+                return 21;
+            }
+            if orbit == 8 {
+                return 17;
+            }
+            if orbit == 9 {
+                return 14;
+            } else {
+                return 11;
             }
         }
     }

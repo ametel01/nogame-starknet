@@ -464,6 +464,7 @@ mod NoGame {
             // Write mission
             let mut mission: Mission = Default::default();
             mission.time_start = time_now;
+            mission.origin = origin_id;
             mission.destination = self.get_position_slot_occupant(destination);
             mission.time_arrival = time_now + travel_time;
             mission.fleet = f;
@@ -606,7 +607,7 @@ mod NoGame {
             } else {
                 self.resources_timer.write(mission.destination, time_now);
             }
-            self.fleet_return_planet(origin, f1);
+            self.fleet_return_planet(mission.origin, f1);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
 
             if is_colony {
@@ -648,7 +649,7 @@ mod NoGame {
             let origin = self.get_owned_planet(get_caller_address());
             let mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'no fleet to recall');
-            self.fleet_return_planet(origin, mission.fleet);
+            self.fleet_return_planet(mission.origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.remove_incoming_mission(mission.destination, mission_id);
             self.last_active.write(origin, get_block_timestamp());
@@ -713,12 +714,7 @@ mod NoGame {
 
             self.receive_resources_erc20(caller, erc20);
 
-            self
-                .ships_level
-                .write(
-                    (origin, Names::SCRAPER),
-                    self.ships_level.read((origin, Names::SCRAPER)) + collector_fleet.scraper
-                );
+            self.fleet_return_planet(mission.origin, collector_fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.last_active.write(origin, time_now);
 

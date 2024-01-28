@@ -422,6 +422,7 @@ impl IncomingMissionZeroable of Zeroable<IncomingMission> {
 struct Mission {
     id: u32,
     time_start: u64,
+    origin: u32,
     destination: u32,
     time_arrival: u64,
     fleet: Fleet,
@@ -433,6 +434,7 @@ impl MissionZeroable of Zeroable<Mission> {
         Mission {
             id: 0,
             time_start: 0,
+            origin: 0,
             destination: 0,
             time_arrival: 0,
             fleet: Zeroable::zero(),
@@ -453,6 +455,7 @@ impl MissionZeroable of Zeroable<Mission> {
 impl MissionPrint of PrintTrait<Mission> {
     fn print(self: @Mission) {
         self.time_start.print();
+        self.origin.print();
         self.destination.print();
         self.time_arrival.print();
         self.category.print();
