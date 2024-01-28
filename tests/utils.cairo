@@ -7,14 +7,15 @@ use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDi
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{PRICE, UpgradeType, BuildType};
+use nogame::libraries::types::{PRICE, UpgradeType, BuildType, Names, ERC20s};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
 use nogame::token::erc20::erc20_ng::ERC20NoGame;
 use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 
 use snforge_std::{
-    declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget
+    declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget,
+    store, map_entry_address
 };
 
 const E18: u128 = 1_000_000_000_000_000_000;
@@ -169,6 +170,155 @@ fn advance_game_state(game: INoGameDispatcher) {
     game.process_tech_upgrade(UpgradeType::Thrust(()), 4);
     game.process_tech_upgrade(UpgradeType::PlasmaTech(()), 7);
     game.process_tech_upgrade(UpgradeType::Weapons(()), 3);
+}
+
+fn init_storage(dsp: Dispatchers, planet_id: u32) {
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::STEEL].span(), // Providing mapping key 
+        ),
+        array![20].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::QUARTZ].span(), // Providing mapping key 
+        ),
+        array![20].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::TRITIUM].span(), // Providing mapping key 
+        ),
+        array![20].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::ENERGY_PLANT].span(), // Providing mapping key 
+        ),
+        array![30].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::LAB].span(), // Providing mapping key 
+        ),
+        array![10].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("compounds_level"), // Providing variable name
+            array![planet_id.into(), Names::DOCKYARD].span(), // Providing mapping key 
+        ),
+        array![8].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::ENERGY_TECH].span(), // Providing mapping key 
+        ),
+        array![8].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::COMBUSTION].span(), // Providing mapping key 
+        ),
+        array![6].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::BEAM_TECH].span(), // Providing mapping key 
+        ),
+        array![10].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::SHIELD].span(), // Providing mapping key 
+        ),
+        array![6].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::SPACETIME].span(), // Providing mapping key 
+        ),
+        array![3].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::WARP].span(), // Providing mapping key 
+        ),
+        array![4].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::ION].span(), // Providing mapping key 
+        ),
+        array![5].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::THRUST].span(), // Providing mapping key 
+        ),
+        array![4].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::PLASMA_TECH].span(), // Providing mapping key 
+        ),
+        array![7].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::WEAPONS].span(), // Providing mapping key 
+        ),
+        array![4].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("techs_level"), // Providing variable name
+            array![planet_id.into(), Names::EXOCRAFT].span(), // Providing mapping key 
+        ),
+        array![5].span()
+    );
+    store(
+        dsp.game.contract_address,
+        map_entry_address(
+            selector!("resources_spent"), // Providing variable name
+            array![planet_id.into()].span(), // Providing mapping key 
+        ),
+        array![1_000_000_000].span()
+    );
+    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + WEEK);
+    dsp.game.collect_resources();
 }
 
 

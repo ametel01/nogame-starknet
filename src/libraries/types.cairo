@@ -383,7 +383,7 @@ impl PrintUnit of PrintTrait<Unit> {
 }
 
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
-struct HostileMission {
+struct IncomingMission {
     origin: u32,
     id_at_origin: usize,
     time_arrival: u64,
@@ -391,8 +391,8 @@ struct HostileMission {
     destination: u32,
 }
 
-impl HostileMissionPrint of PrintTrait<HostileMission> {
-    fn print(self: @HostileMission) {
+impl IncomingMissionPrint of PrintTrait<IncomingMission> {
+    fn print(self: @IncomingMission) {
         self.origin.print();
         self.id_at_origin.print();
         self.time_arrival.print();
@@ -400,9 +400,9 @@ impl HostileMissionPrint of PrintTrait<HostileMission> {
     }
 }
 
-impl HostileMissionZeroable of Zeroable<HostileMission> {
-    fn zero() -> HostileMission {
-        HostileMission {
+impl IncomingMissionZeroable of Zeroable<IncomingMission> {
+    fn zero() -> IncomingMission {
+        IncomingMission {
             origin: Zeroable::zero(),
             id_at_origin: Zeroable::zero(),
             time_arrival: Zeroable::zero(),
@@ -410,10 +410,10 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
             destination: Zeroable::zero(),
         }
     }
-    fn is_zero(self: HostileMission) -> bool {
+    fn is_zero(self: IncomingMission) -> bool {
         self.origin.is_zero() || self.number_of_ships.is_zero() || self.time_arrival.is_zero()
     }
-    fn is_non_zero(self: HostileMission) -> bool {
+    fn is_non_zero(self: IncomingMission) -> bool {
         !self.is_zero()
     }
 }
@@ -422,10 +422,11 @@ impl HostileMissionZeroable of Zeroable<HostileMission> {
 struct Mission {
     id: u32,
     time_start: u64,
+    origin: u32,
     destination: u32,
     time_arrival: u64,
     fleet: Fleet,
-    is_debris: bool,
+    category: u8,
 }
 
 impl MissionZeroable of Zeroable<Mission> {
@@ -433,10 +434,11 @@ impl MissionZeroable of Zeroable<Mission> {
         Mission {
             id: 0,
             time_start: 0,
+            origin: 0,
             destination: 0,
             time_arrival: 0,
             fleet: Zeroable::zero(),
-            is_debris: false,
+            category: 0,
         }
     }
     fn is_zero(self: Mission) -> bool {
@@ -453,9 +455,10 @@ impl MissionZeroable of Zeroable<Mission> {
 impl MissionPrint of PrintTrait<Mission> {
     fn print(self: @Mission) {
         self.time_start.print();
+        self.origin.print();
         self.destination.print();
         self.time_arrival.print();
-        self.is_debris.print();
+        self.category.print();
         self.fleet.print();
     }
 }
@@ -574,4 +577,10 @@ enum ColonyBuildType {
     Beam,
     Astral,
     Plasma
+}
+
+mod MissionCategory {
+    const ATTACK: u8 = 1;
+    const TRANSPORT: u8 = 2;
+    const DEBRIS: u8 = 3;
 }

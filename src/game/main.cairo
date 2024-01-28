@@ -20,9 +20,9 @@ mod NoGame {
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
-        PlanetPosition, Debris, Mission, HostileMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05, PRICE,
-        DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
-        ColonyBuildType
+        PlanetPosition, Debris, Mission, IncomingMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05,
+        PRICE, DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
+        ColonyBuildType, MissionCategory
     };
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
     use nogame::libraries::defences::Defences;
@@ -87,7 +87,7 @@ mod NoGame {
         defences_level: LegacyMap::<(u32, felt252), u32>,
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
-        hostile_missions: LegacyMap<(u32, u32), HostileMission>,
+        hostile_missions: LegacyMap<(u32, u32), IncomingMission>,
         hostile_missions_len: LegacyMap<u32, usize>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
@@ -160,14 +160,14 @@ mod NoGame {
     struct FleetSent {
         origin: u32,
         destination: u32,
-        mission_type: felt252,
+        mission_type: u8,
         fleet: Fleet,
     }
 
     #[derive(Drop, starknet::Event)]
     struct FleetReturn {
         docked_at: u32,
-        mission_type: felt252,
+        mission_type: u8,
         fleet: Fleet,
     }
 
@@ -408,38 +408,40 @@ mod NoGame {
             ref self: ContractState,
             f: Fleet,
             destination: PlanetPosition,
-            is_debris_collection: bool,
+            mission_type: u8,
             speed_modifier: u32,
+            colony_id: u8,
         ) {
             let destination_id = self.position_to_planet.read(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
-            let time_now = get_block_timestamp();
-            let is_inactive = time_now - self.last_active.read(destination_id) > WEEK;
-            if is_debris_collection {
-                assert(
-                    !self.planet_debris_field.read(destination_id).is_zero(), 'empty debris fiels'
-                );
-                assert(f.scraper >= 1, 'no scrapers for collection');
-                assert(
-                    f.carrier.is_zero()
-                        && f.sparrow.is_zero()
-                        && f.frigate.is_zero() & f.armade.is_zero(),
-                    'only scraper can collect'
-                );
+            let origin_id = if colony_id.is_zero() {
+                planet_id
             } else {
-                assert(destination_id != planet_id, 'cannot send to own planet');
-                if !is_inactive {
+                (planet_id * 1000) + colony_id.into()
+            };
+
+            if destination_id > 500 && mission_type == MissionCategory::TRANSPORT {
+                assert(
+                    self.get_colony_mother_planet(destination_id) == planet_id, 'not your colony'
+                );
+            }
+            if mission_type == MissionCategory::ATTACK {
+                if destination_id > 500 {
                     assert(
-                        !self.is_noob_protected(planet_id, destination_id), 'noob protection active'
+                        self.get_colony_mother_planet(destination_id) != planet_id,
+                        'cannot attack own planet'
                     );
+                } else {
+                    assert(destination_id != planet_id, 'cannot attack own planet');
                 }
             }
+            let time_now = get_block_timestamp();
 
-            self.check_enough_ships(planet_id, f);
+            self.check_enough_ships(planet_id, colony_id, f);
             // Calculate distance
-            let distance = fleet::get_distance(self.planet_position.read(planet_id), destination);
+            let distance = fleet::get_distance(self.planet_position.read(origin_id), destination);
 
             // Calculate time
             let techs = self.get_tech_levels(planet_id);
@@ -462,12 +464,17 @@ mod NoGame {
             // Write mission
             let mut mission: Mission = Default::default();
             mission.time_start = time_now;
+            mission.origin = origin_id;
             mission.destination = self.get_position_slot_occupant(destination);
             mission.time_arrival = time_now + travel_time;
             mission.fleet = f;
 
-            if is_debris_collection {
-                mission.is_debris = true;
+            if mission_type == MissionCategory::DEBRIS {
+                assert(
+                    !self.planet_debris_field.read(destination_id).is_zero(), 'empty debris fiels'
+                );
+                assert(f.scraper >= 1, 'no scrapers for collection');
+                mission.category = MissionCategory::DEBRIS;
                 self.add_active_mission(planet_id, mission);
                 self
                     .emit(
@@ -475,15 +482,35 @@ mod NoGame {
                             FleetSent {
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'debris collection',
+                                mission_type: MissionCategory::DEBRIS,
+                                fleet: f,
+                            }
+                        )
+                    );
+            } else if mission_type == MissionCategory::TRANSPORT {
+                mission.category = MissionCategory::TRANSPORT;
+                self.add_active_mission(planet_id, mission);
+                self
+                    .emit(
+                        Event::FleetSent(
+                            FleetSent {
+                                origin: planet_id,
+                                destination: destination_id,
+                                mission_type: MissionCategory::TRANSPORT,
                                 fleet: f,
                             }
                         )
                     );
             } else {
+                let is_inactive = time_now - self.last_active.read(destination_id) > WEEK;
+                if !is_inactive {
+                    assert(
+                        !self.is_noob_protected(planet_id, destination_id), 'noob protection active'
+                    );
+                }
+                mission.category = MissionCategory::ATTACK;
                 let id = self.add_active_mission(planet_id, mission);
-                mission.is_debris = false;
-                let mut hostile_mission: HostileMission = Default::default();
+                let mut hostile_mission: IncomingMission = Default::default();
                 hostile_mission.origin = planet_id;
                 hostile_mission.id_at_origin = id;
                 hostile_mission.time_arrival = mission.time_arrival;
@@ -496,14 +523,14 @@ mod NoGame {
                 } else {
                     mission.destination
                 };
-                self.add_hostile_mission(target_planet, hostile_mission);
+                self.add_incoming_mission(target_planet, hostile_mission);
                 self
                     .emit(
                         Event::FleetSent(
                             FleetSent {
                                 origin: planet_id,
                                 destination: destination_id,
-                                mission_type: 'attack',
+                                mission_type: MissionCategory::ATTACK,
                                 fleet: f,
                             }
                         )
@@ -511,7 +538,7 @@ mod NoGame {
             }
             self.last_active.write(planet_id, time_now);
             // Write new fleet levels
-            self.fleet_leave_planet(planet_id, f);
+            self.fleet_leave_planet(origin_id, f);
         }
 
 
@@ -520,6 +547,7 @@ mod NoGame {
             let origin = self.get_owned_planet(caller);
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
+            assert(mission.category == MissionCategory::ATTACK, 'not an attack mission');
             assert(mission.destination != origin, 'cannot attack own planet');
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
@@ -569,7 +597,9 @@ mod NoGame {
                 .calculate_loot_amount(mission.destination, f1);
             let total_loot = loot_spendable + loot_collectible;
 
-            self.process_loot_payment(mission.destination, loot_spendable);
+            if !is_colony {
+                self.process_loot_payment(mission.destination, loot_spendable);
+            }
             self.receive_resources_erc20(get_caller_address(), total_loot);
 
             if is_colony {
@@ -577,13 +607,13 @@ mod NoGame {
             } else {
                 self.resources_timer.write(mission.destination, time_now);
             }
-            self.fleet_return_planet(origin, f1);
+            self.fleet_return_planet(mission.origin, f1);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
 
             if is_colony {
-                self.remove_hostile_mission(colony_mother_planet, mission_id);
+                self.remove_incoming_mission(colony_mother_planet, mission_id);
             } else {
-                self.remove_hostile_mission(mission.destination, mission_id);
+                self.remove_incoming_mission(mission.destination, mission_id);
             }
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
@@ -619,16 +649,32 @@ mod NoGame {
             let origin = self.get_owned_planet(get_caller_address());
             let mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'no fleet to recall');
-            self.fleet_return_planet(origin, mission.fleet);
+            self.fleet_return_planet(mission.origin, mission.fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
-            self.remove_hostile_mission(mission.destination, mission_id);
+            self.remove_incoming_mission(mission.destination, mission_id);
             self.last_active.write(origin, get_block_timestamp());
-            let mission_type = if mission.is_debris {
-                'debris collection'
-            } else {
-                'attack'
-            };
-            self.emit(FleetReturn { docked_at: origin, mission_type, fleet: mission.fleet });
+            self
+                .emit(
+                    FleetReturn {
+                        docked_at: origin, mission_type: mission.category, fleet: mission.fleet
+                    }
+                );
+        }
+
+        fn dock_fleet(ref self: ContractState, mission_id: usize) {
+            let origin = self.get_owned_planet(get_caller_address());
+            let mission = self.active_missions.read((origin, mission_id));
+            assert(mission.category == MissionCategory::TRANSPORT, 'not a transport mission');
+            assert(!mission.is_zero(), 'no fleet to dock');
+            self.fleet_return_planet(mission.destination, mission.fleet);
+            self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.last_active.write(origin, get_block_timestamp());
+            self
+                .emit(
+                    FleetReturn {
+                        docked_at: origin, mission_type: mission.category, fleet: mission.fleet
+                    }
+                );
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -637,7 +683,7 @@ mod NoGame {
 
             let mut mission = self.active_missions.read((origin, mission_id));
             assert(!mission.is_zero(), 'the mission is empty');
-            assert(mission.is_debris, 'not a debris mission');
+            assert(mission.category == MissionCategory::DEBRIS, 'not a debris mission');
 
             let time_now = get_block_timestamp();
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
@@ -668,18 +714,17 @@ mod NoGame {
 
             self.receive_resources_erc20(caller, erc20);
 
-            self
-                .ships_level
-                .write(
-                    (origin, Names::SCRAPER),
-                    self.ships_level.read((origin, Names::SCRAPER)) + collector_fleet.scraper
-                );
+            self.fleet_return_planet(mission.origin, collector_fleet);
             self.active_missions.write((origin, mission_id), Zeroable::zero());
             self.last_active.write(origin, time_now);
 
             self
                 .emit(
-                    FleetReturn { docked_at: origin, mission_type: 'debris', fleet: mission.fleet }
+                    FleetReturn {
+                        docked_at: origin,
+                        mission_type: MissionCategory::DEBRIS,
+                        fleet: mission.fleet
+                    }
                 );
 
             self
@@ -800,9 +845,7 @@ mod NoGame {
             }
         }
 
-        fn get_colony_ships_levels(
-            self: @ContractState, planet_id: u32, colony_id: u8
-        ) -> ShipsLevels {
+        fn get_colony_ships_levels(self: @ContractState, planet_id: u32, colony_id: u8) -> Fleet {
             self.colony.get_colony_ships(planet_id, colony_id)
         }
 
@@ -857,8 +900,8 @@ mod NoGame {
             arr
         }
 
-        fn get_hostile_missions(self: @ContractState, planet_id: u32) -> Array<HostileMission> {
-            let mut arr: Array<HostileMission> = array![];
+        fn get_incoming_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
+            let mut arr: Array<IncomingMission> = array![];
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1157,70 +1200,97 @@ mod NoGame {
         }
 
         fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
-            let fleet_levels = self.get_ships_levels(planet_id);
-            if fleet.carrier > 0 {
+            if planet_id > 500 {
+                let colony_mother_planet = self.colony_owner.read(planet_id);
                 self
-                    .ships_level
-                    .write((planet_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier);
-            }
-            if fleet.scraper > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper);
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow);
-            }
-            if fleet.frigate > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate);
-            }
-            if fleet.armade > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::ARMADE), fleet_levels.armade - fleet.armade);
+                    .colony
+                    .fleet_leaves(
+                        colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
+                    );
+            } else {
+                let fleet_levels = self.get_ships_levels(planet_id);
+                if fleet.carrier > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier);
+                }
+                if fleet.scraper > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper);
+                }
+                if fleet.sparrow > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow);
+                }
+                if fleet.frigate > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate);
+                }
+                if fleet.armade > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::ARMADE), fleet_levels.armade - fleet.armade);
+                }
             }
         }
 
         fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
-            let fleet_levels = self.get_ships_levels(planet_id);
-            if fleet.carrier > 0 {
+            if planet_id > 500 {
+                let colony_mother_planet = self.colony_owner.read(planet_id);
                 self
-                    .ships_level
-                    .write((planet_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier);
-            }
-            if fleet.scraper > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper);
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow);
-            }
-            if fleet.frigate > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate);
-            }
-            if fleet.armade > 0 {
-                self
-                    .ships_level
-                    .write((planet_id, Names::ARMADE), fleet_levels.armade + fleet.armade);
+                    .colony
+                    .fleet_arrives(
+                        colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
+                    );
+            } else {
+                let fleet_levels = self.get_ships_levels(planet_id);
+                if fleet.carrier > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier);
+                }
+                if fleet.scraper > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper);
+                }
+                if fleet.sparrow > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow);
+                }
+                if fleet.frigate > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate);
+                }
+                if fleet.armade > 0 {
+                    self
+                        .ships_level
+                        .write((planet_id, Names::ARMADE), fleet_levels.armade + fleet.armade);
+                }
             }
         }
 
-        fn check_enough_ships(self: @ContractState, planet_id: u32, fleet: Fleet) {
-            let ships_levels = self.get_ships_levels(planet_id);
-            assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
-            assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
-            assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
-            assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
-            assert(ships_levels.armade >= fleet.armade, 'not enough armades');
+        fn check_enough_ships(self: @ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            if colony_id == 0 {
+                let ships_levels = self.get_ships_levels(planet_id);
+                assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
+                assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
+                assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
+                assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
+                assert(ships_levels.armade >= fleet.armade, 'not enough armades');
+            } else {
+                let ships_levels = self.get_colony_ships_levels(planet_id, colony_id);
+                assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
+                assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
+                assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
+                assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
+                assert(ships_levels.armade >= fleet.armade, 'not enough armades');
+            }
         }
 
         fn update_defender_fleet_levels_after_attack(
@@ -1266,7 +1336,7 @@ mod NoGame {
             i
         }
 
-        fn add_hostile_mission(ref self: ContractState, planet_id: u32, mission: HostileMission) {
+        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1284,7 +1354,7 @@ mod NoGame {
             };
         }
 
-        fn remove_hostile_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
+        fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
             let len = self.hostile_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -1402,6 +1472,11 @@ mod NoGame {
             loot: ERC20s,
             debris: Debris
         ) {
+            let defender = if defender > 500 {
+                self.colony_owner.read(defender)
+            } else {
+                defender
+            };
             self
                 .emit(
                     Event::BattleReport(

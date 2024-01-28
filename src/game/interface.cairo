@@ -2,7 +2,7 @@ use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    SimulationResult, HostileMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
+    SimulationResult, IncomingMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
 };
 
 #[starknet::interface]
@@ -35,11 +35,13 @@ trait INoGame<TState> {
         ref self: TState,
         f: Fleet,
         destination: PlanetPosition,
-        is_debris_collection: bool,
-        speed_modifier: u32
+        mission_type: u8,
+        speed_modifier: u32,
+        colony_id: u8,
     );
     fn attack_planet(ref self: TState, mission_id: usize);
     fn recall_fleet(ref self: TState, mission_id: usize);
+    fn dock_fleet(ref self: TState, mission_id: usize);
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
     fn get_current_planet_price(self: @TState) -> u128;
@@ -57,7 +59,7 @@ trait INoGame<TState> {
     fn get_defences_levels(self: @TState, planet_id: u32) -> DefencesLevels;
     fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
     fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
-    fn get_hostile_missions(self: @TState, planet_id: u32) -> Array<HostileMission>;
+    fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
     // Colony
     fn generate_colony(ref self: TState);
@@ -73,7 +75,7 @@ trait INoGame<TState> {
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
-    fn get_colony_ships_levels(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
+    fn get_colony_ships_levels(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
     fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: DefencesLevels

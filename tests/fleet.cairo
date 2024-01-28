@@ -8,10 +8,7 @@ use nogame::libraries::types::{
 };
 use nogame::libraries::fleet;
 
-use tests::utils::{
-    ACCOUNT1, ACCOUNT2, set_up, init_game, advance_game_state, build_basic_mines, YEAR,
-    warp_multiple
-};
+use tests::utils::{ACCOUNT1, ACCOUNT2, set_up, init_game, YEAR, warp_multiple};
 
 #[test]
 fn test_war_basic() {
