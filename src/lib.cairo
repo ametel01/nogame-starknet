@@ -14,6 +14,10 @@ mod colony {
     mod positions;
 }
 
+mod compounds {
+    mod compounds;
+}
+
 mod libraries {
     mod auction;
     mod compounds;
@@ -37,5 +41,9 @@ mod token {
         mod erc721_ng;
         mod interface;
     }
+}
+
+mod storage {
+    mod storage;
 }
 
