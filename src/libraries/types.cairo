@@ -565,7 +565,7 @@ enum ColonyUpgradeType {
     Dockyard,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Drop, Serde, PartialEq)]
 enum ColonyBuildType {
     Carrier,
     Scraper,

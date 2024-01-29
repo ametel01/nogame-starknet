@@ -64,7 +64,7 @@ fn test_beam_build() {
 }
 
 #[test]
-#[should_panic(expected: ('dockyard 2 required',))]
+#[should_panic(expected: ('dockyard 4 required',))]
 fn test_beam_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
@@ -77,7 +77,7 @@ fn test_beam_build_fails_dockyard_level() {
 }
 
 #[test]
-#[should_panic(expected: ('energy innovation 2 required',))]
+#[should_panic(expected: ('energy innovation 3 required',))]
 fn test_beam_build_fails_energy_tech_level() {
     let dsp = set_up();
     init_game(dsp);
@@ -86,7 +86,7 @@ fn test_beam_build_fails_energy_tech_level() {
     dsp.game.generate_planet();
     build_basic_mines(dsp.game);
     warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    dsp.game.process_compound_upgrade(UpgradeType::Dockyard(()), 2);
+    dsp.game.process_compound_upgrade(UpgradeType::Dockyard(()), 4);
 
     dsp.game.process_defence_build(BuildType::Beam(()), 2);
 }

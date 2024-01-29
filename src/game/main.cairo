@@ -397,8 +397,14 @@ mod NoGame {
             self.collect_colony_resources(colony_id);
             let planet_id = self.get_owned_planet(caller);
             let cost = self.build_colony_component(caller, planet_id, colony_id, name, quantity);
+            if name == ColonyBuildType::Carrier
+                || name == ColonyBuildType::Scraper
+                || name == ColonyBuildType::Sparrow
+                || name == ColonyBuildType::Frigate
+                || name == ColonyBuildType::Armade {
+                self.emit(FleetSpent { planet_id, quantity, spent: cost })
+            }
             self.update_planet_points(planet_id, cost);
-            self.emit(DefenceSpent { planet_id, quantity, spent: cost })
         }
 
         /////////////////////////////////////////////////////////////////////

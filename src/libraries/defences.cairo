@@ -15,9 +15,9 @@ impl Defences of DefencesTrait {
     }
 
     fn beam_requirements_check(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 2, 'dockyard 2 required');
-        assert(techs.energy >= 2, 'energy innovation 2 required');
-        assert(techs.beam >= 3, 'beam technology 3 required');
+        assert(dockyard_level >= 4, 'dockyard 4 required');
+        assert(techs.energy >= 3, 'energy innovation 3 required');
+        assert(techs.beam >= 6, 'beam technology 6 required');
     }
 
     fn astral_launcher_requirements_check(dockyard_level: u8, techs: TechLevels) {
