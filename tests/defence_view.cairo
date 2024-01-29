@@ -16,10 +16,10 @@ use nogame::game::main::NoGame;
 fn test_get_defences_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
 
-    let def = dsp.game.get_defences_levels(1);
+    let def = dsp.nogame.get_defences_levels(1);
     assert(def.blaster == 0, 'wrong blaster');
     assert(def.beam == 0, 'wrong beam');
     assert(def.astral == 0, 'wrong astral');

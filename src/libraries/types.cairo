@@ -16,14 +16,6 @@ const WEEK: u64 = 604_800;
 const DAY: u64 = 86_400;
 const HOUR: u64 = 3_600;
 
-#[derive(Copy, Drop, Serde)]
-struct Tokens {
-    erc721: ContractAddress,
-    steel: ContractAddress,
-    quartz: ContractAddress,
-    tritium: ContractAddress,
-}
-
 #[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct ERC20s {
     steel: u128,
@@ -583,4 +575,17 @@ mod MissionCategory {
     const ATTACK: u8 = 1;
     const TRANSPORT: u8 = 2;
     const DEBRIS: u8 = 3;
+}
+
+use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
+use nogame::token::erc20::interface::IERC20NoGameDispatcher;
+use nogame::token::erc721::interface::IERC721NoGameDispatcher;
+
+#[derive(Copy, Drop, Serde)]
+struct Tokens {
+    erc721: IERC721NoGameDispatcher,
+    steel: IERC20NoGameDispatcher,
+    quartz: IERC20NoGameDispatcher,
+    tritium: IERC20NoGameDispatcher,
+    eth: IERC20CamelDispatcher,
 }

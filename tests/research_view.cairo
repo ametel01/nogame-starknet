@@ -6,6 +6,7 @@ use snforge_std::PrintTrait;
 use snforge_std::{start_prank, start_warp, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
@@ -15,10 +16,10 @@ use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up
 fn test_get_tech_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
 
-    let techs = dsp.game.get_tech_levels(1);
+    let techs = dsp.storage.get_tech_levels(1);
     assert(techs.energy == 0, 'wrong level');
     assert(techs.digital == 0, 'wrong level');
     assert(techs.beam == 0, 'wrong level');

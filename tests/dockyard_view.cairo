@@ -16,10 +16,10 @@ use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up
 fn test_get_ships_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
 
-    let ships = dsp.game.get_ships_levels(1);
+    let ships = dsp.nogame.get_ships_levels(1);
     assert(ships.carrier == 0, 'wrong carrier`');
     assert(ships.scraper == 0, 'wrong scraper');
     assert(ships.sparrow == 0, 'wrong sparrow');

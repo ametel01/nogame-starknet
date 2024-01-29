@@ -23,15 +23,15 @@ fn test_blaster_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
 
-    build_basic_mines(dsp.game);
+    build_basic_mines(dsp.nogame);
     start_warp(CheatTarget::All, HOUR * 2400000);
-    dsp.game.process_compound_upgrade(UpgradeType::Dockyard(()), 1);
+    dsp.nogame.process_compound_upgrade(UpgradeType::Dockyard(()), 1);
 
-    dsp.game.process_defence_build(BuildType::Blaster(()), 10);
-    let def = dsp.game.get_defences_levels(1);
+    dsp.nogame.process_defence_build(BuildType::Blaster(()), 10);
+    let def = dsp.nogame.get_defences_levels(1);
     assert(def.blaster == 10, 'wrong blaster level');
 }
 
@@ -41,12 +41,12 @@ fn test_blaster_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    // advance_game_state(dsp.game);
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
+    build_basic_mines(dsp.nogame);
+    // advance_game_state(dsp.nogame);
 
-    dsp.game.process_defence_build(BuildType::Blaster(()), 1);
+    dsp.nogame.process_defence_build(BuildType::Blaster(()), 1);
 }
 
 #[test]
@@ -54,12 +54,12 @@ fn test_beam_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
     init_storage(dsp, 1);
 
-    dsp.game.process_defence_build(BuildType::Beam(()), 10);
-    let def = dsp.game.get_defences_levels(1);
+    dsp.nogame.process_defence_build(BuildType::Beam(()), 10);
+    let def = dsp.nogame.get_defences_levels(1);
     assert(def.beam == 10, 'wrong beam level');
 }
 
@@ -69,11 +69,11 @@ fn test_beam_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
+    build_basic_mines(dsp.nogame);
 
-    dsp.game.process_defence_build(BuildType::Beam(()), 2);
+    dsp.nogame.process_defence_build(BuildType::Beam(()), 2);
 }
 
 #[test]
@@ -82,13 +82,15 @@ fn test_beam_build_fails_energy_tech_level() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
-    build_basic_mines(dsp.game);
-    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + YEAR);
-    dsp.game.process_compound_upgrade(UpgradeType::Dockyard(()), 4);
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
+    build_basic_mines(dsp.nogame);
+    warp_multiple(
+        dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + YEAR
+    );
+    dsp.nogame.process_compound_upgrade(UpgradeType::Dockyard(()), 4);
 
-    dsp.game.process_defence_build(BuildType::Beam(()), 2);
+    dsp.nogame.process_defence_build(BuildType::Beam(()), 2);
 }
 
 #[test]
@@ -122,12 +124,12 @@ fn test_plasma_build() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-    dsp.game.generate_planet();
+    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+    dsp.nogame.generate_planet();
     init_storage(dsp, 1);
 
-    dsp.game.process_defence_build(BuildType::Plasma(()), 1);
-    let def = dsp.game.get_defences_levels(1);
+    dsp.nogame.process_defence_build(BuildType::Plasma(()), 1);
+    let def = dsp.nogame.get_defences_levels(1);
     assert(def.plasma == 1, 'wrong plasma level');
 }
 

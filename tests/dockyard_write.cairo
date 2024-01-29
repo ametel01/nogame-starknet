@@ -17,21 +17,21 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(1);
-//     dsp.game.dockyard_upgrade(1);
-//     dsp.game.lab_upgrade(1);
-//     dsp.game.energy_innovation_upgrade(1);
-//     dsp.game.combustive_engine_upgrade(1);
-//     dsp.game.combustive_engine_upgrade(1);
+//     dsp.nogame.dockyard_upgrade(1);
+//     dsp.nogame.dockyard_upgrade(1);
+//     dsp.nogame.lab_upgrade(1);
+//     dsp.nogame.energy_innovation_upgrade(1);
+//     dsp.nogame.combustive_engine_upgrade(1);
+//     dsp.nogame.combustive_engine_upgrade(1);
 
-//     dsp.game.carrier_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.carrier_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 //     assert(ships.carrier == 10, 'wrong carrier level');
 // }
 
@@ -50,19 +50,19 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(1);
-//     dsp.game.lab_upgrade(1);
-//     dsp.game.energy_innovation_upgrade(1);
-//     dsp.game.combustive_engine_upgrade(1);
+//     dsp.nogame.dockyard_upgrade(1);
+//     dsp.nogame.lab_upgrade(1);
+//     dsp.nogame.energy_innovation_upgrade(1);
+//     dsp.nogame.combustive_engine_upgrade(1);
 
-//     dsp.game.celestia_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.celestia_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 // }
 
 // #[test]
@@ -80,19 +80,19 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(1);
-//     dsp.game.lab_upgrade(1);
-//     dsp.game.energy_innovation_upgrade(1);
-//     dsp.game.combustive_engine_upgrade(1);
+//     dsp.nogame.dockyard_upgrade(1);
+//     dsp.nogame.lab_upgrade(1);
+//     dsp.nogame.energy_innovation_upgrade(1);
+//     dsp.nogame.combustive_engine_upgrade(1);
 
-//     dsp.game.sparrow_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.sparrow_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 //     assert(ships.sparrow == 10, 'wrong sparrow level');
 // }
 
@@ -111,22 +111,22 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(4);
-//     dsp.game.lab_upgrade(1);
-//     dsp.game.energy_innovation_upgrade(1);
-//     dsp.game.combustive_engine_upgrade(6);
-//     dsp.game.lab_upgrade(5);
-//     dsp.game.energy_innovation_upgrade(2);
-//     dsp.game.shield_tech_upgrade(2);
+//     dsp.nogame.dockyard_upgrade(4);
+//     dsp.nogame.lab_upgrade(1);
+//     dsp.nogame.energy_innovation_upgrade(1);
+//     dsp.nogame.combustive_engine_upgrade(6);
+//     dsp.nogame.lab_upgrade(5);
+//     dsp.nogame.energy_innovation_upgrade(2);
+//     dsp.nogame.shield_tech_upgrade(2);
 
-//     dsp.game.scraper_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.scraper_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 //     assert(ships.scraper == 10, 'wrong scraper level');
 // }
 
@@ -150,21 +150,21 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(5);
-//     dsp.game.lab_upgrade(4);
-//     dsp.game.energy_innovation_upgrade(4);
-//     dsp.game.beam_technology_upgrade(5);
-//     dsp.game.ion_systems_upgrade(2);
-//     dsp.game.thrust_propulsion_upgrade(4);
+//     dsp.nogame.dockyard_upgrade(5);
+//     dsp.nogame.lab_upgrade(4);
+//     dsp.nogame.energy_innovation_upgrade(4);
+//     dsp.nogame.beam_technology_upgrade(5);
+//     dsp.nogame.ion_systems_upgrade(2);
+//     dsp.nogame.thrust_propulsion_upgrade(4);
 
-//     dsp.game.frigate_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.frigate_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 //     assert(ships.frigate == 10, 'wrong frigate level');
 // }
 
@@ -188,21 +188,21 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.game.contract_address), ACCOUNT1());
-//     dsp.game.generate_planet();
+//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     dsp.nogame.generate_planet();
 
-//     dsp.game.energy_plant_upgrade(1);
-//     dsp.game.tritium_mine_upgrade(1);
+//     dsp.nogame.energy_plant_upgrade(1);
+//     dsp.nogame.tritium_mine_upgrade(1);
 //     start_warp(CheatTarget::All, HOUR * 2400000);
-//     dsp.game.dockyard_upgrade(7);
-//     dsp.game.lab_upgrade(7);
-//     dsp.game.energy_innovation_upgrade(5);
-//     dsp.game.shield_tech_upgrade(5);
-//     dsp.game.spacetime_warp_upgrade(3);
-//     dsp.game.warp_drive_upgrade(4);
+//     dsp.nogame.dockyard_upgrade(7);
+//     dsp.nogame.lab_upgrade(7);
+//     dsp.nogame.energy_innovation_upgrade(5);
+//     dsp.nogame.shield_tech_upgrade(5);
+//     dsp.nogame.spacetime_warp_upgrade(3);
+//     dsp.nogame.warp_drive_upgrade(4);
 
-//     dsp.game.armade_build(10);
-//     let ships = dsp.game.get_ships_levels(1);
+//     dsp.nogame.armade_build(10);
+//     let ships = dsp.nogame.get_ships_levels(1);
 //     assert(ships.armade == 10, 'wrong armade level');
 // }
 

@@ -1,4 +1,3 @@
-use array::ArrayTrait;
 use starknet::{
     ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,
     get_caller_address, class_hash::ClassHash
@@ -12,6 +11,7 @@ use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispat
 use nogame::token::erc20::erc20_ng::ERC20NoGame;
 use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame::storage::storage::{Storage, IStorageDispatcher, IStorageDispatcherTrait};
 
 use snforge_std::{
     declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget,
@@ -24,6 +24,8 @@ const HOUR: u64 = 3_600;
 const DAY: u64 = 86_400;
 const WEEK: u64 = 604_800;
 const YEAR: u64 = 31_557_600;
+const UNI_SPEED: u128 = 1;
+const TOKEN_PRICE: u128 = 1;
 
 #[derive(Copy, Drop, Serde)]
 struct Dispatchers {
@@ -32,7 +34,8 @@ struct Dispatchers {
     quartz: IERC20NoGameDispatcher,
     tritium: IERC20NoGameDispatcher,
     eth: IERC20CamelDispatcher,
-    game: INoGameDispatcher,
+    nogame: INoGameDispatcher,
+    storage: IStorageDispatcher,
 }
 
 fn DEPLOYER() -> ContractAddress {
@@ -57,40 +60,48 @@ fn ACCOUNT5() -> ContractAddress {
 fn set_up() -> Dispatchers {
     let contract = declare('NoGame');
     let calldata: Array<felt252> = array![];
-    let _game = contract.deploy(@calldata).expect('failed nogame');
+    let nogame = contract.deploy(@calldata).expect('failed nogame');
+
+    let contract = declare('Storage');
+    let calldata: Array<felt252> = array![nogame.into()];
+    let storage = contract.deploy(@calldata).expect('failed storage');
 
     let contract = declare('ERC721NoGame');
-    let calldata: Array<felt252> = array!['nogame-planet', 'NGPL', _game.into(), DEPLOYER().into()];
-    let _erc721 = contract.deploy(@calldata).expect('failed erc721');
+    let calldata: Array<felt252> = array![
+        'nogame-planet', 'NGPL', nogame.into(), DEPLOYER().into()
+    ];
+    let erc721 = contract.deploy(@calldata).expect('failed erc721');
 
     let contract = declare('ERC20NoGame');
-    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', _game.into()];
-    let _steel = contract.deploy(@calldata).expect('failed steel');
+    let calldata: Array<felt252> = array!['Nogame Steel', 'NGST', nogame.into()];
+    let steel = contract.deploy(@calldata).expect('failed steel');
 
-    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', _game.into()];
-    let _quartz = contract.deploy(@calldata).expect('failed quartz');
+    let calldata: Array<felt252> = array!['Nogame Quartz', 'NGQZ', nogame.into()];
+    let quartz = contract.deploy(@calldata).expect('failed quartz');
 
-    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', _game.into()];
-    let _tritium = contract.deploy(@calldata).expect('failed tritium');
+    let calldata: Array<felt252> = array!['Nogame Tritium', 'NGTR', nogame.into()];
+    let tritium = contract.deploy(@calldata).expect('failed tritium');
 
     let contract = declare('ERC20');
     let calldata: Array<felt252> = array!['ETHER', 'ETH', ETH_SUPPLY, 0, DEPLOYER().into()];
-    let _eth = contract.deploy(@calldata).expect('failed to deploy eth');
+    let eth = contract.deploy(@calldata).expect('failed to deploy eth');
 
     Dispatchers {
-        erc721: IERC721NoGameDispatcher { contract_address: _erc721 },
-        steel: IERC20NoGameDispatcher { contract_address: _steel },
-        quartz: IERC20NoGameDispatcher { contract_address: _quartz },
-        tritium: IERC20NoGameDispatcher { contract_address: _tritium },
-        eth: IERC20CamelDispatcher { contract_address: _eth },
-        game: INoGameDispatcher { contract_address: _game }
+        erc721: IERC721NoGameDispatcher { contract_address: erc721 },
+        steel: IERC20NoGameDispatcher { contract_address: steel },
+        quartz: IERC20NoGameDispatcher { contract_address: quartz },
+        tritium: IERC20NoGameDispatcher { contract_address: tritium },
+        eth: IERC20CamelDispatcher { contract_address: eth },
+        nogame: INoGameDispatcher { contract_address: nogame },
+        storage: IStorageDispatcher { contract_address: storage },
     }
 }
 
 fn init_game(dsp: Dispatchers) {
     start_prank(CheatTarget::All, DEPLOYER());
+    dsp.nogame.initializer(DEPLOYER(), dsp.storage.contract_address,);
     dsp
-        .game
+        .storage
         .initializer(
             dsp.erc721.contract_address,
             dsp.steel.contract_address,
@@ -98,9 +109,9 @@ fn init_game(dsp: Dispatchers) {
             dsp.tritium.contract_address,
             dsp.eth.contract_address,
             DEPLOYER(),
-            1,
-            ONE,
-            false
+            UNI_SPEED,
+            TOKEN_PRICE,
+            false,
         );
     start_prank(CheatTarget::One(dsp.eth.contract_address), DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
@@ -111,35 +122,35 @@ fn init_game(dsp: Dispatchers) {
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
     start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT1());
-    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    dsp.eth.approve(dsp.nogame.contract_address, (2 * E18).into());
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
     start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT2());
-    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    dsp.eth.approve(dsp.nogame.contract_address, (2 * E18).into());
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
     start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT3());
-    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    dsp.eth.approve(dsp.nogame.contract_address, (2 * E18).into());
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
     start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT4());
-    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    dsp.eth.approve(dsp.nogame.contract_address, (2 * E18).into());
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
 
     start_prank(CheatTarget::One(dsp.eth.contract_address), ACCOUNT5());
-    dsp.eth.approve(dsp.game.contract_address, (2 * E18).into());
+    dsp.eth.approve(dsp.nogame.contract_address, (2 * E18).into());
     stop_prank(CheatTarget::One(dsp.eth.contract_address));
-    start_prank(CheatTarget::One(dsp.erc721.contract_address), dsp.game.contract_address);
-    start_prank(CheatTarget::One(dsp.steel.contract_address), dsp.game.contract_address);
-    start_prank(CheatTarget::One(dsp.quartz.contract_address), dsp.game.contract_address);
-    start_prank(CheatTarget::One(dsp.tritium.contract_address), dsp.game.contract_address);
+    start_prank(CheatTarget::One(dsp.erc721.contract_address), dsp.nogame.contract_address);
+    start_prank(CheatTarget::One(dsp.steel.contract_address), dsp.nogame.contract_address);
+    start_prank(CheatTarget::One(dsp.quartz.contract_address), dsp.nogame.contract_address);
+    start_prank(CheatTarget::One(dsp.tritium.contract_address), dsp.nogame.contract_address);
 }
 
 #[test]
 fn test_deploy_and_init() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::All, dsp.game.contract_address);
+    start_prank(CheatTarget::All, dsp.nogame.contract_address);
     dsp.eth.transferFrom(ACCOUNT1(), DEPLOYER(), 1.into());
 }
 
@@ -174,7 +185,7 @@ fn advance_game_state(game: INoGameDispatcher) {
 
 fn init_storage(dsp: Dispatchers, planet_id: u32) {
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::STEEL].span(), // Providing mapping key 
@@ -182,7 +193,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![20].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::QUARTZ].span(), // Providing mapping key 
@@ -190,7 +201,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![20].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::TRITIUM].span(), // Providing mapping key 
@@ -198,7 +209,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![20].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::ENERGY_PLANT].span(), // Providing mapping key 
@@ -206,7 +217,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![30].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::LAB].span(), // Providing mapping key 
@@ -214,7 +225,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![10].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("compounds_level"), // Providing variable name
             array![planet_id.into(), Names::DOCKYARD].span(), // Providing mapping key 
@@ -222,7 +233,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![8].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::ENERGY_TECH].span(), // Providing mapping key 
@@ -230,7 +241,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![8].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::COMBUSTION].span(), // Providing mapping key 
@@ -238,7 +249,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![6].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::BEAM_TECH].span(), // Providing mapping key 
@@ -246,7 +257,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![10].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::SHIELD].span(), // Providing mapping key 
@@ -254,7 +265,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![6].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::SPACETIME].span(), // Providing mapping key 
@@ -262,7 +273,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![3].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::WARP].span(), // Providing mapping key 
@@ -270,7 +281,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![4].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::ION].span(), // Providing mapping key 
@@ -278,7 +289,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![5].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::THRUST].span(), // Providing mapping key 
@@ -286,7 +297,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![4].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::PLASMA_TECH].span(), // Providing mapping key 
@@ -294,7 +305,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![7].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::WEAPONS].span(), // Providing mapping key 
@@ -302,7 +313,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![4].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("techs_level"), // Providing variable name
             array![planet_id.into(), Names::EXOCRAFT].span(), // Providing mapping key 
@@ -310,15 +321,17 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         array![5].span()
     );
     store(
-        dsp.game.contract_address,
+        dsp.storage.contract_address,
         map_entry_address(
             selector!("resources_spent"), // Providing variable name
             array![planet_id.into()].span(), // Providing mapping key 
         ),
         array![1_000_000_000].span()
     );
-    warp_multiple(dsp.game.contract_address, get_contract_address(), get_block_timestamp() + WEEK);
-    dsp.game.collect_resources();
+    warp_multiple(
+        dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + WEEK
+    );
+    dsp.nogame.collect_resources();
 }
 
 

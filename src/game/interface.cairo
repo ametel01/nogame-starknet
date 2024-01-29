@@ -7,23 +7,10 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait INoGame<TState> {
-    fn initializer(
-        ref self: TState,
-        erc721: ContractAddress,
-        steel: ContractAddress,
-        quartz: ContractAddress,
-        tritium: ContractAddress,
-        eth: ContractAddress,
-        owner: ContractAddress,
-        uni_speed: u128,
-        token_price: u128,
-        is_testnet: bool
-    );
+    fn initializer(ref self: TState, owner: ContractAddress, storage: ContractAddress,);
     // Upgradable
     fn upgrade(ref self: TState, impl_hash: ClassHash);
     // Write functions
-    fn generate_mint_key(ref self: TState, secret: felt252);
-    fn get_mint_key(self: @TState, account: ContractAddress) -> felt252;
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
     fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
@@ -45,13 +32,7 @@ trait INoGame<TState> {
     fn collect_debris(ref self: TState, mission_id: usize);
     // View functions
     fn get_current_planet_price(self: @TState) -> u128;
-    fn get_number_of_planets(self: @TState) -> u32;
     fn get_planet_points(self: @TState, planet_id: u32) -> u128;
-    fn get_planet_position(self: @TState, planet_id: u32) -> PlanetPosition;
-    fn get_last_active(self: @TState, planet_id: u32) -> u64;
-    fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
-    fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
-    fn get_debris_field(self: @TState, planet_id: u32) -> Debris;
     fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
@@ -70,7 +51,6 @@ trait INoGame<TState> {
     fn process_colony_unit_build(
         ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
     );
-    fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
     fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
     fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
