@@ -1,8 +1,8 @@
+use nogame::dockyard::library as dockyard;
+use nogame::libraries::math;
 use nogame::libraries::types::{
     ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, Defences,
 };
-
-use nogame::libraries::{math, dockyard::Dockyard};
 use nogame_fixed::f128::core::{exp, sqrt};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 use snforge_std::PrintTrait;
@@ -443,7 +443,7 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
 
 fn get_debris(f_before: Fleet, f_after: Fleet, celestia: u32) -> Debris {
     let mut debris: Debris = Default::default();
-    let costs = Dockyard::get_ships_unit_cost();
+    let costs = dockyard::get_ships_unit_cost();
     let steel = ((f_before.carrier - f_after.carrier).into() * costs.carrier.steel)
         + ((f_before.scraper - f_after.scraper).into() * costs.scraper.steel)
         + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.steel)

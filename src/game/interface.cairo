@@ -1,59 +1,14 @@
 use nogame::libraries::types::{
     DefencesCost, Defences, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
-    SimulationResult, IncomingMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
+    SimulationResult, IncomingMission, ColonyUpgradeType, ColonyBuildType
 };
 use starknet::{ContractAddress, class_hash::ClassHash};
 
 #[starknet::interface]
 trait INoGame<TState> {
     fn initializer(ref self: TState, owner: ContractAddress, storage: ContractAddress,);
-    // Upgradable
-    fn upgrade(ref self: TState, impl_hash: ClassHash);
-    // Write functions
     fn generate_planet(ref self: TState);
-    fn collect_resources(ref self: TState);
-    fn process_compound_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
-    fn process_tech_upgrade(ref self: TState, component: UpgradeType, quantity: u8);
-    fn process_ship_build(ref self: TState, component: BuildType, quantity: u32);
-    fn process_defence_build(ref self: TState, component: BuildType, quantity: u32);
-    // Fleet functions
-    fn send_fleet(
-        ref self: TState,
-        f: Fleet,
-        destination: PlanetPosition,
-        mission_type: u8,
-        speed_modifier: u32,
-        colony_id: u8,
-    );
-    fn attack_planet(ref self: TState, mission_id: usize);
-    fn recall_fleet(ref self: TState, mission_id: usize);
-    fn dock_fleet(ref self: TState, mission_id: usize);
-    fn collect_debris(ref self: TState, mission_id: usize);
-    // View functions
     fn get_current_planet_price(self: @TState) -> u128;
-    fn get_planet_points(self: @TState, planet_id: u32) -> u128;
-    fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
-    fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
-    fn get_celestia_available(self: @TState, planet_id: u32) -> u32;
-    fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
-    // Colony
-    fn generate_colony(ref self: TState);
-    fn collect_colony_resources(ref self: TState, colony_id: u8);
-    fn process_colony_compound_upgrade(
-        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
-    );
-    fn process_colony_unit_build(
-        ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32
-    );
-    fn get_planet_colonies(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
-    fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
-    fn get_colony_collectible_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
-    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
-    fn get_colony_ships_levels(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
-    fn get_colony_defences_levels(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
-    fn simulate_attack(
-        self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences
-    ) -> SimulationResult;
 }
 

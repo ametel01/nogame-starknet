@@ -1,6 +1,6 @@
 use nogame::libraries::types::{
     Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels, TechLevels, Fleet,
-    Defences
+    Defences, ERC20s
 };
 use starknet::ContractAddress;
 
@@ -8,6 +8,13 @@ use starknet::ContractAddress;
 trait IStorage<TState> {
     fn initializer(
         ref self: TState,
+        game: ContractAddress,
+        fleet: ContractAddress,
+        colony: ContractAddress,
+        compound: ContractAddress,
+        tech: ContractAddress,
+        dockyard: ContractAddress,
+        defence: ContractAddress,
         erc721: ContractAddress,
         steel: ContractAddress,
         quartz: ContractAddress,
@@ -27,6 +34,7 @@ trait IStorage<TState> {
     );
     fn update_resources_timer(ref self: TState, planet_id: u32, new_resources_timer: u64,);
     fn set_last_active(ref self: TState, planet_id: u32, last_active: u64,);
+    fn update_planet_points(ref self: TState, planet_id: u32, spent: ERC20s);
     fn set_planet_debris_field(ref self: TState, planet_id: u32, debris: Debris,);
     fn set_universe_start_time(ref self: TState, universe_start_time: u64,);
     fn set_resources_spent(ref self: TState, planet_id: u32, resources_spent: u128,);
@@ -38,11 +46,27 @@ trait IStorage<TState> {
     fn add_active_mission(ref self: TState, planet_id: u32, mission: Mission) -> usize;
     fn add_incoming_mission(ref self: TState, planet_id: u32, mission: IncomingMission);
     fn remove_incoming_mission(ref self: TState, planet_id: u32, id_to_remove: usize);
+    fn set_colony_count(ref self: TState, colony_count: usize);
+    fn set_planet_colonies_count(ref self: TState, planet_id: u32, colony_count: u8);
+    fn set_colony_position(
+        ref self: TState, planet_id: u32, colony_id: u8, position: PlanetPosition
+    );
+    fn set_colony_resource_timer(ref self: TState, planet_id: u32, colony_id: u8, timer: u64);
+    fn set_colony_compound(
+        ref self: TState, planet_id: u32, colony_id: u8, compound_id: felt252, level: u8,
+    );
+    fn set_colony_ship(
+        ref self: TState, planet_id: u32, colony_id: u8, ship_id: felt252, level: u32,
+    );
+    fn set_colony_defence(
+        ref self: TState, planet_id: u32, colony_id: u8, defence_id: felt252, level: u32,
+    );
 
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_number_of_planets(self: @TState) -> u32;
     fn get_is_testnet(self: @TState) -> bool;
     fn get_uni_speed(self: @TState) -> u128;
+    fn get_planet_points(self: @TState, planet_id: u32) -> u128;
     fn get_position_to_planet(self: @TState, position: PlanetPosition) -> u32;
     fn get_planet_position(self: @TState, planet_id: u32) -> PlanetPosition;
     fn get_last_active(self: @TState, planet_id: u32) -> u64;
@@ -56,14 +80,26 @@ trait IStorage<TState> {
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
     fn get_defences_levels(self: @TState, planet_id: u32) -> Defences;
+    // Missions.
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
     fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
     fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
+    fn get_is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
+    // Colonies.
+    fn get_colony_count(self: @TState) -> usize;
+    fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
+    fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
+    fn get_colony_position(self: @TState, planet_id: u32, colony_id: u8) -> PlanetPosition;
+    fn get_position_to_colony(self: @TState, position: PlanetPosition) -> (u32, u8);
+    fn get_colony_resource_timer(self: @TState, planet_id: u32, colony_id: u8) -> u64;
+    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
+    fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
 }
 
 #[starknet::contract]
 mod Storage {
-    use nogame::libraries::types::{Names};
+    use nogame::libraries::types::{Names, ERC20s};
     use nogame::token::erc20::interface::IERC20NoGameDispatcher;
     use nogame::token::erc721::interface::IERC721NoGameDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
@@ -74,7 +110,14 @@ mod Storage {
 
     #[storage]
     struct Storage {
+        // Settings.
         game: ContractAddress,
+        fleet: ContractAddress,
+        colony: ContractAddress,
+        compound: ContractAddress,
+        tech: ContractAddress,
+        dockyard: ContractAddress,
+        defence: ContractAddress,
         erc721: IERC721NoGameDispatcher,
         steel: IERC20NoGameDispatcher,
         quartz: IERC20NoGameDispatcher,
@@ -85,61 +128,44 @@ mod Storage {
         fees_receiver: ContractAddress,
         token_price: u128,
         uni_speed: u128,
-        // General.
+        // Planets.
         number_of_planets: u32,
         planet_position: LegacyMap::<u32, PlanetPosition>,
         position_to_planet: LegacyMap::<PlanetPosition, u32>,
+        resources_timer: LegacyMap::<u32, u64>,
+        last_active: LegacyMap::<u32, u64>,
         planet_debris_field: LegacyMap::<u32, Debris>,
         universe_start_time: u64,
         resources_spent: LegacyMap::<u32, u128>,
-        // mapping colony_planet_id to mother planet id
-        colony_owner: LegacyMap::<u32, u32>,
-        // Tokens.
-        resources_timer: LegacyMap::<u32, u64>,
-        last_active: LegacyMap::<u32, u64>,
+        // Levels.
         compounds_level: LegacyMap::<(u32, felt252), u8>,
         techs_level: LegacyMap::<(u32, felt252), u8>,
         ships_level: LegacyMap::<(u32, felt252), u32>,
         defences_level: LegacyMap::<(u32, felt252), u32>,
+        // Missions.
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
         incoming_missions: LegacyMap<(u32, u32), IncomingMission>,
         incoming_missions_len: LegacyMap<u32, usize>,
+        // Colonies.
+        colony_owner: LegacyMap::<u32, u32>,
+        colony_count: usize,
+        planet_colonies_count: LegacyMap::<u32, u8>,
+        colony_position: LegacyMap::<(u32, u8), PlanetPosition>,
+        position_to_colony: LegacyMap::<PlanetPosition, (u32, u8)>,
+        colony_resource_timer: LegacyMap<(u32, u8), u64>,
+        colony_compounds: LegacyMap::<(u32, u8, felt252), u8>,
+        colony_ships: LegacyMap::<(u32, u8, felt252), u32>,
+        colony_defences: LegacyMap::<(u32, u8, felt252), u32>,
     }
 
     #[constructor]
     fn constructor(ref self: ContractState, game: ContractAddress) {
         self.universe_start_time.write(starknet::get_block_timestamp());
-        self.game.write(game);
     }
 
     #[abi(embed_v0)]
     impl StorageImpl of super::IStorage<ContractState> {
-        fn initializer(
-            ref self: ContractState,
-            erc721: ContractAddress,
-            steel: ContractAddress,
-            quartz: ContractAddress,
-            tritium: ContractAddress,
-            eth: ContractAddress,
-            fees_receiver: ContractAddress,
-            uni_speed: u128,
-            token_price: u128,
-            is_testnet: bool
-        ) {
-            assert(!self.initialized.read(), 'already initialized');
-            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
-            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
-            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
-            self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
-            self.fees_receiver.write(fees_receiver);
-            self.uni_speed.write(uni_speed);
-            self.initialized.write(true);
-            self.token_price.write(token_price);
-            self.is_testnet.write(is_testnet);
-        }
-
         fn add_new_planet(
             ref self: ContractState,
             planet_id: u32,
@@ -168,6 +194,14 @@ mod Storage {
 
         fn set_last_active(ref self: ContractState, planet_id: u32, last_active: u64,) {
             self.last_active.write(planet_id, last_active);
+        }
+
+        fn update_planet_points(ref self: ContractState, planet_id: u32, spent: ERC20s) {
+            self.set_last_active(planet_id, starknet::get_block_timestamp());
+            self
+                .set_resources_spent(
+                    planet_id, self.get_resources_spent(planet_id) + spent.steel + spent.quartz
+                );
         }
 
         fn set_planet_debris_field(ref self: ContractState, planet_id: u32, debris: Debris,) {
@@ -265,6 +299,48 @@ mod Storage {
             }
         }
 
+        fn set_colony_count(ref self: ContractState, colony_count: usize) {
+            self.colony_count.write(colony_count);
+        }
+
+        fn set_planet_colonies_count(ref self: ContractState, planet_id: u32, colony_count: u8) {
+            self.planet_colonies_count.write(planet_id, colony_count);
+        }
+
+        fn set_colony_position(
+            ref self: ContractState, planet_id: u32, colony_id: u8, position: PlanetPosition,
+        ) {
+            self.colony_position.write((planet_id, colony_id), position);
+            self.position_to_colony.write(position, (planet_id, colony_id));
+            self
+                .colony_resource_timer
+                .write((planet_id, colony_id), starknet::get_block_timestamp());
+        }
+
+        fn set_colony_resource_timer(
+            ref self: ContractState, planet_id: u32, colony_id: u8, timer: u64,
+        ) {
+            self.colony_resource_timer.write((planet_id, colony_id), timer);
+        }
+
+        fn set_colony_compound(
+            ref self: ContractState, planet_id: u32, colony_id: u8, compound_id: felt252, level: u8,
+        ) {
+            self.colony_compounds.write((planet_id, colony_id, compound_id), level);
+        }
+
+        fn set_colony_ship(
+            ref self: ContractState, planet_id: u32, colony_id: u8, ship_id: felt252, level: u32,
+        ) {
+            self.colony_ships.write((planet_id, colony_id, ship_id), level);
+        }
+
+        fn set_colony_defence(
+            ref self: ContractState, planet_id: u32, colony_id: u8, defence_id: felt252, level: u32,
+        ) {
+            self.colony_defences.write((planet_id, colony_id, defence_id), level);
+        }
+
         fn get_token_addresses(self: @ContractState) -> Tokens {
             Tokens {
                 erc721: self.erc721.read(),
@@ -285,6 +361,10 @@ mod Storage {
 
         fn get_uni_speed(self: @ContractState) -> u128 {
             self.uni_speed.read()
+        }
+
+        fn get_planet_points(self: @ContractState, planet_id: u32) -> u128 {
+            self.resources_spent.read(planet_id) / 1000
         }
 
         fn get_position_to_planet(self: @ContractState, position: PlanetPosition) -> u32 {
@@ -408,6 +488,126 @@ mod Storage {
                 i += 1;
             };
             arr
+        }
+
+        fn get_is_noob_protected(self: @ContractState, planet1_id: u32, planet2_id: u32) -> bool {
+            let p1_points = self.get_planet_points(planet1_id);
+            let p2_points = self.get_planet_points(planet2_id);
+            if p1_points > p2_points {
+                return p1_points > p2_points * 5;
+            } else {
+                return p2_points > p1_points * 5;
+            }
+        }
+
+        fn get_colony_count(self: @ContractState) -> usize {
+            self.colony_count.read()
+        }
+
+        fn get_planet_colonies_count(self: @ContractState, planet_id: u32) -> u8 {
+            self.planet_colonies_count.read(planet_id)
+        }
+
+        fn get_colonies_for_planet(
+            self: @ContractState, planet_id: u32
+        ) -> Array<(u8, PlanetPosition)> {
+            let mut arr: Array<(u8, PlanetPosition)> = array![];
+            let mut i = 1;
+            loop {
+                let colony_position = self.colony_position.read((planet_id, i));
+                if colony_position.is_zero() {
+                    break;
+                }
+                arr.append((i, colony_position));
+                i += 1;
+            };
+            arr
+        }
+
+        fn get_colony_position(
+            self: @ContractState, planet_id: u32, colony_id: u8
+        ) -> PlanetPosition {
+            self.colony_position.read((planet_id, colony_id))
+        }
+
+        fn get_position_to_colony(self: @ContractState, position: PlanetPosition) -> (u32, u8) {
+            self.position_to_colony.read(position)
+        }
+
+        fn get_colony_resource_timer(self: @ContractState, planet_id: u32, colony_id: u8) -> u64 {
+            self.colony_resource_timer.read((planet_id, colony_id))
+        }
+
+        fn get_colony_compounds(
+            self: @ContractState, planet_id: u32, colony_id: u8
+        ) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
+                quartz: self.colony_compounds.read((planet_id, colony_id, Names::QUARTZ)),
+                tritium: self.colony_compounds.read((planet_id, colony_id, Names::TRITIUM)),
+                energy: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
+                lab: self.colony_compounds.read((planet_id, colony_id, Names::LAB)),
+                dockyard: self.colony_compounds.read((planet_id, colony_id, Names::DOCKYARD))
+            }
+        }
+
+        fn get_colony_ships(self: @ContractState, planet_id: u32, colony_id: u8) -> Fleet {
+            Fleet {
+                carrier: self.colony_ships.read((planet_id, colony_id, Names::CARRIER)),
+                scraper: self.colony_ships.read((planet_id, colony_id, Names::SCRAPER)),
+                sparrow: self.colony_ships.read((planet_id, colony_id, Names::SPARROW)),
+                frigate: self.colony_ships.read((planet_id, colony_id, Names::FRIGATE)),
+                armade: self.colony_ships.read((planet_id, colony_id, Names::ARMADE)),
+            }
+        }
+
+        fn get_colony_defences(self: @ContractState, planet_id: u32, colony_id: u8) -> Defences {
+            Defences {
+                celestia: self.colony_defences.read((planet_id, colony_id, Names::CELESTIA)),
+                blaster: self.colony_defences.read((planet_id, colony_id, Names::BLASTER)),
+                beam: self.colony_defences.read((planet_id, colony_id, Names::BEAM)),
+                astral: self.colony_defences.read((planet_id, colony_id, Names::ASTRAL)),
+                plasma: self.colony_defences.read((planet_id, colony_id, Names::PLASMA)),
+            }
+        }
+
+        fn initializer(
+            ref self: ContractState,
+            game: ContractAddress,
+            fleet: ContractAddress,
+            colony: ContractAddress,
+            compound: ContractAddress,
+            tech: ContractAddress,
+            dockyard: ContractAddress,
+            defence: ContractAddress,
+            erc721: ContractAddress,
+            steel: ContractAddress,
+            quartz: ContractAddress,
+            tritium: ContractAddress,
+            eth: ContractAddress,
+            fees_receiver: ContractAddress,
+            uni_speed: u128,
+            token_price: u128,
+            is_testnet: bool
+        ) {
+            assert(!self.initialized.read(), 'already initialized');
+            self.game.write(game);
+            self.fleet.write(fleet);
+            self.colony.write(colony);
+            self.compound.write(compound);
+            self.tech.write(tech);
+            self.dockyard.write(dockyard);
+            self.defence.write(defence);
+            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
+            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
+            self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
+            self.fees_receiver.write(fees_receiver);
+            self.uni_speed.write(uni_speed);
+            self.initialized.write(true);
+            self.token_price.write(token_price);
+            self.is_testnet.write(is_testnet);
         }
     }
 }

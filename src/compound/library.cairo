@@ -10,17 +10,79 @@ const UNI_SPEED: u128 = 1;
 const _1_36: u128 = 25087571940244990000;
 const _0_004: u128 = 73786976294838210;
 
-mod Compounds {
-    fn production_scaler(production: u128, available: u128, required: u128) -> u128 {
-        if available > required {
-            return production;
-        } else {
-            return ((((available * 100) / required) * production) / 100);
-        }
+fn production_scaler(production: u128, available: u128, required: u128) -> u128 {
+    if available > required {
+        return production;
+    } else {
+        return ((((available * 100) / required) * production) / 100);
     }
 }
 
-mod CompoundCost {
+fn calculate_avg_temperature(orbit: u8) -> u32 {
+    if orbit == 1 {
+        return 230;
+    }
+    if orbit == 2 {
+        return 170;
+    }
+    if orbit == 3 {
+        return 120;
+    }
+    if orbit == 4 {
+        return 70;
+    }
+    if orbit == 5 {
+        return 60;
+    }
+    if orbit == 6 {
+        return 50;
+    }
+    if orbit == 7 {
+        return 40;
+    }
+    if orbit == 8 {
+        return 40;
+    }
+    if orbit == 9 {
+        return 20;
+    } else {
+        return 10;
+    }
+}
+
+fn position_to_celestia_production(orbit: u8) -> u32 {
+    if orbit == 1 {
+        return 48;
+    }
+    if orbit == 2 {
+        return 41;
+    }
+    if orbit == 3 {
+        return 36;
+    }
+    if orbit == 4 {
+        return 32;
+    }
+    if orbit == 5 {
+        return 27;
+    }
+    if orbit == 6 {
+        return 24;
+    }
+    if orbit == 7 {
+        return 21;
+    }
+    if orbit == 8 {
+        return 17;
+    }
+    if orbit == 9 {
+        return 14;
+    } else {
+        return 11;
+    }
+}
+
+mod cost {
     use nogame::libraries::types::{ERC20s, erc20_mul};
 
     fn steel(level: u8, quantity: u8) -> ERC20s {
@@ -583,7 +645,7 @@ mod CompoundCost {
     }
 }
 
-mod Production {
+mod production {
     use nogame::libraries::math::{power, BitShift};
     use nogame::libraries::types::ERC20s;
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
@@ -927,7 +989,7 @@ mod Production {
     }
 }
 
-mod Consumption {
+mod consumption {
     fn base(level: u8) -> u128 {
         let costs = array![
             0,

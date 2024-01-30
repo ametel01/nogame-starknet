@@ -459,13 +459,16 @@ impl MissionPrint of PrintTrait<Mission> {
 }
 
 #[derive(Drop, Serde)]
-enum UpgradeType {
+enum CompoundUpgradeType {
     SteelMine,
     QuartzMine,
     TritiumMine,
     EnergyPlant,
     Lab,
     Dockyard,
+}
+#[derive(Drop, Serde)]
+enum TechUpgradeType {
     EnergyTech,
     Digital,
     BeamTech,
@@ -487,13 +490,16 @@ trait UpgradeTrait<TState, UpgradeType> {
 }
 
 #[derive(Drop, Serde)]
-enum BuildType {
+enum ShipBuildType {
     Carrier,
     Scraper,
-    Celestia,
     Sparrow,
     Frigate,
     Armade,
+}
+#[derive(Drop, Serde)]
+enum DefenceBuildType {
+    Celestia,
     Blaster,
     Beam,
     Astral,

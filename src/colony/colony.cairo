@@ -4,7 +4,7 @@ use nogame::libraries::types::{
 };
 
 #[starknet::interface]
-trait IColonyWrite<TState> {
+trait IColony<TState> {
     fn generate_colony(ref self: TState, planet_id: u32) -> (u8, PlanetPosition);
     fn collect_resources(
         ref self: TState, uni_speed: u128, planet_id: u32, colony_id: u8
@@ -24,14 +24,10 @@ trait IColonyWrite<TState> {
     fn get_colony_resources(
         self: @TState, uni_speed: u128, planet_id: u32, colony_id: u8
     ) -> ERC20s;
-}
-
-#[starknet::interface]
-trait IColonyView<TState> {
-    fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
-    fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
-    fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
-    fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
+    fn update_defences_after_attack(ref self: TState, planet_id: u32, colony_id: u8, d: Defences);
+    fn reset_resource_timer(ref self: TState, planet_id: u32, colony_id: u8);
+    fn fleet_arrives(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
+    fn fleet_leaves(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
 }
 
 mod ResourceName {
@@ -40,16 +36,17 @@ mod ResourceName {
     const TRITIUM: felt252 = 3;
 }
 
-#[starknet::component]
-mod ColonyComponent {
+#[starknet::contract]
+mod Colony {
     use nogame::colony::positions;
-    use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
-    use nogame::libraries::defences::{Defence};
-    use nogame::libraries::dockyard::{Dockyard};
+    use nogame::compound::library as compound;
+    use nogame::defence::library as defence;
+    use nogame::dockyard::library as dockyard;
     use nogame::libraries::types::{
         PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
         TechLevels, ShipsLevels, Defences, Fleet
     };
+    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 
     use snforge_std::PrintTrait;
     use starknet::{get_block_timestamp, get_caller_address};
@@ -57,58 +54,48 @@ mod ColonyComponent {
 
     #[storage]
     struct Storage {
-        colony_count: usize,
-        planet_colonies_count: LegacyMap::<u32, u8>,
-        colony_position: LegacyMap::<(u32, u8), PlanetPosition>,
-        position_to_colony: LegacyMap::<PlanetPosition, (u32, u8)>,
-        colony_resource_timer: LegacyMap<(u32, u8), u64>,
-        colony_compounds: LegacyMap::<(u32, u8, felt252), u8>,
-        colony_ships: LegacyMap::<(u32, u8, felt252), u32>,
-        colony_defences: LegacyMap::<(u32, u8, felt252), u32>,
+        storage: IStorageDispatcher,
     }
 
     #[embeddable_as(ColonyWrite)]
-    impl ColonyWriteImpl<
-        TContractState, +HasComponent<TContractState>
-    > of super::IColonyWrite<ComponentState<TContractState>> {
-        fn generate_colony(
-            ref self: ComponentState<TContractState>, planet_id: u32
-        ) -> (u8, PlanetPosition) {
-            let current_count = self.colony_count.read();
+    impl ColonyWriteImpl of super::IColony<ContractState> {
+        fn generate_colony(ref self: ContractState, planet_id: u32) -> (u8, PlanetPosition) {
+            let current_count = self.storage.read().get_colony_count();
             let position = positions::get_colony_position(current_count);
-            let colony_id = self.planet_colonies_count.read(planet_id) + 1;
-            self.colony_position.write((planet_id, colony_id), position);
-            self.position_to_colony.write(position, (planet_id, colony_id));
-            self.planet_colonies_count.write(planet_id, colony_id);
-            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
-            self.colony_count.write(current_count + 1);
+            let colony_id = self.storage.read().get_planet_colonies_count(planet_id) + 1;
+            self.storage.read().set_colony_position(planet_id, colony_id, position);
+            self.storage.read().set_planet_colonies_count(planet_id, colony_id);
+            self.storage.read().set_colony_count(current_count + 1);
             (colony_id, position)
         }
 
         fn collect_resources(
-            ref self: ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
+            ref self: ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             assert!(
-                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
             );
             let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
-            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
+            self
+                .storage
+                .read()
+                .set_colony_resource_timer(planet_id, colony_id, get_block_timestamp());
 
             production
         }
 
         fn process_colony_compound_upgrade(
-            ref self: ComponentState<TContractState>,
+            ref self: ContractState,
             planet_id: u32,
             colony_id: u8,
             name: ColonyUpgradeType,
             quantity: u8
         ) {
             assert!(
-                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
@@ -117,7 +104,7 @@ mod ColonyComponent {
         }
 
         fn process_colony_unit_build(
-            ref self: ComponentState<TContractState>,
+            ref self: ContractState,
             planet_id: u32,
             colony_id: u8,
             techs: TechLevels,
@@ -126,7 +113,7 @@ mod ColonyComponent {
             is_testnet: bool
         ) {
             assert!(
-                !self.colony_position.read((planet_id, colony_id)).is_zero(),
+                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
@@ -135,161 +122,196 @@ mod ColonyComponent {
         }
 
         fn get_colony_resources(
-            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
+            self: @ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
-            if self.colony_position.read((planet_id, colony_id)).is_zero() {
+            if self.storage.read().get_colony_position(planet_id, colony_id).is_zero() {
                 return Zeroable::zero();
             }
             self.calculate_colony_production(uni_speed, planet_id, colony_id)
         }
-    }
 
-    #[embeddable_as(ColonyView)]
-    impl ColonyViewImpl<
-        TContractState, +HasComponent<TContractState>
-    > of super::IColonyView<ComponentState<TContractState>> {
-        fn get_colonies_for_planet(
-            self: @ComponentState<TContractState>, planet_id: u32
-        ) -> Array<(u8, PlanetPosition)> {
-            let mut arr: Array<(u8, PlanetPosition)> = array![];
-            let mut i = 1;
-            loop {
-                let colony_position = self.colony_position.read((planet_id, i));
-                if colony_position.is_zero() {
-                    break;
-                }
-                arr.append((i, colony_position));
-                i += 1;
-            };
-            arr
+        fn update_defences_after_attack(
+            ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences
+        ) {
+            self
+                .storage
+                .read()
+                .set_colony_defence(planet_id, colony_id, Names::CELESTIA, d.celestia);
+            self.storage.read().set_colony_defence(planet_id, colony_id, Names::BLASTER, d.blaster);
+            self.storage.read().set_colony_defence(planet_id, colony_id, Names::BEAM, d.beam);
+            self.storage.read().set_colony_defence(planet_id, colony_id, Names::ASTRAL, d.astral);
+            self.storage.read().set_colony_defence(planet_id, colony_id, Names::PLASMA, d.plasma);
         }
 
-        fn get_colony_coumpounds(
-            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> CompoundsLevels {
-            CompoundsLevels {
-                steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
-                quartz: self.colony_compounds.read((planet_id, colony_id, Names::QUARTZ)),
-                tritium: self.colony_compounds.read((planet_id, colony_id, Names::TRITIUM)),
-                energy: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
-                lab: 0,
-                dockyard: self.colony_compounds.read((planet_id, colony_id, Names::DOCKYARD)),
+        fn reset_resource_timer(ref self: ContractState, planet_id: u32, colony_id: u8) {
+            self
+                .storage
+                .read()
+                .set_colony_resource_timer(planet_id, colony_id, get_block_timestamp());
+        }
+
+        fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            let current_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
+            if fleet.carrier > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::CARRIER, current_levels.carrier + fleet.carrier
+                    );
+            }
+            if fleet.scraper > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::SCRAPER, current_levels.scraper + fleet.scraper
+                    );
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::SPARROW, current_levels.sparrow + fleet.sparrow
+                    );
+            }
+            if fleet.frigate > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::FRIGATE, current_levels.frigate + fleet.frigate
+                    );
+            }
+            if fleet.armade > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::ARMADE, current_levels.armade + fleet.armade
+                    );
             }
         }
 
-        fn get_colony_ships(
-            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> Fleet {
-            Fleet {
-                carrier: self.colony_ships.read((planet_id, colony_id, Names::CARRIER)),
-                scraper: self.colony_ships.read((planet_id, colony_id, Names::SCRAPER)),
-                sparrow: self.colony_ships.read((planet_id, colony_id, Names::SPARROW)),
-                frigate: self.colony_ships.read((planet_id, colony_id, Names::FRIGATE)),
-                armade: self.colony_ships.read((planet_id, colony_id, Names::ARMADE)),
+        fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            let current_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
+            if fleet.carrier > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::CARRIER, current_levels.carrier - fleet.carrier
+                    );
             }
-        }
-
-        fn get_colony_defences(
-            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> Defences {
-            Defences {
-                celestia: self.colony_defences.read((planet_id, colony_id, Names::CELESTIA)),
-                blaster: self.colony_defences.read((planet_id, colony_id, Names::BLASTER)),
-                beam: self.colony_defences.read((planet_id, colony_id, Names::BEAM)),
-                astral: self.colony_defences.read((planet_id, colony_id, Names::ASTRAL)),
-                plasma: self.colony_defences.read((planet_id, colony_id, Names::PLASMA)),
+            if fleet.scraper > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::SCRAPER, current_levels.scraper - fleet.scraper
+                    );
+            }
+            if fleet.sparrow > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::SPARROW, current_levels.sparrow - fleet.sparrow
+                    );
+            }
+            if fleet.frigate > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::FRIGATE, current_levels.frigate - fleet.frigate
+                    );
+            }
+            if fleet.armade > 0 {
+                self
+                    .storage
+                    .read()
+                    .set_colony_ship(
+                        planet_id, colony_id, Names::ARMADE, current_levels.armade - fleet.armade
+                    );
             }
         }
     }
 
     #[generate_trait]
-    impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
-    > of InternalTrait<TContractState> {
-        fn reset_resource_timer(
-            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) {
-            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
-        }
-
-        fn update_defences_after_attack(
-            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, d: Defences
-        ) {
-            self.colony_defences.write((planet_id, colony_id, Names::CELESTIA), d.celestia);
-            self.colony_defences.write((planet_id, colony_id, Names::BLASTER), d.blaster);
-            self.colony_defences.write((planet_id, colony_id, Names::BEAM), d.beam);
-            self.colony_defences.write((planet_id, colony_id, Names::ASTRAL), d.astral);
-            self.colony_defences.write((planet_id, colony_id, Names::PLASMA), d.plasma);
-        }
-
+    impl InternalImpl of InternalTrait {
         fn upgrade_component(
-            ref self: ComponentState<TContractState>,
+            ref self: ContractState,
             planet_id: u32,
             colony_id: u8,
             component: ColonyUpgradeType,
             quantity: u8
         ) {
+            let current_levels = self.storage.read().get_colony_compounds(planet_id, colony_id);
             match component {
                 ColonyUpgradeType::SteelMine => {
-                    let current_level = self
-                        .colony_compounds
-                        .read((planet_id, colony_id, Names::STEEL));
                     self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::STEEL),
-                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        .storage
+                        .read()
+                        .set_colony_compound(
+                            planet_id,
+                            colony_id,
+                            Names::STEEL,
+                            current_levels.steel + quantity.try_into().expect('u32 into u8 failed')
                         );
                 },
                 ColonyUpgradeType::QuartzMine => {
-                    let current_level = self
-                        .colony_compounds
-                        .read((planet_id, colony_id, Names::QUARTZ));
                     self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::QUARTZ),
-                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        .storage
+                        .read()
+                        .set_colony_compound(
+                            planet_id,
+                            colony_id,
+                            Names::QUARTZ,
+                            current_levels.quartz + quantity.try_into().expect('u32 into u8 failed')
                         );
                 },
                 ColonyUpgradeType::TritiumMine => {
-                    let current_level = self
-                        .colony_compounds
-                        .read((planet_id, colony_id, Names::TRITIUM));
                     self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::TRITIUM),
-                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        .storage
+                        .read()
+                        .set_colony_compound(
+                            planet_id,
+                            colony_id,
+                            Names::TRITIUM,
+                            current_levels.tritium
+                                + quantity.try_into().expect('u32 into u8 failed')
                         );
                 },
                 ColonyUpgradeType::EnergyPlant => {
-                    let current_level = self
-                        .colony_compounds
-                        .read((planet_id, colony_id, Names::ENERGY_PLANT));
                     self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::ENERGY_PLANT),
-                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        .storage
+                        .read()
+                        .set_colony_compound(
+                            planet_id,
+                            colony_id,
+                            Names::ENERGY_PLANT,
+                            current_levels.energy + quantity.try_into().expect('u32 into u8 failed')
                         );
                 },
                 ColonyUpgradeType::Dockyard => {
-                    let current_level = self
-                        .colony_compounds
-                        .read((planet_id, colony_id, Names::DOCKYARD));
                     self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::DOCKYARD),
-                            current_level + quantity.try_into().expect('u32 into u8 failed')
+                        .storage
+                        .read()
+                        .set_colony_compound(
+                            planet_id,
+                            colony_id,
+                            Names::DOCKYARD,
+                            current_levels.dockyard
+                                + quantity.try_into().expect('u32 into u8 failed')
                         );
                 },
             }
         }
 
         fn build_component(
-            ref self: ComponentState<TContractState>,
+            ref self: ContractState,
             planet_id: u32,
             colony_id: u8,
             techs: TechLevels,
@@ -298,173 +320,160 @@ mod ColonyComponent {
             is_tesnet: bool,
         ) {
             let dockyard_level = self
-                .colony_compounds
-                .read((planet_id, colony_id, Names::DOCKYARD));
+                .storage
+                .read()
+                .get_colony_compounds(planet_id, colony_id)
+                .dockyard;
+            let ship_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
+            let defence_levels = self.storage.read().get_colony_defences(planet_id, colony_id);
             match component {
                 ColonyBuildType::Carrier => {
-                    Dockyard::carrier_requirements_check(dockyard_level, techs);
+                    dockyard::carrier_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::CARRIER),
-                            self.colony_ships.read((planet_id, colony_id, Names::CARRIER))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_ship(
+                            planet_id, colony_id, Names::CARRIER, ship_levels.carrier + quantity
                         );
                 },
                 ColonyBuildType::Scraper => {
-                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::SCRAPER),
-                            self.colony_ships.read((planet_id, colony_id, Names::SCRAPER))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_ship(
+                            planet_id, colony_id, Names::SCRAPER, ship_levels.scraper + quantity
                         );
                 },
                 ColonyBuildType::Sparrow => {
-                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::SPARROW),
-                            self.colony_ships.read((planet_id, colony_id, Names::SPARROW))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_ship(
+                            planet_id, colony_id, Names::SPARROW, ship_levels.sparrow + quantity
                         );
                 },
                 ColonyBuildType::Frigate => {
-                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::FRIGATE),
-                            self.colony_ships.read((planet_id, colony_id, Names::FRIGATE))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_ship(
+                            planet_id, colony_id, Names::FRIGATE, ship_levels.frigate + quantity
                         );
                 },
                 ColonyBuildType::Armade => {
-                    Dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::ARMADE),
-                            self.colony_ships.read((planet_id, colony_id, Names::ARMADE)) + quantity
+                        .storage
+                        .read()
+                        .set_colony_ship(
+                            planet_id, colony_id, Names::ARMADE, ship_levels.armade + quantity
                         );
                 },
                 ColonyBuildType::Celestia => {
-                    Dockyard::celestia_requirements_check(dockyard_level, techs);
+                    dockyard::celestia_requirements_check(dockyard_level, techs);
                     self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::CELESTIA),
-                            self.colony_defences.read((planet_id, colony_id, Names::CELESTIA))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_defence(
+                            planet_id,
+                            colony_id,
+                            Names::CELESTIA,
+                            defence_levels.celestia + quantity
                         );
                 },
                 ColonyBuildType::Blaster => {
-                    Defence::blaster_requirements_check(dockyard_level, techs);
+                    defence::blaster_requirements_check(dockyard_level, techs);
                     self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::BLASTER),
-                            self.colony_defences.read((planet_id, colony_id, Names::BLASTER))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_defence(
+                            planet_id, colony_id, Names::BLASTER, defence_levels.blaster + quantity
                         );
                 },
                 ColonyBuildType::Beam => {
-                    Defence::beam_requirements_check(dockyard_level, techs);
+                    defence::beam_requirements_check(dockyard_level, techs);
                     self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::BEAM),
-                            self.colony_defences.read((planet_id, colony_id, Names::BEAM))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_defence(
+                            planet_id, colony_id, Names::BEAM, defence_levels.beam + quantity
                         );
                 },
                 ColonyBuildType::Astral => {
-                    Defence::astral_launcher_requirements_check(dockyard_level, techs);
+                    defence::astral_launcher_requirements_check(dockyard_level, techs);
                     self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::ASTRAL),
-                            self.colony_defences.read((planet_id, colony_id, Names::ASTRAL))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_defence(
+                            planet_id, colony_id, Names::ASTRAL, defence_levels.astral + quantity
                         );
                 },
                 ColonyBuildType::Plasma => {
-                    Defence::plasma_beam_requirements_check(dockyard_level, techs);
+                    defence::plasma_beam_requirements_check(dockyard_level, techs);
                     self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::PLASMA),
-                            self.colony_defences.read((planet_id, colony_id, Names::PLASMA))
-                                + quantity
+                        .storage
+                        .read()
+                        .set_colony_defence(
+                            planet_id, colony_id, Names::PLASMA, defence_levels.plasma + quantity
                         );
                 },
-            }
-        }
-
-        fn get_planet_colony_count(self: @ComponentState<TContractState>, planet_id: u32) -> u8 {
-            self.planet_colonies_count.read(planet_id)
-        }
-
-
-        fn get_coumpounds_levels(
-            self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> CompoundsLevels {
-            CompoundsLevels {
-                steel: self.colony_compounds.read((planet_id, colony_id, Names::STEEL)),
-                quartz: self.colony_compounds.read((planet_id, colony_id, Names::QUARTZ)),
-                tritium: self.colony_compounds.read((planet_id, colony_id, Names::TRITIUM)),
-                energy: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
-                lab: 0,
-                dockyard: self.colony_compounds.read((planet_id, colony_id, Names::ENERGY_PLANT)),
             }
         }
 
         fn calculate_colony_production(
-            self: @ComponentState<TContractState>, uni_speed: u128, planet_id: u32, colony_id: u8
+            self: @ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
         ) -> ERC20s {
             let time_now = get_block_timestamp();
-            let last_collection_time = self.colony_resource_timer.read((planet_id, colony_id));
+            let last_collection_time = self
+                .storage
+                .read()
+                .get_colony_resource_timer(planet_id, colony_id);
             let time_elapsed = time_now - last_collection_time;
-            let mines_levels = self.get_coumpounds_levels(planet_id, colony_id);
-            let position = self.colony_position.read((planet_id, colony_id));
+            let mines_levels = self.storage.read().get_colony_compounds(planet_id, colony_id);
+            let position = self.storage.read().get_colony_position(planet_id, colony_id);
             let temp = self.calculate_avg_temperature(position.orbit);
-            let steel_available = Production::steel(mines_levels.steel)
+            let steel_available = compound::production::steel(mines_levels.steel)
                 * uni_speed
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let quartz_available = Production::quartz(mines_levels.quartz)
+            let quartz_available = compound::production::quartz(mines_levels.quartz)
                 * uni_speed
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let tritium_available = Production::tritium(mines_levels.tritium, temp, uni_speed)
+            let tritium_available = compound::production::tritium(
+                mines_levels.tritium, temp, uni_speed
+            )
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let colony_position = self.colony_position.read((planet_id, colony_id));
+            let colony_position = self.storage.read().get_colony_position(planet_id, colony_id);
             let celestia_production = self.position_to_celestia_production(colony_position.orbit);
             let celestia_production: u128 = self
+                .storage
+                .read()
                 .get_colony_defences(planet_id, colony_id)
                 .celestia
                 .into()
                 * celestia_production;
-            let energy_available = Production::energy(mines_levels.energy);
-            let energy_required = Consumption::base(mines_levels.steel)
-                + Consumption::base(mines_levels.quartz)
-                + Consumption::base(mines_levels.tritium);
+            let energy_available = compound::production::energy(mines_levels.energy);
+            let energy_required = compound::consumption::base(mines_levels.steel)
+                + compound::consumption::base(mines_levels.quartz)
+                + compound::consumption::base(mines_levels.tritium);
             let total_production = energy_available + celestia_production;
 
             if total_production < energy_required {
-                let _steel = Compounds::production_scaler(
+                let _steel = compound::production_scaler(
                     steel_available, total_production, energy_required
                 );
-                let _quartz = Compounds::production_scaler(
+                let _quartz = compound::production_scaler(
                     quartz_available, total_production, energy_required
                 );
-                let _tritium = Compounds::production_scaler(
+                let _tritium = compound::production_scaler(
                     tritium_available, total_production, energy_required
                 );
 
@@ -474,7 +483,7 @@ mod ColonyComponent {
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
         }
 
-        fn calculate_avg_temperature(self: @ComponentState<TContractState>, orbit: u8) -> u32 {
+        fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u32 {
             if orbit == 1 {
                 return 230;
             }
@@ -506,91 +515,7 @@ mod ColonyComponent {
             }
         }
 
-        fn fleet_arrives(
-            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, fleet: Fleet
-        ) {
-            let fleet_levels = self.get_colony_ships(planet_id, colony_id);
-            if fleet.carrier > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier
-                    );
-            }
-            if fleet.scraper > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper
-                    );
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow
-                    );
-            }
-            if fleet.frigate > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate
-                    );
-            }
-            if fleet.armade > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::ARMADE), fleet_levels.armade + fleet.armade
-                    );
-            }
-        }
-
-        fn fleet_leaves(
-            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, fleet: Fleet
-        ) {
-            let fleet_levels = self.get_colony_ships(planet_id, colony_id);
-            if fleet.carrier > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier
-                    );
-            }
-            if fleet.scraper > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper
-                    );
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow
-                    );
-            }
-            if fleet.frigate > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate
-                    );
-            }
-            if fleet.armade > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::ARMADE), fleet_levels.armade - fleet.armade
-                    );
-            }
-        }
-
-        fn position_to_celestia_production(
-            self: @ComponentState<TContractState>, orbit: u8
-        ) -> u128 {
+        fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u128 {
             if orbit == 1 {
                 return 48;
             }

@@ -14,20 +14,44 @@ mod colony {
     mod positions;
 }
 
-mod compounds {
-    mod compounds;
+mod component {
+    mod shared;
+}
+
+mod compound {
+    mod compound;
+    mod library;
+}
+
+mod defence {
+    mod defence;
+    mod library;
+}
+
+mod dockyard {
+    mod dockyard;
+    mod library;
+}
+
+mod fleet_movements {
+    mod fleet_movements;
+    mod library;
 }
 
 mod libraries {
     mod auction;
-    mod compounds;
-    mod defences;
-    mod dockyard;
-    mod fleet;
     mod math;
     mod positions;
-    mod research;
     mod types;
+}
+
+mod storage {
+    mod storage;
+}
+
+mod tech {
+    mod library;
+    mod tech;
 }
 
 mod token {
@@ -41,9 +65,5 @@ mod token {
         mod erc721_ng;
         mod interface;
     }
-}
-
-mod storage {
-    mod storage;
 }
 
