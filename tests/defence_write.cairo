@@ -2,9 +2,10 @@ use core::testing::get_available_gas;
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost,
     UpgradeType, BuildType
 };
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -31,7 +32,7 @@ fn test_blaster_build() {
     dsp.nogame.process_compound_upgrade(UpgradeType::Dockyard(()), 1);
 
     dsp.nogame.process_defence_build(BuildType::Blaster(()), 10);
-    let def = dsp.nogame.get_defences_levels(1);
+    let def = dsp.storage.get_defences_levels(1);
     assert(def.blaster == 10, 'wrong blaster level');
 }
 
@@ -59,7 +60,7 @@ fn test_beam_build() {
     init_storage(dsp, 1);
 
     dsp.nogame.process_defence_build(BuildType::Beam(()), 10);
-    let def = dsp.nogame.get_defences_levels(1);
+    let def = dsp.storage.get_defences_levels(1);
     assert(def.beam == 10, 'wrong beam level');
 }
 
@@ -129,7 +130,7 @@ fn test_plasma_build() {
     init_storage(dsp, 1);
 
     dsp.nogame.process_defence_build(BuildType::Plasma(()), 1);
-    let def = dsp.nogame.get_defences_levels(1);
+    let def = dsp.storage.get_defences_levels(1);
     assert(def.plasma == 1, 'wrong plasma level');
 }
 

@@ -179,7 +179,6 @@ struct TechsCost {
     combustion: ERC20s,
     thrust: ERC20s,
     warp: ERC20s,
-// exocraft: ERC20s,
 }
 
 #[derive(Copy, Default, Drop, PartialEq, Serde)]
@@ -202,7 +201,7 @@ struct ShipsCost {
 }
 
 #[derive(Copy, Default, PartialEq, Drop, Serde)]
-struct DefencesLevels {
+struct Defences {
     celestia: u32,
     blaster: u32,
     beam: u32,
@@ -210,8 +209,8 @@ struct DefencesLevels {
     plasma: u32
 }
 
-impl DefencesLevelsPrint of PrintTrait<DefencesLevels> {
-    fn print(self: @DefencesLevels) {
+impl DefencesPrint of PrintTrait<Defences> {
+    fn print(self: @Defences) {
         self.celestia.print();
         self.blaster.print();
         self.beam.print();
@@ -220,18 +219,18 @@ impl DefencesLevelsPrint of PrintTrait<DefencesLevels> {
     }
 }
 
-impl DefencesLevelsZeroable of Zeroable<DefencesLevels> {
-    fn zero() -> DefencesLevels {
-        DefencesLevels { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0, }
+impl DefencesZeroable of Zeroable<Defences> {
+    fn zero() -> Defences {
+        Defences { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0, }
     }
-    fn is_zero(self: DefencesLevels) -> bool {
+    fn is_zero(self: Defences) -> bool {
         self.celestia == 0
             && self.blaster == 0
             && self.beam == 0
             && self.astral == 0
             && self.plasma == 0
     }
-    fn is_non_zero(self: DefencesLevels) -> bool {
+    fn is_non_zero(self: Defences) -> bool {
         !self.is_zero()
     }
 }

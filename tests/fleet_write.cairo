@@ -3,7 +3,7 @@ use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::game::main::NoGame;
 use nogame::libraries::fleet;
 use nogame::libraries::types::{
-    Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels, BuildType, UpgradeType, Names,
+    Fleet, Unit, TechLevels, PlanetPosition, ERC20s, Defences, BuildType, UpgradeType, Names,
     MissionCategory
 };
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
@@ -408,7 +408,7 @@ fn test_attack_planet() {
     dsp.nogame.generate_planet();
     init_storage(dsp, 2);
     dsp.nogame.process_ship_build(BuildType::Celestia(()), 100);
-    let defences_before = dsp.nogame.get_defences_levels(2);
+    let defences_before = dsp.storage.get_defences_levels(2);
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Armade(()), 10);
@@ -430,7 +430,7 @@ fn test_attack_planet() {
 
     let fleet_a = dsp.storage.get_ships_levels(1);
     let fleet_b = dsp.storage.get_ships_levels(2);
-    let defences = dsp.nogame.get_defences_levels(2);
+    let defences = dsp.storage.get_defences_levels(2);
 }
 
 #[test]

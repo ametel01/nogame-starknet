@@ -8,7 +8,7 @@
 
 // use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 // use nogame::libraries::types::{
-//     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+//     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
 // };
 // use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 

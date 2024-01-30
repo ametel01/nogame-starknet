@@ -1,6 +1,6 @@
 use nogame::libraries::types::{
     PlanetPosition, ColonyUpgradeType, ERC20s, ColonyBuildType, TechLevels, CompoundsLevels, Fleet,
-    DefencesLevels
+    Defences
 };
 
 #[starknet::interface]
@@ -31,7 +31,7 @@ trait IColonyView<TState> {
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> Fleet;
-    fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> DefencesLevels;
+    fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
 }
 
 mod ResourceName {
@@ -44,11 +44,11 @@ mod ResourceName {
 mod ColonyComponent {
     use nogame::colony::positions;
     use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
-    use nogame::libraries::defences::{Defences};
+    use nogame::libraries::defences::{Defence};
     use nogame::libraries::dockyard::{Dockyard};
     use nogame::libraries::types::{
         PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
-        TechLevels, ShipsLevels, DefencesLevels, Fleet
+        TechLevels, ShipsLevels, Defences, Fleet
     };
 
     use snforge_std::PrintTrait;
@@ -191,8 +191,8 @@ mod ColonyComponent {
 
         fn get_colony_defences(
             self: @ComponentState<TContractState>, planet_id: u32, colony_id: u8
-        ) -> DefencesLevels {
-            DefencesLevels {
+        ) -> Defences {
+            Defences {
                 celestia: self.colony_defences.read((planet_id, colony_id, Names::CELESTIA)),
                 blaster: self.colony_defences.read((planet_id, colony_id, Names::BLASTER)),
                 beam: self.colony_defences.read((planet_id, colony_id, Names::BEAM)),
@@ -213,10 +213,7 @@ mod ColonyComponent {
         }
 
         fn update_defences_after_attack(
-            ref self: ComponentState<TContractState>,
-            planet_id: u32,
-            colony_id: u8,
-            d: DefencesLevels
+            ref self: ComponentState<TContractState>, planet_id: u32, colony_id: u8, d: Defences
         ) {
             self.colony_defences.write((planet_id, colony_id, Names::CELESTIA), d.celestia);
             self.colony_defences.write((planet_id, colony_id, Names::BLASTER), d.blaster);
@@ -364,7 +361,7 @@ mod ColonyComponent {
                         );
                 },
                 ColonyBuildType::Blaster => {
-                    Defences::blaster_requirements_check(dockyard_level, techs);
+                    Defence::blaster_requirements_check(dockyard_level, techs);
                     self
                         .colony_defences
                         .write(
@@ -374,7 +371,7 @@ mod ColonyComponent {
                         );
                 },
                 ColonyBuildType::Beam => {
-                    Defences::beam_requirements_check(dockyard_level, techs);
+                    Defence::beam_requirements_check(dockyard_level, techs);
                     self
                         .colony_defences
                         .write(
@@ -384,7 +381,7 @@ mod ColonyComponent {
                         );
                 },
                 ColonyBuildType::Astral => {
-                    Defences::astral_launcher_requirements_check(dockyard_level, techs);
+                    Defence::astral_launcher_requirements_check(dockyard_level, techs);
                     self
                         .colony_defences
                         .write(
@@ -394,7 +391,7 @@ mod ColonyComponent {
                         );
                 },
                 ColonyBuildType::Plasma => {
-                    Defences::plasma_beam_requirements_check(dockyard_level, techs);
+                    Defence::plasma_beam_requirements_check(dockyard_level, techs);
                     self
                         .colony_defences
                         .write(

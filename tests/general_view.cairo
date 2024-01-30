@@ -1,6 +1,6 @@
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost,
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost,
     Fleet, BuildType, MissionCategory
 };
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};

@@ -1,5 +1,6 @@
 use nogame::libraries::types::{
-    Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels, TechLevels, Fleet
+    Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels, TechLevels, Fleet,
+    Defences
 };
 use starknet::ContractAddress;
 
@@ -32,6 +33,7 @@ trait IStorage<TState> {
     fn set_compound_level(ref self: TState, planet_id: u32, compound_id: felt252, level: u8,);
     fn set_tech_level(ref self: TState, planet_id: u32, tech_id: felt252, level: u8,);
     fn set_ship_level(ref self: TState, planet_id: u32, ship_id: felt252, level: u32,);
+    fn set_defence_level(ref self: TState, planet_id: u32, defence_id: felt252, level: u32,);
 
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_number_of_planets(self: @TState) -> u32;
@@ -49,6 +51,7 @@ trait IStorage<TState> {
     fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
+    fn get_defences_levels(self: @TState, planet_id: u32) -> Defences;
 }
 
 #[starknet::contract]
@@ -59,7 +62,7 @@ mod Storage {
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use super::{
         ContractAddress, Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels,
-        Fleet, TechLevels
+        Fleet, TechLevels, Defences
     };
 
     #[storage]
@@ -186,6 +189,12 @@ mod Storage {
             self.ships_level.write((planet_id, ship_id), level);
         }
 
+        fn set_defence_level(
+            ref self: ContractState, planet_id: u32, defence_id: felt252, level: u32,
+        ) {
+            self.defences_level.write((planet_id, defence_id), level);
+        }
+
         fn get_token_addresses(self: @ContractState) -> Tokens {
             Tokens {
                 erc721: self.erc721.read(),
@@ -280,6 +289,16 @@ mod Storage {
                 sparrow: self.ships_level.read((planet_id, Names::SPARROW)),
                 frigate: self.ships_level.read((planet_id, Names::FRIGATE)),
                 armade: self.ships_level.read((planet_id, Names::ARMADE)),
+            }
+        }
+
+        fn get_defences_levels(self: @ContractState, planet_id: u32) -> Defences {
+            Defences {
+                celestia: self.defences_level.read((planet_id, Names::CELESTIA)),
+                blaster: self.defences_level.read((planet_id, Names::BLASTER)),
+                beam: self.defences_level.read((planet_id, Names::BEAM)),
+                astral: self.defences_level.read((planet_id, Names::ASTRAL)),
+                plasma: self.defences_level.read((planet_id, Names::PLASMA)),
             }
         }
     }

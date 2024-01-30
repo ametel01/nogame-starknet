@@ -1,8 +1,6 @@
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::fleet;
-use nogame::libraries::types::{
-    Fleet, Unit, TechLevels, PlanetPosition, ERC20s, DefencesLevels, Debris
-};
+use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, Defences, Debris};
 
 use snforge_std::{declare, ContractClassTrait, PrintTrait, start_prank, start_warp};
 use starknet::info::get_block_timestamp;
@@ -24,7 +22,7 @@ fn test_war_basic() {
     // defenders.sparrow = 100;
     // defenders.carrier = 0;
     // defenders.frigate = 4;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     // defences.blaster = 20;
     // defences.beam = 1;
     // defences.astral = 10;    
@@ -37,7 +35,7 @@ fn test_war_sparrow_vs_carrier() {
     attackers.sparrow = 1;
     let mut defenders: Fleet = Default::default();
     defenders.carrier = 5;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
@@ -49,7 +47,7 @@ fn test_war_frigate_vs_carrier() {
     attackers.frigate = 1;
     let mut defenders: Fleet = Default::default();
     defenders.carrier = 45;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
@@ -61,7 +59,7 @@ fn test_war_armade_vs_carrier() {
     attackers.armade = 1;
     let mut defenders: Fleet = Default::default();
     defenders.carrier = 152;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
@@ -73,7 +71,7 @@ fn test_war_armade_vs_sparrow() {
     attackers.armade = 1;
     let mut defenders: Fleet = Default::default();
     defenders.sparrow = 30;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
@@ -84,7 +82,7 @@ fn test_war_sparrow_vs_blaster() {
     let mut attackers: Fleet = Default::default();
     attackers.sparrow = 1;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.blaster = 2;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -96,7 +94,7 @@ fn test_war_sparrow_vs_beam() {
     let mut attackers: Fleet = Default::default();
     attackers.sparrow = 3;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.beam = 1;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -108,7 +106,7 @@ fn test_war_sparrow_vs_astral() {
     let mut attackers: Fleet = Default::default();
     attackers.sparrow = 20;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.astral = 1;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -120,7 +118,7 @@ fn test_war_sparrow_vs_plasma() {
     let mut attackers: Fleet = Default::default();
     attackers.sparrow = 100;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.plasma = 1;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -132,7 +130,7 @@ fn test_war_frigate_vs_blaster() {
     let mut attackers: Fleet = Default::default();
     attackers.frigate = 1;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.blaster = 19;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -144,7 +142,7 @@ fn test_war_frigate_vs_beam() {
     let mut attackers: Fleet = Default::default();
     attackers.frigate = 1;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.beam = 3;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -156,7 +154,7 @@ fn test_war_frigate_vs_plasma() {
     let mut attackers: Fleet = Default::default();
     attackers.frigate = 5;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.plasma = 1;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -169,7 +167,7 @@ fn test_war_armade_vs_frigate() {
     attackers.armade = 1;
     let mut defenders: Fleet = Default::default();
     defenders.frigate = 4;
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
     );
@@ -179,7 +177,7 @@ fn test_war_armade_vs_plasma() {
     let mut attackers: Fleet = Default::default();
     attackers.armade = 5;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.plasma = 1;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()
@@ -191,7 +189,7 @@ fn test_war_armade_vs_astral() {
     let mut attackers: Fleet = Default::default();
     attackers.armade = 1;
     let mut defenders: Fleet = Default::default();
-    let mut defences: DefencesLevels = Default::default();
+    let mut defences: Defences = Default::default();
     defences.astral = 10;
     let (res1, res2, def) = fleet::war(
         attackers, Default::default(), defenders, defences, Default::default()

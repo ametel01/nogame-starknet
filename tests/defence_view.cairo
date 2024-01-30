@@ -1,8 +1,9 @@
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::game::main::NoGame;
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
 };
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::PrintTrait;
 
 use snforge_std::{start_prank, start_warp, CheatTarget};
@@ -18,7 +19,7 @@ fn test_get_defences_levels() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     dsp.nogame.generate_planet();
 
-    let def = dsp.nogame.get_defences_levels(1);
+    let def = dsp.storage.get_defences_levels(1);
     assert(def.blaster == 0, 'wrong blaster');
     assert(def.beam == 0, 'wrong beam');
     assert(def.astral == 0, 'wrong astral');

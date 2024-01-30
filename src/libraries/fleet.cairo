@@ -1,5 +1,5 @@
 use nogame::libraries::types::{
-    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, DefencesLevels,
+    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, Defences,
 };
 
 use nogame::libraries::{math, dockyard::Dockyard};
@@ -63,9 +63,9 @@ fn war(
     mut attackers: Fleet,
     a_techs: TechLevels,
     mut defenders: Fleet,
-    defences: DefencesLevels,
+    defences: Defences,
     d_techs: TechLevels
-) -> (Fleet, Fleet, DefencesLevels) {
+) -> (Fleet, Fleet, Defences) {
     let mut attackers = build_ships_array(attackers, Zeroable::zero(), a_techs);
     let mut defenders = build_ships_array(defenders, defences, d_techs);
     loop {
@@ -120,9 +120,9 @@ fn rapid_fire(ref unit1: Unit, ref unit2: Unit) {
     }
 }
 
-fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, DefencesLevels) {
+fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, Defences) {
     let mut fleet: Fleet = Default::default();
-    let mut d: DefencesLevels = Default::default();
+    let mut d: Defences = Default::default();
     loop {
         if a.len().is_zero() {
             break;
@@ -193,9 +193,7 @@ fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, Defences
     (fleet, d)
 }
 
-fn build_ships_array(
-    mut fleet: Fleet, mut defences: DefencesLevels, techs: TechLevels
-) -> Array<Unit> {
+fn build_ships_array(mut fleet: Fleet, mut defences: Defences, techs: TechLevels) -> Array<Unit> {
     let mut array: Array<Unit> = array![];
 
     if defences.plasma > 0 {
@@ -554,7 +552,7 @@ fn decay_fleet(fleet: Fleet, decay_amount: u32) -> Fleet {
     res
 }
 
-fn calculate_number_of_ships(fleet: Fleet, defences: DefencesLevels) -> u32 {
+fn calculate_number_of_ships(fleet: Fleet, defences: Defences) -> u32 {
     fleet.carrier
         + fleet.scraper
         + fleet.sparrow

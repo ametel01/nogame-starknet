@@ -9,13 +9,13 @@ mod NoGame {
 
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
-    use nogame::libraries::defences::Defences;
+    use nogame::libraries::defences::Defence;
     use nogame::libraries::dockyard::Dockyard;
     use nogame::libraries::fleet;
     use nogame::libraries::positions;
     use nogame::libraries::research::Lab;
     use nogame::libraries::types::{
-        ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
+        ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, Defences, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
         PlanetPosition, Debris, Mission, IncomingMission, Fleet, MAX_NUMBER_OF_PLANETS, _0_05,
         PRICE, DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
@@ -60,7 +60,6 @@ mod NoGame {
     #[storage]
     struct Storage {
         storage: IStorageDispatcher,
-        defences_level: LegacyMap::<(u32, felt252), u32>,
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
         hostile_missions: LegacyMap<(u32, u32), IncomingMission>,
@@ -158,8 +157,8 @@ mod NoGame {
         defender_position: PlanetPosition,
         defender_initial_fleet: Fleet,
         defender_fleet_loss: Fleet,
-        initial_defences: DefencesLevels,
-        defences_loss: DefencesLevels,
+        initial_defences: Defences,
+        defences_loss: Defences,
         loot: ERC20s,
         debris: Debris,
     }
@@ -764,22 +763,13 @@ mod NoGame {
         }
 
         fn get_celestia_available(self: @ContractState, planet_id: u32) -> u32 {
-            self.defences_level.read((planet_id, Names::CELESTIA))
+            self.storage.read().get_defences_levels(planet_id).celestia
         }
 
-        fn get_defences_levels(self: @ContractState, planet_id: u32) -> DefencesLevels {
-            DefencesLevels {
-                celestia: self.defences_level.read((planet_id, Names::CELESTIA)),
-                blaster: self.defences_level.read((planet_id, Names::BLASTER)),
-                beam: self.defences_level.read((planet_id, Names::BEAM)),
-                astral: self.defences_level.read((planet_id, Names::ASTRAL)),
-                plasma: self.defences_level.read((planet_id, Names::PLASMA)),
-            }
-        }
 
         fn get_colony_defences_levels(
             self: @ContractState, planet_id: u32, colony_id: u8
-        ) -> DefencesLevels {
+        ) -> Defences {
             self.colony.get_colony_defences(planet_id, colony_id)
         }
 
@@ -832,10 +822,7 @@ mod NoGame {
         }
 
         fn simulate_attack(
-            self: @ContractState,
-            attacker_fleet: Fleet,
-            defender_fleet: Fleet,
-            defences: DefencesLevels
+            self: @ContractState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences
         ) -> SimulationResult {
             let techs: TechLevels = Default::default();
             let (f1, f2, d) = fleet::war(attacker_fleet, techs, defender_fleet, defences, techs);
@@ -898,9 +885,9 @@ mod NoGame {
 
         fn get_fleet_and_defences_before_battle(
             self: @ContractState, planet_id: u32
-        ) -> (Fleet, DefencesLevels, TechLevels, u32) {
+        ) -> (Fleet, Defences, TechLevels, u32) {
             let mut fleet: Fleet = Default::default();
-            let mut defences: DefencesLevels = Default::default();
+            let mut defences: Defences = Default::default();
             let mut techs: TechLevels = Default::default();
             let mut celestia = 0;
             if planet_id > 500 {
@@ -914,7 +901,7 @@ mod NoGame {
                 celestia = defences.celestia;
             } else {
                 fleet = self.storage.read().get_ships_levels(planet_id);
-                defences = self.get_defences_levels(planet_id);
+                defences = self.storage.read().get_defences_levels(planet_id);
                 techs = self.storage.read().get_tech_levels(planet_id);
                 celestia = self.get_celestia_available(planet_id);
             }
@@ -1231,14 +1218,12 @@ mod NoGame {
             self.storage.read().set_ship_level(planet_id, Names::ARMADE, f.armade);
         }
 
-        fn update_defences_after_attack(
-            ref self: ContractState, planet_id: u32, d: DefencesLevels
-        ) {
-            self.defences_level.write((planet_id, Names::CELESTIA), d.celestia);
-            self.defences_level.write((planet_id, Names::BLASTER), d.blaster);
-            self.defences_level.write((planet_id, Names::BEAM), d.beam);
-            self.defences_level.write((planet_id, Names::ASTRAL), d.astral);
-            self.defences_level.write((planet_id, Names::PLASMA), d.plasma);
+        fn update_defences_after_attack(ref self: ContractState, planet_id: u32, d: Defences) {
+            self.storage.read().set_defence_level(planet_id, Names::CELESTIA, d.celestia);
+            self.storage.read().set_defence_level(planet_id, Names::BLASTER, d.blaster);
+            self.storage.read().set_defence_level(planet_id, Names::BEAM, d.beam);
+            self.storage.read().set_defence_level(planet_id, Names::ASTRAL, d.astral);
+            self.storage.read().set_defence_level(planet_id, Names::PLASMA, d.plasma);
         }
 
         fn add_active_mission(
@@ -1372,10 +1357,8 @@ mod NoGame {
             }
         }
 
-        fn calculate_defences_loss(
-            self: @ContractState, a: DefencesLevels, b: DefencesLevels
-        ) -> DefencesLevels {
-            DefencesLevels {
+        fn calculate_defences_loss(self: @ContractState, a: Defences, b: Defences) -> Defences {
+            Defences {
                 celestia: a.celestia - b.celestia,
                 blaster: a.blaster - b.blaster,
                 beam: a.beam - b.beam,
@@ -1395,8 +1378,8 @@ mod NoGame {
             defender_position: PlanetPosition,
             defender_initial_fleet: Fleet,
             defender_fleet_loss: Fleet,
-            initial_defences: DefencesLevels,
-            defences_loss: DefencesLevels,
+            initial_defences: Defences,
+            defences_loss: Defences,
             loot: ERC20s,
             debris: Debris
         ) {
@@ -1428,7 +1411,7 @@ mod NoGame {
         }
 
         fn update_points_after_attack(
-            ref self: ContractState, planet_id: u32, fleet: Fleet, defences: DefencesLevels
+            ref self: ContractState, planet_id: u32, fleet: Fleet, defences: Defences
         ) {
             if fleet.is_zero() && defences.is_zero() {
                 return;
@@ -1793,6 +1776,7 @@ mod NoGame {
             let is_testnet = self.storage.read().get_is_testnet();
             let techs = self.storage.read().get_tech_levels(planet_id);
             let ships_levels = self.storage.read().get_ships_levels(planet_id);
+            let defences_levels = self.storage.read().get_defences_levels(planet_id);
             match component {
                 BuildType::Carrier => {
                     Dockyard::carrier_requirements_check(dockyard_level, techs);
@@ -1822,10 +1806,10 @@ mod NoGame {
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
-                        .defences_level
-                        .write(
-                            (planet_id, Names::CELESTIA),
-                            self.defences_level.read((planet_id, Names::CELESTIA)) + quantity
+                        .storage
+                        .read()
+                        .set_defence_level(
+                            planet_id, Names::CELESTIA, defences_levels.celestia + quantity
                         );
                     return cost;
                 },
@@ -1865,62 +1849,60 @@ mod NoGame {
                     return cost;
                 },
                 BuildType::Blaster => {
-                    Defences::blaster_requirements_check(dockyard_level, techs);
-                    let cost = Defences::get_defences_cost(
+                    Defence::blaster_requirements_check(dockyard_level, techs);
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().blaster
                     );
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
-                        .defences_level
-                        .write(
-                            (planet_id, Names::BLASTER),
-                            self.defences_level.read((planet_id, Names::BLASTER)) + quantity
+                        .storage
+                        .read()
+                        .set_defence_level(
+                            planet_id, Names::BLASTER, defences_levels.blaster + quantity
                         );
                     return cost;
                 },
                 BuildType::Beam => {
-                    Defences::beam_requirements_check(dockyard_level, techs);
-                    let cost = Defences::get_defences_cost(quantity, self.get_defences_cost().beam);
+                    Defence::beam_requirements_check(dockyard_level, techs);
+                    let cost = Defence::get_defences_cost(quantity, self.get_defences_cost().beam);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
-                        .defences_level
-                        .write(
-                            (planet_id, Names::BEAM),
-                            self.defences_level.read((planet_id, Names::BEAM)) + quantity
-                        );
+                        .storage
+                        .read()
+                        .set_defence_level(planet_id, Names::BEAM, defences_levels.beam + quantity);
                     return cost;
                 },
                 BuildType::Astral => {
                     assert!(!is_testnet, "NoGame: Astral not available on testnet realease");
-                    Defences::astral_launcher_requirements_check(dockyard_level, techs);
-                    let cost = Defences::get_defences_cost(
+                    Defence::astral_launcher_requirements_check(dockyard_level, techs);
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().astral
                     );
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
-                        .defences_level
-                        .write(
-                            (planet_id, Names::ASTRAL),
-                            self.defences_level.read((planet_id, Names::ASTRAL)) + quantity
+                        .storage
+                        .read()
+                        .set_defence_level(
+                            planet_id, Names::ASTRAL, defences_levels.astral + quantity
                         );
                     return cost;
                 },
                 BuildType::Plasma => {
                     assert!(!is_testnet, "NoGame: Plasma Cannon not available on testnet realease");
-                    Defences::plasma_beam_requirements_check(dockyard_level, techs);
-                    let cost = Defences::get_defences_cost(
+                    Defence::plasma_beam_requirements_check(dockyard_level, techs);
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().plasma
                     );
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
-                        .defences_level
-                        .write(
-                            (planet_id, Names::PLASMA),
-                            self.defences_level.read((planet_id, Names::PLASMA)) + quantity
+                        .storage
+                        .read()
+                        .set_defence_level(
+                            planet_id, Names::PLASMA, defences_levels.plasma + quantity
                         );
                     return cost;
                 },
@@ -2115,7 +2097,7 @@ mod NoGame {
                     return cost;
                 },
                 ColonyBuildType::Blaster => {
-                    let cost = Defences::get_defences_cost(
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().blaster
                     );
                     self.check_enough_resources(caller, cost);
@@ -2133,7 +2115,7 @@ mod NoGame {
                     return cost;
                 },
                 ColonyBuildType::Beam => {
-                    let cost = Defences::get_defences_cost(quantity, self.get_defences_cost().beam);
+                    let cost = Defence::get_defences_cost(quantity, self.get_defences_cost().beam);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
                     self
@@ -2144,7 +2126,7 @@ mod NoGame {
                     return cost;
                 },
                 ColonyBuildType::Astral => {
-                    let cost = Defences::get_defences_cost(
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().astral
                     );
                     self.check_enough_resources(caller, cost);
@@ -2162,7 +2144,7 @@ mod NoGame {
                     return cost;
                 },
                 ColonyBuildType::Plasma => {
-                    let cost = Defences::get_defences_cost(
+                    let cost = Defence::get_defences_cost(
                         quantity, self.get_defences_cost().plasma
                     );
                     self.check_enough_resources(caller, cost);

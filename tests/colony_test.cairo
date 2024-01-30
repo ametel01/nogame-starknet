@@ -1,7 +1,7 @@
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
-    ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, DefencesLevels,
-    CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris, MissionCategory
+    ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, Defences, CompoundsLevels,
+    DAY, PlanetPosition, ShipsLevels, ERC20s, Debris, MissionCategory
 };
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
@@ -202,7 +202,7 @@ fn process_colony_unit_build_defences_test() {
     dsp.nogame.generate_planet();
     init_storage(dsp, 1);
 
-    let mut expected: DefencesLevels = Default::default();
+    let mut expected: Defences = Default::default();
     expected.blaster = 1;
     expected.beam = 1;
     expected.astral = 1;
