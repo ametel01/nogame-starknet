@@ -35,7 +35,6 @@ trait INoGame<TState> {
     fn get_planet_points(self: @TState, planet_id: u32) -> u128;
     fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
-    fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
     fn get_celestia_available(self: @TState, planet_id: u32) -> u32;
     fn get_defences_levels(self: @TState, planet_id: u32) -> DefencesLevels;
     fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;

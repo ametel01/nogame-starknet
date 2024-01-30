@@ -122,7 +122,7 @@ fn test_send_fleet_from_colony() {
     assert(mission.category == MissionCategory::TRANSPORT, 'wrong mission category');
     start_warp(CheatTarget::One(dsp.nogame.contract_address), mission.time_arrival + 1);
     dsp.nogame.dock_fleet(1);
-    assert(dsp.nogame.get_ships_levels(1).carrier == 1, 'wrong ships levels');
+    assert(dsp.storage.get_ships_levels(1).carrier == 1, 'wrong ships levels');
     assert(dsp.nogame.get_colony_ships_levels(1, 1).carrier == 0, 'wrong colony ships levels');
 }
 

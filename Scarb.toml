@@ -13,6 +13,9 @@ starknet = "2.4.4"
 
 [dev-dependencies]
 
+[tool.fmt]
+sort-module-level-items = true
+
 [scripts]
 test = "snforge test"
 declare = "sh scripts/sepolia/declare.sh"

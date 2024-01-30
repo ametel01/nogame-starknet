@@ -47,11 +47,11 @@ fn test_send_fleet_success() {
     fleet.frigate = 1;
     fleet.armade = 1;
 
-    assert(dsp.nogame.get_ships_levels(1).carrier == 1, 'wrong ships before');
-    assert(dsp.nogame.get_ships_levels(1).scraper == 1, 'wrong ships before');
-    assert(dsp.nogame.get_ships_levels(1).sparrow == 1, 'wrong ships before');
-    assert(dsp.nogame.get_ships_levels(1).frigate == 1, 'wrong ships before');
-    assert(dsp.nogame.get_ships_levels(1).armade == 1, 'wrong ships before');
+    assert(dsp.storage.get_ships_levels(1).carrier == 1, 'wrong ships before');
+    assert(dsp.storage.get_ships_levels(1).scraper == 1, 'wrong ships before');
+    assert(dsp.storage.get_ships_levels(1).sparrow == 1, 'wrong ships before');
+    assert(dsp.storage.get_ships_levels(1).frigate == 1, 'wrong ships before');
+    assert(dsp.storage.get_ships_levels(1).armade == 1, 'wrong ships before');
 
     let tritium_before = dsp.nogame.get_spendable_resources(1).tritium;
 
@@ -59,11 +59,11 @@ fn test_send_fleet_success() {
 
     let tritium_after = dsp.nogame.get_spendable_resources(1).tritium;
 
-    assert(dsp.nogame.get_ships_levels(2).carrier == 0, 'wrong ships after');
-    assert(dsp.nogame.get_ships_levels(2).scraper == 0, 'wrong ships after');
-    assert(dsp.nogame.get_ships_levels(2).sparrow == 0, 'wrong ships after');
-    assert(dsp.nogame.get_ships_levels(2).frigate == 0, 'wrong ships after');
-    assert(dsp.nogame.get_ships_levels(2).armade == 0, 'wrong ships after');
+    assert(dsp.storage.get_ships_levels(2).carrier == 0, 'wrong ships after');
+    assert(dsp.storage.get_ships_levels(2).scraper == 0, 'wrong ships after');
+    assert(dsp.storage.get_ships_levels(2).sparrow == 0, 'wrong ships after');
+    assert(dsp.storage.get_ships_levels(2).frigate == 0, 'wrong ships after');
+    assert(dsp.storage.get_ships_levels(2).armade == 0, 'wrong ships after');
 
     let p1_position = dsp.storage.get_planet_position(1);
     let distance = fleet::get_distance(p1_position, p2_position);
@@ -237,7 +237,7 @@ fn test_collect_debris_success() {
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.nogame.get_spendable_resources(1);
     dsp.nogame.collect_debris(1);
-    let scraper_back = dsp.nogame.get_ships_levels(1).scraper;
+    let scraper_back = dsp.storage.get_ships_levels(1).scraper;
     assert!(scraper_back == 1, "scraper back are {}, it should be 1", scraper_back);
     let resources_after = dsp.nogame.get_spendable_resources(1);
     assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
@@ -285,7 +285,7 @@ fn test_collect_debris_own_planet() {
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.nogame.get_spendable_resources(2);
     dsp.nogame.collect_debris(1);
-    assert(dsp.nogame.get_ships_levels(2).scraper == 1, 'wrong scraper back');
+    assert(dsp.storage.get_ships_levels(2).scraper == 1, 'wrong scraper back');
     let resources_after = dsp.nogame.get_spendable_resources(2);
     assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
     assert(
@@ -332,7 +332,7 @@ fn test_collect_debris_fleet_decay() {
 
     dsp.nogame.collect_debris(1);
 
-    assert(dsp.nogame.get_ships_levels(1).scraper == 5, 'wrong scraper back');
+    assert(dsp.storage.get_ships_levels(1).scraper == 5, 'wrong scraper back');
 
     let resources_after = dsp.nogame.get_spendable_resources(1);
     assert(resources_after.steel == resources_before.steel + 50000, 'wrong steel collected');
@@ -413,7 +413,7 @@ fn test_attack_planet() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Armade(()), 10);
-    let fleetA_before = dsp.nogame.get_ships_levels(1);
+    let fleetA_before = dsp.storage.get_ships_levels(1);
 
     let p2_position = dsp.storage.get_planet_position(2);
     let mut fleet_a: Fleet = Default::default();
@@ -429,8 +429,8 @@ fn test_attack_planet() {
     dsp.nogame.attack_planet(1);
     let celestia_after = dsp.nogame.get_celestia_available(2);
 
-    let fleet_a = dsp.nogame.get_ships_levels(1);
-    let fleet_b = dsp.nogame.get_ships_levels(2);
+    let fleet_a = dsp.storage.get_ships_levels(1);
+    let fleet_b = dsp.storage.get_ships_levels(2);
     let defences = dsp.nogame.get_defences_levels(2);
 }
 
@@ -447,7 +447,7 @@ fn test_attack_planet_fleet_decay() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Carrier(()), 10);
-    let fleetA_before = dsp.nogame.get_ships_levels(1);
+    let fleetA_before = dsp.storage.get_ships_levels(1);
 
     let p2_position = dsp.storage.get_planet_position(2);
     let mut fleet_a: Fleet = Default::default();
@@ -461,12 +461,12 @@ fn test_attack_planet_fleet_decay() {
 
     let points_before = dsp.nogame.get_planet_points(1);
 
-    let before = dsp.nogame.get_ships_levels(1);
+    let before = dsp.storage.get_ships_levels(1);
     assert(before.carrier == 0, 'wrong #1');
 
     dsp.nogame.attack_planet(1);
 
-    let after = dsp.nogame.get_ships_levels(1);
+    let after = dsp.storage.get_ships_levels(1);
     assert(after.carrier == 5, 'wrong #2');
 
     let points_after = dsp.nogame.get_planet_points(1);
@@ -487,7 +487,7 @@ fn test_attack_planet_fails_empty_mission() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Sparrow(()), 1);
-    let fleetA_before = dsp.nogame.get_ships_levels(1);
+    let fleetA_before = dsp.storage.get_ships_levels(1);
 
     let p2_position = dsp.storage.get_planet_position(2);
     let mut fleet_a: Fleet = Default::default();
@@ -581,7 +581,7 @@ fn test_recall_fleet() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Sparrow(()), 1);
-    let fleet_before = dsp.nogame.get_ships_levels(1);
+    let fleet_before = dsp.storage.get_ships_levels(1);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
 
@@ -589,7 +589,7 @@ fn test_recall_fleet() {
     dsp.nogame.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.nogame.recall_fleet(1);
-    let fleet_after = dsp.nogame.get_ships_levels(1);
+    let fleet_after = dsp.storage.get_ships_levels(1);
     assert(fleet_after == fleet_before, 'wrong fleet after');
     let mission_after = dsp.nogame.get_mission_details(1, 1);
     assert(mission_after == Zeroable::zero(), 'wrong mission after');
@@ -610,7 +610,7 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
     init_storage(dsp, 1);
     dsp.nogame.process_ship_build(BuildType::Sparrow(()), 1);
-    let fleet_before = dsp.nogame.get_ships_levels(1);
+    let fleet_before = dsp.storage.get_ships_levels(1);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.sparrow = 1;
 

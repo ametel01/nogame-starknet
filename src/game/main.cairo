@@ -60,7 +60,6 @@ mod NoGame {
     #[storage]
     struct Storage {
         storage: IStorageDispatcher,
-        ships_level: LegacyMap::<(u32, felt252), u32>,
         defences_level: LegacyMap::<(u32, felt252), u32>,
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
@@ -760,16 +759,6 @@ mod NoGame {
             self.colony.get_colony_resources(uni_speed, planet_id, colony_id)
         }
 
-        fn get_ships_levels(self: @ContractState, planet_id: u32) -> Fleet {
-            Fleet {
-                carrier: self.ships_level.read((planet_id, Names::CARRIER)),
-                scraper: self.ships_level.read((planet_id, Names::SCRAPER)),
-                sparrow: self.ships_level.read((planet_id, Names::SPARROW)),
-                frigate: self.ships_level.read((planet_id, Names::FRIGATE)),
-                armade: self.ships_level.read((planet_id, Names::ARMADE)),
-            }
-        }
-
         fn get_colony_ships_levels(self: @ContractState, planet_id: u32, colony_id: u8) -> Fleet {
             self.colony.get_colony_ships(planet_id, colony_id)
         }
@@ -924,7 +913,7 @@ mod NoGame {
                 techs = self.storage.read().get_tech_levels(colony_mother_planet);
                 celestia = defences.celestia;
             } else {
-                fleet = self.get_ships_levels(planet_id);
+                fleet = self.storage.read().get_ships_levels(planet_id);
                 defences = self.get_defences_levels(planet_id);
                 techs = self.storage.read().get_tech_levels(planet_id);
                 celestia = self.get_celestia_available(planet_id);
@@ -1117,31 +1106,21 @@ mod NoGame {
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
                     );
             } else {
-                let fleet_levels = self.get_ships_levels(planet_id);
+                let fleet_levels = self.storage.read().get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::CARRIER), fleet_levels.carrier - fleet.carrier);
+                    self.storage.read().set_ship_level(planet_id, Names::CARRIER, fleet_levels.carrier - fleet.carrier);
                 }
                 if fleet.scraper > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::SCRAPER), fleet_levels.scraper - fleet.scraper);
+                    self.storage.read().set_ship_level(planet_id, Names::SCRAPER, fleet_levels.scraper - fleet.scraper);
                 }
                 if fleet.sparrow > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::SPARROW), fleet_levels.sparrow - fleet.sparrow);
+                    self.storage.read().set_ship_level(planet_id, Names::SPARROW, fleet_levels.sparrow - fleet.sparrow);
                 }
                 if fleet.frigate > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::FRIGATE), fleet_levels.frigate - fleet.frigate);
+                    self.storage.read().set_ship_level(planet_id, Names::FRIGATE, fleet_levels.frigate - fleet.frigate);
                 }
                 if fleet.armade > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::ARMADE), fleet_levels.armade - fleet.armade);
+                    self.storage.read().set_ship_level(planet_id, Names::ARMADE, fleet_levels.armade - fleet.armade);
                 }
             }
         }
@@ -1155,38 +1134,28 @@ mod NoGame {
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
                     );
             } else {
-                let fleet_levels = self.get_ships_levels(planet_id);
+                let fleet_levels = self.storage.read().get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::CARRIER), fleet_levels.carrier + fleet.carrier);
+                    self.storage.read().set_ship_level(planet_id, Names::CARRIER, fleet_levels.carrier + fleet.carrier);
                 }
                 if fleet.scraper > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::SCRAPER), fleet_levels.scraper + fleet.scraper);
+                    self.storage.read().set_ship_level(planet_id, Names::SCRAPER, fleet_levels.scraper + fleet.scraper);
                 }
                 if fleet.sparrow > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::SPARROW), fleet_levels.sparrow + fleet.sparrow);
+                    self.storage.read().set_ship_level(planet_id, Names::SPARROW, fleet_levels.sparrow + fleet.sparrow);
                 }
                 if fleet.frigate > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::FRIGATE), fleet_levels.frigate + fleet.frigate);
+                    self.storage.read().set_ship_level(planet_id, Names::FRIGATE, fleet_levels.frigate + fleet.frigate);
                 }
                 if fleet.armade > 0 {
-                    self
-                        .ships_level
-                        .write((planet_id, Names::ARMADE), fleet_levels.armade + fleet.armade);
+                    self.storage.read().set_ship_level(planet_id, Names::ARMADE, fleet_levels.armade + fleet.armade);
                 }
             }
         }
 
         fn check_enough_ships(self: @ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             if colony_id == 0 {
-                let ships_levels = self.get_ships_levels(planet_id);
+                let ships_levels = self.storage.read().get_ships_levels(planet_id);
                 assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
                 assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
                 assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
@@ -1205,11 +1174,11 @@ mod NoGame {
         fn update_defender_fleet_levels_after_attack(
             ref self: ContractState, planet_id: u32, f: Fleet
         ) {
-            self.ships_level.write((planet_id, Names::CARRIER), f.carrier);
-            self.ships_level.write((planet_id, Names::SCRAPER), f.scraper);
-            self.ships_level.write((planet_id, Names::SPARROW), f.sparrow);
-            self.ships_level.write((planet_id, Names::FRIGATE), f.frigate);
-            self.ships_level.write((planet_id, Names::ARMADE), f.armade);
+            self.storage.read().set_ship_level(planet_id, Names::CARRIER, f.carrier);
+            self.storage.read().set_ship_level(planet_id, Names::SCRAPER, f.scraper);
+            self.storage.read().set_ship_level(planet_id, Names::SPARROW, f.sparrow);
+            self.storage.read().set_ship_level(planet_id, Names::FRIGATE, f.frigate);
+            self.storage.read().set_ship_level(planet_id, Names::ARMADE, f.armade);
         }
 
         fn update_defences_after_attack(
@@ -1773,17 +1742,16 @@ mod NoGame {
         ) -> ERC20s {
             let is_testnet = self.storage.read().get_is_testnet();
             let techs = self.storage.read().get_tech_levels(planet_id);
+            let ships_levels = self.storage.read().get_ships_levels(planet_id);
             match component {
                 BuildType::Carrier => {
                     Dockyard::carrier_requirements_check(dockyard_level, techs);
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().carrier);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self
-                        .ships_level
-                        .write(
-                            (planet_id, Names::CARRIER),
-                            self.ships_level.read((planet_id, Names::CARRIER)) + quantity
+                    self.storage.read().set_ship_level
+                            (planet_id, Names::CARRIER,
+                            ships_levels.carrier + quantity
                         );
                     return cost;
                 },
@@ -1792,11 +1760,9 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().scraper);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self
-                        .ships_level
-                        .write(
-                            (planet_id, Names::SCRAPER),
-                            self.ships_level.read((planet_id, Names::SCRAPER)) + quantity
+                    self.storage.read().set_ship_level(
+                            planet_id, Names::SCRAPER,
+                            ships_levels.scraper + quantity
                         );
                     return cost;
                 },
@@ -1807,8 +1773,8 @@ mod NoGame {
                     self.pay_resources_erc20(caller, cost);
                     self
                         .defences_level
-                        .write(
-                            (planet_id, Names::CELESTIA),
+                        .write((
+                            planet_id, Names::CELESTIA),
                             self.defences_level.read((planet_id, Names::CELESTIA)) + quantity
                         );
                     return cost;
@@ -1818,11 +1784,9 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().sparrow);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self
-                        .ships_level
-                        .write(
-                            (planet_id, Names::SPARROW),
-                            self.ships_level.read((planet_id, Names::SPARROW)) + quantity
+                    self.storage.read().set_ship_level(
+                            planet_id, Names::SPARROW,
+                            ships_levels.sparrow + quantity
                         );
                     return cost;
                 },
@@ -1832,11 +1796,9 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().frigate);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self
-                        .ships_level
-                        .write(
-                            (planet_id, Names::FRIGATE),
-                            self.ships_level.read((planet_id, Names::FRIGATE)) + quantity
+                    self.storage.read().set_ship_level(
+                            planet_id, Names::FRIGATE,
+                            ships_levels.frigate + quantity
                         );
                     return cost;
                 },
@@ -1846,11 +1808,9 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().armade);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self
-                        .ships_level
-                        .write(
-                            (planet_id, Names::ARMADE),
-                            self.ships_level.read((planet_id, Names::ARMADE)) + quantity
+                    self.storage.read().set_ship_level(
+                            planet_id, Names::ARMADE,
+                            ships_levels.armade + quantity
                         );
                     return cost;
                 },
