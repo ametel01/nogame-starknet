@@ -1,16 +1,15 @@
-use starknet::testing::cheatcode;
-use starknet::info::get_contract_address;
-use starknet::{ContractAddress, contract_address_const};
-use snforge_std::PrintTrait;
-
-use snforge_std::{start_prank, start_warp, CheatTarget};
-
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::game::main::NoGame;
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
 };
+use snforge_std::PrintTrait;
+
+use snforge_std::{start_prank, start_warp, CheatTarget};
+use starknet::info::get_contract_address;
+use starknet::testing::cheatcode;
+use starknet::{ContractAddress, contract_address_const};
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
-use nogame::game::main::NoGame;
 
 #[test]
 fn test_get_defences_levels() {

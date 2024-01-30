@@ -1,9 +1,9 @@
 use core::integer::U256Mul;
 use integer::U8Div;
-use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+use nogame::libraries::math::{power, BitShift};
 
 use nogame::libraries::types::{ERC20s};
-use nogame::libraries::math::{power, BitShift};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 const UNI_SPEED: u128 = 1;
 

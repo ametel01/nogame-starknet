@@ -1,6 +1,6 @@
+use debug::PrintTrait;
 use nogame::libraries::compounds::{CompoundCost};
 use nogame::libraries::types::ERC20s;
-use debug::PrintTrait;
 
 #[test]
 fn steel_mine_cost_test() {

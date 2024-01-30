@@ -42,18 +42,18 @@ mod ResourceName {
 
 #[starknet::component]
 mod ColonyComponent {
-    use starknet::{get_block_timestamp, get_caller_address};
-    use nogame::libraries::types::{
-        PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
-        TechLevels, ShipsLevels, DefencesLevels, Fleet
-    };
     use nogame::colony::positions;
     use nogame::libraries::compounds::{Compounds, CompoundCost, Production, Consumption};
     use nogame::libraries::defences::{Defences};
     use nogame::libraries::dockyard::{Dockyard};
-    use super::ResourceName;
+    use nogame::libraries::types::{
+        PlanetPosition, Names, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
+        TechLevels, ShipsLevels, DefencesLevels, Fleet
+    };
 
     use snforge_std::PrintTrait;
+    use starknet::{get_block_timestamp, get_caller_address};
+    use super::ResourceName;
 
     #[storage]
     struct Storage {

@@ -1,10 +1,4 @@
 use core::testing::get_available_gas;
-use starknet::testing::cheatcode;
-use starknet::info::{get_contract_address, get_block_timestamp};
-use starknet::{ContractAddress, contract_address_const};
-use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
 
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
@@ -13,6 +7,12 @@ use nogame::libraries::types::{
 };
 
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
+use starknet::info::{get_contract_address, get_block_timestamp};
+use starknet::testing::cheatcode;
+use starknet::{ContractAddress, contract_address_const};
 use tests::utils::{
     E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, build_basic_mines,
     YEAR, warp_multiple, init_storage,

@@ -1,13 +1,13 @@
-use tests::utils::{
-    ACCOUNT1, ACCOUNT2, set_up, init_game, YEAR, warp_multiple, Dispatchers, E18, init_storage
-};
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::libraries::types::{
     ColonyUpgradeType, ColonyBuildType, BuildType, UpgradeType, Fleet, DefencesLevels,
     CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris, MissionCategory
 };
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
+use tests::utils::{
+    ACCOUNT1, ACCOUNT2, set_up, init_game, YEAR, warp_multiple, Dispatchers, E18, init_storage
+};
 
 #[test]
 fn test_generate_colony() {

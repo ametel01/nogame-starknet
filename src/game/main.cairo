@@ -1,23 +1,19 @@
 // TODOS: 
 #[starknet::contract]
 mod NoGame {
+    use core::poseidon::poseidon_hash_span;
+    use nogame::colony::colony::ColonyComponent;
     use nogame::colony::colony::IColonyView;
     use nogame::colony::colony::IColonyWrite;
-    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-    use starknet::{
-        ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
-        SyscallResultTrait, class_hash::ClassHash
-    };
-    use core::poseidon::poseidon_hash_span;
-    use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    // Components
-    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
-    use nogame::colony::colony::ColonyComponent;
-
-    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
     use nogame::game::interface::INoGame;
+
+    use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
+    use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
+    use nogame::libraries::defences::Defences;
+    use nogame::libraries::dockyard::Dockyard;
+    use nogame::libraries::fleet;
+    use nogame::libraries::positions;
+    use nogame::libraries::research::Lab;
     use nogame::libraries::types::{
         ETH_ADDRESS, BANK_ADDRESS, E18, DefencesCost, DefencesLevels, EnergyCost, ERC20s, erc20_mul,
         CompoundsCost, CompoundsLevels, ShipsLevels, ShipsCost, TechLevels, TechsCost, Tokens,
@@ -25,18 +21,22 @@ mod NoGame {
         PRICE, DAY, HOUR, Names, UpgradeType, BuildType, WEEK, SimulationResult, ColonyUpgradeType,
         ColonyBuildType, MissionCategory,
     };
-    use nogame::libraries::compounds::{Compounds, CompoundCost, Consumption, Production};
-    use nogame::libraries::defences::Defences;
-    use nogame::libraries::dockyard::Dockyard;
-    use nogame::libraries::fleet;
-    use nogame::libraries::research::Lab;
-    use nogame::libraries::positions;
+    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
 
-    use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
+    use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
+    // Components
+    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
 
     use snforge_std::PrintTrait;
+    use starknet::{
+        ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
+        SyscallResultTrait, class_hash::ClassHash
+    };
 
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
@@ -1108,19 +1108,44 @@ mod NoGame {
             } else {
                 let fleet_levels = self.storage.read().get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::CARRIER, fleet_levels.carrier - fleet.carrier);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::CARRIER, fleet_levels.carrier - fleet.carrier
+                        );
                 }
                 if fleet.scraper > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::SCRAPER, fleet_levels.scraper - fleet.scraper);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::SCRAPER, fleet_levels.scraper - fleet.scraper
+                        );
                 }
                 if fleet.sparrow > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::SPARROW, fleet_levels.sparrow - fleet.sparrow);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::SPARROW, fleet_levels.sparrow - fleet.sparrow
+                        );
                 }
                 if fleet.frigate > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::FRIGATE, fleet_levels.frigate - fleet.frigate);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::FRIGATE, fleet_levels.frigate - fleet.frigate
+                        );
                 }
                 if fleet.armade > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::ARMADE, fleet_levels.armade - fleet.armade);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::ARMADE, fleet_levels.armade - fleet.armade
+                        );
                 }
             }
         }
@@ -1136,19 +1161,44 @@ mod NoGame {
             } else {
                 let fleet_levels = self.storage.read().get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::CARRIER, fleet_levels.carrier + fleet.carrier);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::CARRIER, fleet_levels.carrier + fleet.carrier
+                        );
                 }
                 if fleet.scraper > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::SCRAPER, fleet_levels.scraper + fleet.scraper);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::SCRAPER, fleet_levels.scraper + fleet.scraper
+                        );
                 }
                 if fleet.sparrow > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::SPARROW, fleet_levels.sparrow + fleet.sparrow);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::SPARROW, fleet_levels.sparrow + fleet.sparrow
+                        );
                 }
                 if fleet.frigate > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::FRIGATE, fleet_levels.frigate + fleet.frigate);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::FRIGATE, fleet_levels.frigate + fleet.frigate
+                        );
                 }
                 if fleet.armade > 0 {
-                    self.storage.read().set_ship_level(planet_id, Names::ARMADE, fleet_levels.armade + fleet.armade);
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(
+                            planet_id, Names::ARMADE, fleet_levels.armade + fleet.armade
+                        );
                 }
             }
         }
@@ -1749,10 +1799,10 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().carrier);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.storage.read().set_ship_level
-                            (planet_id, Names::CARRIER,
-                            ships_levels.carrier + quantity
-                        );
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(planet_id, Names::CARRIER, ships_levels.carrier + quantity);
                     return cost;
                 },
                 BuildType::Scraper => {
@@ -1760,10 +1810,10 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().scraper);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.storage.read().set_ship_level(
-                            planet_id, Names::SCRAPER,
-                            ships_levels.scraper + quantity
-                        );
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(planet_id, Names::SCRAPER, ships_levels.scraper + quantity);
                     return cost;
                 },
                 BuildType::Celestia => {
@@ -1773,8 +1823,8 @@ mod NoGame {
                     self.pay_resources_erc20(caller, cost);
                     self
                         .defences_level
-                        .write((
-                            planet_id, Names::CELESTIA),
+                        .write(
+                            (planet_id, Names::CELESTIA),
                             self.defences_level.read((planet_id, Names::CELESTIA)) + quantity
                         );
                     return cost;
@@ -1784,10 +1834,10 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().sparrow);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.storage.read().set_ship_level(
-                            planet_id, Names::SPARROW,
-                            ships_levels.sparrow + quantity
-                        );
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(planet_id, Names::SPARROW, ships_levels.sparrow + quantity);
                     return cost;
                 },
                 BuildType::Frigate => {
@@ -1796,10 +1846,10 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().frigate);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.storage.read().set_ship_level(
-                            planet_id, Names::FRIGATE,
-                            ships_levels.frigate + quantity
-                        );
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(planet_id, Names::FRIGATE, ships_levels.frigate + quantity);
                     return cost;
                 },
                 BuildType::Armade => {
@@ -1808,10 +1858,10 @@ mod NoGame {
                     let cost = Dockyard::get_ships_cost(quantity, self.get_ships_cost().armade);
                     self.check_enough_resources(caller, cost);
                     self.pay_resources_erc20(caller, cost);
-                    self.storage.read().set_ship_level(
-                            planet_id, Names::ARMADE,
-                            ships_levels.armade + quantity
-                        );
+                    self
+                        .storage
+                        .read()
+                        .set_ship_level(planet_id, Names::ARMADE, ships_levels.armade + quantity);
                     return cost;
                 },
                 BuildType::Blaster => {

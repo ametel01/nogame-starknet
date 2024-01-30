@@ -1,13 +1,13 @@
 #[starknet::contract]
 mod ERC721NoGame {
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
+    use nogame::token::erc721::interface::IERC721NoGame;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::introspection::src5::SRC5Component;
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
-    use openzeppelin::introspection::src5::SRC5Component;
-    use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-    use nogame::token::erc721::interface::IERC721NoGame;
+    use starknet::ContractAddress;
+    use starknet::get_caller_address;
 
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);

@@ -1,11 +1,10 @@
 #[starknet::contract]
 mod ERC20NoGame {
-    use starknet::{ContractAddress, get_caller_address};
-    use openzeppelin::token::erc20::erc20::ERC20Component;
-    use openzeppelin::access::ownable::OwnableComponent;
-
     use nogame::token::erc20::interface::IERC20NoGame;
     use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::token::erc20::erc20::ERC20Component;
+    use starknet::{ContractAddress, get_caller_address};
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);

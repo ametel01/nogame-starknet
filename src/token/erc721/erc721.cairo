@@ -13,12 +13,12 @@ trait IERC721MetadataCamelOnly<TState> {
 
 #[starknet::contract]
 mod ERC721 {
-    use starknet::{ContractAddress, get_caller_address};
+    use nogame::token::erc721::interface::IERC721NoGame;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::introspection::src5::SRC5Component;
 
     use openzeppelin::token::erc721::erc721::ERC721Component;
-    use openzeppelin::introspection::src5::SRC5Component;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use nogame::token::erc721::interface::IERC721NoGame;
+    use starknet::{ContractAddress, get_caller_address};
 
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);

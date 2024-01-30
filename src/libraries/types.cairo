@@ -1,7 +1,11 @@
 use integer::{u128_overflowing_add, u128_overflowing_sub};
-use starknet::ContractAddress;
+use nogame::token::erc20::interface::IERC20NoGameDispatcher;
+use nogame::token::erc721::interface::IERC721NoGameDispatcher;
+
+use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
 
 use snforge_std::PrintTrait;
+use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
 const MAX_NUMBER_OF_PLANETS: u32 = 500;
@@ -576,10 +580,6 @@ mod MissionCategory {
     const TRANSPORT: u8 = 2;
     const DEBRIS: u8 = 3;
 }
-
-use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
-use nogame::token::erc20::interface::IERC20NoGameDispatcher;
-use nogame::token::erc721::interface::IERC721NoGameDispatcher;
 
 #[derive(Copy, Drop, Serde)]
 struct Tokens {

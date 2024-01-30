@@ -1,21 +1,20 @@
-use starknet::{
-    ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,
-    get_caller_address, class_hash::ClassHash
-};
-use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
-
 use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{PRICE, UpgradeType, BuildType, Names, ERC20s};
-use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-use nogame::token::erc20::erc20_ng::ERC20NoGame;
-use nogame::token::erc20::erc20::ERC20;
-use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame::storage::storage::{Storage, IStorageDispatcher, IStorageDispatcherTrait};
+use nogame::token::erc20::erc20::ERC20;
+use nogame::token::erc20::erc20_ng::ERC20NoGame;
+use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
 use snforge_std::{
     declare, ContractClassTrait, start_warp, start_prank, stop_prank, PrintTrait, CheatTarget,
     store, map_entry_address
+};
+use starknet::{
+    ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,
+    get_caller_address, class_hash::ClassHash
 };
 
 const E18: u128 = 1_000_000_000_000_000_000;

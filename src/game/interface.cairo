@@ -1,9 +1,9 @@
-use starknet::{ContractAddress, class_hash::ClassHash};
 use nogame::libraries::types::{
     DefencesCost, DefencesLevels, EnergyCost, ERC20s, CompoundsCost, CompoundsLevels, ShipsLevels,
     ShipsCost, TechLevels, TechsCost, Tokens, PlanetPosition, Cargo, Debris, Fleet, Mission,
     SimulationResult, IncomingMission, UpgradeType, BuildType, ColonyUpgradeType, ColonyBuildType
 };
+use starknet::{ContractAddress, class_hash::ClassHash};
 
 #[starknet::interface]
 trait INoGame<TState> {

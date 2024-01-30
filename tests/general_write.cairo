@@ -1,20 +1,20 @@
 use core::option::OptionTrait;
 use core::testing::get_available_gas;
-use starknet::testing::cheatcode;
-use starknet::info::{get_contract_address, get_block_timestamp};
-use starknet::{ContractAddress, contract_address_const};
+
+use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::libraries::types::{
+    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
+};
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
+use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
 
 use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, PrintTrait, CheatTarget};
-
-use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, DefencesLevels, DefencesCost
-};
-use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+use starknet::info::{get_contract_address, get_block_timestamp};
+use starknet::testing::cheatcode;
+use starknet::{ContractAddress, contract_address_const};
 use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
 
 #[test]

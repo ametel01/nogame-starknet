@@ -1,7 +1,7 @@
-use starknet::ContractAddress;
 use nogame::libraries::types::{
     Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels, TechLevels, Fleet
 };
+use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IStorage<TState> {
@@ -53,14 +53,14 @@ trait IStorage<TState> {
 
 #[starknet::contract]
 mod Storage {
+    use nogame::libraries::types::{Names};
+    use nogame::token::erc20::interface::IERC20NoGameDispatcher;
+    use nogame::token::erc721::interface::IERC721NoGameDispatcher;
+    use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use super::{
         ContractAddress, Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels,
         Fleet, TechLevels
     };
-    use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
-    use nogame::token::erc20::interface::IERC20NoGameDispatcher;
-    use nogame::token::erc721::interface::IERC721NoGameDispatcher;
-    use nogame::libraries::types::{Names};
 
     #[storage]
     struct Storage {

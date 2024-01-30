@@ -1,5 +1,5 @@
-use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128};
 use nogame_fixed::f128::core::{abs, exp, ln};
+use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128};
 
 /// A Linear Variable Rate Gradual Dutch Auction (VRGDA) struct.
 /// Represents an auction where the price decays linearly based on the target price,

@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod ERC20 {
-    use starknet::ContractAddress;
     use openzeppelin::token::erc20::erc20::ERC20Component;
+    use starknet::ContractAddress;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
