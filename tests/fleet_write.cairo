@@ -71,7 +71,7 @@ fn test_send_fleet_success() {
 
     assert(tritium_after == tritium_before - fuel_consumption, 'wrong fuel consumption');
 
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
 
     assert(mission.fleet.carrier == 1, 'wrong carrier');
     assert(mission.fleet.scraper == 1, 'wrong scraper');
@@ -172,7 +172,7 @@ fn test_send_speed_modifier() {
 
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 50, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     assert((mission.time_arrival - get_block_timestamp()) == 18125, 'wrong time arrival');
 }
 
@@ -223,7 +223,7 @@ fn test_collect_debris_success() {
     fleet.carrier = 5;
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(1);
 
@@ -231,8 +231,8 @@ fn test_collect_debris_success() {
     fleet.scraper = 1;
     let debris = dsp.storage.get_planet_debris_field(2);
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::DEBRIS, 100, 0);
-    let missions = dsp.nogame.get_active_missions(1);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let missions = dsp.storage.get_active_missions(1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.nogame.get_spendable_resources(1);
     dsp.nogame.collect_debris(1);
@@ -270,7 +270,7 @@ fn test_collect_debris_own_planet() {
     fleet.carrier = 1;
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(1);
 
@@ -279,8 +279,8 @@ fn test_collect_debris_own_planet() {
     let debris = dsp.storage.get_planet_debris_field(2);
     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::DEBRIS, 100, 0);
-    let missions = dsp.nogame.get_active_missions(2);
-    let mission = dsp.nogame.get_mission_details(2, 1);
+    let missions = dsp.storage.get_active_missions(2);
+    let mission = dsp.storage.get_mission_details(2, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     let resources_before = dsp.nogame.get_spendable_resources(2);
     dsp.nogame.collect_debris(1);
@@ -316,7 +316,7 @@ fn test_collect_debris_fleet_decay() {
     fleet.carrier = 100;
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(1);
 
@@ -324,8 +324,8 @@ fn test_collect_debris_fleet_decay() {
     fleet.scraper = 10;
     let debris = dsp.storage.get_planet_debris_field(2);
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::DEBRIS, 100, 0);
-    let missions = dsp.nogame.get_active_missions(1);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let missions = dsp.storage.get_active_missions(1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 9000);
     let resources_before = dsp.nogame.get_spendable_resources(1);
 
@@ -363,7 +363,7 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
     fleet.scraper = 1;
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::DEBRIS, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.collect_debris(2);
 }
@@ -390,7 +390,7 @@ fn test_send_fleet_debris_fails_no_scrapers() {
     fleet.carrier = 1;
 
     dsp.nogame.send_fleet(fleet, p1_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(1);
 
@@ -419,7 +419,7 @@ fn test_attack_planet() {
     let fleet_b: Fleet = Zeroable::zero();
     fleet_a.armade = 10;
     dsp.nogame.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
 
     let points_before = dsp.nogame.get_planet_points(2);
@@ -453,7 +453,7 @@ fn test_attack_planet_fleet_decay() {
     let fleet_b: Fleet = Zeroable::zero();
     fleet_a.carrier = 10;
     dsp.nogame.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
 
     // warping 2100 seconds over an hour to create fleet decay
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 9000);
@@ -493,7 +493,7 @@ fn test_attack_planet_fails_empty_mission() {
     fleet_a.sparrow = 1;
 
     dsp.nogame.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
 
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(2)
@@ -519,7 +519,7 @@ fn test_attack_planet_fails_destination_not_reached() {
     let p2_position = dsp.storage.get_planet_position(2);
     dsp.nogame.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
 
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     dsp.nogame.attack_planet(1)
 }
 
@@ -551,7 +551,7 @@ fn test_attack_planet_loot_amount() {
     let spendable_before = dsp.nogame.get_spendable_resources(2);
     let attacker_spendable_before = dsp.nogame.get_spendable_resources(1);
 
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 1);
     dsp.nogame.attack_planet(1);
 
@@ -590,9 +590,9 @@ fn test_recall_fleet() {
     dsp.nogame.recall_fleet(1);
     let fleet_after = dsp.storage.get_ships_levels(1);
     assert(fleet_after == fleet_before, 'wrong fleet after');
-    let mission_after = dsp.nogame.get_mission_details(1, 1);
+    let mission_after = dsp.storage.get_mission_details(1, 1);
     assert(mission_after == Zeroable::zero(), 'wrong mission after');
-    assert(dsp.nogame.get_active_missions(1).len() == 0, 'wrong active missions');
+    assert(dsp.storage.get_active_missions(1).len() == 0, 'wrong active missions');
 }
 
 #[test]

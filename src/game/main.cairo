@@ -60,10 +60,6 @@ mod NoGame {
     #[storage]
     struct Storage {
         storage: IStorageDispatcher,
-        active_missions: LegacyMap::<(u32, u32), Mission>,
-        active_missions_len: LegacyMap<u32, usize>,
-        hostile_missions: LegacyMap<(u32, u32), IncomingMission>,
-        hostile_missions_len: LegacyMap<u32, usize>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         #[substorage(v0)]
@@ -412,7 +408,7 @@ mod NoGame {
             let travel_time = fleet::get_flight_time(speed, distance, speed_modifier);
 
             // Check numeber of mission
-            let active_missions = self.get_active_missions(planet_id).len();
+            let active_missions = self.storage.read().get_active_missions(planet_id).len();
             assert(active_missions < techs.digital.into() + 1, 'max active missions');
 
             // Pay for fuel
@@ -439,7 +435,7 @@ mod NoGame {
                 );
                 assert(f.scraper >= 1, 'no scrapers for collection');
                 mission.category = MissionCategory::DEBRIS;
-                self.add_active_mission(planet_id, mission);
+                self.storage.read().add_active_mission(planet_id, mission);
                 self
                     .emit(
                         Event::FleetSent(
@@ -453,7 +449,7 @@ mod NoGame {
                     );
             } else if mission_type == MissionCategory::TRANSPORT {
                 mission.category = MissionCategory::TRANSPORT;
-                self.add_active_mission(planet_id, mission);
+                self.storage.read().add_active_mission(planet_id, mission);
                 self
                     .emit(
                         Event::FleetSent(
@@ -474,7 +470,7 @@ mod NoGame {
                     );
                 }
                 mission.category = MissionCategory::ATTACK;
-                let id = self.add_active_mission(planet_id, mission);
+                let id = self.storage.read().add_active_mission(planet_id, mission);
                 let mut hostile_mission: IncomingMission = Default::default();
                 hostile_mission.origin = planet_id;
                 hostile_mission.id_at_origin = id;
@@ -488,7 +484,7 @@ mod NoGame {
                 } else {
                     mission.destination
                 };
-                self.add_incoming_mission(target_planet, hostile_mission);
+                self.storage.read().add_incoming_mission(target_planet, hostile_mission);
                 self
                     .emit(
                         Event::FleetSent(
@@ -510,7 +506,7 @@ mod NoGame {
         fn attack_planet(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
             let origin = self.get_owned_planet(caller);
-            let mut mission = self.active_missions.read((origin, mission_id));
+            let mut mission = self.storage.read().get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'the mission is empty');
             assert(mission.category == MissionCategory::ATTACK, 'not an attack mission');
             assert(mission.destination != origin, 'cannot attack own planet');
@@ -577,12 +573,12 @@ mod NoGame {
                 self.storage.read().update_resources_timer(mission.destination, time_now);
             }
             self.fleet_return_planet(mission.origin, f1);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.storage.read().set_mission(origin, mission_id, Zeroable::zero());
 
             if is_colony {
-                self.remove_incoming_mission(colony_mother_planet, mission_id);
+                self.storage.read().remove_incoming_mission(colony_mother_planet, mission_id);
             } else {
-                self.remove_incoming_mission(mission.destination, mission_id);
+                self.storage.read().remove_incoming_mission(mission.destination, mission_id);
             }
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
@@ -616,11 +612,11 @@ mod NoGame {
 
         fn recall_fleet(ref self: ContractState, mission_id: usize) {
             let origin = self.get_owned_planet(get_caller_address());
-            let mission = self.active_missions.read((origin, mission_id));
+            let mission = self.storage.read().get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'no fleet to recall');
             self.fleet_return_planet(mission.origin, mission.fleet);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
-            self.remove_incoming_mission(mission.destination, mission_id);
+            self.storage.read().set_mission(origin, mission_id, Zeroable::zero());
+            self.storage.read().remove_incoming_mission(mission.destination, mission_id);
             self.storage.read().set_last_active(origin, get_block_timestamp());
             self
                 .emit(
@@ -632,11 +628,11 @@ mod NoGame {
 
         fn dock_fleet(ref self: ContractState, mission_id: usize) {
             let origin = self.get_owned_planet(get_caller_address());
-            let mission = self.active_missions.read((origin, mission_id));
+            let mission = self.storage.read().get_mission_details(origin, mission_id);
             assert(mission.category == MissionCategory::TRANSPORT, 'not a transport mission');
             assert(!mission.is_zero(), 'no fleet to dock');
             self.fleet_return_planet(mission.destination, mission.fleet);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.storage.read().set_mission(origin, mission_id, Zeroable::zero());
             self.storage.read().set_last_active(origin, get_block_timestamp());
             self
                 .emit(
@@ -650,7 +646,7 @@ mod NoGame {
             let caller = get_caller_address();
             let origin = self.get_owned_planet(caller);
 
-            let mut mission = self.active_missions.read((origin, mission_id));
+            let mission = self.storage.read().get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'the mission is empty');
             assert(mission.category == MissionCategory::DEBRIS, 'not a debris mission');
 
@@ -684,7 +680,7 @@ mod NoGame {
             self.receive_resources_erc20(caller, erc20);
 
             self.fleet_return_planet(mission.origin, collector_fleet);
-            self.active_missions.write((origin, mission_id), Zeroable::zero());
+            self.storage.read().set_mission(origin, mission_id, Zeroable::zero());
             self.storage.read().set_last_active(origin, time_now);
 
             self
@@ -781,44 +777,6 @@ mod NoGame {
             } else {
                 return p2_points > p1_points * 5;
             }
-        }
-
-        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
-            self.active_missions.read((planet_id, mission_id))
-        }
-
-        fn get_active_missions(self: @ContractState, planet_id: u32) -> Array<Mission> {
-            let mut arr: Array<Mission> = array![];
-            let len = self.active_missions_len.read(planet_id);
-            let mut i = 1;
-            loop {
-                if i > len {
-                    break;
-                }
-                let mission = self.active_missions.read((planet_id, i));
-                if !mission.is_zero() {
-                    arr.append(mission);
-                }
-                i += 1;
-            };
-            arr
-        }
-
-        fn get_incoming_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
-            let mut arr: Array<IncomingMission> = array![];
-            let len = self.hostile_missions_len.read(planet_id);
-            let mut i = 1;
-            loop {
-                if i > len {
-                    break;
-                }
-                let mission = self.hostile_missions.read((planet_id, i));
-                if !mission.is_zero() {
-                    arr.append(mission);
-                }
-                i += 1;
-            };
-            arr
         }
 
         fn simulate_attack(
@@ -1224,63 +1182,6 @@ mod NoGame {
             self.storage.read().set_defence_level(planet_id, Names::BEAM, d.beam);
             self.storage.read().set_defence_level(planet_id, Names::ASTRAL, d.astral);
             self.storage.read().set_defence_level(planet_id, Names::PLASMA, d.plasma);
-        }
-
-        fn add_active_mission(
-            ref self: ContractState, planet_id: u32, mut mission: Mission
-        ) -> usize {
-            let len = self.active_missions_len.read(planet_id);
-            let mut i = 1;
-            loop {
-                if i > len {
-                    mission.id = i.try_into().expect('add active mission fail');
-                    self.active_missions.write((planet_id, i), mission);
-                    self.active_missions_len.write(planet_id, i);
-                    break;
-                }
-                let read_mission = self.active_missions.read((planet_id, i));
-                if read_mission.is_zero() {
-                    mission.id = i.try_into().expect('add active mission fail');
-                    self.active_missions.write((planet_id, i), mission);
-                    break;
-                }
-                i += 1;
-            };
-            i
-        }
-
-        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
-            let len = self.hostile_missions_len.read(planet_id);
-            let mut i = 1;
-            loop {
-                if i > len {
-                    self.hostile_missions.write((planet_id, i), mission);
-                    self.hostile_missions_len.write(planet_id, i);
-                    break;
-                }
-                let read_mission = self.hostile_missions.read((planet_id, i));
-                if read_mission.is_zero() {
-                    self.hostile_missions.write((planet_id, i), mission);
-                    break;
-                }
-                i += 1;
-            };
-        }
-
-        fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
-            let len = self.hostile_missions_len.read(planet_id);
-            let mut i = 1;
-            loop {
-                if i > len {
-                    break;
-                }
-                let mission = self.hostile_missions.read((planet_id, i));
-                if mission.id_at_origin == id_to_remove {
-                    self.hostile_missions.write((planet_id, i), Zeroable::zero());
-                    break;
-                }
-                i += 1;
-            }
         }
 
         fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u32 {

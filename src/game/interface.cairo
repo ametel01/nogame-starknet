@@ -37,9 +37,6 @@ trait INoGame<TState> {
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_celestia_available(self: @TState, planet_id: u32) -> u32;
     fn is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
-    fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
-    fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
-    fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
     // Colony
     fn generate_colony(ref self: TState);
     fn collect_colony_resources(ref self: TState, colony_id: u8);

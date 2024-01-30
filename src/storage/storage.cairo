@@ -34,6 +34,10 @@ trait IStorage<TState> {
     fn set_tech_level(ref self: TState, planet_id: u32, tech_id: felt252, level: u8,);
     fn set_ship_level(ref self: TState, planet_id: u32, ship_id: felt252, level: u32,);
     fn set_defence_level(ref self: TState, planet_id: u32, defence_id: felt252, level: u32,);
+    fn set_mission(ref self: TState, planet_id: u32, mission_id: usize, mission: Mission,);
+    fn add_active_mission(ref self: TState, planet_id: u32, mission: Mission) -> usize;
+    fn add_incoming_mission(ref self: TState, planet_id: u32, mission: IncomingMission);
+    fn remove_incoming_mission(ref self: TState, planet_id: u32, id_to_remove: usize);
 
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_number_of_planets(self: @TState) -> u32;
@@ -52,6 +56,9 @@ trait IStorage<TState> {
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
     fn get_ships_levels(self: @TState, planet_id: u32) -> Fleet;
     fn get_defences_levels(self: @TState, planet_id: u32) -> Defences;
+    fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
+    fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
+    fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
 }
 
 #[starknet::contract]
@@ -96,8 +103,8 @@ mod Storage {
         defences_level: LegacyMap::<(u32, felt252), u32>,
         active_missions: LegacyMap::<(u32, u32), Mission>,
         active_missions_len: LegacyMap<u32, usize>,
-        hostile_missions: LegacyMap<(u32, u32), IncomingMission>,
-        hostile_missions_len: LegacyMap<u32, usize>,
+        incoming_missions: LegacyMap<(u32, u32), IncomingMission>,
+        incoming_missions_len: LegacyMap<u32, usize>,
     }
 
     #[constructor]
@@ -193,6 +200,69 @@ mod Storage {
             ref self: ContractState, planet_id: u32, defence_id: felt252, level: u32,
         ) {
             self.defences_level.write((planet_id, defence_id), level);
+        }
+
+        fn set_mission(
+            ref self: ContractState, planet_id: u32, mission_id: usize, mission: Mission,
+        ) {
+            self.active_missions.write((planet_id, mission_id), mission);
+        }
+
+        fn add_active_mission(
+            ref self: ContractState, planet_id: u32, mut mission: Mission
+        ) -> usize {
+            let len = self.active_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    mission.id = i.try_into().expect('add active mission fail');
+                    self.active_missions.write((planet_id, i), mission);
+                    self.active_missions_len.write(planet_id, i);
+                    break;
+                }
+                let read_mission = self.active_missions.read((planet_id, i));
+                if read_mission.is_zero() {
+                    mission.id = i.try_into().expect('add active mission fail');
+                    self.active_missions.write((planet_id, i), mission);
+                    break;
+                }
+                i += 1;
+            };
+            i
+        }
+
+        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    self.incoming_missions.write((planet_id, i), mission);
+                    self.incoming_missions_len.write(planet_id, i);
+                    break;
+                }
+                let read_mission = self.incoming_missions.read((planet_id, i));
+                if read_mission.is_zero() {
+                    self.incoming_missions.write((planet_id, i), mission);
+                    break;
+                }
+                i += 1;
+            };
+        }
+
+        fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.incoming_missions.read((planet_id, i));
+                if mission.id_at_origin == id_to_remove {
+                    self.incoming_missions.write((planet_id, i), Zeroable::zero());
+                    break;
+                }
+                i += 1;
+            }
         }
 
         fn get_token_addresses(self: @ContractState) -> Tokens {
@@ -300,6 +370,44 @@ mod Storage {
                 astral: self.defences_level.read((planet_id, Names::ASTRAL)),
                 plasma: self.defences_level.read((planet_id, Names::PLASMA)),
             }
+        }
+
+        fn get_active_missions(self: @ContractState, planet_id: u32) -> Array<Mission> {
+            let mut arr: Array<Mission> = array![];
+            let len = self.active_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.active_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
+                i += 1;
+            };
+            arr
+        }
+
+        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
+            self.active_missions.read((planet_id, mission_id))
+        }
+
+        fn get_incoming_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
+            let mut arr: Array<IncomingMission> = array![];
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.incoming_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
+                i += 1;
+            };
+            arr
         }
     }
 }

@@ -62,7 +62,7 @@ fn test_get_hostile_missions() {
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 3, 'wrong missions len #1');
     assert(*missions.at(0).origin == 1, 'wrong origin #2');
     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin #3');
@@ -72,7 +72,7 @@ fn test_get_hostile_missions() {
     assert(*missions.at(2).id_at_origin == 3, 'wrong id at origin #7');
 
     dsp.nogame.recall_fleet(1);
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 2, 'wrong missions len 2 #8');
     assert(*missions.at(0).origin == 1, 'wrong origin #9');
     assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #10');
@@ -80,13 +80,13 @@ fn test_get_hostile_missions() {
     assert(*missions.at(1).id_at_origin == 3, 'wrong id at origin #12');
 
     dsp.nogame.recall_fleet(3);
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 1, 'wrong missions len 1 #13');
     assert(*missions.at(0).origin == 1, 'wrong origin #14');
     assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #15');
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 2, 'wrong missions len 2 #16');
     assert(*missions.at(0).origin == 1, 'wrong origin #17');
     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 2 #18');
@@ -94,13 +94,13 @@ fn test_get_hostile_missions() {
     assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin 1 #20');
 
     dsp.nogame.recall_fleet(2);
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 1, 'wrong missions len 1 #21');
     assert(*missions.at(0).origin == 1, 'wrong origin #22');
     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 1 #23');
 
     dsp.nogame.recall_fleet(1);
-    let mut missions = dsp.nogame.get_incoming_missions(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
     assert(missions.len() == 0, 'wrong missions len 1 #24');
 }
 
@@ -129,7 +129,7 @@ fn test_get_active_missions() {
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 3, 'wrong assert #1');
     assert(*missions.at(0).id == 1, 'wrong assert #2');
     assert(*missions.at(0).destination == 2, 'wrong assert #3');
@@ -144,7 +144,7 @@ fn test_get_active_missions() {
     assert(*missions.at(2).category == MissionCategory::ATTACK, 'wrong assert #10');
 
     dsp.nogame.recall_fleet(1);
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 2, 'wrong assert #11');
 
     assert(*missions.at(0).id == 2, 'wrong assert #12');
@@ -154,14 +154,14 @@ fn test_get_active_missions() {
     assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #15');
 
     dsp.nogame.recall_fleet(3);
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 1, 'wrong assert #16');
 
     assert(*missions.at(0).id == 2, 'wrong assert #17');
     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #18');
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 2, 'wrong assert #19');
 
     assert(*missions.at(0).id == 1, 'wrong assert #20');
@@ -171,14 +171,14 @@ fn test_get_active_missions() {
     assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #23');
 
     dsp.nogame.recall_fleet(1);
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 1, 'wrong assert #24');
 
     assert(*missions.at(0).id == 2, 'wrong assert #25');
     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #26');
 
     dsp.nogame.recall_fleet(2);
-    let mut missions = dsp.nogame.get_active_missions(1);
+    let mut missions = dsp.storage.get_active_missions(1);
     assert(missions.len() == 0, 'wrong assert #27');
 }
 

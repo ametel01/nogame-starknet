@@ -89,7 +89,7 @@ fn test_send_fleet_to_colony() {
     p2_position.system = 188;
     p2_position.orbit = 10;
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 0);
-    let missions = dsp.nogame.get_active_missions(1);
+    let missions = dsp.storage.get_active_missions(1);
     let mission = *missions.at(0);
     assert(mission.destination == 1001, 'wrong hostile mission');
     assert(mission.category == MissionCategory::TRANSPORT, 'wrong hostile mission');
@@ -116,7 +116,7 @@ fn test_send_fleet_from_colony() {
 
     let mut p2_position: PlanetPosition = dsp.storage.get_planet_position(1);
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 1);
-    let missions = dsp.nogame.get_active_missions(1);
+    let missions = dsp.storage.get_active_missions(1);
     let mission = *missions.at(0);
     assert(mission.destination == 1, 'wrong mission destination');
     assert(mission.category == MissionCategory::TRANSPORT, 'wrong mission category');
@@ -150,7 +150,7 @@ fn test_attack_from_colony() {
     dsp.nogame.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
 
     dsp.nogame.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 1);
-    let missions = dsp.nogame.get_active_missions(1);
+    let missions = dsp.storage.get_active_missions(1);
     let mission = *missions.at(0);
     assert(mission.destination == 2, 'wrong mission destination');
     assert(mission.category == MissionCategory::ATTACK, 'wrong mission category');
@@ -313,7 +313,7 @@ fn test_attack_colony() {
         starknet::get_block_timestamp() + DAY * 7
     );
     dsp.nogame.send_fleet(fleet_a, colony_position, MissionCategory::ATTACK, 100, 0);
-    let mission = dsp.nogame.get_mission_details(1, 1);
+    let mission = dsp.storage.get_mission_details(1, 1);
     warp_multiple(
         dsp.nogame.contract_address, starknet::get_contract_address(), mission.time_arrival + 1
     );
