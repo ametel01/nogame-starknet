@@ -5,8 +5,7 @@ use starknet::{
 };
 
 mod game {
-    mod interface;
-    mod main;
+    mod game;
 }
 
 mod colony {

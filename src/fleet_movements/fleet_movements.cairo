@@ -35,18 +35,26 @@ mod FleetMovements {
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, get_contract_address,
+        contract_address_const
+    };
 
     component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedImpl = SharedComponent::Shared<ContractState>;
     impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         #[substorage(v0)]
         shared: SharedComponent::Storage,
-        compound: ICompoundDispatcher,
-        dockyard: IDockyardDispatcher,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
     }
 
     #[event]
@@ -56,6 +64,8 @@ mod FleetMovements {
         DebrisCollected: DebrisCollected,
         #[flat]
         SharedEvent: SharedComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -83,8 +93,9 @@ mod FleetMovements {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, storage: ContractAddress) {
-        self.shared.storage.write(IStorageDispatcher { contract_address: storage });
+    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+        self.ownable.initializer(get_caller_address());
+        self.shared.initializer(storage, colony);
     }
 
     #[abi(embed_v0)]
@@ -207,7 +218,6 @@ mod FleetMovements {
                 self.shared.storage.read().add_incoming_mission(target_planet, hostile_mission);
             }
             self.shared.storage.read().set_last_active(planet_id, time_now);
-            // Write new fleet levels
             self.fleet_leave_planet(origin_id, f);
         }
 
@@ -646,16 +656,17 @@ mod FleetMovements {
                     .storage
                     .read()
                     .get_colony_mother_planet(destination_id);
-                let uni_speed = self.shared.storage.read().get_uni_speed();
                 let colony_id: u8 = (destination_id - mother_planet * 1000).try_into().unwrap();
                 collectible = self
                     .shared
                     .colony
                     .read()
-                    .get_colony_resources(uni_speed, mother_planet, colony_id);
+                    .get_colony_resources(mother_planet, colony_id);
             } else {
-                spendable = self.compound.read().get_spendable_resources(destination_id);
-                collectible = self.compound.read().get_collectible_resources(destination_id);
+                let contracts = self.shared.storage.read().get_contracts();
+                let compound = ICompoundDispatcher { contract_address: contracts.compound };
+                spendable = compound.get_spendable_resources(destination_id);
+                collectible = compound.get_collectible_resources(destination_id);
             }
 
             if storage < (collectible.steel + collectible.quartz + collectible.tritium) {

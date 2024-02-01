@@ -1,15 +1,10 @@
-use nogame::libraries::types::{};
-
-#[starknet::interface]
-trait IShared<TState> {
-    fn collect_resources(ref self: TState);
-}
+use starknet::ContractAddress;
 
 #[starknet::component]
 mod SharedComponent {
     use nogame::colony::colony::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::compound::library as compound;
-    use nogame::libraries::types::{E18, ERC20s, HOUR};
+    use nogame::libraries::types::{E18, ERC20s, HOUR, PlanetPosition};
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
@@ -21,15 +16,23 @@ mod SharedComponent {
         colony: IColonyDispatcher,
     }
 
-    #[embeddable_as(Shared)]
-    impl SharedImpl<
+    #[generate_trait]
+    impl InternalImpl<
         TContractState, +HasComponent<TContractState>
-    > of super::IShared<ComponentState<TContractState>> {
+    > of InternalTrait<TContractState> {
+        fn initializer(
+            ref self: ComponentState<TContractState>,
+            storage: ContractAddress,
+            colony: ContractAddress
+        ) {
+            self.storage.write(IStorageDispatcher { contract_address: storage });
+            self.colony.write(IColonyDispatcher { contract_address: colony });
+        }
+
         fn collect_resources(ref self: ComponentState<TContractState>) {
             let caller = get_caller_address();
             let planet_id = self.get_owned_planet(caller);
             let colonies = self.storage.read().get_colonies_for_planet(planet_id);
-            let speed = self.storage.read().get_uni_speed();
             let mut i = 1;
             let colonies_len = colonies.len();
             let mut total_production: ERC20s = Default::default();
@@ -37,22 +40,14 @@ mod SharedComponent {
                 if colonies_len.is_zero() || i > colonies_len {
                     break;
                 }
-                let production = self
-                    .colony
-                    .read()
-                    .collect_resources(speed, planet_id, i.try_into().unwrap());
+                let production = self.colony.read().collect_resources(i.try_into().unwrap());
                 total_production = total_production + production;
                 i += 1;
             };
             self.receive_resources_erc20(caller, total_production);
             self.collect(get_caller_address());
         }
-    }
 
-    #[generate_trait]
-    impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
-    > of InternalTrait<TContractState> {
         fn get_owned_planet(self: @ComponentState<TContractState>, caller: ContractAddress) -> u32 {
             let tokens = self.storage.read().get_token_addresses();
             tokens.erc721.token_of(caller).try_into().expect('get_owned_planet fail')

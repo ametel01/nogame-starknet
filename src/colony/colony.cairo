@@ -5,25 +5,15 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait IColony<TState> {
-    fn generate_colony(ref self: TState, planet_id: u32) -> (u8, PlanetPosition);
-    fn collect_resources(
-        ref self: TState, uni_speed: u128, planet_id: u32, colony_id: u8
-    ) -> ERC20s;
+    fn generate_colony(ref self: TState);
+    fn collect_resources(ref self: TState, colony_id: u8) -> ERC20s;
     fn process_colony_compound_upgrade(
-        ref self: TState, planet_id: u32, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
     );
     fn process_colony_unit_build(
-        ref self: TState,
-        planet_id: u32,
-        colony_id: u8,
-        techs: TechLevels,
-        name: ColonyBuildType,
-        quantity: u32,
-        is_testnet: bool
+        ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32,
     );
-    fn get_colony_resources(
-        self: @TState, uni_speed: u128, planet_id: u32, colony_id: u8
-    ) -> ERC20s;
+    fn get_colony_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
     fn update_defences_after_attack(ref self: TState, planet_id: u32, colony_id: u8, d: Defences);
     fn reset_resource_timer(ref self: TState, planet_id: u32, colony_id: u8);
     fn fleet_arrives(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
@@ -39,6 +29,7 @@ mod ResourceName {
 #[starknet::contract]
 mod Colony {
     use nogame::colony::positions;
+    use nogame::component::shared::SharedComponent;
     use nogame::compound::library as compound;
     use nogame::defence::library as defence;
     use nogame::dockyard::library as dockyard;
@@ -47,39 +38,101 @@ mod Colony {
         TechLevels, ShipsLevels, Defences, Fleet
     };
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use snforge_std::PrintTrait;
-    use starknet::{get_block_timestamp, get_caller_address};
-    use super::ResourceName;
+    use starknet::{
+        get_block_timestamp, get_caller_address, ContractAddress, contract_address_const
+    };
+
+    component!(path: SharedComponent, storage: shared, event: SharedEvent);
+    impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
-        storage: IStorageDispatcher,
+        #[substorage(v0)]
+        shared: SharedComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
     }
 
-    #[embeddable_as(ColonyWrite)]
-    impl ColonyWriteImpl of super::IColony<ContractState> {
-        fn generate_colony(ref self: ContractState, planet_id: u32) -> (u8, PlanetPosition) {
-            let current_count = self.storage.read().get_colony_count();
-            let position = positions::get_colony_position(current_count);
-            let colony_id = self.storage.read().get_planet_colonies_count(planet_id) + 1;
-            self.storage.read().set_colony_position(planet_id, colony_id, position);
-            self.storage.read().set_planet_colonies_count(planet_id, colony_id);
-            self.storage.read().set_colony_count(current_count + 1);
-            (colony_id, position)
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        PlanetGenerated: PlanetGenerated,
+        #[flat]
+        SharedEvent: SharedComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct PlanetGenerated {
+        id: u32,
+        position: PlanetPosition,
+        account: ContractAddress,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress) {
+        self.ownable.initializer(owner);
+        self.shared.initializer(storage, contract_address_const::<0>());
+    }
+
+    #[abi(embed_v0)]
+    impl ColonyImpl of super::IColony<ContractState> {
+        fn generate_colony(ref self: ContractState) {
+            let caller = get_caller_address();
+            let planet_id = self.shared.get_owned_planet(caller);
+            let exo_tech = self.shared.storage.read().get_tech_levels(planet_id).exocraft;
+            let max_colonies = if exo_tech % 2 == 1 {
+                exo_tech / 2 + 1
+            } else {
+                exo_tech / 2
+            };
+            let current_count = self.shared.storage.read().get_colony_count();
+            assert!(
+                current_count < max_colonies.into(),
+                "NoGame: max colonies {} reached, upgrade Exocraft tech to increase max colonies",
+                max_colonies
+            );
+            let price: u256 = 0;
+            if !price.is_zero() {
+                let eth = self.shared.storage.read().get_token_addresses().eth;
+                eth.transferFrom(caller, self.ownable.owner(), price);
+            }
+            let position = positions::get_colony_position(current_count.into());
+            let colony_id = self.shared.storage.read().get_planet_colonies_count(planet_id) + 1;
+            let id = ((planet_id * 1000) + colony_id.into());
+            self.shared.storage.read().set_colony_position(planet_id, colony_id, position);
+            self.shared.storage.read().set_planet_colonies_count(planet_id, colony_id);
+            self.shared.storage.read().set_colony_count(current_count + 1);
+            let number_of_planets = self.shared.storage.read().get_number_of_planets();
+            self
+                .shared
+                .storage
+                .read()
+                .add_new_planet(planet_id, position, number_of_planets + 1, id);
+            self.emit(Event::PlanetGenerated(PlanetGenerated { id, position, account: caller }));
         }
 
-        fn collect_resources(
-            ref self: ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
-        ) -> ERC20s {
+        fn collect_resources(ref self: ContractState, colony_id: u8) -> ERC20s {
+            let planet_id = self.shared.get_owned_planet(get_caller_address());
             assert!(
-                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
+                !self.shared.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
             );
+            let uni_speed = self.shared.storage.read().get_uni_speed();
             let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
             self
+                .shared
                 .storage
                 .read()
                 .set_colony_resource_timer(planet_id, colony_id, get_block_timestamp());
@@ -88,14 +141,11 @@ mod Colony {
         }
 
         fn process_colony_compound_upgrade(
-            ref self: ContractState,
-            planet_id: u32,
-            colony_id: u8,
-            name: ColonyUpgradeType,
-            quantity: u8
+            ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
         ) {
+            let planet_id = self.shared.get_owned_planet(get_caller_address());
             assert!(
-                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
+                !self.shared.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
@@ -104,29 +154,25 @@ mod Colony {
         }
 
         fn process_colony_unit_build(
-            ref self: ContractState,
-            planet_id: u32,
-            colony_id: u8,
-            techs: TechLevels,
-            name: ColonyBuildType,
-            quantity: u32,
-            is_testnet: bool
+            ref self: ContractState, colony_id: u8, name: ColonyBuildType, quantity: u32,
         ) {
+            let planet_id = self.shared.get_owned_planet(get_caller_address());
             assert!(
-                !self.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
+                !self.shared.storage.read().get_colony_position(planet_id, colony_id).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
                 planet_id
             );
+            let techs = self.shared.storage.read().get_tech_levels(planet_id);
+            let is_testnet = self.shared.storage.read().get_is_testnet();
             self.build_component(planet_id, colony_id, techs, name, quantity, is_testnet);
         }
 
-        fn get_colony_resources(
-            self: @ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
-        ) -> ERC20s {
-            if self.storage.read().get_colony_position(planet_id, colony_id).is_zero() {
+        fn get_colony_resources(self: @ContractState, planet_id: u32, colony_id: u8) -> ERC20s {
+            if self.shared.storage.read().get_colony_position(planet_id, colony_id).is_zero() {
                 return Zeroable::zero();
             }
+            let uni_speed = self.shared.storage.read().get_uni_speed();
             self.calculate_colony_production(uni_speed, planet_id, colony_id)
         }
 
@@ -134,26 +180,45 @@ mod Colony {
             ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences
         ) {
             self
+                .shared
                 .storage
                 .read()
                 .set_colony_defence(planet_id, colony_id, Names::CELESTIA, d.celestia);
-            self.storage.read().set_colony_defence(planet_id, colony_id, Names::BLASTER, d.blaster);
-            self.storage.read().set_colony_defence(planet_id, colony_id, Names::BEAM, d.beam);
-            self.storage.read().set_colony_defence(planet_id, colony_id, Names::ASTRAL, d.astral);
-            self.storage.read().set_colony_defence(planet_id, colony_id, Names::PLASMA, d.plasma);
+            self
+                .shared
+                .storage
+                .read()
+                .set_colony_defence(planet_id, colony_id, Names::BLASTER, d.blaster);
+            self
+                .shared
+                .storage
+                .read()
+                .set_colony_defence(planet_id, colony_id, Names::BEAM, d.beam);
+            self
+                .shared
+                .storage
+                .read()
+                .set_colony_defence(planet_id, colony_id, Names::ASTRAL, d.astral);
+            self
+                .shared
+                .storage
+                .read()
+                .set_colony_defence(planet_id, colony_id, Names::PLASMA, d.plasma);
         }
 
         fn reset_resource_timer(ref self: ContractState, planet_id: u32, colony_id: u8) {
             self
+                .shared
                 .storage
                 .read()
                 .set_colony_resource_timer(planet_id, colony_id, get_block_timestamp());
         }
 
         fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
-            let current_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
+            let current_levels = self.shared.storage.read().get_colony_ships(planet_id, colony_id);
             if fleet.carrier > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -162,6 +227,7 @@ mod Colony {
             }
             if fleet.scraper > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -170,6 +236,7 @@ mod Colony {
             }
             if fleet.sparrow > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -178,6 +245,7 @@ mod Colony {
             }
             if fleet.frigate > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -186,6 +254,7 @@ mod Colony {
             }
             if fleet.armade > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -195,9 +264,10 @@ mod Colony {
         }
 
         fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
-            let current_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
+            let current_levels = self.shared.storage.read().get_colony_ships(planet_id, colony_id);
             if fleet.carrier > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -206,6 +276,7 @@ mod Colony {
             }
             if fleet.scraper > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -214,6 +285,7 @@ mod Colony {
             }
             if fleet.sparrow > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -222,6 +294,7 @@ mod Colony {
             }
             if fleet.frigate > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -230,6 +303,7 @@ mod Colony {
             }
             if fleet.armade > 0 {
                 self
+                    .shared
                     .storage
                     .read()
                     .set_colony_ship(
@@ -248,10 +322,15 @@ mod Colony {
             component: ColonyUpgradeType,
             quantity: u8
         ) {
-            let current_levels = self.storage.read().get_colony_compounds(planet_id, colony_id);
+            let current_levels = self
+                .shared
+                .storage
+                .read()
+                .get_colony_compounds(planet_id, colony_id);
             match component {
                 ColonyUpgradeType::SteelMine => {
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_compound(
@@ -263,6 +342,7 @@ mod Colony {
                 },
                 ColonyUpgradeType::QuartzMine => {
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_compound(
@@ -274,6 +354,7 @@ mod Colony {
                 },
                 ColonyUpgradeType::TritiumMine => {
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_compound(
@@ -286,6 +367,7 @@ mod Colony {
                 },
                 ColonyUpgradeType::EnergyPlant => {
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_compound(
@@ -297,6 +379,7 @@ mod Colony {
                 },
                 ColonyUpgradeType::Dockyard => {
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_compound(
@@ -320,16 +403,22 @@ mod Colony {
             is_tesnet: bool,
         ) {
             let dockyard_level = self
+                .shared
                 .storage
                 .read()
                 .get_colony_compounds(planet_id, colony_id)
                 .dockyard;
-            let ship_levels = self.storage.read().get_colony_ships(planet_id, colony_id);
-            let defence_levels = self.storage.read().get_colony_defences(planet_id, colony_id);
+            let ship_levels = self.shared.storage.read().get_colony_ships(planet_id, colony_id);
+            let defence_levels = self
+                .shared
+                .storage
+                .read()
+                .get_colony_defences(planet_id, colony_id);
             match component {
                 ColonyBuildType::Carrier => {
                     dockyard::carrier_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_ship(
@@ -339,6 +428,7 @@ mod Colony {
                 ColonyBuildType::Scraper => {
                     dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_ship(
@@ -348,6 +438,7 @@ mod Colony {
                 ColonyBuildType::Sparrow => {
                     dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_ship(
@@ -357,6 +448,7 @@ mod Colony {
                 ColonyBuildType::Frigate => {
                     dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_ship(
@@ -366,6 +458,7 @@ mod Colony {
                 ColonyBuildType::Armade => {
                     dockyard::scraper_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_ship(
@@ -375,6 +468,7 @@ mod Colony {
                 ColonyBuildType::Celestia => {
                     dockyard::celestia_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_defence(
@@ -387,6 +481,7 @@ mod Colony {
                 ColonyBuildType::Blaster => {
                     defence::blaster_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_defence(
@@ -396,6 +491,7 @@ mod Colony {
                 ColonyBuildType::Beam => {
                     defence::beam_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_defence(
@@ -405,6 +501,7 @@ mod Colony {
                 ColonyBuildType::Astral => {
                     defence::astral_launcher_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_defence(
@@ -414,6 +511,7 @@ mod Colony {
                 ColonyBuildType::Plasma => {
                     defence::plasma_beam_requirements_check(dockyard_level, techs);
                     self
+                        .shared
                         .storage
                         .read()
                         .set_colony_defence(
@@ -428,12 +526,17 @@ mod Colony {
         ) -> ERC20s {
             let time_now = get_block_timestamp();
             let last_collection_time = self
+                .shared
                 .storage
                 .read()
                 .get_colony_resource_timer(planet_id, colony_id);
             let time_elapsed = time_now - last_collection_time;
-            let mines_levels = self.storage.read().get_colony_compounds(planet_id, colony_id);
-            let position = self.storage.read().get_colony_position(planet_id, colony_id);
+            let mines_levels = self
+                .shared
+                .storage
+                .read()
+                .get_colony_compounds(planet_id, colony_id);
+            let position = self.shared.storage.read().get_colony_position(planet_id, colony_id);
             let temp = self.calculate_avg_temperature(position.orbit);
             let steel_available = compound::production::steel(mines_levels.steel)
                 * uni_speed
@@ -451,9 +554,14 @@ mod Colony {
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let colony_position = self.storage.read().get_colony_position(planet_id, colony_id);
+            let colony_position = self
+                .shared
+                .storage
+                .read()
+                .get_colony_position(planet_id, colony_id);
             let celestia_production = self.position_to_celestia_production(colony_position.orbit);
             let celestia_production: u128 = self
+                .shared
                 .storage
                 .read()
                 .get_colony_defences(planet_id, colony_id)

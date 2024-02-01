@@ -1,6 +1,14 @@
-use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
-use nogame::libraries::types::{PRICE, UpgradeType, BuildType, Names, ERC20s};
+use nogame::colony::colony::{Colony, IColonyDispatcher, IColonyDispatcherTrait};
+use nogame::compound::compound::{Compound, ICompoundDispatcher, ICompoundDispatcherTrait};
+use nogame::defence::defence::{Defence, IDefenceDispatcher, IDefenceDispatcherTrait};
+use nogame::dockyard::dockyard::{Dockyard, IDockyardDispatcher, IDockyardDispatcherTrait};
+use nogame::fleet_movements::fleet_movements::{
+    FleetMovements, IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
+};
+use nogame::game::game::{NoGame, INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::libraries::types::{PRICE, TechUpgradeType, CompoundUpgradeType, Names, ERC20s};
 use nogame::storage::storage::{Storage, IStorageDispatcher, IStorageDispatcherTrait};
+use nogame::tech::tech::{Tech, ITechDispatcher, ITechDispatcherTrait};
 use nogame::token::erc20::erc20::ERC20;
 use nogame::token::erc20::erc20_ng::ERC20NoGame;
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -35,6 +43,12 @@ struct Dispatchers {
     eth: IERC20CamelDispatcher,
     nogame: INoGameDispatcher,
     storage: IStorageDispatcher,
+    colony: IColonyDispatcher,
+    compound: ICompoundDispatcher,
+    defence: IDefenceDispatcher,
+    dockyard: IDockyardDispatcher,
+    fleet: IFleetMovementsDispatcher,
+    tech: ITechDispatcher,
 }
 
 fn DEPLOYER() -> ContractAddress {
@@ -57,13 +71,37 @@ fn ACCOUNT5() -> ContractAddress {
 }
 
 fn set_up() -> Dispatchers {
-    let contract = declare('NoGame');
+    let contract = declare('Storage');
     let calldata: Array<felt252> = array![];
+    let storage = contract.deploy(@calldata).expect('failed storage');
+
+    let contract = declare('Colony');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into()];
+    let colony = contract.deploy(@calldata).expect('failed colony');
+
+    let contract = declare('Compound');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
+    let compound = contract.deploy(@calldata).expect('failed compound');
+
+    let contract = declare('Defence');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
+    let defence = contract.deploy(@calldata).expect('failed defence');
+
+    let contract = declare('Dockyard');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
+    let dockyard = contract.deploy(@calldata).expect('failed dockyard');
+
+    let contract = declare('FleetMovements');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
+    let fleet = contract.deploy(@calldata).expect('failed fleet');
+
+    let contract = declare('NoGame');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
     let nogame = contract.deploy(@calldata).expect('failed nogame');
 
-    let contract = declare('Storage');
-    let calldata: Array<felt252> = array![nogame.into()];
-    let storage = contract.deploy(@calldata).expect('failed storage');
+    let contract = declare('Tech');
+    let calldata: Array<felt252> = array![DEPLOYER().into(), storage.into(), colony.into()];
+    let tech = contract.deploy(@calldata).expect('failed tech');
 
     let contract = declare('ERC721NoGame');
     let calldata: Array<felt252> = array![
@@ -91,17 +129,29 @@ fn set_up() -> Dispatchers {
         quartz: IERC20NoGameDispatcher { contract_address: quartz },
         tritium: IERC20NoGameDispatcher { contract_address: tritium },
         eth: IERC20CamelDispatcher { contract_address: eth },
+        colony: IColonyDispatcher { contract_address: colony },
+        compound: ICompoundDispatcher { contract_address: compound },
+        defence: IDefenceDispatcher { contract_address: defence },
+        dockyard: IDockyardDispatcher { contract_address: dockyard },
+        fleet: IFleetMovementsDispatcher { contract_address: fleet },
         nogame: INoGameDispatcher { contract_address: nogame },
+        tech: ITechDispatcher { contract_address: tech },
         storage: IStorageDispatcher { contract_address: storage },
     }
 }
 
 fn init_game(dsp: Dispatchers) {
     start_prank(CheatTarget::All, DEPLOYER());
-    dsp.nogame.initializer(DEPLOYER(), dsp.storage.contract_address,);
     dsp
         .storage
         .initializer(
+            dsp.colony.contract_address,
+            dsp.compound.contract_address,
+            dsp.defence.contract_address,
+            dsp.dockyard.contract_address,
+            dsp.fleet.contract_address,
+            dsp.nogame.contract_address,
+            dsp.tech.contract_address,
             dsp.erc721.contract_address,
             dsp.steel.contract_address,
             dsp.quartz.contract_address,
@@ -151,35 +201,6 @@ fn test_deploy_and_init() {
     init_game(dsp);
     start_prank(CheatTarget::All, dsp.nogame.contract_address);
     dsp.eth.transferFrom(ACCOUNT1(), DEPLOYER(), 1.into());
-}
-
-// builds:
-// - steel_mine: 3
-// - quartz_mine: 4
-// - tritium_mine: 7
-// - energy_plant: 8
-fn build_basic_mines(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 2);
-    game.process_compound_upgrade(UpgradeType::EnergyPlant(()), 8);
-    game.process_compound_upgrade(UpgradeType::SteelMine(()), 3);
-    game.process_compound_upgrade(UpgradeType::QuartzMine(()), 4);
-    game.process_compound_upgrade(UpgradeType::TritiumMine(()), 6);
-}
-
-fn advance_game_state(game: INoGameDispatcher) {
-    warp_multiple(game.contract_address, get_contract_address(), get_block_timestamp() + YEAR * 3);
-    game.process_compound_upgrade(UpgradeType::Dockyard(()), 8);
-    game.process_compound_upgrade(UpgradeType::Lab(()), 7);
-    game.process_tech_upgrade(UpgradeType::EnergyTech(()), 8);
-    game.process_tech_upgrade(UpgradeType::Combustion(()), 6);
-    game.process_tech_upgrade(UpgradeType::BeamTech(()), 10);
-    game.process_tech_upgrade(UpgradeType::Shield(()), 5);
-    game.process_tech_upgrade(UpgradeType::Spacetime(()), 3);
-    game.process_tech_upgrade(UpgradeType::Warp(()), 4);
-    game.process_tech_upgrade(UpgradeType::Ion(()), 5);
-    game.process_tech_upgrade(UpgradeType::Thrust(()), 4);
-    game.process_tech_upgrade(UpgradeType::PlasmaTech(()), 7);
-    game.process_tech_upgrade(UpgradeType::Weapons(()), 3);
 }
 
 fn init_storage(dsp: Dispatchers, planet_id: u32) {
@@ -336,9 +357,31 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
 
 fn warp_multiple(a: ContractAddress, b: ContractAddress, time: u64) {
     start_warp(CheatTarget::All, time);
-    start_warp(CheatTarget::All, time);
 }
 
 fn declare_upgradable() -> ClassHash {
     declare('NoGameUpgraded').class_hash
+}
+
+fn prank_contracts(dsp: Dispatchers, account: ContractAddress) {
+    start_prank(
+        CheatTarget::Multiple(
+            array![
+                dsp.colony.contract_address,
+                dsp.compound.contract_address,
+                dsp.defence.contract_address,
+                dsp.dockyard.contract_address,
+                dsp.fleet.contract_address,
+                dsp.nogame.contract_address,
+                dsp.tech.contract_address,
+            ]
+        ),
+        account
+    );
+}
+
+#[test]
+fn test_deploy() {
+    let dsp = set_up();
+    init_game(dsp);
 }

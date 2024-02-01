@@ -1,9 +1,15 @@
-// TODOS: 
+use starknet::{ContractAddress};
+
+#[starknet::interface]
+trait INoGame<TState> {
+    fn generate_planet(ref self: TState);
+    fn collect_resources(ref self: TState);
+    fn get_current_planet_price(self: @TState) -> u128;
+}
+
 #[starknet::contract]
 mod NoGame {
-    use core::poseidon::poseidon_hash_span;
     use nogame::component::shared::SharedComponent;
-    use nogame::game::interface::INoGame;
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::positions;
     use nogame::libraries::types::{ERC20s, PlanetPosition, DAY, E18, MAX_NUMBER_OF_PLANETS, _0_05};
@@ -15,19 +21,16 @@ mod NoGame {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    // Components
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
 
     use snforge_std::PrintTrait;
     use starknet::{
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
-        SyscallResultTrait, class_hash::ClassHash
+        contract_address_const
     };
 
     component!(path: SharedComponent, storage: shared, event: SharedEvent);
     impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl SharedImpl = SharedComponent::Shared<ContractState>;
 
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
@@ -76,18 +79,13 @@ mod NoGame {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {}
+    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+        self.ownable.initializer(get_caller_address());
+        self.shared.initializer(storage, colony);
+    }
 
     #[abi(embed_v0)]
-    impl NoGame of INoGame<ContractState> {
-        fn initializer(ref self: ContractState, owner: ContractAddress, storage: ContractAddress,) {
-            self.ownable.initializer(owner);
-            self.shared.storage.write(IStorageDispatcher { contract_address: storage });
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        //                         Planet Functions                                
-        /////////////////////////////////////////////////////////////////////
+    impl NoGame of super::INoGame<ContractState> {
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
             let tokens = self.shared.storage.read().get_token_addresses();
@@ -121,6 +119,10 @@ mod NoGame {
                         PlanetGenerated { id: token_id, position, account: caller }
                     )
                 );
+        }
+
+        fn collect_resources(ref self: ContractState) {
+            self.shared.collect_resources();
         }
 
         fn get_current_planet_price(self: @ContractState) -> u128 {

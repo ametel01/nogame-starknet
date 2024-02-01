@@ -1,6 +1,6 @@
 use nogame::libraries::types::{
     Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels, TechLevels, Fleet,
-    Defences, ERC20s
+    Defences, ERC20s, Contracts
 };
 use starknet::ContractAddress;
 
@@ -8,13 +8,13 @@ use starknet::ContractAddress;
 trait IStorage<TState> {
     fn initializer(
         ref self: TState,
-        game: ContractAddress,
-        fleet: ContractAddress,
         colony: ContractAddress,
         compound: ContractAddress,
-        tech: ContractAddress,
-        dockyard: ContractAddress,
         defence: ContractAddress,
+        dockyard: ContractAddress,
+        fleet: ContractAddress,
+        nogame: ContractAddress,
+        tech: ContractAddress,
         erc721: ContractAddress,
         steel: ContractAddress,
         quartz: ContractAddress,
@@ -62,6 +62,7 @@ trait IStorage<TState> {
         ref self: TState, planet_id: u32, colony_id: u8, defence_id: felt252, level: u32,
     );
 
+    fn get_contracts(self: @TState) -> Contracts;
     fn get_token_addresses(self: @TState) -> Tokens;
     fn get_number_of_planets(self: @TState) -> u32;
     fn get_is_testnet(self: @TState) -> bool;
@@ -86,7 +87,7 @@ trait IStorage<TState> {
     fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
     fn get_is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
     // Colonies.
-    fn get_colony_count(self: @TState) -> usize;
+    fn get_colony_count(self: @TState) -> u32;
     fn get_planet_colonies_count(self: @TState, planet_id: u32) -> u8;
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_position(self: @TState, planet_id: u32, colony_id: u8) -> PlanetPosition;
@@ -99,17 +100,24 @@ trait IStorage<TState> {
 
 #[starknet::contract]
 mod Storage {
+    use nogame::component::shared::SharedComponent;
     use nogame::libraries::types::{Names, ERC20s};
     use nogame::token::erc20::interface::IERC20NoGameDispatcher;
     use nogame::token::erc721::interface::IERC721NoGameDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
+    use snforge_std::PrintTrait;
     use super::{
         ContractAddress, Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels,
-        Fleet, TechLevels, Defences
+        Fleet, TechLevels, Defences, Contracts
     };
+
+    component!(path: SharedComponent, storage: shared, event: SharedEvent);
+    impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        shared: SharedComponent::Storage,
         // Settings.
         game: ContractAddress,
         fleet: ContractAddress,
@@ -159,8 +167,15 @@ mod Storage {
         colony_defences: LegacyMap::<(u32, u8, felt252), u32>,
     }
 
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SharedEvent: SharedComponent::Event,
+    }
+
     #[constructor]
-    fn constructor(ref self: ContractState, game: ContractAddress) {
+    fn constructor(ref self: ContractState) {
         self.universe_start_time.write(starknet::get_block_timestamp());
     }
 
@@ -177,7 +192,6 @@ mod Storage {
                 self.colony_owner.write(colony_id, planet_id);
                 self.planet_position.write(colony_id, position);
                 self.position_to_planet.write(position, colony_id);
-                self.resources_timer.write(colony_id, starknet::get_block_timestamp());
             } else {
                 self.position_to_planet.write(position, planet_id);
                 self.planet_position.write(planet_id, position);
@@ -341,6 +355,18 @@ mod Storage {
             self.colony_defences.write((planet_id, colony_id, defence_id), level);
         }
 
+        fn get_contracts(self: @ContractState) -> Contracts {
+            Contracts {
+                colony: self.colony.read(),
+                game: self.game.read(),
+                fleet: self.fleet.read(),
+                compound: self.compound.read(),
+                tech: self.tech.read(),
+                dockyard: self.dockyard.read(),
+                defence: self.defence.read(),
+            }
+        }
+
         fn get_token_addresses(self: @ContractState) -> Tokens {
             Tokens {
                 erc721: self.erc721.read(),
@@ -500,7 +526,7 @@ mod Storage {
             }
         }
 
-        fn get_colony_count(self: @ContractState) -> usize {
+        fn get_colony_count(self: @ContractState) -> u32 {
             self.colony_count.read()
         }
 
@@ -573,13 +599,13 @@ mod Storage {
 
         fn initializer(
             ref self: ContractState,
-            game: ContractAddress,
-            fleet: ContractAddress,
             colony: ContractAddress,
             compound: ContractAddress,
-            tech: ContractAddress,
-            dockyard: ContractAddress,
             defence: ContractAddress,
+            dockyard: ContractAddress,
+            fleet: ContractAddress,
+            nogame: ContractAddress,
+            tech: ContractAddress,
             erc721: ContractAddress,
             steel: ContractAddress,
             quartz: ContractAddress,
@@ -588,16 +614,16 @@ mod Storage {
             fees_receiver: ContractAddress,
             uni_speed: u128,
             token_price: u128,
-            is_testnet: bool
+            is_testnet: bool,
         ) {
             assert(!self.initialized.read(), 'already initialized');
-            self.game.write(game);
-            self.fleet.write(fleet);
             self.colony.write(colony);
             self.compound.write(compound);
-            self.tech.write(tech);
-            self.dockyard.write(dockyard);
             self.defence.write(defence);
+            self.dockyard.write(dockyard);
+            self.fleet.write(fleet);
+            self.game.write(nogame);
+            self.tech.write(tech);
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
             self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
             self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
@@ -605,9 +631,9 @@ mod Storage {
             self.ETH.write(IERC20CamelDispatcher { contract_address: eth });
             self.fees_receiver.write(fees_receiver);
             self.uni_speed.write(uni_speed);
-            self.initialized.write(true);
             self.token_price.write(token_price);
             self.is_testnet.write(is_testnet);
+            self.initialized.write(true);
         }
     }
 }

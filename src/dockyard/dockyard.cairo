@@ -14,16 +14,23 @@ mod Dockyard {
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use starknet::{get_caller_address, ContractAddress};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use starknet::{get_caller_address, ContractAddress, contract_address_const};
 
     component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedImpl = SharedComponent::Shared<ContractState>;
     impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         #[substorage(v0)]
         shared: SharedComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
     }
 
     #[event]
@@ -32,6 +39,8 @@ mod Dockyard {
         FleetSpent: FleetSpent,
         #[flat]
         SharedEvent: SharedComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -39,6 +48,12 @@ mod Dockyard {
         planet_id: u32,
         quantity: u32,
         spent: ERC20s
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+        self.ownable.initializer(owner);
+        self.shared.initializer(storage, colony);
     }
 
     #[abi(embed_v0)]

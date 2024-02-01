@@ -594,3 +594,14 @@ struct Tokens {
     tritium: IERC20NoGameDispatcher,
     eth: IERC20CamelDispatcher,
 }
+
+#[derive(Copy, Drop, Serde)]
+struct Contracts {
+    colony: ContractAddress,
+    compound: ContractAddress,
+    defence: ContractAddress,
+    dockyard: ContractAddress,
+    fleet: ContractAddress,
+    game: ContractAddress,
+    tech: ContractAddress,
+}

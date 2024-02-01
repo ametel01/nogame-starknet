@@ -14,17 +14,26 @@ mod Tech {
     use nogame::tech::library as tech;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use starknet::{get_caller_address, ContractAddress, get_block_timestamp};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use starknet::{
+        get_caller_address, ContractAddress, get_block_timestamp, contract_address_const
+    };
 
     component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedImpl = SharedComponent::Shared<ContractState>;
     impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
 
     #[storage]
     struct Storage {
         #[substorage(v0)]
         shared: SharedComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
     }
 
     #[event]
@@ -33,6 +42,8 @@ mod Tech {
         TechSpent: TechSpent,
         #[flat]
         SharedEvent: SharedComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -40,6 +51,12 @@ mod Tech {
         planet_id: u32,
         quantity: u8,
         spent: ERC20s
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+        self.ownable.initializer(owner);
+        self.shared.initializer(storage, colony);
     }
 
     #[abi(embed_v0)]
@@ -136,6 +153,7 @@ mod Tech {
                     return cost;
                 },
                 TechUpgradeType::Ion => {
+                    assert!(!is_testnet, "NoGame Tech: Ion tech is not available on testnet");
                     tech::ion_requirements_check(lab_level, techs);
                     let base_cost: ERC20s = tech::base_tech_costs().ion;
                     let cost = tech::get_tech_cost(techs.ion, quantity, base_cost);
@@ -153,6 +171,7 @@ mod Tech {
                     return cost;
                 },
                 TechUpgradeType::PlasmaTech => {
+                    assert!(!is_testnet, "NoGame Tech: Plasma tech is not available on testnet");
                     tech::plasma_tech_requirements_check(lab_level, techs);
                     let base_cost: ERC20s = tech::base_tech_costs().plasma;
                     let cost = tech::get_tech_cost(techs.plasma, quantity, base_cost);
@@ -204,6 +223,7 @@ mod Tech {
                     return cost;
                 },
                 TechUpgradeType::Spacetime => {
+                    assert!(!is_testnet, "NoGame Tech: Spacetime tech is not available on testnet");
                     tech::spacetime_requirements_check(lab_level, techs);
                     let base_cost: ERC20s = tech::base_tech_costs().spacetime;
                     let cost = tech::get_tech_cost(techs.spacetime, quantity, base_cost);
@@ -255,6 +275,7 @@ mod Tech {
                     return cost;
                 },
                 TechUpgradeType::Warp => {
+                    assert!(!is_testnet, "NoGame Tech: Warp tech is not available on testnet");
                     tech::warp_requirements_check(lab_level, techs);
                     let base_cost: ERC20s = tech::base_tech_costs().warp;
                     let cost = tech::get_tech_cost(techs.warp, quantity, base_cost);
