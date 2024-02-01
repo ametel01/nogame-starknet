@@ -3,8 +3,8 @@ name: Test
 on: [push, pull_request]
 
 env:
-  SCARB_VERSION: 2.4.4
-  SNFORGE_VERSION: 0.14.0
+  SCARB_VERSION: 2.5.0
+  SNFORGE_VERSION: 0.16.0
 
 jobs:
   check:
