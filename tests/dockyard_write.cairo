@@ -10,14 +10,14 @@
 // use nogame::libraries::types::{
 //     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
 // };
-// use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up};
+// use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, DEPLOYER, init_game, set_up, prank_contracts};
 
 // #[test]
 // fn test_carrier_build() {
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);
@@ -50,7 +50,7 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);
@@ -80,7 +80,7 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);
@@ -111,7 +111,7 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);
@@ -150,7 +150,7 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);
@@ -188,7 +188,7 @@
 //     let dsp = set_up();
 //     init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
+//     prank_contracts(dsp, ACCOUNT1());
 //     dsp.nogame.generate_planet();
 
 //     dsp.nogame.energy_plant_upgrade(1);

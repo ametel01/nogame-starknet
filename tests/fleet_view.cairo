@@ -1,181 +1,180 @@
-// use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
-// use nogame::fleet_movements::fleet_movements::{
-//     IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
-// };
-// use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
-// use nogame::libraries::types::{Fleet, ShipBuildType, TechUpgradeType, MissionCategory};
-// use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-// use nogame::tech::tech::{ITechDispatcher, ITechDispatcherTrait};
-// use snforge_std::PrintTrait;
+use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
+use nogame::fleet_movements::fleet_movements::{
+    IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
+};
+use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
+use nogame::libraries::types::{Fleet, ShipBuildType, TechUpgradeType, MissionCategory};
+use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+use nogame::tech::tech::{ITechDispatcher, ITechDispatcherTrait};
+use snforge_std::PrintTrait;
 
-// use snforge_std::{start_prank, CheatTarget};
-// use tests::utils::{ACCOUNT1, ACCOUNT2, init_game, set_up, init_storage};
+use snforge_std::{start_prank, CheatTarget};
+use tests::utils::{ACCOUNT1, ACCOUNT2, init_game, set_up, init_storage, prank_contracts};
 
-// #[test]
-// fn test_is_noob_protected() {
-//     let dsp = set_up();
-//     init_game(dsp);
+#[test]
+fn test_is_noob_protected() {
+    let dsp = set_up();
+    init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     dsp.nogame.generate_planet();
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
-//     dsp.nogame.generate_planet();
+    prank_contracts(dsp, ACCOUNT1());
+    dsp.nogame.generate_planet();
+    prank_contracts(dsp, ACCOUNT2());
+    dsp.nogame.generate_planet();
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     init_storage(dsp, 1);
+    prank_contracts(dsp, ACCOUNT1());
+    init_storage(dsp, 1);
 
-//     assert(dsp.storage.get_is_noob_protected(1, 2) == true, 'wrong noob true');
-//     assert(dsp.storage.get_is_noob_protected(2, 1) == true, 'wrong noob true');
-// }
+    assert(dsp.storage.get_is_noob_protected(1, 2) == true, 'wrong noob true');
+    assert(dsp.storage.get_is_noob_protected(2, 1) == true, 'wrong noob true');
+}
 
-// #[test]
-// fn test_get_mission_details() { // TODO
-//     assert(0 == 0, 'todo');
-// }
+#[test]
+fn test_get_mission_details() { // TODO
+    assert(0 == 0, 'todo');
+}
 
-// #[test]
-// fn test_get_hostile_missions() {
-//     let dsp = set_up();
-//     init_game(dsp);
+#[test]
+fn test_get_hostile_missions() {
+    let dsp = set_up();
+    init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     dsp.nogame.generate_planet();
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
-//     dsp.nogame.generate_planet();
-//     init_storage(dsp, 2);
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     init_storage(dsp, 1);
-//     dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
+    prank_contracts(dsp, ACCOUNT1());
+    dsp.nogame.generate_planet();
+    prank_contracts(dsp, ACCOUNT2());
+    dsp.nogame.generate_planet();
+    init_storage(dsp, 2);
+    prank_contracts(dsp, ACCOUNT1());
+    init_storage(dsp, 1);
+    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
 
-//     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
 
-//     let p2_position = dsp.storage.get_planet_position(2);
+    let p2_position = dsp.storage.get_planet_position(2);
 
-//     let mut fleet: Fleet = Default::default();
-//     fleet.carrier = 1;
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
 
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 3, 'wrong missions len #1');
-//     assert(*missions.at(0).origin == 1, 'wrong origin #2');
-//     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin #3');
-//     assert(*missions.at(1).origin == 1, 'wrong origin #4');
-//     assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin #5');
-//     assert(*missions.at(2).origin == 1, 'wrong origin #6');
-//     assert(*missions.at(2).id_at_origin == 3, 'wrong id at origin #7');
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 3, 'wrong missions len #1');
+    assert(*missions.at(0).origin == 1, 'wrong origin #2');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin #3');
+    assert(*missions.at(1).origin == 1, 'wrong origin #4');
+    assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin #5');
+    assert(*missions.at(2).origin == 1, 'wrong origin #6');
+    assert(*missions.at(2).id_at_origin == 3, 'wrong id at origin #7');
 
-//     dsp.fleet.recall_fleet(1);
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 2, 'wrong missions len 2 #8');
-//     assert(*missions.at(0).origin == 1, 'wrong origin #9');
-//     assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #10');
-//     assert(*missions.at(1).origin == 1, 'wrong origin #11');
-//     assert(*missions.at(1).id_at_origin == 3, 'wrong id at origin #12');
+    dsp.fleet.recall_fleet(1);
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 2, 'wrong missions len 2 #8');
+    assert(*missions.at(0).origin == 1, 'wrong origin #9');
+    assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #10');
+    assert(*missions.at(1).origin == 1, 'wrong origin #11');
+    assert(*missions.at(1).id_at_origin == 3, 'wrong id at origin #12');
 
-//     dsp.fleet.recall_fleet(3);
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 1, 'wrong missions len 1 #13');
-//     assert(*missions.at(0).origin == 1, 'wrong origin #14');
-//     assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #15');
+    dsp.fleet.recall_fleet(3);
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 1, 'wrong missions len 1 #13');
+    assert(*missions.at(0).origin == 1, 'wrong origin #14');
+    assert(*missions.at(0).id_at_origin == 2, 'wrong id at origin #15');
 
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 2, 'wrong missions len 2 #16');
-//     assert(*missions.at(0).origin == 1, 'wrong origin #17');
-//     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 2 #18');
-//     assert(*missions.at(1).origin == 1, 'wrong origin #19');
-//     assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin 1 #20');
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 2, 'wrong missions len 2 #16');
+    assert(*missions.at(0).origin == 1, 'wrong origin #17');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 2 #18');
+    assert(*missions.at(1).origin == 1, 'wrong origin #19');
+    assert(*missions.at(1).id_at_origin == 2, 'wrong id at origin 1 #20');
 
-//     dsp.fleet.recall_fleet(2);
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 1, 'wrong missions len 1 #21');
-//     assert(*missions.at(0).origin == 1, 'wrong origin #22');
-//     assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 1 #23');
+    dsp.fleet.recall_fleet(2);
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 1, 'wrong missions len 1 #21');
+    assert(*missions.at(0).origin == 1, 'wrong origin #22');
+    assert(*missions.at(0).id_at_origin == 1, 'wrong id at origin 1 #23');
 
-//     dsp.fleet.recall_fleet(1);
-//     let mut missions = dsp.storage.get_incoming_missions(2);
-//     assert(missions.len() == 0, 'wrong missions len 1 #24');
-// }
+    dsp.fleet.recall_fleet(1);
+    let mut missions = dsp.storage.get_incoming_missions(2);
+    assert(missions.len() == 0, 'wrong missions len 1 #24');
+}
 
-// #[test]
-// fn test_get_active_missions() {
-//     let dsp = set_up();
-//     init_game(dsp);
+#[test]
+fn test_get_active_missions() {
+    let dsp = set_up();
+    init_game(dsp);
 
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     dsp.nogame.generate_planet();
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
-//     dsp.nogame.generate_planet();
-//     init_storage(dsp, 2);
-//     start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-//     init_storage(dsp, 1);
-//     dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
+    prank_contracts(dsp, ACCOUNT1());
+    dsp.nogame.generate_planet();
+    prank_contracts(dsp, ACCOUNT2());
+    dsp.nogame.generate_planet();
+    init_storage(dsp, 2);
+    prank_contracts(dsp, ACCOUNT1());
+    init_storage(dsp, 1);
+    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
 
-//     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
 
-//     let p2_position = dsp.storage.get_planet_position(2);
+    let p2_position = dsp.storage.get_planet_position(2);
 
-//     let mut fleet: Fleet = Default::default();
-//     fleet.carrier = 1;
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
 
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 3, 'wrong assert #1');
-//     assert(*missions.at(0).id == 1, 'wrong assert #2');
-//     assert(*missions.at(0).destination == 2, 'wrong assert #3');
-//     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #4');
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 3, 'wrong assert #1');
+    assert(*missions.at(0).id == 1, 'wrong assert #2');
+    assert(*missions.at(0).destination == 2, 'wrong assert #3');
+    assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #4');
 
-//     assert(*missions.at(1).id == 2, 'wrong assert #5');
-//     assert(*missions.at(1).destination == 2, 'wrong assert #6');
-//     assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #7');
+    assert(*missions.at(1).id == 2, 'wrong assert #5');
+    assert(*missions.at(1).destination == 2, 'wrong assert #6');
+    assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #7');
 
-//     assert(*missions.at(2).id == 3, 'wrong assert #8');
-//     assert(*missions.at(2).destination == 2, 'wrong assert #9');
-//     assert(*missions.at(2).category == MissionCategory::ATTACK, 'wrong assert #10');
+    assert(*missions.at(2).id == 3, 'wrong assert #8');
+    assert(*missions.at(2).destination == 2, 'wrong assert #9');
+    assert(*missions.at(2).category == MissionCategory::ATTACK, 'wrong assert #10');
 
-//     dsp.fleet.recall_fleet(1);
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 2, 'wrong assert #11');
+    dsp.fleet.recall_fleet(1);
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 2, 'wrong assert #11');
 
-//     assert(*missions.at(0).id == 2, 'wrong assert #12');
-//     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #13');
+    assert(*missions.at(0).id == 2, 'wrong assert #12');
+    assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #13');
 
-//     assert(*missions.at(1).id == 3, 'wrong assert #14');
-//     assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #15');
+    assert(*missions.at(1).id == 3, 'wrong assert #14');
+    assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #15');
 
-//     dsp.fleet.recall_fleet(3);
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 1, 'wrong assert #16');
+    dsp.fleet.recall_fleet(3);
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 1, 'wrong assert #16');
 
-//     assert(*missions.at(0).id == 2, 'wrong assert #17');
-//     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #18');
+    assert(*missions.at(0).id == 2, 'wrong assert #17');
+    assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #18');
 
-//     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 2, 'wrong assert #19');
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 2, 'wrong assert #19');
 
-//     assert(*missions.at(0).id == 1, 'wrong assert #20');
-//     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #21');
+    assert(*missions.at(0).id == 1, 'wrong assert #20');
+    assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #21');
 
-//     assert(*missions.at(1).id == 2, 'wrong assert #22');
-//     assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #23');
+    assert(*missions.at(1).id == 2, 'wrong assert #22');
+    assert(*missions.at(1).category == MissionCategory::ATTACK, 'wrong assert #23');
 
-//     dsp.fleet.recall_fleet(1);
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 1, 'wrong assert #24');
+    dsp.fleet.recall_fleet(1);
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 1, 'wrong assert #24');
 
-//     assert(*missions.at(0).id == 2, 'wrong assert #25');
-//     assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #26');
+    assert(*missions.at(0).id == 2, 'wrong assert #25');
+    assert(*missions.at(0).category == MissionCategory::ATTACK, 'wrong assert #26');
 
-//     dsp.fleet.recall_fleet(2);
-//     let mut missions = dsp.storage.get_active_missions(1);
-//     assert(missions.len() == 0, 'wrong assert #27');
-// }
-
+    dsp.fleet.recall_fleet(2);
+    let mut missions = dsp.storage.get_active_missions(1);
+    assert(missions.len() == 0, 'wrong assert #27');
+}
 
