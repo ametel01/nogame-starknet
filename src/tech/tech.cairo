@@ -54,7 +54,12 @@ mod Tech {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+    fn constructor(
+        ref self: ContractState,
+        owner: ContractAddress,
+        storage: ContractAddress,
+        colony: ContractAddress
+    ) {
         self.ownable.initializer(owner);
         self.shared.initializer(storage, colony);
     }

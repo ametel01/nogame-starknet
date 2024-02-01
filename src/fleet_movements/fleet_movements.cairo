@@ -93,7 +93,12 @@ mod FleetMovements {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, storage: ContractAddress, colony: ContractAddress) {
+    fn constructor(
+        ref self: ContractState,
+        owner: ContractAddress,
+        storage: ContractAddress,
+        colony: ContractAddress
+    ) {
         self.ownable.initializer(get_caller_address());
         self.shared.initializer(storage, colony);
     }

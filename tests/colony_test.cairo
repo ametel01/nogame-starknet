@@ -85,21 +85,20 @@ fn test_send_fleet_to_colony() {
 
     dsp.colony.generate_colony();
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 1);
+// let mut fleet: Fleet = Default::default();
+// fleet.carrier = 1;
 
-    // let mut fleet: Fleet = Default::default();
-    // fleet.carrier = 1;
-
-    // let mut p2_position: PlanetPosition = Default::default();
-    // p2_position.system = 188;
-    // p2_position.orbit = 10;
-    // dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 0);
-    // let missions = dsp.storage.get_active_missions(1);
-    // let mission = *missions.at(0);
-    // assert(mission.destination == 1001, 'wrong hostile mission');
-    // assert(mission.category == MissionCategory::TRANSPORT, 'wrong hostile mission');
-    // start_warp(CheatTarget::All, mission.time_arrival + 1);
-    // dsp.fleet.dock_fleet(1);
-    // assert(dsp.storage.get_colony_ships(1, 1).carrier == 1, 'wrong colony ships levels');
+// let mut p2_position: PlanetPosition = Default::default();
+// p2_position.system = 188;
+// p2_position.orbit = 10;
+// dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 0);
+// let missions = dsp.storage.get_active_missions(1);
+// let mission = *missions.at(0);
+// assert(mission.destination == 1001, 'wrong hostile mission');
+// assert(mission.category == MissionCategory::TRANSPORT, 'wrong hostile mission');
+// start_warp(CheatTarget::All, mission.time_arrival + 1);
+// dsp.fleet.dock_fleet(1);
+// assert(dsp.storage.get_colony_ships(1, 1).carrier == 1, 'wrong colony ships levels');
 }
 
 #[test]
