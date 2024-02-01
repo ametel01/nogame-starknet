@@ -4,8 +4,8 @@ use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::fleet_movements::{
     IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
 };
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, ShipBuildType, DefenceBuildType, MissionCategory};
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::PrintTrait;
 
@@ -22,27 +22,27 @@ fn test_get_current_planet_price() {
     let dsp = set_up();
     init_game(dsp);
 
-    (dsp.nogame.get_current_planet_price() == 11999999999999998, 'wrong price-1');
+    (dsp.planet.get_current_planet_price() == 11999999999999998, 'wrong price-1');
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
-    (dsp.nogame.get_current_planet_price() == 12060150250085595, 'wrong price-1');
+    (dsp.planet.get_current_planet_price() == 12060150250085595, 'wrong price-1');
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
-    (dsp.nogame.get_current_planet_price() == 12120602004610750, 'wrong price-1');
+    (dsp.planet.get_current_planet_price() == 12120602004610750, 'wrong price-1');
     prank_contracts(dsp, ACCOUNT3());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     start_warp(CheatTarget::All, DAY * 13);
 
-    (dsp.nogame.get_current_planet_price() == 6359225859946644, 'wrong price-1');
+    (dsp.planet.get_current_planet_price() == 6359225859946644, 'wrong price-1');
     prank_contracts(dsp, ACCOUNT4());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
-    (dsp.nogame.get_current_planet_price() == 6391101612214528, 'wrong price-1');
+    (dsp.planet.get_current_planet_price() == 6391101612214528, 'wrong price-1');
     prank_contracts(dsp, ACCOUNT5());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn test_get_number_of_planets() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     assert(dsp.storage.get_number_of_planets() == 1, 'wrong n planets');
 }
 
@@ -68,9 +68,9 @@ fn test_get_debris_field() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     assert(dsp.storage.get_planet_debris_field(1).is_zero(), 'wrong debris field');
     assert(dsp.storage.get_planet_debris_field(2).is_zero(), 'wrong debris field');
@@ -88,7 +88,7 @@ fn test_get_debris_field() {
     let position = dsp.storage.get_planet_position(2);
     fleet.carrier = 100;
     dsp.fleet.send_fleet(fleet, position, MissionCategory::ATTACK, 100, 0);
-    warp_multiple(dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+    warp_multiple(dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + DAY);
     dsp.fleet.attack_planet(1);
 
     assert(dsp.storage.get_planet_debris_field(1).is_zero(), 'wrong debris field');
@@ -101,7 +101,7 @@ fn test_get_spendable_resources() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     let spendable = dsp.compound.get_spendable_resources(1);
     assert(spendable.steel == 500, 'wrong spendable');
@@ -114,7 +114,7 @@ fn test_get_collectible_resources() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     start_warp(CheatTarget::All, get_block_timestamp() + HOUR / 6);
@@ -129,12 +129,12 @@ fn test_get_planet_points() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
-    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT3());
-    dsp.nogame.generate_planet();
+    start_prank(CheatTarget::One(dsp.planet.contract_address), ACCOUNT3());
+    dsp.planet.generate_planet();
     init_storage(dsp, 3);
 
     (dsp.storage.get_planet_points(1) == 0, 'wrong points 0');

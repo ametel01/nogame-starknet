@@ -1,14 +1,14 @@
 use starknet::{ContractAddress};
 
 #[starknet::interface]
-trait INoGame<TState> {
+trait IPlanet<TState> {
     fn generate_planet(ref self: TState);
     fn collect_resources(ref self: TState);
     fn get_current_planet_price(self: @TState) -> u128;
 }
 
 #[starknet::contract]
-mod NoGame {
+mod Planet {
     use nogame::component::shared::SharedComponent;
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::positions;
@@ -90,7 +90,7 @@ mod NoGame {
     }
 
     #[abi(embed_v0)]
-    impl NoGame of super::INoGame<ContractState> {
+    impl PlanetImpl of super::IPlanet<ContractState> {
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
             let tokens = self.shared.storage.read().get_token_addresses();

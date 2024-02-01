@@ -5,11 +5,11 @@ use nogame::fleet_movements::fleet_movements::{
     IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
 };
 use nogame::fleet_movements::library as fleet;
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     Fleet, Unit, TechLevels, PlanetPosition, ERC20s, Defences, ShipBuildType, DefenceBuildType,
     TechUpgradeType, CompoundUpgradeType, Names, MissionCategory
 };
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::tech::tech::{ITechDispatcher, ITechDispatcherTrait};
 
@@ -30,9 +30,9 @@ fn test_send_fleet_success() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -94,7 +94,7 @@ fn test_send_fleet_fails_no_planet_at_destination() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 1);
@@ -114,7 +114,7 @@ fn test_send_fleet_fails_origin_is_destination() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 1);
@@ -134,9 +134,9 @@ fn test_send_fleet_fails_noob_protection() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
     init_storage(dsp, 1);
 
@@ -160,9 +160,9 @@ fn test_send_speed_modifier() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
     prank_contracts(dsp, ACCOUNT2());
     init_storage(dsp, 2);
@@ -190,9 +190,9 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
     prank_contracts(dsp, ACCOUNT2());
     init_storage(dsp, 1);
@@ -214,9 +214,9 @@ fn test_collect_debris_success() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
     prank_contracts(dsp, ACCOUNT1());
@@ -259,9 +259,9 @@ fn test_collect_debris_own_planet() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
     dsp.dockyard.process_ship_build(ShipBuildType::Scraper(()), 1);
@@ -305,9 +305,9 @@ fn test_collect_debris_fleet_decay() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
     prank_contracts(dsp, ACCOUNT1());
@@ -330,7 +330,7 @@ fn test_collect_debris_fleet_decay() {
     let debris = dsp.storage.get_planet_debris_field(2);
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::DEBRIS, 100, 0);
     let mission = dsp.storage.get_mission_details(1, 1);
-    warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 9000);
+    warp_multiple(dsp.planet.contract_address, get_contract_address(), mission.time_arrival + 9000);
     let resources_before = dsp.compound.get_spendable_resources(1);
 
     dsp.fleet.collect_debris(1);
@@ -352,9 +352,9 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -379,9 +379,9 @@ fn test_send_fleet_debris_fails_no_scrapers() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
     prank_contracts(dsp, ACCOUNT1());
@@ -407,9 +407,9 @@ fn test_attack_planet() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     dsp.defence.process_defence_build(DefenceBuildType::Celestia(()), 100);
     prank_contracts(dsp, ACCOUNT1());
@@ -432,9 +432,9 @@ fn test_attack_planet_fleet_decay() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -447,7 +447,7 @@ fn test_attack_planet_fleet_decay() {
     let mission = dsp.storage.get_mission_details(1, 1);
 
     // warping 2100 seconds over an hour to create fleet decay
-    warp_multiple(dsp.nogame.contract_address, get_contract_address(), mission.time_arrival + 9000);
+    warp_multiple(dsp.planet.contract_address, get_contract_address(), mission.time_arrival + 9000);
 
     let points_before = dsp.storage.get_planet_points(1);
 
@@ -470,9 +470,9 @@ fn test_attack_planet_fails_empty_mission() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -496,9 +496,9 @@ fn test_attack_planet_fails_destination_not_reached() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -518,9 +518,9 @@ fn test_attack_planet_loot_amount() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -558,9 +558,9 @@ fn test_recall_fleet() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -571,7 +571,7 @@ fn test_recall_fleet() {
 
     let p2_position = dsp.storage.get_planet_position(2);
     dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
-    warp_multiple(dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + 60);
+    warp_multiple(dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.fleet.recall_fleet(1);
     let fleet_after = dsp.storage.get_ships_levels(1);
     assert(fleet_after == fleet_before, 'wrong fleet after');
@@ -587,9 +587,9 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -599,7 +599,7 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
 
     let p2_position = dsp.storage.get_planet_position(2);
     dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
-    warp_multiple(dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + 60);
+    warp_multiple(dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + 60);
     dsp.fleet.recall_fleet(2);
 }
 

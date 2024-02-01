@@ -1,7 +1,7 @@
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost, Names
 };
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use snforge_std::PrintTrait;
@@ -16,8 +16,8 @@ use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up
 fn test_get_ships_level() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT1());
-    dsp.nogame.generate_planet();
+    start_prank(CheatTarget::One(dsp.planet.contract_address), ACCOUNT1());
+    dsp.planet.generate_planet();
 
     store(
         dsp.storage.contract_address,

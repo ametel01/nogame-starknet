@@ -2,8 +2,8 @@ use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::fleet_movements::{
     IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
 };
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{Fleet, ShipBuildType, TechUpgradeType, MissionCategory};
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::tech::tech::{ITechDispatcher, ITechDispatcherTrait};
 use snforge_std::PrintTrait;
@@ -17,9 +17,9 @@ fn test_is_noob_protected() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -39,9 +39,9 @@ fn test_get_hostile_missions() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
@@ -106,9 +106,9 @@ fn test_get_active_missions() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);

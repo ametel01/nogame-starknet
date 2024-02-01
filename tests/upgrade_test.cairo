@@ -1,4 +1,4 @@
-// use nogame::game::interface::{INoGameDispatcher, INoGameDispatcherTrait};
+// use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 // use nogame::libraries::types::{PlanetPosition, Fleet};
 // use snforge_std::{PrintTrait, BlockId, start_prank, CheatTarget};
 
@@ -17,7 +17,7 @@
 // #[test]
 // #[fork(url: "https://free-rpc.nethermind.io/sepolia-juno", block_id: BlockId::Number(25993))]
 // fn test_upgrade_breking_changes() {
-//     let nogame = INoGameDispatcher {
+//     let nogame = IPlanetDispatcher {
 //         contract_address: starknet::contract_address_const::<
 //             0x0519afeefd86845375134c0e3c0331ad578960e1d020041155385d54b721dd04
 //         >()

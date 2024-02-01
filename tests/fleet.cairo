@@ -1,5 +1,5 @@
 // use nogame::fleet_movements::library as fleet;
-// use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
+// use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 // use nogame::libraries::types::{Fleet, Unit, TechLevels, PlanetPosition, ERC20s, Defences, Debris};
 
 // use snforge_std::{declare, ContractClassTrait, PrintTrait, start_prank, start_warp};

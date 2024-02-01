@@ -4,11 +4,11 @@ use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::fleet_movements::{
     IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait
 };
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ColonyUpgradeType, ColonyBuildType, ShipBuildType, TechUpgradeType, Fleet, Defences,
     CompoundsLevels, DAY, PlanetPosition, ShipsLevels, ERC20s, Debris, MissionCategory
 };
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
 use tests::utils::{
@@ -22,7 +22,7 @@ fn test_generate_colony() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
     dsp.colony.generate_colony();
     dsp.colony.generate_colony();
@@ -49,7 +49,7 @@ fn test_collect_resources_all_planets() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.colony.generate_colony();
@@ -62,7 +62,7 @@ fn test_collect_resources_all_planets() {
     let colony2_collectible = dsp.colony.get_colony_resources(1, 2);
     let colony3_collectible = dsp.colony.get_colony_resources(1, 3);
     let planet_spendable = dsp.compound.get_spendable_resources(1);
-    dsp.nogame.collect_resources();
+    dsp.planet.collect_resources();
     let planet_spendable_after = dsp.compound.get_spendable_resources(1);
     assert(
         planet_spendable_after == planet_spendable
@@ -80,7 +80,7 @@ fn test_send_fleet_to_colony() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.colony.generate_colony();
@@ -107,7 +107,7 @@ fn test_send_fleet_from_colony() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
     dsp.colony.generate_colony();
 
@@ -123,7 +123,7 @@ fn test_send_fleet_from_colony() {
     let mission = *missions.at(0);
     assert(mission.destination == 1, 'wrong mission destination');
     assert(mission.category == MissionCategory::TRANSPORT, 'wrong mission category');
-    start_warp(CheatTarget::One(dsp.nogame.contract_address), mission.time_arrival + 1);
+    start_warp(CheatTarget::One(dsp.planet.contract_address), mission.time_arrival + 1);
     dsp.fleet.dock_fleet(1);
     assert(dsp.storage.get_ships_levels(1).carrier == 1, 'wrong ships levels');
     assert(dsp.storage.get_colony_ships(1, 1).carrier == 0, 'wrong colony ships levels');
@@ -135,11 +135,11 @@ fn test_attack_from_colony() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
 
     let mut fleet: Fleet = Default::default();
@@ -167,7 +167,7 @@ fn test_process_colony_compound_upgrade() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     let mut expected_compounds: CompoundsLevels = Default::default();
@@ -202,7 +202,7 @@ fn process_colony_unit_build_defences_test() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     let mut expected: Defences = Default::default();
@@ -229,7 +229,7 @@ fn process_colony_unit_build_fleet_test() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     let mut expected: Fleet = Default::default();
@@ -256,7 +256,7 @@ fn test_collect_colony_resources() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.colony.generate_colony();
@@ -267,7 +267,7 @@ fn test_collect_colony_resources() {
 
     let planet_spendable_resources = dsp.compound.get_spendable_resources(1);
     start_warp(
-        CheatTarget::One(dsp.nogame.contract_address), starknet::get_block_timestamp() + DAY
+        CheatTarget::One(dsp.planet.contract_address), starknet::get_block_timestamp() + DAY
     );
     let colony_collectible = dsp.colony.get_colony_resources(1, 1);
 
@@ -288,10 +288,10 @@ fn test_attack_colony() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     prank_contracts(dsp, ACCOUNT2());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 2);
 
     prank_contracts(dsp, ACCOUNT1());
@@ -312,7 +312,7 @@ fn test_attack_colony() {
     fleet_a.carrier = 10;
     prank_contracts(dsp, ACCOUNT1());
     warp_multiple(
-        dsp.nogame.contract_address,
+        dsp.planet.contract_address,
         starknet::get_contract_address(),
         starknet::get_block_timestamp() + DAY * 7
     );

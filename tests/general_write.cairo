@@ -1,9 +1,9 @@
 use core::testing::get_available_gas;
-
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
 };
+
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
@@ -22,10 +22,10 @@ fn test_generate() {
     let dsp = set_up();
     init_game(dsp);
     let owner_balance_before = dsp.eth.balanceOf(DEPLOYER());
-    let planet_price = dsp.nogame.get_current_planet_price();
+    let planet_price = dsp.planet.get_current_planet_price();
     prank_contracts(dsp, ACCOUNT1());
 
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     assert(
         dsp.eth.balanceOf(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet1 not paid'
@@ -36,9 +36,9 @@ fn test_generate() {
     assert(dsp.tritium.balance_of(ACCOUNT1()).low == 100 * E18, 'wrong steel balance');
 
     let owner_balance_before = dsp.eth.balanceOf(DEPLOYER());
-    let planet_price = dsp.nogame.get_current_planet_price();
-    start_prank(CheatTarget::One(dsp.nogame.contract_address), ACCOUNT2());
-    dsp.nogame.generate_planet();
+    let planet_price = dsp.planet.get_current_planet_price();
+    start_prank(CheatTarget::One(dsp.planet.contract_address), ACCOUNT2());
+    dsp.planet.generate_planet();
     assert(
         dsp.eth.balanceOf(DEPLOYER()) == owner_balance_before + planet_price.into(),
         'planet2 not paid'
@@ -56,8 +56,8 @@ fn test_collect_resources() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
-    dsp.nogame.collect_resources();
+    dsp.planet.generate_planet();
+    dsp.planet.collect_resources();
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn test_collect() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 }
 // #[test]
 // fn test_planet_position() {
@@ -78,13 +78,13 @@ fn test_collect() {
 //             break;
 //         }
 //         start_prank(CheatTarget::All, len.try_into().unwrap());
-//         dsp.nogame.generate_planet();
-//         let position = dsp.nogame.get_planet_position((len).try_into().unwrap());
+//         dsp.planet.generate_planet();
+//         let position = dsp.planet.get_planet_position((len).try_into().unwrap());
 //         assert(position.system <= 200, 'system out of bound');
 //         assert(position.orbit <= 10, 'orbit out of bound');
 //         len += 1;
 //     };
-//     let positions = dsp.nogame.get_generated_planets_positions();
+//     let positions = dsp.planet.get_generated_planets_positions();
 //     assert(*positions.at(0).orbit == 2 && *positions.at(0).system == 156, 'wrong assertion #1');
 //     assert(*positions.at(1).orbit == 9 && *positions.at(1).system == 388, 'wrong assertion #2');
 // }

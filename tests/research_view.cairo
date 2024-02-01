@@ -1,7 +1,7 @@
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
 };
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::PrintTrait;
 
@@ -16,7 +16,7 @@ fn test_get_tech_levels() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     let techs = dsp.storage.get_tech_levels(1);
     assert(techs.energy == 0, 'wrong level');

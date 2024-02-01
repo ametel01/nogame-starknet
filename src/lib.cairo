@@ -4,8 +4,8 @@ use starknet::{
     {SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall}}
 };
 
-mod game {
-    mod game;
+mod planet {
+    mod planet;
 }
 
 mod colony {

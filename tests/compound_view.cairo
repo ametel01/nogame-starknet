@@ -1,5 +1,5 @@
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{CompoundsLevels, Names};
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use snforge_std::PrintTrait;
 use snforge_std::{start_prank, start_warp, CheatTarget};
@@ -16,7 +16,7 @@ fn test_get_compounds_levels() {
     let dsp = set_up();
     init_game(dsp);
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     let compounds = dsp.storage.get_compounds_levels(1);

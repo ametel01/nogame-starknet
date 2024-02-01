@@ -1,12 +1,12 @@
 use core::testing::get_available_gas;
 use nogame::compound::compound::{ICompoundDispatcher, ICompoundDispatcherTrait};
 use nogame::defence::defence::{IDefenceDispatcher, IDefenceDispatcherTrait};
-
-use nogame::game::game::{INoGameDispatcher, INoGameDispatcherTrait};
 use nogame::libraries::types::{
     ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost,
     ShipBuildType, DefenceBuildType, CompoundUpgradeType
 };
+
+use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -26,7 +26,7 @@ fn test_blaster_build() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
 
     init_storage(dsp, 1);
     start_warp(CheatTarget::All, HOUR * 2400000);
@@ -44,7 +44,7 @@ fn test_blaster_build() {
 //     init_game(dsp);
 
 //     prank_contracts(dsp, ACCOUNT1());
-//     dsp.nogame.generate_planet();
+//     dsp.planet.generate_planet();
 //     init_storage(dsp, 1);
 
 //     dsp.defence.process_defence_build(DefenceBuildType::Blaster(()), 1);
@@ -56,7 +56,7 @@ fn test_beam_build() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.defence.process_defence_build(DefenceBuildType::Beam(()), 10);
@@ -71,7 +71,7 @@ fn test_beam_build() {
 //     init_game(dsp);
 
 //     prank_contracts(dsp, ACCOUNT1());
-//     dsp.nogame.generate_planet();
+//     dsp.planet.generate_planet();
 //     init_storage(dsp, 1);
 
 //     dsp.defence.process_defence_build(DefenceBuildType::Beam(()), 2);
@@ -84,10 +84,10 @@ fn test_beam_build() {
 //     init_game(dsp);
 
 //     prank_contracts(dsp, ACCOUNT1());
-//     dsp.nogame.generate_planet();
+//     dsp.planet.generate_planet();
 //     init_storage(dsp, 1);
 //     warp_multiple(
-//         dsp.nogame.contract_address, get_contract_address(), get_block_timestamp() + YEAR
+//         dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + YEAR
 //     );
 //     dsp.compound.process_upgrade(CompoundUpgradeType::Dockyard(()), 4);
 
@@ -126,7 +126,7 @@ fn test_plasma_build() {
     init_game(dsp);
 
     prank_contracts(dsp, ACCOUNT1());
-    dsp.nogame.generate_planet();
+    dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
