@@ -237,6 +237,7 @@ impl DefencesZeroable of Zeroable<Defences> {
 
 #[derive(Copy, Drop, Serde)]
 struct DefencesCost {
+    celestia: ERC20s,
     blaster: ERC20s,
     beam: ERC20s,
     astral: ERC20s,

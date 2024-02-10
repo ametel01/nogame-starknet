@@ -1,9 +1,10 @@
-use nogame::libraries::types::{ERC20s, CompoundUpgradeType};
+use nogame::libraries::types::{ERC20s, CompoundUpgradeType, CompoundsLevels};
 
 #[starknet::interface]
 trait ICompound<TState> {
     fn process_upgrade(ref self: TState, component: CompoundUpgradeType, quantity: u8);
 
+    fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
     fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
 }
@@ -13,7 +14,8 @@ mod Compound {
     use nogame::colony::colony::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::component::shared::SharedComponent;
     use nogame::compound::library as compound;
-    use nogame::libraries::types::{ERC20s, E18, HOUR, CompoundUpgradeType, Names};
+    use nogame::libraries::names::Names;
+    use nogame::libraries::types::{ERC20s, E18, HOUR, CompoundUpgradeType, CompoundsLevels};
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
@@ -33,6 +35,7 @@ mod Compound {
 
     #[storage]
     struct Storage {
+        compound_level: LegacyMap::<(u32, u8), u8>,
         #[substorage(v0)]
         shared: SharedComponent::Storage,
         #[substorage(v0)]
@@ -78,6 +81,17 @@ mod Compound {
             self.emit(CompoundSpent { planet_id: planet_id, quantity, spent: cost })
         }
 
+        fn get_compounds_levels(self: @ContractState, planet_id: u32) -> CompoundsLevels {
+            CompoundsLevels {
+                steel: self.compound_level.read((planet_id, Names::Compound::STEEL)),
+                quartz: self.compound_level.read((planet_id, Names::Compound::QUARTZ)),
+                tritium: self.compound_level.read((planet_id, Names::Compound::TRITIUM)),
+                energy: self.compound_level.read((planet_id, Names::Compound::ENERGY)),
+                lab: self.compound_level.read((planet_id, Names::Compound::LAB)),
+                dockyard: self.compound_level.read((planet_id, Names::Compound::DOCKYARD)),
+            }
+        }
+
         fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
             let tokens = self.shared.storage.read().get_token_addresses();
             let planet_owner = tokens.erc721.ownerOf(planet_id.into());
@@ -101,19 +115,16 @@ mod Compound {
             component: CompoundUpgradeType,
             quantity: u8
         ) -> ERC20s {
-            let compound_levels = self.shared.storage.read().get_compounds_levels(planet_id);
+            let compound_levels = self.get_compounds_levels(planet_id);
             match component {
                 CompoundUpgradeType::SteelMine => {
                     let cost: ERC20s = compound::cost::steel(compound_levels.steel, quantity);
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::STEEL,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::STEEL),
                             compound_levels.steel + quantity.try_into().expect('u32 into u8 failed')
                         );
                     return cost;
@@ -123,12 +134,9 @@ mod Compound {
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::QUARTZ,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::QUARTZ),
                             compound_levels.quartz
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
@@ -139,12 +147,9 @@ mod Compound {
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::TRITIUM,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::TRITIUM),
                             compound_levels.tritium
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
@@ -155,12 +160,9 @@ mod Compound {
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::ENERGY_PLANT,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::ENERGY),
                             compound_levels.energy
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
@@ -171,12 +173,9 @@ mod Compound {
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::LAB,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::LAB),
                             compound_levels.lab + quantity.try_into().expect('u32 into u8 failed')
                         );
                     return cost;
@@ -186,12 +185,9 @@ mod Compound {
                     self.shared.check_enough_resources(caller, cost);
                     self.shared.pay_resources_erc20(caller, cost);
                     self
-                        .shared
-                        .storage
-                        .read()
-                        .set_compound_level(
-                            planet_id,
-                            Names::DOCKYARD,
+                        .compound_level
+                        .write(
+                            (planet_id, Names::Compound::DOCKYARD),
                             compound_levels.dockyard
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );

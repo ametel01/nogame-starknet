@@ -40,6 +40,7 @@ mod fleet_movements {
 mod libraries {
     mod auction;
     mod math;
+    mod names;
     mod positions;
     mod types;
 }

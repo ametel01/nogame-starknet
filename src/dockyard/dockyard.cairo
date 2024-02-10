@@ -27,6 +27,7 @@ mod Dockyard {
 
     #[storage]
     struct Storage {
+        compounds: ICompoundDispatcher,
         #[substorage(v0)]
         shared: SharedComponent::Storage,
         #[substorage(v0)]
@@ -67,12 +68,7 @@ mod Dockyard {
             let caller = get_caller_address();
             self.shared.collect_resources();
             let planet_id = self.shared.get_owned_planet(caller);
-            let dockyard_level = self
-                .shared
-                .storage
-                .read()
-                .get_compounds_levels(planet_id)
-                .dockyard;
+            let dockyard_level = self.compounds.read().get_compounds_levels(planet_id).dockyard;
             let techs = self.shared.storage.read().get_tech_levels(planet_id);
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
@@ -97,7 +93,7 @@ mod Dockyard {
             let ships_levels = self.shared.storage.read().get_ships_levels(planet_id);
             match component {
                 ShipBuildType::Carrier => {
-                    dockyard::carrier_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::carrier(dockyard_level, techs);
                     let cost = dockyard::get_ships_cost(
                         quantity, dockyard::get_ships_unit_cost().carrier
                     );
@@ -111,7 +107,7 @@ mod Dockyard {
                     return cost;
                 },
                 ShipBuildType::Scraper => {
-                    dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::scraper(dockyard_level, techs);
                     let cost = dockyard::get_ships_cost(
                         quantity, dockyard::get_ships_unit_cost().scraper
                     );
@@ -125,7 +121,7 @@ mod Dockyard {
                     return cost;
                 },
                 ShipBuildType::Sparrow => {
-                    dockyard::sparrow_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::sparrow(dockyard_level, techs);
                     let cost = dockyard::get_ships_cost(
                         quantity, dockyard::get_ships_unit_cost().sparrow
                     );
@@ -140,7 +136,7 @@ mod Dockyard {
                 },
                 ShipBuildType::Frigate => {
                     assert!(!is_testnet, "NoGame: Frigate not available on testnet realease");
-                    dockyard::frigate_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::frigate(dockyard_level, techs);
                     let cost = dockyard::get_ships_cost(
                         quantity, dockyard::get_ships_unit_cost().frigate
                     );
@@ -155,7 +151,7 @@ mod Dockyard {
                 },
                 ShipBuildType::Armade => {
                     assert!(!is_testnet, "NoGame: Armade not available on testnet realease");
-                    dockyard::armade_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::armade(dockyard_level, techs);
                     let cost = dockyard::get_ships_cost(
                         quantity, dockyard::get_ships_unit_cost().armade
                     );

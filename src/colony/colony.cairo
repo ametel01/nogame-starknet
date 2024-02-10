@@ -416,7 +416,7 @@ mod Colony {
                 .get_colony_defences(planet_id, colony_id);
             match component {
                 ColonyBuildType::Carrier => {
-                    dockyard::carrier_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::carrier(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -426,7 +426,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Scraper => {
-                    dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::scraper(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -436,7 +436,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Sparrow => {
-                    dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::sparrow(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -446,7 +446,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Frigate => {
-                    dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::frigate(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -456,7 +456,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Armade => {
-                    dockyard::scraper_requirements_check(dockyard_level, techs);
+                    dockyard::requirements::armade(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -466,7 +466,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Celestia => {
-                    dockyard::celestia_requirements_check(dockyard_level, techs);
+                    defence::requirements::celestia(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -479,7 +479,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Blaster => {
-                    defence::blaster_requirements_check(dockyard_level, techs);
+                    defence::requirements::blaster(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -489,7 +489,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Beam => {
-                    defence::beam_requirements_check(dockyard_level, techs);
+                    defence::requirements::beam(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -499,7 +499,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Astral => {
-                    defence::astral_launcher_requirements_check(dockyard_level, techs);
+                    defence::requirements::astral(dockyard_level, techs);
                     self
                         .shared
                         .storage
@@ -509,7 +509,7 @@ mod Colony {
                         );
                 },
                 ColonyBuildType::Plasma => {
-                    defence::plasma_beam_requirements_check(dockyard_level, techs);
+                    defence::requirements::plasma(dockyard_level, techs);
                     self
                         .shared
                         .storage

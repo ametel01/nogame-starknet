@@ -30,6 +30,7 @@ mod Tech {
 
     #[storage]
     struct Storage {
+        compounds: ICompoundDispatcher,
         #[substorage(v0)]
         shared: SharedComponent::Storage,
         #[substorage(v0)]
@@ -86,7 +87,7 @@ mod Tech {
             quantity: u8
         ) -> ERC20s {
             let is_testnet = self.shared.storage.read().get_is_testnet();
-            let lab_level = self.shared.storage.read().get_compounds_levels(planet_id).lab;
+            let lab_level = self.compounds.read().get_compounds_levels(planet_id).lab;
             let techs = self.shared.storage.read().get_tech_levels(planet_id);
             match component {
                 TechUpgradeType::EnergyTech => {
