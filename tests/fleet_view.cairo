@@ -6,7 +6,6 @@ use nogame::libraries::types::{Fleet, ShipBuildType, TechUpgradeType, MissionCat
 use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::tech::tech::{ITechDispatcher, ITechDispatcherTrait};
-use snforge_std::PrintTrait;
 
 use snforge_std::{start_prank, CheatTarget};
 use tests::utils::{ACCOUNT1, ACCOUNT2, init_game, set_up, init_storage, prank_contracts};

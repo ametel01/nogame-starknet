@@ -1,6 +1,5 @@
 use nogame::libraries::types::ERC20s;
 use nogame::tech::library as research;
-use snforge_std::PrintTrait;
 
 #[test]
 fn multilevel_tech_cost_test() {

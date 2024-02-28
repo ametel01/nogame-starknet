@@ -1,4 +1,3 @@
-use debug::PrintTrait;
 use nogame::compound::library as compound;
 use nogame::libraries::types::ERC20s;
 

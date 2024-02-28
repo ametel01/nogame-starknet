@@ -5,7 +5,6 @@ use nogame::libraries::types::{
 };
 use nogame_fixed::f128::core::{exp, sqrt};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
-use snforge_std::PrintTrait;
 
 fn CARRIER() -> Unit {
     Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 10000, consumption: 10 }

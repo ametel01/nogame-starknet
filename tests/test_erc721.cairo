@@ -1,7 +1,7 @@
 use core::result::ResultTrait;
 
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait, CheatTarget};
+use snforge_std::{declare, ContractClassTrait, start_prank,  CheatTarget};
 use tests::utils::{DEPLOYER, ACCOUNT1};
 
 #[test]

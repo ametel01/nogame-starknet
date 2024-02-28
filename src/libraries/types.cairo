@@ -4,7 +4,6 @@ use nogame::token::erc721::interface::IERC721NoGameDispatcher;
 
 use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
 
-use snforge_std::PrintTrait;
 use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
@@ -81,14 +80,6 @@ fn erc20_mul(a: ERC20s, multiplicator: u128) -> ERC20s {
     }
 }
 
-impl ERC20Print of PrintTrait<ERC20s> {
-    fn print(self: @ERC20s) {
-        self.steel.print();
-        self.quartz.print();
-        self.tritium.print();
-    }
-}
-
 #[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct CompoundsLevels {
     steel: u8,
@@ -99,17 +90,6 @@ struct CompoundsLevels {
     dockyard: u8,
 }
 
-impl CompoundsLevelsPrint of PrintTrait<CompoundsLevels> {
-    fn print(self: @CompoundsLevels) {
-        self.steel.print();
-        self.quartz.print();
-        self.tritium.print();
-        self.energy.print();
-        self.lab.print();
-        self.dockyard.print();
-    }
-}
-
 #[derive(Copy, Drop, Serde)]
 struct CompoundsCost {
     steel: ERC20s,
@@ -118,17 +98,6 @@ struct CompoundsCost {
     energy: ERC20s,
     lab: ERC20s,
     dockyard: ERC20s,
-}
-
-impl CompoundsCostPrint of PrintTrait<CompoundsCost> {
-    fn print(self: @CompoundsCost) {
-        self.steel.print();
-        self.quartz.print();
-        self.tritium.print();
-        self.energy.print();
-        self.lab.print();
-        self.dockyard.print();
-    }
 }
 
 #[derive(Copy, Default, Drop, Serde)]
@@ -146,23 +115,6 @@ struct TechLevels {
     thrust: u8,
     warp: u8,
     exocraft: u8,
-}
-
-impl TechLevelsPrint of PrintTrait<TechLevels> {
-    fn print(self: @TechLevels) {
-        self.energy.print();
-        self.digital.print();
-        self.beam.print();
-        self.armour.print();
-        self.ion.print();
-        self.plasma.print();
-        self.weapons.print();
-        self.shield.print();
-        self.spacetime.print();
-        self.combustion.print();
-        self.thrust.print();
-        self.warp.print();
-    }
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -209,16 +161,6 @@ struct Defences {
     plasma: u32
 }
 
-impl DefencesPrint of PrintTrait<Defences> {
-    fn print(self: @Defences) {
-        self.celestia.print();
-        self.blaster.print();
-        self.beam.print();
-        self.astral.print();
-        self.plasma.print();
-    }
-}
-
 impl DefencesZeroable of Zeroable<Defences> {
     fn zero() -> Defences {
         Defences { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0, }
@@ -255,13 +197,6 @@ struct EnergyCost {
 struct PlanetPosition {
     system: u32,
     orbit: u8,
-}
-
-impl PlanetPositionPrint of PrintTrait<PlanetPosition> {
-    fn print(self: @PlanetPosition) {
-        self.system.print();
-        self.orbit.print();
-    }
 }
 
 impl PlanetPositionZeroable of Zeroable<PlanetPosition> {
@@ -301,13 +236,6 @@ impl DebrisZeroable of Zeroable<Debris> {
     }
 }
 
-impl DebrisPrint of PrintTrait<Debris> {
-    fn print(self: @Debris) {
-        self.steel.print();
-        self.quartz.print();
-    }
-}
-
 impl DebrisAdd of Add<Debris> {
     fn add(lhs: Debris, rhs: Debris) -> Debris {
         Debris {
@@ -342,16 +270,6 @@ impl FleetZeroable of Zeroable<Fleet> {
     }
 }
 
-impl FleetPrint of PrintTrait<Fleet> {
-    fn print(self: @Fleet) {
-        self.carrier.print();
-        self.scraper.print();
-        self.sparrow.print();
-        self.frigate.print();
-        self.armade.print();
-    }
-}
-
 #[derive(Default, Drop, Copy, PartialEq, Serde, starknet::Store)]
 struct Unit {
     id: u8,
@@ -370,14 +288,6 @@ impl UnitImpl of UnitTrait {
     }
 }
 
-impl PrintUnit of PrintTrait<Unit> {
-    fn print(self: @Unit) {
-        self.weapon.print();
-        self.shield.print();
-        self.hull.print();
-    }
-}
-
 #[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct IncomingMission {
     origin: u32,
@@ -385,15 +295,6 @@ struct IncomingMission {
     time_arrival: u64,
     number_of_ships: u32,
     destination: u32,
-}
-
-impl IncomingMissionPrint of PrintTrait<IncomingMission> {
-    fn print(self: @IncomingMission) {
-        self.origin.print();
-        self.id_at_origin.print();
-        self.time_arrival.print();
-        self.number_of_ships.print();
-    }
 }
 
 impl IncomingMissionZeroable of Zeroable<IncomingMission> {
@@ -445,17 +346,6 @@ impl MissionZeroable of Zeroable<Mission> {
     }
     fn is_non_zero(self: Mission) -> bool {
         !self.is_zero()
-    }
-}
-
-impl MissionPrint of PrintTrait<Mission> {
-    fn print(self: @Mission) {
-        self.time_start.print();
-        self.origin.print();
-        self.destination.print();
-        self.time_arrival.print();
-        self.category.print();
-        self.fleet.print();
     }
 }
 

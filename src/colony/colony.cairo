@@ -40,7 +40,6 @@ mod Colony {
     use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    use snforge_std::PrintTrait;
     use starknet::{
         get_block_timestamp, get_caller_address, ContractAddress, contract_address_const
     };

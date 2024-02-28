@@ -10,7 +10,7 @@ use nogame::libraries::types::{
 };
 use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-use snforge_std::{start_prank, CheatTarget, PrintTrait, start_warp};
+use snforge_std::{start_prank, CheatTarget,  start_warp};
 use tests::utils::{
     ACCOUNT1, ACCOUNT2, set_up, init_game, YEAR, warp_multiple, prank_contracts, Dispatchers, E18,
     init_storage

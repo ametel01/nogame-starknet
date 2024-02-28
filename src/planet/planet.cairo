@@ -23,7 +23,6 @@ mod Planet {
     use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
 
-    use snforge_std::PrintTrait;
     use starknet::{
         ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
         contract_address_const

@@ -1,7 +1,6 @@
 use nogame::libraries::types::{CompoundsLevels, Names};
 use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-use snforge_std::PrintTrait;
 use snforge_std::{start_prank, start_warp, CheatTarget};
 use starknet::info::get_contract_address;
 use starknet::testing::cheatcode;
@@ -19,7 +18,7 @@ fn test_get_compounds_levels() {
     dsp.planet.generate_planet();
     init_storage(dsp, 1);
 
-    let compounds = dsp.compound.get_compounds_levels(1);
+    let compounds = dsp.storage.get_compounds_levels(1);
     assert(compounds.steel == 20, 'wrong steel lev');
     assert(compounds.quartz == 20, 'wrong quartz lev');
     assert(compounds.tritium == 20, 'wrong quartz lev');

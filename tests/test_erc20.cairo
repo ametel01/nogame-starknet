@@ -4,7 +4,7 @@ use openzeppelin::token::erc20::interface::{
     IERC20MetadataDispatcherTrait
 };
 
-use snforge_std::{declare, ContractClassTrait, start_prank, PrintTrait, CheatTarget};
+use snforge_std::{declare, ContractClassTrait, start_prank,  CheatTarget};
 use starknet::contract_address_const;
 
 use tests::utils::{DEPLOYER, ACCOUNT1, ETH_SUPPLY, E18};

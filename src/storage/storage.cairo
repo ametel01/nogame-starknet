@@ -105,7 +105,6 @@ mod Storage {
     use nogame::token::erc20::interface::IERC20NoGameDispatcher;
     use nogame::token::erc721::interface::IERC721NoGameDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
-    use snforge_std::PrintTrait;
     use super::{
         ContractAddress, Tokens, PlanetPosition, Debris, Mission, IncomingMission, CompoundsLevels,
         Fleet, TechLevels, Defences, Contracts

@@ -3,7 +3,6 @@ use nogame::libraries::types::{
 };
 use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-use snforge_std::PrintTrait;
 
 use snforge_std::{start_prank, start_warp, CheatTarget};
 use starknet::info::get_contract_address;

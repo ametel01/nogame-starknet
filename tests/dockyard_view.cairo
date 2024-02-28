@@ -4,7 +4,6 @@ use nogame::libraries::types::{
 use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use snforge_std::PrintTrait;
 
 use snforge_std::{start_prank, start_warp, CheatTarget, store, map_entry_address};
 use starknet::info::get_contract_address;
