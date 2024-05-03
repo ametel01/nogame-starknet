@@ -1,45 +1,47 @@
 use nogame::libraries::types::{ERC20s, CompoundUpgradeType, CompoundsLevels};
+use starknet::ClassHash;
 
 #[starknet::interface]
 trait ICompound<TState> {
+    fn upgrade(ref self: TState, impl_hash: ClassHash);
     fn process_upgrade(ref self: TState, component: CompoundUpgradeType, quantity: u8);
-
     fn get_compounds_levels(self: @TState, planet_id: u32) -> CompoundsLevels;
-    fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
-    fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
 }
 
 #[starknet::contract]
 mod Compound {
-    use nogame::colony::colony::{IColonyDispatcher, IColonyDispatcherTrait};
-    use nogame::component::shared::SharedComponent;
+    use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::compound::library as compound;
+    use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{ERC20s, E18, HOUR, CompoundUpgradeType, CompoundsLevels};
-    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+    use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
     use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
     use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const
+        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const, ClassHash
     };
 
-    component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+    impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
 
     #[storage]
     struct Storage {
+        game_manager: IGameDispatcher,
         compound_level: LegacyMap::<(u32, u8), u8>,
         #[substorage(v0)]
-        shared: SharedComponent::Storage,
-        #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage,
     }
 
     #[event]
@@ -47,9 +49,9 @@ mod Compound {
     enum Event {
         CompoundSpent: CompoundSpent,
         #[flat]
-        SharedEvent: SharedComponent::Event,
-        #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -60,24 +62,25 @@ mod Compound {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        owner: ContractAddress,
-        storage: ContractAddress,
-        colony: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
         self.ownable.initializer(owner);
-        self.shared.initializer(storage, colony);
+        self.game_manager.write(IGameDispatcher { contract_address: game });
     }
 
     #[abi(embed_v0)]
     impl CompoundImpl of super::ICompound<ContractState> {
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.ownable.assert_only_owner();
+            self.upgradeable._upgrade(impl_hash);
+        }
+
         fn process_upgrade(ref self: ContractState, component: CompoundUpgradeType, quantity: u8) {
             let caller = get_caller_address();
-            self.shared.collect(caller);
-            let planet_id = self.shared.get_owned_planet(caller);
+            let contracts = self.game_manager.read().get_contracts();
+            contracts.planet.collect_resources(caller);
+            let planet_id = contracts.planet.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
-            self.shared.storage.read().update_planet_points(planet_id, cost);
+            contracts.planet.update_planet_points(planet_id, cost, false);
             self.emit(CompoundSpent { planet_id: planet_id, quantity, spent: cost })
         }
 
@@ -91,19 +94,6 @@ mod Compound {
                 dockyard: self.compound_level.read((planet_id, Names::Compound::DOCKYARD)),
             }
         }
-
-        fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
-            let tokens = self.shared.storage.read().get_token_addresses();
-            let planet_owner = tokens.erc721.ownerOf(planet_id.into());
-            let steel = tokens.steel.balance_of(planet_owner).low / E18;
-            let quartz = tokens.quartz.balance_of(planet_owner).low / E18;
-            let tritium = tokens.tritium.balance_of(planet_owner).low / E18;
-            ERC20s { steel: steel, quartz: quartz, tritium: tritium }
-        }
-
-        fn get_collectible_resources(self: @ContractState, planet_id: u32) -> ERC20s {
-            self.shared.calculate_production(planet_id)
-        }
     }
 
     #[generate_trait]
@@ -116,23 +106,22 @@ mod Compound {
             quantity: u8
         ) -> ERC20s {
             let compound_levels = self.get_compounds_levels(planet_id);
+            let mut cost: ERC20s = Default::default();
+            let game_manager = self.game_manager.read();
             match component {
                 CompoundUpgradeType::SteelMine => {
-                    let cost: ERC20s = compound::cost::steel(compound_levels.steel, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::steel(compound_levels.steel, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::STEEL),
                             compound_levels.steel + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
                 CompoundUpgradeType::QuartzMine => {
-                    let cost: ERC20s = compound::cost::quartz(compound_levels.quartz, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::quartz(compound_levels.quartz, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -140,12 +129,10 @@ mod Compound {
                             compound_levels.quartz
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
                 CompoundUpgradeType::TritiumMine => {
-                    let cost: ERC20s = compound::cost::tritium(compound_levels.tritium, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::tritium(compound_levels.tritium, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -153,12 +140,10 @@ mod Compound {
                             compound_levels.tritium
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
                 CompoundUpgradeType::EnergyPlant => {
-                    let cost: ERC20s = compound::cost::energy(compound_levels.energy, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::energy(compound_levels.energy, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -166,24 +151,20 @@ mod Compound {
                             compound_levels.energy
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
                 CompoundUpgradeType::Lab => {
-                    let cost: ERC20s = compound::cost::lab(compound_levels.lab, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::lab(compound_levels.lab, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::LAB),
                             compound_levels.lab + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
                 CompoundUpgradeType::Dockyard => {
-                    let cost: ERC20s = compound::cost::dockyard(compound_levels.dockyard, quantity);
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost = compound::cost::dockyard(compound_levels.dockyard, quantity);
+                    game_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -191,9 +172,10 @@ mod Compound {
                             compound_levels.dockyard
                                 + quantity.try_into().expect('u32 into u8 failed')
                         );
-                    return cost;
                 },
             }
+            game_manager.pay_resources_erc20(caller, cost);
+            cost
         }
     }
 }

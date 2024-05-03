@@ -9,7 +9,7 @@ use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispat
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
-use snforge_std::{declare, ContractClassTrait, start_prank, start_warp,  CheatTarget};
+use snforge_std::{declare, ContractClassTrait, start_prank, start_warp, CheatTarget};
 use starknet::info::{get_contract_address, get_block_timestamp};
 use starknet::testing::cheatcode;
 use starknet::{ContractAddress, contract_address_const};

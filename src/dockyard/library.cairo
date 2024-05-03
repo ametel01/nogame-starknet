@@ -21,7 +21,7 @@ fn get_ships_unit_cost() -> ShipsCost {
 
 mod requirements {
     use nogame::libraries::types::TechLevels;
-    
+
     fn carrier(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 2, 'Dockyard 2 required');
         assert(techs.combustion >= 2, 'Combustive Engine 2 required');

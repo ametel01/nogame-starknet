@@ -17,8 +17,8 @@ use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
 
 use snforge_std::{
-    declare, ContractClassTrait, start_warp, start_prank, stop_prank, CheatTarget,
-    store, map_entry_address
+    declare, ContractClassTrait, start_warp, start_prank, stop_prank, CheatTarget, store,
+    map_entry_address
 };
 use starknet::{
     ContractAddress, contract_address_const, get_block_timestamp, get_contract_address,

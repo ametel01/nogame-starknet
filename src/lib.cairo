@@ -5,36 +5,36 @@ use starknet::{
 };
 
 mod planet {
-    mod planet;
+    mod contract;
 }
 
 mod colony {
-    mod colony;
+    mod contract;
     mod positions;
 }
 
-mod component {
-    mod shared;
-}
-
 mod compound {
-    mod compound;
+    mod contract;
     mod library;
 }
 
 mod defence {
-    mod defence;
+    mod contract;
     mod library;
 }
 
 mod dockyard {
-    mod dockyard;
+    mod contract;
     mod library;
 }
 
 mod fleet_movements {
-    mod fleet_movements;
+    mod contract;
     mod library;
+}
+
+mod game {
+    mod contract;
 }
 
 mod libraries {
@@ -45,13 +45,9 @@ mod libraries {
     mod types;
 }
 
-mod storage {
-    mod storage;
-}
-
 mod tech {
+    mod contract;
     mod library;
-    mod tech;
 }
 
 mod token {

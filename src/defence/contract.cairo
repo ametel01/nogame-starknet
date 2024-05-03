@@ -3,27 +3,26 @@ use nogame::libraries::types::{DefencesCost, ERC20s, DefenceBuildType, Defences}
 #[starknet::interface]
 trait IDefence<TState> {
     fn process_defence_build(ref self: TState, component: DefenceBuildType, quantity: u32);
+    fn set_defence_level(ref self: TState, planet_id: u32, name: u8, level: u32);
     fn get_defences_levels(ref self: TState, planet_id: u32) -> Defences;
 }
 
 #[starknet::contract]
 mod Defence {
-    use nogame::component::shared::SharedComponent;
-    use nogame::compound::compound::{ICompoundDispatcher, ICompoundDispatcherTrait};
+    use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::defence::library as defence;
     use nogame::dockyard::library as dockyard;
+    use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
         DefencesCost, ERC20s, DefenceBuildType, TechLevels, E18, Defences
     };
-    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+    use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
+    use nogame::tech::contract::ITechDispatcherTrait;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
     use openzeppelin::access::ownable::OwnableComponent;
     use starknet::{get_caller_address, ContractAddress, contract_address_const};
-
-    component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
@@ -32,10 +31,8 @@ mod Defence {
 
     #[storage]
     struct Storage {
+        game_manager: IGameDispatcher,
         defence_level: LegacyMap::<(u32, u8), u32>,
-        compounds: ICompoundDispatcher,
-        #[substorage(v0)]
-        shared: SharedComponent::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
     }
@@ -44,8 +41,6 @@ mod Defence {
     #[derive(Drop, starknet::Event)]
     enum Event {
         DefenceSpent: DefenceSpent,
-        #[flat]
-        SharedEvent: SharedComponent::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
     }
@@ -58,14 +53,9 @@ mod Defence {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        owner: ContractAddress,
-        storage: ContractAddress,
-        colony: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
         self.ownable.initializer(owner);
-        self.shared.initializer(storage, colony);
+        self.game_manager.write(IGameDispatcher { contract_address: game });
     }
 
     #[abi(embed_v0)]
@@ -74,14 +64,20 @@ mod Defence {
             ref self: ContractState, component: DefenceBuildType, quantity: u32
         ) {
             let caller = get_caller_address();
-            self.shared.collect_resources();
-            let planet_id = self.shared.get_owned_planet(caller);
-            let dockyard_level = self.compounds.read().get_compounds_levels(planet_id).dockyard;
-            let techs = self.shared.storage.read().get_tech_levels(planet_id);
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+            contracts.planet.collect_resources(caller);
+            let planet_id = contracts.planet.get_owned_planet(caller);
+            let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;
+            let techs = contracts.tech.get_tech_levels(planet_id);
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
-            self.shared.storage.read().update_planet_points(planet_id, cost);
+            contracts.planet.update_planet_points(planet_id, cost, false);
             self.emit(DefenceSpent { planet_id, quantity, spent: cost })
+        }
+
+        fn set_defence_level(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
+            self.defence_level.write((planet_id, name), level);
         }
 
         fn get_defences_levels(ref self: ContractState, planet_id: u32) -> Defences {
@@ -106,79 +102,76 @@ mod Defence {
             component: DefenceBuildType,
             quantity: u32
         ) -> ERC20s {
-            let techs = self.shared.storage.read().get_tech_levels(planet_id);
+            let contracts = self.game_manager.read().get_contracts();
+            let techs = contracts.tech.get_tech_levels(planet_id);
             let defences_levels = self.get_defences_levels(planet_id);
+            let mut cost: ERC20s = Default::default();
             match component {
                 DefenceBuildType::Celestia => {
                     defence::requirements::celestia(dockyard_level, techs);
-                    let cost = dockyard::get_ships_cost(
-                        quantity, defence::get_defences_unit_cost().celestia
-                    );
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost =
+                        dockyard::get_ships_cost(
+                            quantity, defence::get_defences_unit_cost().celestia
+                        );
+                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
                             (planet_id, Names::Defence::CELESTIA),
                             defences_levels.celestia + quantity
                         );
-                    return cost;
                 },
                 DefenceBuildType::Blaster => {
                     defence::requirements::blaster(dockyard_level, techs);
-                    let cost = dockyard::get_ships_cost(
-                        quantity, defence::get_defences_unit_cost().blaster
-                    );
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost =
+                        dockyard::get_ships_cost(
+                            quantity, defence::get_defences_unit_cost().blaster
+                        );
+                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
                             (planet_id, Names::Defence::BLASTER), defences_levels.blaster + quantity
                         );
-                    return cost;
                 },
                 DefenceBuildType::Beam => {
                     defence::requirements::beam(dockyard_level, techs);
-                    let cost = dockyard::get_ships_cost(
-                        quantity, defence::get_defences_unit_cost().beam
-                    );
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost =
+                        dockyard::get_ships_cost(quantity, defence::get_defences_unit_cost().beam);
+                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write((planet_id, Names::Defence::BEAM), defences_levels.beam + quantity);
-                    return cost;
                 },
                 DefenceBuildType::Astral => {
                     defence::requirements::astral(dockyard_level, techs);
-                    let cost = dockyard::get_ships_cost(
-                        quantity, defence::get_defences_unit_cost().astral
-                    );
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost =
+                        dockyard::get_ships_cost(
+                            quantity, defence::get_defences_unit_cost().astral
+                        );
+                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
                             (planet_id, Names::Defence::ASTRAL), defences_levels.astral + quantity
                         );
-                    return cost;
                 },
                 DefenceBuildType::Plasma => {
                     defence::requirements::plasma(dockyard_level, techs);
-                    let cost = dockyard::get_ships_cost(
-                        quantity, defence::get_defences_unit_cost().plasma
-                    );
-                    self.shared.check_enough_resources(caller, cost);
-                    self.shared.pay_resources_erc20(caller, cost);
+                    cost =
+                        dockyard::get_ships_cost(
+                            quantity, defence::get_defences_unit_cost().plasma
+                        );
+                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
                             (planet_id, Names::Defence::PLASMA), defences_levels.plasma + quantity
                         );
-                    return cost;
                 },
             }
+            contracts.game.pay_resources_erc20(caller, cost);
+            cost
         }
     }
 }

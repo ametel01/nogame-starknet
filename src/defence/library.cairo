@@ -20,7 +20,7 @@ fn get_defences_unit_cost() -> DefencesCost {
 
 mod requirements {
     use nogame::libraries::types::TechLevels;
-    
+
     fn celestia(dockyard_level: u8, techs: TechLevels) {
         assert(dockyard_level >= 1, 'Dockyard 1 required');
         assert(techs.combustion >= 1, 'Combustive Engine 1 required');

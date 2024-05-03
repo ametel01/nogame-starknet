@@ -1,4 +1,4 @@
-use nogame::libraries::types::{Fleet, PlanetPosition, SimulationResult, Defences, Debris};
+use nogame::libraries::types::{Fleet, PlanetPosition, SimulationResult, Defences, Debris, Mission};
 
 #[starknet::interface]
 trait IFleetMovements<TState> {
@@ -17,22 +17,29 @@ trait IFleetMovements<TState> {
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences
     ) -> SimulationResult;
+    fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
 }
 
 #[starknet::contract]
 mod FleetMovements {
-    use nogame::colony::colony::{IColonyDispatcher, IColonyDispatcherTrait};
-    use nogame::component::shared::SharedComponent;
-    use nogame::compound::compound::{ICompoundDispatcher, ICompoundDispatcherTrait};
+    use core::clone::Clone;
+    use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
+    use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
+    use nogame::defence::contract::IDefenceDispatcherTrait;
     use nogame::defence::library as defence;
-    use nogame::dockyard::dockyard::{IDockyardDispatcher, IDockyardDispatcherTrait};
+    use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
     use nogame::dockyard::library as dockyard;
     use nogame::fleet_movements::library as fleet;
-    use nogame::libraries::types::{
-        MissionCategory, Fleet, PlanetPosition, Mission, ERC20s, Names, E18, IncomingMission,
-        Defences, Debris, TechLevels, WEEK, HOUR, SimulationResult
+    use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::libraries::{
+        names::Names,
+        types::{
+            MissionCategory, Fleet, PlanetPosition, Mission, ERC20s, E18, IncomingMission, Defences,
+            Debris, TechLevels, WEEK, HOUR, SimulationResult, erc20_mul,
+        }
     };
-    use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+    use nogame::planet::contract::IPlanetDispatcherTrait;
+    use nogame::tech::contract::ITechDispatcherTrait;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
     use openzeppelin::access::ownable::OwnableComponent;
@@ -41,8 +48,6 @@ mod FleetMovements {
         contract_address_const
     };
 
-    component!(path: SharedComponent, storage: shared, event: SharedEvent);
-    impl SharedInternalImpl = SharedComponent::InternalImpl<ContractState>;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
@@ -51,8 +56,11 @@ mod FleetMovements {
 
     #[storage]
     struct Storage {
-        #[substorage(v0)]
-        shared: SharedComponent::Storage,
+        game_manager: IGameDispatcher,
+        active_missions: LegacyMap::<(u32, u32), Mission>,
+        active_missions_len: LegacyMap<u32, usize>,
+        incoming_missions: LegacyMap<(u32, u32), IncomingMission>,
+        incoming_missions_len: LegacyMap<u32, usize>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
     }
@@ -62,8 +70,6 @@ mod FleetMovements {
     enum Event {
         BattleReport: BattleReport,
         DebrisCollected: DebrisCollected,
-        #[flat]
-        SharedEvent: SharedComponent::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
     }
@@ -93,14 +99,9 @@ mod FleetMovements {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        owner: ContractAddress,
-        storage: ContractAddress,
-        colony: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
         self.ownable.initializer(get_caller_address());
-        self.shared.initializer(storage, colony);
+        self.game_manager.write(IGameDispatcher { contract_address: game });
     }
 
     #[abi(embed_v0)]
@@ -113,10 +114,11 @@ mod FleetMovements {
             speed_modifier: u32,
             colony_id: u8,
         ) {
-            let destination_id = self.shared.storage.read().get_position_to_planet(destination);
+            let contracts = self.game_manager.read().get_contracts();
+            let destination_id = contracts.planet.get_position_to_planet(destination);
             assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
-            let planet_id = self.shared.get_owned_planet(caller);
+            let planet_id = contracts.planet.get_owned_planet(caller);
             let origin_id = if colony_id.is_zero() {
                 planet_id
             } else {
@@ -125,22 +127,14 @@ mod FleetMovements {
 
             if destination_id > 500 && mission_type == MissionCategory::TRANSPORT {
                 assert(
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .get_colony_mother_planet(destination_id) == planet_id,
+                    contracts.colony.get_colony_mother_planet(destination_id) == planet_id,
                     'not your colony'
                 );
             }
             if mission_type == MissionCategory::ATTACK {
                 if destination_id > 500 {
                     assert(
-                        self
-                            .shared
-                            .storage
-                            .read()
-                            .get_colony_mother_planet(destination_id) != planet_id,
+                        contracts.colony.get_colony_mother_planet(destination_id) != planet_id,
                         'cannot attack own planet'
                     );
                 } else {
@@ -152,16 +146,16 @@ mod FleetMovements {
             self.check_enough_ships(planet_id, colony_id, f);
             // Calculate distance
             let distance = fleet::get_distance(
-                self.shared.storage.read().get_planet_position(origin_id), destination
+                contracts.planet.get_planet_position(origin_id), destination
             );
 
             // Calculate time
-            let techs = self.shared.storage.read().get_tech_levels(planet_id);
+            let techs = contracts.tech.get_tech_levels(planet_id);
             let speed = fleet::get_fleet_speed(f, techs);
             let travel_time = fleet::get_flight_time(speed, distance, speed_modifier);
 
             // Check numeber of mission
-            let active_missions = self.shared.storage.read().get_active_missions(planet_id).len();
+            let active_missions = self.get_active_missions(planet_id).len();
             assert(active_missions < techs.digital.into() + 1, 'max active missions');
 
             // Pay for fuel
@@ -170,43 +164,39 @@ mod FleetMovements {
                 / speed_modifier.into();
             let mut cost: ERC20s = Default::default();
             cost.tritium = consumption;
-            self.shared.check_enough_resources(caller, cost);
-            self.shared.pay_resources_erc20(caller, cost);
+            contracts.game.check_enough_resources(caller, cost);
+            contracts.game.pay_resources_erc20(caller, cost);
 
             // Write mission
             let mut mission: Mission = Default::default();
             mission.time_start = time_now;
             mission.origin = origin_id;
-            mission.destination = self.shared.storage.read().get_position_to_planet(destination);
+            mission.destination = contracts.planet.get_position_to_planet(destination);
             mission.time_arrival = time_now + travel_time;
             mission.fleet = f;
 
             if mission_type == MissionCategory::DEBRIS {
                 assert(
-                    !self.shared.storage.read().get_planet_debris_field(destination_id).is_zero(),
+                    !contracts.planet.get_planet_debris_field(destination_id).is_zero(),
                     'empty debris fiels'
                 );
                 assert(f.scraper >= 1, 'no scrapers for collection');
                 mission.category = MissionCategory::DEBRIS;
-                self.shared.storage.read().add_active_mission(planet_id, mission);
+                self.add_active_mission(planet_id, mission);
             } else if mission_type == MissionCategory::TRANSPORT {
                 mission.category = MissionCategory::TRANSPORT;
-                self.shared.storage.read().add_active_mission(planet_id, mission);
+                self.add_active_mission(planet_id, mission);
             } else {
                 let is_inactive = time_now
-                    - self.shared.storage.read().get_last_active(destination_id) > WEEK;
+                    - contracts.planet.get_last_active(destination_id) > WEEK;
                 if !is_inactive {
                     assert(
-                        !self
-                            .shared
-                            .storage
-                            .read()
-                            .get_is_noob_protected(planet_id, destination_id),
+                        !contracts.planet.get_is_noob_protected(planet_id, destination_id),
                         'noob protection active'
                     );
                 }
                 mission.category = MissionCategory::ATTACK;
-                let id = self.shared.storage.read().add_active_mission(planet_id, mission);
+                let id = self.add_active_mission(planet_id, mission);
                 let mut hostile_mission: IncomingMission = Default::default();
                 hostile_mission.origin = planet_id;
                 hostile_mission.id_at_origin = id;
@@ -216,20 +206,21 @@ mod FleetMovements {
                 hostile_mission.destination = destination_id;
                 let is_colony = mission.destination > 1000;
                 let target_planet = if is_colony {
-                    self.shared.storage.read().get_colony_mother_planet(mission.destination)
+                    contracts.colony.get_colony_mother_planet(mission.destination)
                 } else {
                     mission.destination
                 };
-                self.shared.storage.read().add_incoming_mission(target_planet, hostile_mission);
+                self.add_incoming_mission(target_planet, hostile_mission);
             }
-            self.shared.storage.read().set_last_active(planet_id, time_now);
+            contracts.planet.set_last_active(planet_id);
             self.fleet_leave_planet(origin_id, f);
         }
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
-            let origin = self.shared.get_owned_planet(caller);
-            let mut mission = self.shared.storage.read().get_mission_details(origin, mission_id);
+            let contracts = self.game_manager.read().get_contracts();
+            let origin = contracts.planet.get_owned_planet(caller);
+            let mut mission = self.get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'the mission is empty');
             assert(mission.category == MissionCategory::ATTACK, 'not an attack mission');
             assert(mission.destination != origin, 'cannot attack own planet');
@@ -237,7 +228,7 @@ mod FleetMovements {
             assert(time_now >= mission.time_arrival, 'destination not reached yet');
             let is_colony = mission.destination > 500;
             let colony_mother_planet = if is_colony {
-                self.shared.storage.read().get_colony_mother_planet(mission.destination)
+                contracts.colony.get_colony_mother_planet(mission.destination)
             } else {
                 0
             };
@@ -247,7 +238,7 @@ mod FleetMovements {
                 0
             };
 
-            let mut t1 = self.shared.storage.read().get_tech_levels(origin);
+            let mut t1 = contracts.tech.get_tech_levels(origin);
             let (defender_fleet, defences, t2, celestia_before) = self
                 .get_fleet_and_defences_before_battle(mission.destination);
 
@@ -265,26 +256,18 @@ mod FleetMovements {
             let debris1 = fleet::get_debris(mission.fleet, f1, 0);
             let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
             let total_debris = debris1 + debris2;
-            let current_debries_field = self
-                .shared
-                .storage
-                .read()
+            let current_debries_field = contracts
+                .planet
                 .get_planet_debris_field(mission.destination);
-            self
-                .shared
-                .storage
-                .read()
+            contracts
+                .planet
                 .set_planet_debris_field(mission.destination, current_debries_field + total_debris);
 
             if is_colony {
-                self
-                    .shared
-                    .colony
-                    .read()
-                    .update_defences_after_attack(colony_mother_planet, colony_id, d);
+                contracts.colony.update_defences_after_attack(colony_mother_planet, colony_id, d);
             } else {
-                self.update_defender_fleet_levels_after_attack(mission.destination, f2);
-                self.update_defences_after_attack(mission.destination, d);
+                self.update_defender_fleet_levels_after_attack(mission.destination, colony_id, f2);
+                self.update_defences_after_attack(mission.destination, colony_id, d);
             }
 
             let (loot_spendable, loot_collectible) = self
@@ -294,24 +277,20 @@ mod FleetMovements {
             if !is_colony {
                 self.process_loot_payment(mission.destination, loot_spendable);
             }
-            self.shared.receive_resources_erc20(get_caller_address(), total_loot);
+            contracts.game.receive_resources_erc20(get_caller_address(), total_loot);
 
             if is_colony {
-                self.shared.colony.read().reset_resource_timer(colony_mother_planet, colony_id)
+                contracts.colony.set_resource_timer(colony_mother_planet, colony_id)
             } else {
-                self.shared.storage.read().update_resources_timer(mission.destination, time_now);
+                contracts.planet.set_resources_timer(mission.destination);
             }
             self.fleet_return_planet(mission.origin, f1);
-            self.shared.storage.read().set_mission(origin, mission_id, Zeroable::zero());
+            self.set_mission(origin, mission_id, Zeroable::zero());
 
             if is_colony {
-                self
-                    .shared
-                    .storage
-                    .read()
-                    .remove_incoming_mission(colony_mother_planet, mission_id);
+                self.remove_incoming_mission(colony_mother_planet, mission_id);
             } else {
-                self.shared.storage.read().remove_incoming_mission(mission.destination, mission_id);
+                self.remove_incoming_mission(mission.destination, mission_id);
             }
 
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
@@ -324,16 +303,16 @@ mod FleetMovements {
             } else {
                 self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
             }
-            self.shared.storage.read().set_last_active(origin, time_now);
+            contracts.planet.set_last_active(origin);
             self
                 .emit_battle_report(
                     time_now,
                     origin,
-                    self.shared.storage.read().get_planet_position(origin),
+                    contracts.planet.get_planet_position(origin),
                     mission.fleet,
                     attacker_loss,
                     mission.destination,
-                    self.shared.storage.read().get_planet_position(mission.destination),
+                    contracts.planet.get_planet_position(mission.destination),
                     defender_fleet,
                     defender_loss,
                     defences,
@@ -344,30 +323,33 @@ mod FleetMovements {
         }
 
         fn recall_fleet(ref self: ContractState, mission_id: usize) {
-            let origin = self.shared.get_owned_planet(get_caller_address());
-            let mission = self.shared.storage.read().get_mission_details(origin, mission_id);
+            let contracts = self.game_manager.read().get_contracts();
+            let origin = contracts.planet.get_owned_planet(get_caller_address());
+            let mission = self.get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'no fleet to recall');
             self.fleet_return_planet(mission.origin, mission.fleet);
-            self.shared.storage.read().set_mission(origin, mission_id, Zeroable::zero());
-            self.shared.storage.read().remove_incoming_mission(mission.destination, mission_id);
-            self.shared.storage.read().set_last_active(origin, get_block_timestamp());
+            self.set_mission(origin, mission_id, Zeroable::zero());
+            self.remove_incoming_mission(mission.destination, mission_id);
+            contracts.planet.set_last_active(origin);
         }
 
         fn dock_fleet(ref self: ContractState, mission_id: usize) {
-            let origin = self.shared.get_owned_planet(get_caller_address());
-            let mission = self.shared.storage.read().get_mission_details(origin, mission_id);
+            let contracts = self.game_manager.read().get_contracts();
+            let origin = contracts.planet.get_owned_planet(get_caller_address());
+            let mission = self.get_mission_details(origin, mission_id);
             assert(mission.category == MissionCategory::TRANSPORT, 'not a transport mission');
             assert(!mission.is_zero(), 'no fleet to dock');
             self.fleet_return_planet(mission.destination, mission.fleet);
-            self.shared.storage.read().set_mission(origin, mission_id, Zeroable::zero());
-            self.shared.storage.read().set_last_active(origin, get_block_timestamp());
+            self.set_mission(origin, mission_id, Zeroable::zero());
+            contracts.planet.set_last_active(origin);
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
+            let contracts = self.game_manager.read().get_contracts();
             let caller = get_caller_address();
-            let origin = self.shared.get_owned_planet(caller);
+            let origin = contracts.planet.get_owned_planet(caller);
 
-            let mission = self.shared.storage.read().get_mission_details(origin, mission_id);
+            let mission = self.get_mission_details(origin, mission_id);
             assert(!mission.is_zero(), 'the mission is empty');
             assert(mission.category == MissionCategory::DEBRIS, 'not a debris mission');
 
@@ -382,7 +364,7 @@ mod FleetMovements {
                 collector_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
-            let debris = self.shared.storage.read().get_planet_debris_field(mission.destination);
+            let debris = contracts.planet.get_planet_debris_field(mission.destination);
             let storage = fleet::get_fleet_cargo_capacity(collector_fleet);
             let collectible_debris = fleet::get_collectible_debris(storage, debris);
             let new_debris = Debris {
@@ -390,7 +372,7 @@ mod FleetMovements {
                 quartz: debris.quartz - collectible_debris.quartz
             };
 
-            self.shared.storage.read().set_planet_debris_field(mission.destination, new_debris);
+            contracts.planet.set_planet_debris_field(mission.destination, new_debris);
 
             let erc20 = ERC20s {
                 steel: collectible_debris.steel,
@@ -398,11 +380,11 @@ mod FleetMovements {
                 tritium: Zeroable::zero()
             };
 
-            self.shared.receive_resources_erc20(caller, erc20);
+            contracts.game.receive_resources_erc20(caller, erc20);
 
             self.fleet_return_planet(mission.origin, collector_fleet);
-            self.shared.storage.read().set_mission(origin, mission_id, Zeroable::zero());
-            self.shared.storage.read().set_last_active(origin, time_now);
+            self.set_mission(origin, mission_id, Zeroable::zero());
+            contracts.planet.set_last_active(origin);
 
             self
                 .emit(
@@ -442,152 +424,136 @@ mod FleetMovements {
                 plasma: defences_loss.plasma
             }
         }
+
+        fn get_active_missions(self: @ContractState, planet_id: u32) -> Array<Mission> {
+            let mut arr: Array<Mission> = array![];
+            let len = self.active_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.active_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
+                i += 1;
+            };
+            arr
+        }
     }
 
     #[generate_trait]
     impl Private of PrivateTrait {
         fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
+            let contracts = self.game_manager.read().get_contracts();
             if planet_id > 500 {
-                let colony_mother_planet = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_mother_planet(planet_id);
-                self
-                    .shared
+                let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
+                contracts
                     .colony
-                    .read()
                     .fleet_leaves(
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
                     );
             } else {
-                let fleet_levels = self.shared.storage.read().get_ships_levels(planet_id);
+                let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::CARRIER, fleet_levels.carrier - fleet.carrier
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::CARRIER, fleet_levels.carrier - fleet.carrier
                         );
                 }
                 if fleet.scraper > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::SCRAPER, fleet_levels.scraper - fleet.scraper
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::SCRAPER, fleet_levels.scraper - fleet.scraper
                         );
                 }
                 if fleet.sparrow > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::SPARROW, fleet_levels.sparrow - fleet.sparrow
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::SPARROW, fleet_levels.sparrow - fleet.sparrow
                         );
                 }
                 if fleet.frigate > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::FRIGATE, fleet_levels.frigate - fleet.frigate
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::FRIGATE, fleet_levels.frigate - fleet.frigate
                         );
                 }
                 if fleet.armade > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::ARMADE, fleet_levels.armade - fleet.armade
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::ARMADE, fleet_levels.armade - fleet.armade
                         );
                 }
             }
         }
 
         fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
+            let contracts = self.game_manager.read().get_contracts();
             if planet_id > 500 {
-                let colony_mother_planet = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_mother_planet(planet_id);
-                self
-                    .shared
+                let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
+                contracts
                     .colony
-                    .read()
                     .fleet_arrives(
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet
                     );
             } else {
-                let fleet_levels = self.shared.storage.read().get_ships_levels(planet_id);
+                let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
                 if fleet.carrier > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::CARRIER, fleet_levels.carrier + fleet.carrier
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::CARRIER, fleet_levels.carrier + fleet.carrier
                         );
                 }
                 if fleet.scraper > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::SCRAPER, fleet_levels.scraper + fleet.scraper
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::SCRAPER, fleet_levels.scraper + fleet.scraper
                         );
                 }
                 if fleet.sparrow > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::SPARROW, fleet_levels.sparrow + fleet.sparrow
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::SPARROW, fleet_levels.sparrow + fleet.sparrow
                         );
                 }
                 if fleet.frigate > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::FRIGATE, fleet_levels.frigate + fleet.frigate
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::FRIGATE, fleet_levels.frigate + fleet.frigate
                         );
                 }
                 if fleet.armade > 0 {
-                    self
-                        .shared
-                        .storage
-                        .read()
-                        .set_ship_level(
-                            planet_id, Names::ARMADE, fleet_levels.armade + fleet.armade
+                    contracts
+                        .dockyard
+                        .set_ship_levels(
+                            planet_id, Names::Fleet::ARMADE, fleet_levels.armade + fleet.armade
                         );
                 }
             }
         }
 
         fn check_enough_ships(self: @ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            let contracts = self.game_manager.read().get_contracts();
             if colony_id == 0 {
-                let ships_levels = self.shared.storage.read().get_ships_levels(planet_id);
+                let ships_levels = contracts.dockyard.get_ships_levels(planet_id);
                 assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
                 assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
                 assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
                 assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
                 assert(ships_levels.armade >= fleet.armade, 'not enough armades');
             } else {
-                let ships_levels = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_ships(planet_id, colony_id);
+                let ships_levels = contracts.colony.get_colony_ships(planet_id, colony_id);
                 assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
                 assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
                 assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
@@ -597,51 +563,85 @@ mod FleetMovements {
         }
 
         fn update_defender_fleet_levels_after_attack(
-            ref self: ContractState, planet_id: u32, f: Fleet
+            ref self: ContractState, planet_id: u32, colony_id: u8, f: Fleet
         ) {
-            self.shared.storage.read().set_ship_level(planet_id, Names::CARRIER, f.carrier);
-            self.shared.storage.read().set_ship_level(planet_id, Names::SCRAPER, f.scraper);
-            self.shared.storage.read().set_ship_level(planet_id, Names::SPARROW, f.sparrow);
-            self.shared.storage.read().set_ship_level(planet_id, Names::FRIGATE, f.frigate);
-            self.shared.storage.read().set_ship_level(planet_id, Names::ARMADE, f.armade);
+            let contracts = self.game_manager.read().get_contracts();
+            if colony_id.is_zero() {
+                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::CARRIER, f.carrier);
+                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SCRAPER, f.scraper);
+                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SPARROW, f.sparrow);
+                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::FRIGATE, f.frigate);
+                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::ARMADE, f.armade);
+            } else {
+                contracts
+                    .colony
+                    .set_colony_ship(planet_id, colony_id, Names::Fleet::CARRIER, f.carrier);
+                contracts
+                    .colony
+                    .set_colony_ship(planet_id, colony_id, Names::Fleet::SCRAPER, f.scraper);
+                contracts
+                    .colony
+                    .set_colony_ship(planet_id, colony_id, Names::Fleet::SPARROW, f.sparrow);
+                contracts
+                    .colony
+                    .set_colony_ship(planet_id, colony_id, Names::Fleet::FRIGATE, f.frigate);
+                contracts
+                    .colony
+                    .set_colony_ship(planet_id, colony_id, Names::Fleet::ARMADE, f.armade);
+            }
         }
 
-        fn update_defences_after_attack(ref self: ContractState, planet_id: u32, d: Defences) {
-            self.shared.storage.read().set_defence_level(planet_id, Names::CELESTIA, d.celestia);
-            self.shared.storage.read().set_defence_level(planet_id, Names::BLASTER, d.blaster);
-            self.shared.storage.read().set_defence_level(planet_id, Names::BEAM, d.beam);
-            self.shared.storage.read().set_defence_level(planet_id, Names::ASTRAL, d.astral);
-            self.shared.storage.read().set_defence_level(planet_id, Names::PLASMA, d.plasma);
+        fn update_defences_after_attack(
+            ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences
+        ) {
+            let contracts = self.game_manager.read().get_contracts();
+            if colony_id.is_zero() {
+                contracts
+                    .defence
+                    .set_defence_level(planet_id, Names::Defence::CELESTIA, d.celestia);
+                contracts.defence.set_defence_level(planet_id, Names::Defence::BLASTER, d.blaster);
+                contracts.defence.set_defence_level(planet_id, Names::Defence::BEAM, d.beam);
+                contracts.defence.set_defence_level(planet_id, Names::Defence::ASTRAL, d.astral);
+                contracts.defence.set_defence_level(planet_id, Names::Defence::PLASMA, d.plasma);
+            } else {
+                contracts
+                    .colony
+                    .set_colony_defence(planet_id, colony_id, Names::Defence::CELESTIA, d.celestia);
+                contracts
+                    .colony
+                    .set_colony_defence(planet_id, colony_id, Names::Defence::BLASTER, d.blaster);
+                contracts
+                    .colony
+                    .set_colony_defence(planet_id, colony_id, Names::Defence::BEAM, d.beam);
+                contracts
+                    .colony
+                    .set_colony_defence(planet_id, colony_id, Names::Defence::ASTRAL, d.astral);
+                contracts
+                    .colony
+                    .set_colony_defence(planet_id, colony_id, Names::Defence::PLASMA, d.plasma);
+            }
         }
 
         fn get_fleet_and_defences_before_battle(
             self: @ContractState, planet_id: u32
         ) -> (Fleet, Defences, TechLevels, u32) {
+            let contracts = self.game_manager.read().get_contracts();
             let mut fleet: Fleet = Default::default();
             let mut defences: Defences = Default::default();
             let mut techs: TechLevels = Default::default();
             let mut celestia = 0;
             if planet_id > 500 {
-                let colony_mother_planet = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_mother_planet(planet_id);
-                defences = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_defences(
-                        colony_mother_planet,
-                        (planet_id - colony_mother_planet * 1000).try_into().unwrap()
-                    );
-                techs = self.shared.storage.read().get_tech_levels(colony_mother_planet);
+                let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
+                let colony_id: u8 = (planet_id - colony_mother_planet * 1000).try_into().unwrap();
+                defences = contracts.colony.get_colony_defences(colony_mother_planet, colony_id);
+                techs = contracts.tech.get_tech_levels(colony_mother_planet);
+                fleet = contracts.colony.get_colony_ships(colony_mother_planet, colony_id).into();
                 celestia = defences.celestia;
             } else {
-                fleet = self.shared.storage.read().get_ships_levels(planet_id);
-                defences = self.shared.storage.read().get_defences_levels(planet_id);
-                techs = self.shared.storage.read().get_tech_levels(planet_id);
-                celestia = self.shared.storage.read().get_defences_levels(planet_id).celestia;
+                fleet = contracts.dockyard.get_ships_levels(planet_id).into();
+                defences = contracts.defence.get_defences_levels(planet_id);
+                techs = contracts.tech.get_tech_levels(planet_id);
+                celestia = contracts.defence.get_defences_levels(planet_id).celestia;
             }
             (fleet, defences, techs, celestia)
         }
@@ -649,6 +649,7 @@ mod FleetMovements {
         fn calculate_loot_amount(
             self: @ContractState, destination_id: u32, attacker_fleet: Fleet
         ) -> (ERC20s, ERC20s) {
+            let contracts = self.game_manager.read().get_contracts();
             let mut loot_collectible: ERC20s = Default::default();
             let mut loot_spendable: ERC20s = Default::default();
             let mut storage = fleet::get_fleet_cargo_capacity(attacker_fleet);
@@ -656,22 +657,12 @@ mod FleetMovements {
             let mut collectible: ERC20s = Default::default();
 
             if destination_id > 500 {
-                let mother_planet = self
-                    .shared
-                    .storage
-                    .read()
-                    .get_colony_mother_planet(destination_id);
+                let mother_planet = contracts.colony.get_colony_mother_planet(destination_id);
                 let colony_id: u8 = (destination_id - mother_planet * 1000).try_into().unwrap();
-                collectible = self
-                    .shared
-                    .colony
-                    .read()
-                    .get_colony_resources(mother_planet, colony_id);
+                collectible = contracts.colony.get_colony_resources(mother_planet, colony_id);
             } else {
-                let contracts = self.shared.storage.read().get_contracts();
-                let compound = ICompoundDispatcher { contract_address: contracts.compound };
-                spendable = compound.get_spendable_resources(destination_id);
-                collectible = compound.get_collectible_resources(destination_id);
+                spendable = contracts.planet.get_spendable_resources(destination_id);
+                collectible = contracts.planet.get_collectible_resources(destination_id);
             }
 
             if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
@@ -699,18 +690,17 @@ mod FleetMovements {
         fn process_loot_payment(
             ref self: ContractState, destination_id: u32, loot_spendable: ERC20s,
         ) {
-            let tokens = self.shared.storage.read().get_token_addresses();
+            let contracts = self.game_manager.read().get_contracts();
+            let tokens = contracts.game.get_tokens();
             if destination_id > 500 {
-                let colony_mother_planet = self
-                    .shared
-                    .storage
-                    .read()
+                let colony_mother_planet = contracts
+                    .colony
                     .get_colony_mother_planet(destination_id);
                 let planet_owner = tokens.erc721.ownerOf(colony_mother_planet.into());
-                self.shared.pay_resources_erc20(planet_owner, loot_spendable);
+                contracts.game.pay_resources_erc20(planet_owner, loot_spendable);
             } else {
-                self
-                    .shared
+                contracts
+                    .game
                     .pay_resources_erc20(
                         tokens.erc721.ownerOf(destination_id.into()), loot_spendable
                     );
@@ -744,32 +734,23 @@ mod FleetMovements {
                 return;
             }
             let ships_cost = dockyard::get_ships_unit_cost();
-            let ships_points = fleet.carrier.into()
-                * (ships_cost.carrier.steel + ships_cost.carrier.quartz)
-                + fleet.scraper.into() * (ships_cost.scraper.steel + ships_cost.scraper.quartz)
-                + fleet.sparrow.into() * (ships_cost.sparrow.steel + ships_cost.sparrow.quartz)
-                + fleet.frigate.into() * (ships_cost.frigate.steel + ships_cost.frigate.quartz)
-                + fleet.armade.into() * (ships_cost.armade.steel + ships_cost.armade.quartz);
-
             let defences_cost = defence::get_defences_unit_cost();
-            let defences_points = defences.celestia.into() * 2000
-                + defences.blaster.into()
-                    * (defences_cost.blaster.steel + defences_cost.blaster.quartz)
-                + defences.beam.into() * (defences_cost.beam.steel + defences_cost.beam.quartz)
-                + defences.astral.into()
-                    * (defences_cost.astral.steel + defences_cost.astral.quartz)
-                + defences.plasma.into()
-                    * (defences_cost.plasma.steel + defences_cost.plasma.quartz);
+            let mut resources_points: ERC20s = Default::default();
+            let gross_damage = erc20_mul(ships_cost.carrier, fleet.carrier.into())
+                + erc20_mul(ships_cost.scraper, fleet.scraper.into())
+                + erc20_mul(ships_cost.sparrow, fleet.sparrow.into())
+                + erc20_mul(ships_cost.frigate, fleet.frigate.into())
+                + erc20_mul(ships_cost.armade, fleet.armade.into())
+                + erc20_mul(defences_cost.celestia, defences.celestia.into())
+                + erc20_mul(defences_cost.blaster, defences.blaster.into())
+                + erc20_mul(defences_cost.beam, defences.beam.into())
+                + erc20_mul(defences_cost.astral, defences.astral.into())
+                + erc20_mul(defences_cost.plasma, defences.plasma.into());
+            resources_points.steel = gross_damage.steel;
+            resources_points.quartz = gross_damage.quartz;
 
-            self
-                .shared
-                .storage
-                .read()
-                .set_resources_spent(
-                    planet_id,
-                    self.shared.storage.read().get_resources_spent(planet_id)
-                        - (ships_points + defences_points)
-                );
+            let contracts = self.game_manager.read().get_contracts();
+            contracts.planet.update_planet_points(planet_id, resources_points, true);
         }
 
         fn emit_battle_report(
@@ -788,8 +769,9 @@ mod FleetMovements {
             loot: ERC20s,
             debris: Debris
         ) {
+            let contracts = self.game_manager.read().get_contracts();
             let defender = if defender > 500 {
-                self.shared.storage.read().get_colony_mother_planet(defender)
+                contracts.colony.get_colony_mother_planet(defender)
             } else {
                 defender
             };
@@ -820,6 +802,73 @@ mod FleetMovements {
         ) -> u128 {
             let distance = fleet::get_distance(origin, destination);
             fleet::get_fuel_consumption(fleet, distance)
+        }
+
+        fn add_active_mission(
+            ref self: ContractState, planet_id: u32, mut mission: Mission
+        ) -> usize {
+            let len = self.active_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    mission.id = i.try_into().expect('add active mission fail');
+                    self.active_missions.write((planet_id, i), mission);
+                    self.active_missions_len.write(planet_id, i);
+                    break;
+                }
+                let read_mission = self.active_missions.read((planet_id, i));
+                if read_mission.is_zero() {
+                    mission.id = i.try_into().expect('add active mission fail');
+                    self.active_missions.write((planet_id, i), mission);
+                    break;
+                }
+                i += 1;
+            };
+            i
+        }
+
+        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    self.incoming_missions.write((planet_id, i), mission);
+                    self.incoming_missions_len.write(planet_id, i);
+                    break;
+                }
+                let read_mission = self.incoming_missions.read((planet_id, i));
+                if read_mission.is_zero() {
+                    self.incoming_missions.write((planet_id, i), mission);
+                    break;
+                }
+                i += 1;
+            };
+        }
+
+        fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            loop {
+                if i > len {
+                    break;
+                }
+                let mission = self.incoming_missions.read((planet_id, i));
+                if mission.id_at_origin == id_to_remove {
+                    self.incoming_missions.write((planet_id, i), Zeroable::zero());
+                    break;
+                }
+                i += 1;
+            }
+        }
+
+        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
+            self.active_missions.read((planet_id, mission_id))
+        }
+
+        fn set_mission(
+            ref self: ContractState, planet_id: u32, mission_id: usize, mission: Mission,
+        ) {
+            self.active_missions.write((planet_id, mission_id), mission);
         }
     }
 }

@@ -6,9 +6,9 @@ license = "MIT"
 edition = '2023_01'
 
 [dependencies]
-openzeppelin = { git = "https://github.com/ametel01/cairo-contracts.git", rev="8641873" }
-nogame_fixed = {git = "https://github.com/ametel01/nogame-fixed.git", rev="5317597"}
-starknet = "2.5.4"
+openzeppelin = { git = "https://github.com/ametel01/cairo-contracts.git", rev = "8641873" }
+nogame_fixed = { git = "https://github.com/ametel01/nogame-fixed.git", rev = "5317597" }
+# starknet = "2.5.4"
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.18.0" }
@@ -29,4 +29,3 @@ casm = true
 
 [tool.snforge]
 exit_first = false
-

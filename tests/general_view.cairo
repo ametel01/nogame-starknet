@@ -77,22 +77,21 @@ fn test_get_debris_field() {
     prank_contracts(dsp, ACCOUNT1());
     init_storage(dsp, 1);
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 100);
+// prank_contracts(dsp, ACCOUNT2());
+// init_storage(dsp, 2);
+// dsp.defence.process_defence_build(DefenceBuildType::Astral(()), 5);
 
-    // prank_contracts(dsp, ACCOUNT2());
-    // init_storage(dsp, 2);
-    // dsp.defence.process_defence_build(DefenceBuildType::Astral(()), 5);
+// prank_contracts(dsp, ACCOUNT1());
+// let mut fleet: Fleet = Default::default();
+// let position = dsp.storage.get_planet_position(2);
+// fleet.carrier = 100;
+// dsp.fleet.send_fleet(fleet, position, MissionCategory::ATTACK, 100, 0);
+// warp_multiple(dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + DAY);
+// dsp.fleet.attack_planet(1);
 
-    // prank_contracts(dsp, ACCOUNT1());
-    // let mut fleet: Fleet = Default::default();
-    // let position = dsp.storage.get_planet_position(2);
-    // fleet.carrier = 100;
-    // dsp.fleet.send_fleet(fleet, position, MissionCategory::ATTACK, 100, 0);
-    // warp_multiple(dsp.planet.contract_address, get_contract_address(), get_block_timestamp() + DAY);
-    // dsp.fleet.attack_planet(1);
-
-    // assert(dsp.storage.get_planet_debris_field(1).is_zero(), 'wrong debris field');
-    // let debris = dsp.storage.get_planet_debris_field(2);
-    // assert(debris.steel == 66666 && debris.quartz == 66666, 'wrong debris field');
+// assert(dsp.storage.get_planet_debris_field(1).is_zero(), 'wrong debris field');
+// let debris = dsp.storage.get_planet_debris_field(2);
+// assert(debris.steel == 66666 && debris.quartz == 66666, 'wrong debris field');
 }
 
 #[test]

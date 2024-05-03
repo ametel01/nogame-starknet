@@ -1,4 +1,12 @@
 use integer::{u128_overflowing_add, u128_overflowing_sub};
+use nogame::colony::contract::IColonyDispatcher;
+use nogame::compound::contract::ICompoundDispatcher;
+use nogame::defence::contract::IDefenceDispatcher;
+use nogame::dockyard::contract::IDockyardDispatcher;
+use nogame::fleet_movements::contract::IFleetMovementsDispatcher;
+use nogame::game::contract::IGameDispatcher;
+use nogame::planet::contract::IPlanetDispatcher;
+use nogame::tech::contract::ITechDispatcher;
 use nogame::token::erc20::interface::IERC20NoGameDispatcher;
 use nogame::token::erc721::interface::IERC721NoGameDispatcher;
 
@@ -10,14 +18,26 @@ const E18: u128 = 1000000000000000000;
 const MAX_NUMBER_OF_PLANETS: u32 = 500;
 const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
-const BANK_ADDRESS: felt252 =
-    1860366167800154921415928660539590774912334121378072733158434352123488366392;
+// const BANK_ADDRESS: felt252 =
+// 1860366167800154921415928660539590774912334121378072733158434352123488366392;
 const _0_05: u128 = 922337203685477600;
 const PRICE: u128 = 221360928884514600;
 const PRECISION: u128 = 1_000_000_000_000_000_000;
 const WEEK: u64 = 604_800;
 const DAY: u64 = 86_400;
 const HOUR: u64 = 3_600;
+
+#[derive(Copy, Drop, Serde)]
+struct Contracts {
+    colony: IColonyDispatcher,
+    compound: ICompoundDispatcher,
+    dockyard: IDockyardDispatcher,
+    defence: IDefenceDispatcher,
+    planet: IPlanetDispatcher,
+    fleet: IFleetMovementsDispatcher,
+    game: IGameDispatcher,
+    tech: ITechDispatcher,
+}
 
 #[derive(Copy, Default, Drop, Serde, PartialEq)]
 struct ERC20s {
@@ -140,6 +160,18 @@ struct ShipsLevels {
     sparrow: u32,
     frigate: u32,
     armade: u32,
+}
+
+impl ShipsLevelsIntoFleet of Into<ShipsLevels, Fleet> {
+    fn into(self: ShipsLevels) -> Fleet {
+        Fleet {
+            carrier: self.carrier,
+            scraper: self.scraper,
+            sparrow: self.sparrow,
+            frigate: self.frigate,
+            armade: self.armade,
+        }
+    }
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -486,13 +518,3 @@ struct Tokens {
     eth: IERC20CamelDispatcher,
 }
 
-#[derive(Copy, Drop, Serde)]
-struct Contracts {
-    colony: ContractAddress,
-    compound: ContractAddress,
-    defence: ContractAddress,
-    dockyard: ContractAddress,
-    fleet: ContractAddress,
-    game: ContractAddress,
-    tech: ContractAddress,
-}
