@@ -6,12 +6,16 @@ license = "MIT"
 edition = '2023_01'
 
 [dependencies]
-openzeppelin = { git = "https://github.com/ametel01/cairo-contracts.git", rev = "8641873" }
+openzeppelin_access = "1.0.0"
+openzeppelin_token = "1.0.0"
+openzeppelin_upgrades = "1.0.0"
+openzeppelin_security = "1.0.0"
+openzeppelin_introspection = "1.0.0"
 nogame_fixed = { git = "https://github.com/ametel01/nogame-fixed.git", rev = "5317597" }
-# starknet = "2.5.4"
+starknet = ">=2.11.1"
 
 [dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.18.0" }
+snforge_std = "0.38.3"
 
 [tool.fmt]
 sort-module-level-items = true

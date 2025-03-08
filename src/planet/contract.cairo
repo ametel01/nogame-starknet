@@ -1,5 +1,5 @@
-use nogame::libraries::types::{ERC20s, Tokens, PlanetPosition, Debris};
-use starknet::{ContractAddress};
+use nogame::libraries::types::{Debris, ERC20s, PlanetPosition, Tokens};
+use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IPlanet<TState> {
@@ -36,23 +36,21 @@ mod Planet {
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::positions;
     use nogame::libraries::types::{
-        ERC20s, PlanetPosition, Tokens, Contracts, HOUR, DAY, E18, MAX_NUMBER_OF_PLANETS, _0_05,
-        Debris,
+        Contracts, DAY, Debris, E18, ERC20s, HOUR, MAX_NUMBER_OF_PLANETS, PlanetPosition, Tokens,
+        _0_05,
     };
     // use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
-    use openzeppelin::token::erc20::interface::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
-    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-
-    use starknet::{
-        ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
-        contract_address_const
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_security::reentrancyguard::ReentrancyGuardComponent;
+    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
@@ -63,20 +61,20 @@ mod Planet {
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     component!(
-        path: ReentrancyGuardComponent, storage: reentrancyguard, event: ReentrancyGuardEvent
+        path: ReentrancyGuardComponent, storage: reentrancyguard, event: ReentrancyGuardEvent,
     );
     impl ReentrancyGuardInternalImpl = ReentrancyGuardComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        resources_spent: LegacyMap::<u32, u128>,
+        resources_spent: Map<u32, u128>,
         number_of_planets: u32,
-        planet_position: LegacyMap::<u32, PlanetPosition>,
-        position_to_planet: LegacyMap::<PlanetPosition, u32>,
-        last_active: LegacyMap::<u32, u64>,
-        resources_timer: LegacyMap::<u32, u64>,
-        planet_debris_field: LegacyMap::<u32, Debris>,
+        planet_position: Map<u32, PlanetPosition>,
+        position_to_planet: Map<PlanetPosition, u32>,
+        last_active: Map<u32, u64>,
+        resources_timer: Map<u32, u64>,
+        planet_debris_field: Map<u32, Debris>,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         #[substorage(v0)]
@@ -105,7 +103,7 @@ mod Planet {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
         self.ownable.initializer(get_caller_address());
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
@@ -119,14 +117,14 @@ mod Planet {
 
             assert!(
                 tokens.erc721.balance_of(caller).is_zero(),
-                "NoGame: caller is already a planet owner"
+                "NoGame: caller is already a planet owner",
             );
 
             let time_elapsed = (get_block_timestamp() - game_manager.get_universe_start_time())
                 / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
 
-            tokens.eth.transferFrom(caller, self.ownable.owner(), price);
+            tokens.eth.transfer_from(caller, self.ownable.owner(), price);
 
             let number_of_planets = self.number_of_planets.read();
             assert(number_of_planets != MAX_NUMBER_OF_PLANETS, 'max number of planets');
@@ -142,8 +140,8 @@ mod Planet {
             self
                 .emit(
                     Event::PlanetGenerated(
-                        PlanetGenerated { id: token_id, position, account: caller }
-                    )
+                        PlanetGenerated { id: token_id, position, account: caller },
+                    ),
                 );
         }
 
@@ -158,14 +156,11 @@ mod Planet {
             let mut i = 1;
             let colonies_len = colonies.len();
             let mut total_production: ERC20s = Default::default();
-            loop {
-                if colonies_len.is_zero() || i > colonies_len {
-                    break;
-                }
+            while i != colonies_len {
                 let production = contracts.colony.collect_resources(i.try_into().unwrap());
                 total_production = total_production + production;
                 i += 1;
-            };
+            }
             self.receive_resources_erc20(caller, total_production);
             self.collect(caller);
         }
@@ -176,13 +171,15 @@ mod Planet {
                 self
                     .resources_spent
                     .write(
-                        planet_id, self.resources_spent.read(planet_id) - spent.steel - spent.quartz
+                        planet_id,
+                        self.resources_spent.read(planet_id) - spent.steel - spent.quartz,
                     );
             } else {
                 self
                     .resources_spent
                     .write(
-                        planet_id, self.resources_spent.read(planet_id) + spent.steel + spent.quartz
+                        planet_id,
+                        self.resources_spent.read(planet_id) + spent.steel + spent.quartz,
                     );
             }
         }
@@ -237,9 +234,21 @@ mod Planet {
         fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
             let tokens = self.game_manager.read().get_tokens();
             let planet_owner = tokens.erc721.ownerOf(planet_id.into());
-            let steel = tokens.steel.balance_of(planet_owner).low / E18;
-            let quartz = tokens.quartz.balance_of(planet_owner).low / E18;
-            let tritium = tokens.tritium.balance_of(planet_owner).low / E18;
+            let steel = IERC20Dispatcher { contract_address: tokens.steel.contract_address }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap()
+                / E18;
+            let quartz = IERC20Dispatcher { contract_address: tokens.quartz.contract_address }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap()
+                / E18;
+            let tritium = IERC20Dispatcher { contract_address: tokens.tritium.contract_address }
+                .balance_of(planet_owner)
+                .try_into()
+                .unwrap()
+                / E18;
             ERC20s { steel: steel, quartz: quartz, tritium: tritium }
         }
 
@@ -283,7 +292,7 @@ mod Planet {
             auction
                 .get_vrgda_price(
                     FixedTrait::new_unscaled(time_elapsed.into(), false),
-                    FixedTrait::new_unscaled(planet_sold, false)
+                    FixedTrait::new_unscaled(planet_sold, false),
                 )
                 .mag
                 * E18
@@ -299,7 +308,7 @@ mod Planet {
                     || caller == contracts.tech.contract_address
                     || caller == contracts.fleet.contract_address
                     || caller == contracts.dockyard.contract_address,
-                "NoGame::Planet: caller is not authorized to collect resources"
+                "NoGame::Planet: caller is not authorized to collect resources",
             );
         }
 
@@ -362,19 +371,19 @@ mod Planet {
             if energy_available
                 + (celestia_production.into() * celestia_available).into() < energy_required {
                 let _steel = compound::production_scaler(
-                    steel_available, energy_available, energy_required
+                    steel_available, energy_available, energy_required,
                 );
                 let _quartz = compound::production_scaler(
-                    quartz_available, energy_available, energy_required
+                    quartz_available, energy_available, energy_required,
                 );
                 let _tritium = compound::production_scaler(
-                    tritium_available, energy_available, energy_required
+                    tritium_available, energy_available, energy_required,
                 );
 
-                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium, };
+                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium };
             }
 
-            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
+            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available }
         }
     }
 }

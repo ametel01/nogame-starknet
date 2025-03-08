@@ -37,9 +37,10 @@ trait BitShift<T> {
 
 impl U128BitShift of BitShift<u128> {
     fn fpow(x: u128, n: u128) -> u128 {
+        let (n, rem) = DivRem::div_rem(n, 2);
         if n == 0 {
             1
-        } else if (n & 1) == 1 {
+        } else if rem == 1 {
             x * BitShift::fpow(x * x, n / 2)
         } else {
             BitShift::fpow(x * x, n / 2)
@@ -56,9 +57,10 @@ impl U128BitShift of BitShift<u128> {
 
 impl U256BitShift of BitShift<u256> {
     fn fpow(x: u256, n: u256) -> u256 {
+        let (n, rem) = DivRem::div_rem(n, 2);
         if n == 0 {
             1
-        } else if (n & 1) == 1 {
+        } else if rem == 1 {
             x * BitShift::fpow(x * x, n / 2)
         } else {
             BitShift::fpow(x * x, n / 2)
@@ -71,19 +73,6 @@ impl U256BitShift of BitShift<u256> {
     fn shr(x: u256, n: u256) -> u256 {
         x / BitShift::fpow(2, n)
     }
-}
-
-fn power(x: u128, y: u128) -> u128 {
-    let mut result = x;
-    let mut n = 1;
-    loop {
-        if n == y {
-            break;
-        }
-        result = result * 11 / 10;
-        n += 1;
-    };
-    result * ((100 / 19) * y) / 10 + (700 / 190)
 }
 
 fn min(a: u128, b: u128) -> u128 {

@@ -1,4 +1,4 @@
-use nogame::libraries::types::{Tokens, Contracts, ERC20s};
+use nogame::libraries::types::{Contracts, ERC20s, Tokens};
 use starknet::{ClassHash, ContractAddress};
 
 #[starknet::interface]
@@ -21,15 +21,18 @@ mod Game {
     use nogame::defence::contract::IDefenceDispatcher;
     use nogame::dockyard::contract::IDockyardDispatcher;
     use nogame::fleet_movements::contract::IFleetMovementsDispatcher;
-    use nogame::libraries::types::{Tokens, Contracts, ERC20s, E18};
+    use nogame::libraries::types::{Contracts, E18, ERC20s, Tokens};
     use nogame::planet::contract::IPlanetDispatcher;
     use nogame::tech::contract::ITechDispatcher;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcher};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
-    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-    use starknet::{ContractAddress, get_caller_address, ClassHash, get_contract_address};
+    use nogame::token::erc721::interface::IERC721NoGameDispatcher;
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+    };
+    use starknet::{ClassHash, ContractAddress, get_caller_address, get_contract_address};
     use super::IGameDispatcher;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -48,7 +51,7 @@ mod Game {
         steel: IERC20NoGameDispatcher,
         quartz: IERC20NoGameDispatcher,
         tritium: IERC20NoGameDispatcher,
-        eth: IERC20CamelDispatcher,
+        eth: IERC20Dispatcher,
         universe_start_time: u64,
         game_manager: IGameDispatcher,
         planet_manager: IPlanetDispatcher,
@@ -100,7 +103,7 @@ mod Game {
     impl GameImpl of super::IGame<ContractState> {
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
             self.ownable.assert_only_owner();
-            self.upgradeable._upgrade(impl_hash);
+            self.upgradeable.upgrade(impl_hash);
         }
 
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
@@ -111,7 +114,7 @@ mod Game {
         }
 
         fn receive_resources_erc20(
-            self: @ContractState, account: ContractAddress, amounts: ERC20s
+            self: @ContractState, account: ContractAddress, amounts: ERC20s,
         ) {
             let tokens = self.get_tokens();
             tokens.steel.mint(account, (amounts.steel * E18).into());
@@ -166,14 +169,17 @@ mod Game {
     impl Private of PrivateTrait {
         fn get_erc20s_available(self: @ContractState, caller: ContractAddress) -> ERC20s {
             let tokens = self.get_tokens();
-            let steel = tokens.steel.balance_of(caller);
-            let quartz = tokens.quartz.balance_of(caller);
-            let tritium = tokens.tritium.balance_of(caller);
+            let steel = IERC20Dispatcher { contract_address: tokens.steel.contract_address }
+                .balance_of(caller);
+            let quartz = IERC20Dispatcher { contract_address: tokens.quartz.contract_address }
+                .balance_of(caller);
+            let tritium = IERC20Dispatcher { contract_address: tokens.tritium.contract_address }
+                .balance_of(caller);
 
             ERC20s {
                 steel: steel.try_into().unwrap(),
                 quartz: quartz.try_into().unwrap(),
-                tritium: tritium.try_into().unwrap()
+                tritium: tritium.try_into().unwrap(),
             }
         }
     }

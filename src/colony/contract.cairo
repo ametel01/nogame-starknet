@@ -1,6 +1,6 @@
 use nogame::libraries::types::{
-    PlanetPosition, ColonyUpgradeType, ERC20s, ColonyBuildType, TechLevels, CompoundsLevels, Fleet,
-    Defences, ShipsLevels
+    ColonyBuildType, ColonyUpgradeType, CompoundsLevels, Defences, ERC20s, Fleet, PlanetPosition,
+    ShipsLevels, TechLevels,
 };
 
 #[starknet::interface]
@@ -8,7 +8,7 @@ trait IColony<TState> {
     fn generate_colony(ref self: TState);
     fn collect_resources(ref self: TState, colony_id: u8) -> ERC20s;
     fn process_colony_compound_upgrade(
-        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+        ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8,
     );
     fn process_colony_unit_build(
         ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32,
@@ -41,20 +41,19 @@ mod Colony {
     use nogame::defence::library as defence;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::libraries::{
-        names::Names,
-        types::{
-            PlanetPosition, ERC20s, CompoundsLevels, HOUR, ColonyUpgradeType, ColonyBuildType,
-            TechLevels, ShipsLevels, Defences, Fleet
-        }
+    use nogame::libraries::names::Names;
+    use nogame::libraries::types::{
+        ColonyBuildType, ColonyUpgradeType, CompoundsLevels, Defences, ERC20s, Fleet, HOUR,
+        PlanetPosition, ShipsLevels, TechLevels,
     };
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::token::erc20::interface::IERC20CamelDispatcherTrait;
-    use starknet::{
-        get_block_timestamp, get_caller_address, ContractAddress, contract_address_const
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_block_timestamp, get_caller_address};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
@@ -64,15 +63,15 @@ mod Colony {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        colony_owner: LegacyMap::<u32, u32>,
+        colony_owner: Map<u32, u32>,
         colony_count: usize,
-        planet_colonies_count: LegacyMap::<u32, u8>,
-        colony_position: LegacyMap::<(u32, u8), PlanetPosition>,
-        position_to_colony: LegacyMap::<PlanetPosition, (u32, u8)>,
-        colony_resource_timer: LegacyMap<(u32, u8), u64>,
-        colony_compounds: LegacyMap::<(u32, u8, u8), u8>,
-        colony_ships: LegacyMap::<(u32, u8, u8), u32>,
-        colony_defences: LegacyMap::<(u32, u8, u8), u32>,
+        planet_colonies_count: Map<u32, u8>,
+        colony_position: Map<(u32, u8), PlanetPosition>,
+        position_to_colony: Map<PlanetPosition, (u32, u8)>,
+        colony_resource_timer: Map<(u32, u8), u64>,
+        colony_compounds: Map<(u32, u8, u8), u8>,
+        colony_ships: Map<(u32, u8, u8), u32>,
+        colony_defences: Map<(u32, u8, u8), u32>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
     }
@@ -116,12 +115,12 @@ mod Colony {
             assert!(
                 current_count < max_colonies.into(),
                 "NoGame: max colonies {} reached, upgrade Exocraft tech to increase max colonies",
-                max_colonies
+                max_colonies,
             );
             let price: u256 = 0;
             if !price.is_zero() {
                 let eth = game_manager.get_tokens().eth;
-                eth.transferFrom(caller, self.ownable.owner(), price);
+                eth.transfer_from(caller, self.ownable.owner(), price);
             }
             let position = positions::get_colony_position(current_count.into());
             let colony_id = self.planet_colonies_count.read(planet_id) + 1;
@@ -148,7 +147,7 @@ mod Colony {
         }
 
         fn process_colony_compound_upgrade(
-            ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8
+            ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8,
         ) {
             let contracts = self.game_manager.read().get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
@@ -167,7 +166,7 @@ mod Colony {
         }
 
         fn update_defences_after_attack(
-            ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences
+            ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
         ) {
             self
                 .colony_defences
@@ -185,7 +184,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::CARRIER),
-                        current_levels.carrier + fleet.carrier
+                        current_levels.carrier + fleet.carrier,
                     );
             }
             if fleet.scraper > 0 {
@@ -193,7 +192,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::SCRAPER),
-                        current_levels.scraper + fleet.scraper
+                        current_levels.scraper + fleet.scraper,
                     );
             }
             if fleet.sparrow > 0 {
@@ -201,7 +200,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::SPARROW),
-                        current_levels.sparrow + fleet.sparrow
+                        current_levels.sparrow + fleet.sparrow,
                     );
             }
             if fleet.frigate > 0 {
@@ -209,7 +208,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::FRIGATE),
-                        current_levels.frigate + fleet.frigate
+                        current_levels.frigate + fleet.frigate,
                     );
             }
             if fleet.armade > 0 {
@@ -217,7 +216,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::ARMADE),
-                        current_levels.armade + fleet.armade
+                        current_levels.armade + fleet.armade,
                     );
             }
         }
@@ -229,7 +228,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::CARRIER),
-                        current_levels.carrier - fleet.carrier
+                        current_levels.carrier - fleet.carrier,
                     );
             }
             if fleet.scraper > 0 {
@@ -237,7 +236,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::SCRAPER),
-                        current_levels.scraper - fleet.scraper
+                        current_levels.scraper - fleet.scraper,
                     );
             }
             if fleet.sparrow > 0 {
@@ -245,7 +244,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::SPARROW),
-                        current_levels.sparrow - fleet.sparrow
+                        current_levels.sparrow - fleet.sparrow,
                     );
             }
             if fleet.frigate > 0 {
@@ -253,7 +252,7 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::FRIGATE),
-                        current_levels.frigate - fleet.frigate
+                        current_levels.frigate - fleet.frigate,
                     );
             }
             if fleet.armade > 0 {
@@ -261,13 +260,13 @@ mod Colony {
                     .colony_ships
                     .write(
                         (planet_id, colony_id, Names::Fleet::ARMADE),
-                        current_levels.armade - fleet.armade
+                        current_levels.armade - fleet.armade,
                     );
             }
         }
 
         fn get_colonies_for_planet(
-            self: @ContractState, planet_id: u32
+            self: @ContractState, planet_id: u32,
         ) -> Array<(u8, PlanetPosition)> {
             let mut arr: Array<(u8, PlanetPosition)> = array![];
             let mut i = 1;
@@ -278,7 +277,7 @@ mod Colony {
                 }
                 arr.append((i, colony_position));
                 i += 1;
-            };
+            }
             arr
         }
 
@@ -291,13 +290,13 @@ mod Colony {
         }
 
         fn set_colony_ship(
-            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32
+            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
             self.colony_ships.write((planet_id, colony_id, name), quantity);
         }
 
         fn set_colony_defence(
-            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32
+            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
             self.colony_defences.write((planet_id, colony_id, name), quantity);
         }
@@ -312,7 +311,7 @@ mod Colony {
         }
 
         fn get_colony_coumpounds(
-            self: @ContractState, planet_id: u32, colony_id: u8
+            self: @ContractState, planet_id: u32, colony_id: u8,
         ) -> CompoundsLevels {
             CompoundsLevels {
                 steel: self.colony_compounds.read((planet_id, colony_id, Names::Compound::STEEL)),
@@ -358,7 +357,7 @@ mod Colony {
                 !self.colony_position.read((planet_id, colony_id)).is_zero(),
                 "NoGameColony: colony {} not present for planet {}",
                 colony_id,
-                planet_id
+                planet_id,
             );
         }
 
@@ -367,7 +366,7 @@ mod Colony {
             planet_id: u32,
             colony_id: u8,
             component: ColonyUpgradeType,
-            quantity: u8
+            quantity: u8,
         ) {
             let current_levels = self.get_colony_coumpounds(planet_id, colony_id);
             match component {
@@ -376,7 +375,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::STEEL),
-                            current_levels.steel + quantity.try_into().expect('u32 into u8 failed')
+                            current_levels.steel + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 ColonyUpgradeType::QuartzMine => {
@@ -384,7 +383,8 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::QUARTZ),
-                            current_levels.quartz + quantity.try_into().expect('u32 into u8 failed')
+                            current_levels.quartz
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 ColonyUpgradeType::TritiumMine => {
@@ -393,7 +393,7 @@ mod Colony {
                         .write(
                             (planet_id, colony_id, Names::Compound::TRITIUM),
                             current_levels.tritium
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 ColonyUpgradeType::EnergyPlant => {
@@ -401,7 +401,8 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::ENERGY),
-                            current_levels.energy + quantity.try_into().expect('u32 into u8 failed')
+                            current_levels.energy
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 ColonyUpgradeType::Dockyard => {
@@ -410,7 +411,7 @@ mod Colony {
                         .write(
                             (planet_id, colony_id, Names::Compound::DOCKYARD),
                             current_levels.dockyard
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
             }
@@ -434,7 +435,7 @@ mod Colony {
                         .colony_ships
                         .write(
                             (planet_id, colony_id, Names::Fleet::CARRIER),
-                            ship_levels.carrier + quantity
+                            ship_levels.carrier + quantity,
                         );
                 },
                 ColonyBuildType::Scraper => {
@@ -443,7 +444,7 @@ mod Colony {
                         .colony_ships
                         .write(
                             (planet_id, colony_id, Names::Fleet::SCRAPER),
-                            ship_levels.scraper + quantity
+                            ship_levels.scraper + quantity,
                         );
                 },
                 ColonyBuildType::Sparrow => {
@@ -452,7 +453,7 @@ mod Colony {
                         .colony_ships
                         .write(
                             (planet_id, colony_id, Names::Fleet::SPARROW),
-                            ship_levels.sparrow + quantity
+                            ship_levels.sparrow + quantity,
                         );
                 },
                 ColonyBuildType::Frigate => {
@@ -461,7 +462,7 @@ mod Colony {
                         .colony_ships
                         .write(
                             (planet_id, colony_id, Names::Fleet::FRIGATE),
-                            ship_levels.frigate + quantity
+                            ship_levels.frigate + quantity,
                         );
                 },
                 ColonyBuildType::Armade => {
@@ -470,7 +471,7 @@ mod Colony {
                         .colony_ships
                         .write(
                             (planet_id, colony_id, Names::Fleet::ARMADE),
-                            ship_levels.armade + quantity
+                            ship_levels.armade + quantity,
                         );
                 },
                 ColonyBuildType::Celestia => {
@@ -479,7 +480,7 @@ mod Colony {
                         .colony_defences
                         .write(
                             (planet_id, colony_id, Names::Defence::CELESTIA),
-                            defence_levels.celestia + quantity
+                            defence_levels.celestia + quantity,
                         );
                 },
                 ColonyBuildType::Blaster => {
@@ -488,7 +489,7 @@ mod Colony {
                         .colony_defences
                         .write(
                             (planet_id, colony_id, Names::Defence::BLASTER),
-                            defence_levels.blaster + quantity
+                            defence_levels.blaster + quantity,
                         );
                 },
                 ColonyBuildType::Beam => {
@@ -497,7 +498,7 @@ mod Colony {
                         .colony_defences
                         .write(
                             (planet_id, colony_id, Names::Defence::BEAM),
-                            defence_levels.beam + quantity
+                            defence_levels.beam + quantity,
                         );
                 },
                 ColonyBuildType::Astral => {
@@ -506,7 +507,7 @@ mod Colony {
                         .colony_defences
                         .write(
                             (planet_id, colony_id, Names::Defence::ASTRAL),
-                            defence_levels.astral + quantity
+                            defence_levels.astral + quantity,
                         );
                 },
                 ColonyBuildType::Plasma => {
@@ -515,14 +516,14 @@ mod Colony {
                         .colony_defences
                         .write(
                             (planet_id, colony_id, Names::Defence::PLASMA),
-                            defence_levels.plasma + quantity
+                            defence_levels.plasma + quantity,
                         );
                 },
             }
         }
 
         fn calculate_colony_production(
-            self: @ContractState, uni_speed: u128, planet_id: u32, colony_id: u8
+            self: @ContractState, uni_speed: u128, planet_id: u32, colony_id: u8,
         ) -> ERC20s {
             let time_now = get_block_timestamp();
             let last_collection_time = self.colony_resource_timer.read((planet_id, colony_id));
@@ -541,7 +542,7 @@ mod Colony {
                 / HOUR.into();
 
             let tritium_available = compound::production::tritium(
-                mines_levels.tritium, temp, uni_speed
+                mines_levels.tritium, temp, uni_speed,
             )
                 * time_elapsed.into()
                 / HOUR.into();
@@ -560,19 +561,19 @@ mod Colony {
 
             if total_production < energy_required {
                 let _steel = compound::production_scaler(
-                    steel_available, total_production, energy_required
+                    steel_available, total_production, energy_required,
                 );
                 let _quartz = compound::production_scaler(
-                    quartz_available, total_production, energy_required
+                    quartz_available, total_production, energy_required,
                 );
                 let _tritium = compound::production_scaler(
-                    tritium_available, total_production, energy_required
+                    tritium_available, total_production, energy_required,
                 );
 
-                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium, };
+                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium };
             }
 
-            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available, }
+            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available }
         }
 
         fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u32 {

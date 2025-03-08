@@ -2,27 +2,31 @@
 mod ERC20NoGame {
     use nogame::token::erc20::interface::IERC20NoGame;
     use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::token::erc20::erc20::ERC20Component;
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+    };
     use starknet::{ContractAddress, get_caller_address};
 
-    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
-    impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
-    impl ERC20CamelOnlyImpl = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
+    // Ownable Mixin
     #[abi(embed_v0)]
-    impl SafeAllowanceImpl = ERC20Component::SafeAllowanceImpl<ContractState>;
+    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    // ERC20 Mixin
     #[abi(embed_v0)]
-    impl SafeAllowanceCamelImpl =
-        ERC20Component::SafeAllowanceCamelImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    // Upgradeable
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
     impl InternalImpl = ERC20Component::InternalImpl<ContractState>;
-
-    #[abi(embed_v0)]
-    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
-    impl OwnableInteralImpl = OwnableComponent::InternalImpl<ContractState>;
 
     #[storage]
     struct Storage {
@@ -30,6 +34,8 @@ mod ERC20NoGame {
         erc20: ERC20Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage,
     }
 
     #[event]
@@ -39,11 +45,13 @@ mod ERC20NoGame {
         ERC20Event: ERC20Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event,
     }
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: felt252, symbol: felt252, owner: ContractAddress,
+        ref self: ContractState, name: ByteArray, symbol: ByteArray, owner: ContractAddress,
     ) {
         self.erc20.initializer(name, symbol);
         self.ownable.initializer(owner);
@@ -51,60 +59,18 @@ mod ERC20NoGame {
 
     #[abi(embed_v0)]
     impl ERC20NoGameImpl of IERC20NoGame<ContractState> {
-        fn total_supply(self: @ContractState) -> u256 {
-            self.erc20.total_supply()
-        }
-
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balance_of(account)
-        }
-
-        fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
-        ) -> u256 {
-            self.erc20.allowance(owner, spender)
-        }
-
-        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            self.erc20.transfer(recipient, amount)
-        }
-
-        fn transfer_from(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
-        ) -> bool {
-            self.erc20.transfer_from(sender, recipient, amount)
-        }
-
-        fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
-            self.erc20.approve(spender, amount)
-        }
-        // IERC20CamelOnly
-        fn totalSupply(self: @ContractState) -> u256 {
-            self.erc20.total_supply()
-        }
-        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balance_of(account)
-        }
-
-        fn transferFrom(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
-        ) -> bool {
-            self.erc20.transfer_from(sender, recipient, amount)
+        fn upgrade(ref self: ContractState, impl_hash: starknet::ClassHash) {
+            self.ownable.assert_only_owner();
+            self.upgradeable.upgrade(impl_hash);
         }
 
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             self.ownable.assert_only_owner();
-            self.erc20._mint(recipient, amount)
+            self.erc20.mint(recipient, amount)
         }
         fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
             self.ownable.assert_only_owner();
-            self.erc20._burn(account, amount);
+            self.erc20.burn(account, amount);
         }
     }
 }

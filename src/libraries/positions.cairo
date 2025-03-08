@@ -501,7 +501,7 @@ fn get_planet_position(planet_id: u32) -> PlanetPosition {
         PlanetPosition { system: 129, orbit: 7 },
         PlanetPosition { system: 167, orbit: 8 },
         PlanetPosition { system: 190, orbit: 9 },
-        PlanetPosition { system: 135, orbit: 10 }
+        PlanetPosition { system: 135, orbit: 10 },
     ];
     return *positions_array.at((planet_id - 1).into());
 }

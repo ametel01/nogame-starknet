@@ -1,4 +1,4 @@
-use integer::{u128_overflowing_add, u128_overflowing_sub};
+use core::num::traits::{OverflowingAdd, OverflowingSub};
 use nogame::colony::contract::IColonyDispatcher;
 use nogame::compound::contract::ICompoundDispatcher;
 use nogame::defence::contract::IDefenceDispatcher;
@@ -9,9 +9,7 @@ use nogame::planet::contract::IPlanetDispatcher;
 use nogame::tech::contract::ITechDispatcher;
 use nogame::token::erc20::interface::IERC20NoGameDispatcher;
 use nogame::token::erc721::interface::IERC721NoGameDispatcher;
-
-use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
-
+use openzeppelin_token::erc20::interface::IERC20Dispatcher;
 use starknet::ContractAddress;
 
 const E18: u128 = 1000000000000000000;
@@ -60,20 +58,18 @@ impl ERC20LevelsZeroable of Zeroable<ERC20s> {
 
 impl ERC20sAdd of Add<ERC20s> {
     fn add(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
-        ERC20s {
-            steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
-            quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow'),
-            tritium: u128_overflowing_add(lhs.tritium, rhs.tritium).expect('u128_add Overflow'),
-        }
+        let (steel, _) = lhs.steel.overflowing_add(rhs.steel);
+        let (quartz, _) = lhs.quartz.overflowing_add(rhs.quartz);
+        let (tritium, _) = lhs.tritium.overflowing_add(rhs.tritium);
+        ERC20s { steel: steel, quartz: quartz, tritium: tritium }
     }
 }
 impl ERC20sSub of Sub<ERC20s> {
     fn sub(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
-        ERC20s {
-            steel: u128_overflowing_sub(lhs.steel, rhs.steel).expect('u128_sub Overflow'),
-            quartz: u128_overflowing_sub(lhs.quartz, rhs.quartz).expect('u128_sub Overflow'),
-            tritium: u128_overflowing_sub(lhs.tritium, rhs.tritium).expect('u128_sub Overflow'),
-        }
+        let (steel, _) = lhs.steel.overflowing_sub(rhs.steel);
+        let (quartz, _) = lhs.quartz.overflowing_sub(rhs.quartz);
+        let (tritium, _) = lhs.tritium.overflowing_sub(rhs.tritium);
+        ERC20s { steel: steel, quartz: quartz, tritium: tritium }
     }
 }
 
@@ -96,7 +92,7 @@ fn erc20_mul(a: ERC20s, multiplicator: u128) -> ERC20s {
     ERC20s {
         steel: a.steel * multiplicator,
         quartz: a.quartz * multiplicator,
-        tritium: a.tritium * multiplicator
+        tritium: a.tritium * multiplicator,
     }
 }
 
@@ -190,12 +186,12 @@ struct Defences {
     blaster: u32,
     beam: u32,
     astral: u32,
-    plasma: u32
+    plasma: u32,
 }
 
 impl DefencesZeroable of Zeroable<Defences> {
     fn zero() -> Defences {
-        Defences { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0, }
+        Defences { celestia: 0, blaster: 0, beam: 0, astral: 0, plasma: 0 }
     }
     fn is_zero(self: Defences) -> bool {
         self.celestia == 0
@@ -253,7 +249,7 @@ struct Cargo {
 #[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
 struct Debris {
     steel: u128,
-    quartz: u128
+    quartz: u128,
 }
 
 impl DebrisZeroable of Zeroable<Debris> {
@@ -270,10 +266,9 @@ impl DebrisZeroable of Zeroable<Debris> {
 
 impl DebrisAdd of Add<Debris> {
     fn add(lhs: Debris, rhs: Debris) -> Debris {
-        Debris {
-            steel: u128_overflowing_add(lhs.steel, rhs.steel).expect('u128_add Overflow'),
-            quartz: u128_overflowing_add(lhs.quartz, rhs.quartz).expect('u128_add Overflow')
-        }
+        let (steel, _) = lhs.steel.overflowing_add(rhs.steel);
+        let (quartz, _) = lhs.quartz.overflowing_add(rhs.quartz);
+        Debris { steel: steel, quartz: quartz }
     }
 }
 
@@ -288,7 +283,7 @@ struct Fleet {
 
 impl FleetZeroable of Zeroable<Fleet> {
     fn zero() -> Fleet {
-        Fleet { carrier: 0, scraper: 0, sparrow: 0, frigate: 0, armade: 0, }
+        Fleet { carrier: 0, scraper: 0, sparrow: 0, frigate: 0, armade: 0 }
     }
     fn is_zero(self: Fleet) -> bool {
         self.carrier == 0
@@ -426,7 +421,7 @@ enum DefenceBuildType {
     Blaster,
     Beam,
     Astral,
-    Plasma
+    Plasma,
 }
 
 mod Names {
@@ -500,7 +495,7 @@ enum ColonyBuildType {
     Blaster,
     Beam,
     Astral,
-    Plasma
+    Plasma,
 }
 
 mod MissionCategory {
@@ -515,6 +510,6 @@ struct Tokens {
     steel: IERC20NoGameDispatcher,
     quartz: IERC20NoGameDispatcher,
     tritium: IERC20NoGameDispatcher,
-    eth: IERC20CamelDispatcher,
+    eth: IERC20Dispatcher,
 }
 

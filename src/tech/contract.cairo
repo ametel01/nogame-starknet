@@ -1,4 +1,4 @@
-use nogame::libraries::types::{TechUpgradeType, TechLevels};
+use nogame::libraries::types::{TechLevels, TechUpgradeType};
 use starknet::ClassHash;
 
 #[starknet::interface]
@@ -12,16 +12,17 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::libraries::types::{TechUpgradeType, Names, ERC20s, E18, TechLevels};
+    use nogame::libraries::types::{E18, ERC20s, Names, TechLevels, TechUpgradeType};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::tech::library as tech;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-    use starknet::{
-        ClassHash, get_caller_address, ContractAddress, get_block_timestamp, contract_address_const
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
+    use starknet::{ClassHash, ContractAddress, get_block_timestamp, get_caller_address};
 
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
     impl UpgradableInteralImpl = UpgradeableComponent::InternalImpl<ContractState>;
@@ -35,7 +36,7 @@ mod Tech {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        tech_level: LegacyMap::<(u32, felt252), u8>,
+        tech_level: Map<(u32, felt252), u8>,
         planet_manager: IPlanetDispatcher,
         compound_manager: ICompoundDispatcher,
         #[substorage(v0)]
@@ -58,11 +59,11 @@ mod Tech {
     struct TechSpent {
         planet_id: u32,
         quantity: u8,
-        spent: ERC20s
+        spent: ERC20s,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
         self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
@@ -71,7 +72,7 @@ mod Tech {
     impl TechImpl of super::ITech<ContractState> {
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
             self.ownable.assert_only_owner();
-            self.upgradeable._upgrade(impl_hash);
+            self.upgradeable.upgrade(impl_hash);
         }
 
         fn process_tech_upgrade(ref self: ContractState, component: TechUpgradeType, quantity: u8) {
@@ -110,7 +111,7 @@ mod Tech {
             caller: ContractAddress,
             planet_id: u32,
             component: TechUpgradeType,
-            quantity: u8
+            quantity: u8,
         ) -> ERC20s {
             let lab_level = self.compound_manager.read().get_compounds_levels(planet_id).lab;
             let techs = self.get_tech_levels(planet_id);
@@ -127,7 +128,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::ENERGY_TECH),
-                            techs.energy + quantity.try_into().expect('u32 into u8 failed')
+                            techs.energy + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Digital => {
@@ -139,7 +140,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::DIGITAL),
-                            techs.digital + quantity.try_into().expect('u32 into u8 failed')
+                            techs.digital + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::BeamTech => {
@@ -151,7 +152,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::BEAM_TECH),
-                            techs.beam + quantity.try_into().expect('u32 into u8 failed')
+                            techs.beam + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Armour => {
@@ -163,7 +164,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::ARMOUR),
-                            techs.armour + quantity.try_into().expect('u32 into u8 failed')
+                            techs.armour + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Ion => {
@@ -175,7 +176,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::ION),
-                            techs.ion + quantity.try_into().expect('u32 into u8 failed')
+                            techs.ion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::PlasmaTech => {
@@ -187,7 +188,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::PLASMA_TECH),
-                            techs.plasma + quantity.try_into().expect('u32 into u8 failed')
+                            techs.plasma + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Weapons => {
@@ -199,7 +200,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::WEAPONS),
-                            techs.weapons + quantity.try_into().expect('u32 into u8 failed')
+                            techs.weapons + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Shield => {
@@ -211,7 +212,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::SHIELD),
-                            techs.shield + quantity.try_into().expect('u32 into u8 failed')
+                            techs.shield + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Spacetime => {
@@ -223,7 +224,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::SPACETIME),
-                            techs.spacetime + quantity.try_into().expect('u32 into u8 failed')
+                            techs.spacetime + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Combustion => {
@@ -235,7 +236,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::COMBUSTION),
-                            techs.combustion + quantity.try_into().expect('u32 into u8 failed')
+                            techs.combustion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Thrust => {
@@ -247,7 +248,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::THRUST),
-                            techs.thrust + quantity.try_into().expect('u32 into u8 failed')
+                            techs.thrust + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Warp => {
@@ -259,7 +260,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::WARP),
-                            techs.warp + quantity.try_into().expect('u32 into u8 failed')
+                            techs.warp + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 TechUpgradeType::Exocraft => {
@@ -271,7 +272,7 @@ mod Tech {
                         .tech_level
                         .write(
                             (planet_id, Names::EXOCRAFT),
-                            techs.exocraft + quantity.try_into().expect('u32 into u8 failed')
+                            techs.exocraft + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
             }

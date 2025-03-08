@@ -4,7 +4,7 @@ fn get_ships_cost(quantity: u32, cost: ERC20s) -> ERC20s {
     ERC20s {
         steel: (cost.steel * quantity.into()),
         quartz: (cost.quartz * quantity.into()),
-        tritium: (cost.tritium * quantity.into())
+        tritium: (cost.tritium * quantity.into()),
     }
 }
 
@@ -15,7 +15,7 @@ fn get_ships_unit_cost() -> ShipsCost {
         scraper: ERC20s { steel: 10000, quartz: 6000, tritium: 2000 },
         sparrow: ERC20s { steel: 3000, quartz: 1000, tritium: 0 },
         frigate: ERC20s { steel: 20000, quartz: 7000, tritium: 2000 },
-        armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 }
+        armade: ERC20s { steel: 45000, quartz: 15000, tritium: 0 },
     }
 }
 

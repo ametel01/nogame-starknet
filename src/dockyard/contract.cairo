@@ -11,16 +11,18 @@ trait IDockyard<TState> {
 mod Dockyard {
     use nogame::compound::contract::ICompoundDispatcherTrait;
     use nogame::dockyard::library as dockyard;
-    use nogame::game::contract::{IGameDispatcherTrait, IGameDispatcher};
-    use nogame::libraries::{
-        names::Names, types::{ShipBuildType, ERC20s, TechLevels, E18, ShipsCost, ShipsLevels}
-    };
+    use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::libraries::names::Names;
+    use nogame::libraries::types::{E18, ERC20s, ShipBuildType, ShipsCost, ShipsLevels, TechLevels};
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use starknet::{get_caller_address, ContractAddress, contract_address_const};
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use openzeppelin_access::ownable::OwnableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+    };
+    use starknet::{ContractAddress, get_caller_address};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
@@ -30,7 +32,7 @@ mod Dockyard {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        ships_level: LegacyMap::<(u32, u8), u32>,
+        ships_level: Map<(u32, u8), u32>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
     }
@@ -47,11 +49,11 @@ mod Dockyard {
     struct FleetSpent {
         planet_id: u32,
         quantity: u32,
-        spent: ERC20s
+        spent: ERC20s,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
         self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
@@ -96,7 +98,7 @@ mod Dockyard {
             dockyard_level: u8,
             techs: TechLevels,
             component: ShipBuildType,
-            quantity: u32
+            quantity: u32,
         ) -> ERC20s {
             let contracts = self.game_manager.read().get_contracts();
             let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;

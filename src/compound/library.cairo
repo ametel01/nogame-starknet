@@ -1,8 +1,6 @@
-use core::integer::U256Mul;
 use integer::U8Div;
-use nogame::libraries::math::{power, BitShift};
-
-use nogame::libraries::types::{ERC20s};
+use nogame::libraries::math::BitShift;
+use nogame::libraries::types::ERC20s;
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 const UNI_SPEED: u128 = 1;
@@ -192,13 +190,10 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
 
@@ -309,13 +304,10 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
 
@@ -426,13 +418,10 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
     fn energy(level: u8, quantity: u8) -> ERC20s {
@@ -542,13 +531,10 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
     fn lab(level: u8, quantity: u8) -> ERC20s {
@@ -588,13 +574,10 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
     fn dockyard(level: u8, quantity: u8) -> ERC20s {
@@ -634,19 +617,16 @@ mod cost {
         ];
         let mut sum: ERC20s = Default::default();
         let mut i: usize = (level + quantity).into();
-        loop {
-            if i == level.into() {
-                break;
-            }
+        while i != level.into() {
             sum = sum + (*costs.at(i - 1));
             i -= 1;
-        };
+        }
         sum
     }
 }
 
 mod production {
-    use nogame::libraries::math::{power, BitShift};
+    use nogame::libraries::math::BitShift;
     use nogame::libraries::types::ERC20s;
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 

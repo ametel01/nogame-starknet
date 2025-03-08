@@ -1,4 +1,4 @@
-use nogame::libraries::types::{ERC20s, CompoundUpgradeType, CompoundsLevels};
+use nogame::libraries::types::{CompoundUpgradeType, CompoundsLevels, ERC20s};
 use starknet::ClassHash;
 
 #[starknet::interface]
@@ -14,15 +14,16 @@ mod Compound {
     use nogame::compound::library as compound;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::libraries::names::Names;
-    use nogame::libraries::types::{ERC20s, E18, HOUR, CompoundUpgradeType, CompoundsLevels};
+    use nogame::libraries::types::{CompoundUpgradeType, CompoundsLevels, E18, ERC20s, HOUR};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
-    use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const, ClassHash
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
+    use starknet::{ClassHash, ContractAddress, get_block_timestamp, get_caller_address};
 
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -37,7 +38,7 @@ mod Compound {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        compound_level: LegacyMap::<(u32, u8), u8>,
+        compound_level: Map<(u32, u8), u8>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
@@ -58,11 +59,11 @@ mod Compound {
     struct CompoundSpent {
         planet_id: u32,
         quantity: u8,
-        spent: ERC20s
+        spent: ERC20s,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
         self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
@@ -71,7 +72,7 @@ mod Compound {
     impl CompoundImpl of super::ICompound<ContractState> {
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
             self.ownable.assert_only_owner();
-            self.upgradeable._upgrade(impl_hash);
+            self.upgradeable.upgrade(impl_hash);
         }
 
         fn process_upgrade(ref self: ContractState, component: CompoundUpgradeType, quantity: u8) {
@@ -103,7 +104,7 @@ mod Compound {
             caller: ContractAddress,
             planet_id: u32,
             component: CompoundUpgradeType,
-            quantity: u8
+            quantity: u8,
         ) -> ERC20s {
             let compound_levels = self.get_compounds_levels(planet_id);
             let mut cost: ERC20s = Default::default();
@@ -116,7 +117,8 @@ mod Compound {
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::STEEL),
-                            compound_levels.steel + quantity.try_into().expect('u32 into u8 failed')
+                            compound_levels.steel
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 CompoundUpgradeType::QuartzMine => {
@@ -127,7 +129,7 @@ mod Compound {
                         .write(
                             (planet_id, Names::Compound::QUARTZ),
                             compound_levels.quartz
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 CompoundUpgradeType::TritiumMine => {
@@ -138,7 +140,7 @@ mod Compound {
                         .write(
                             (planet_id, Names::Compound::TRITIUM),
                             compound_levels.tritium
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 CompoundUpgradeType::EnergyPlant => {
@@ -149,7 +151,7 @@ mod Compound {
                         .write(
                             (planet_id, Names::Compound::ENERGY),
                             compound_levels.energy
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 CompoundUpgradeType::Lab => {
@@ -159,7 +161,7 @@ mod Compound {
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::LAB),
-                            compound_levels.lab + quantity.try_into().expect('u32 into u8 failed')
+                            compound_levels.lab + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
                 CompoundUpgradeType::Dockyard => {
@@ -170,7 +172,7 @@ mod Compound {
                         .write(
                             (planet_id, Names::Compound::DOCKYARD),
                             compound_levels.dockyard
-                                + quantity.try_into().expect('u32 into u8 failed')
+                                + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
             }

@@ -1,10 +1,10 @@
-use nogame::libraries::types::{ERC20s, TechLevels, DefencesCost};
+use nogame::libraries::types::{DefencesCost, ERC20s, TechLevels};
 
 fn get_defences_cost(quantity: u32, base_cost: ERC20s) -> ERC20s {
     ERC20s {
         steel: base_cost.steel * quantity.into(),
         quartz: base_cost.quartz * quantity.into(),
-        tritium: base_cost.tritium * quantity.into()
+        tritium: base_cost.tritium * quantity.into(),
     }
 }
 

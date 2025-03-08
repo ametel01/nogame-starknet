@@ -1,7 +1,7 @@
 use nogame::dockyard::library as dockyard;
 use nogame::libraries::math;
 use nogame::libraries::types::{
-    ERC20s, TechLevels, Debris, Fleet, Unit, UnitTrait, ShipsCost, PlanetPosition, Defences,
+    Debris, Defences, ERC20s, Fleet, PlanetPosition, ShipsCost, TechLevels, Unit, UnitTrait,
 };
 use nogame_fixed::f128::core::{exp, sqrt};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
@@ -28,7 +28,7 @@ fn FRIGATE() -> Unit {
 // 75000
 fn ARMADE() -> Unit {
     Unit {
-        id: 4, weapon: 3750, shield: 150, hull: 15000, speed: 10000, cargo: 1500, consumption: 500
+        id: 4, weapon: 3750, shield: 150, hull: 15000, speed: 10000, cargo: 1500, consumption: 500,
     }
 }
 
@@ -63,14 +63,11 @@ fn war(
     a_techs: TechLevels,
     mut defenders: Fleet,
     defences: Defences,
-    d_techs: TechLevels
+    d_techs: TechLevels,
 ) -> (Fleet, Fleet, Defences) {
     let mut attackers = build_ships_array(attackers, Zeroable::zero(), a_techs);
     let mut defenders = build_ships_array(defenders, defences, d_techs);
-    loop {
-        if attackers.len().is_zero() || defenders.len().is_zero() {
-            break;
-        }
+    while !attackers.is_empty() && !defenders.is_empty() {
         let mut u1 = attackers.pop_front().unwrap();
         let mut u2 = defenders.pop_front().unwrap();
         let (u1, u2) = unit_combat(ref u1, ref u2);
@@ -80,7 +77,7 @@ fn war(
         if u2.hull > 0 {
             defenders.append(u2);
         }
-    };
+    }
     let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers, a_techs);
     let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref defenders, d_techs);
     (attacker_fleet_struct, defender_fleet_struct, defences_struct)
@@ -122,73 +119,28 @@ fn rapid_fire(ref unit1: Unit, ref unit2: Unit) {
 fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, Defences) {
     let mut fleet: Fleet = Default::default();
     let mut d: Defences = Default::default();
-    loop {
-        if a.len().is_zero() {
-            break;
-        }
+    while !a.is_empty() {
         let u = a.pop_front().unwrap();
-        if u.id == 0 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                fleet.carrier += unit_count;
-            }
+        if u.hull == 0 {
+            continue;
         }
-        if u.id == 1 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                fleet.scraper += unit_count;
-            }
+
+        let unit_count = get_number_of_units_from_blob(u, techs);
+
+        match u.id {
+            0 => { fleet.carrier += unit_count; },
+            1 => { fleet.scraper += unit_count; },
+            2 => { fleet.sparrow += unit_count; },
+            3 => { fleet.frigate += unit_count; },
+            4 => { fleet.armade += unit_count; },
+            5 => { d.celestia += unit_count; },
+            6 => { d.blaster += unit_count; },
+            7 => { d.beam += unit_count; },
+            8 => { d.astral += unit_count; },
+            9 => { d.plasma += unit_count; },
+            _ => {},
         }
-        if u.id == 2 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                fleet.sparrow += unit_count;
-            }
-        }
-        if u.id == 3 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                fleet.frigate += unit_count;
-            }
-        }
-        if u.id == 4 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                fleet.armade += unit_count;
-            }
-        }
-        if u.id == 5 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                d.celestia += unit_count;
-            }
-        }
-        if u.id == 6 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                d.blaster += unit_count;
-            }
-        }
-        if u.id == 7 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                d.beam += unit_count;
-            }
-        }
-        if u.id == 8 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                d.astral += unit_count;
-            }
-        }
-        if u.id == 9 {
-            if u.hull > 0 {
-                let unit_count = get_number_of_units_from_blob(u, techs);
-                d.plasma += unit_count;
-            }
-        }
-        continue;
-    };
+    }
     (fleet, d)
 }
 
@@ -290,43 +242,35 @@ fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
         let mut base_unit = CARRIER();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 1 {
+    } else if blob.id == 1 {
         let mut base_unit = SCRAPER();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 2 {
+    } else if blob.id == 2 {
         let mut base_unit = SPARROW();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 3 {
+    } else if blob.id == 3 {
         let mut base_unit = FRIGATE();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 4 {
+    } else if blob.id == 4 {
         let mut base_unit = ARMADE();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 5 {
+    } else if blob.id == 5 {
         let mut base_unit = CELESTIA();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 6 {
+    } else if blob.id == 6 {
         let mut base_unit = BLASTER();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 7 {
+    } else if blob.id == 7 {
         let mut base_unit = BEAM();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
-    }
-    if blob.id == 8 {
+    } else if blob.id == 8 {
         let mut base_unit = ASTRAL();
         add_techs(ref base_unit, techs);
         return blob.hull / base_unit.hull;
@@ -420,8 +364,7 @@ fn get_fuel_consumption(f: Fleet, distance: u32) -> u128 {
 fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
     if start.system == end.system && start.orbit == end.orbit {
         return 5;
-    }
-    if start.system == end.system {
+    } else if start.system == end.system {
         if start.orbit > end.orbit {
             let dis: u32 = (start.orbit - end.orbit).into();
             return 1000 + 5 * dis;
@@ -429,14 +372,12 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
             let dis: u32 = (end.orbit - start.orbit).into();
             return 1000 + 5 * dis;
         }
+    } else if start.system > end.system {
+        let dis: u32 = (start.system - end.system).into();
+        return 2700 + 95 * dis;
     } else {
-        if start.system > end.system {
-            let dis: u32 = (start.system - end.system).into();
-            return 2700 + 95 * dis;
-        } else {
-            let dis: u32 = (end.system - start.system).into();
-            return 2700 + 95 * dis;
-        }
+        let dis: u32 = (end.system - start.system).into();
+        return 2700 + 95 * dis;
     }
 }
 
@@ -467,10 +408,7 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
     let mut quartz_loaded = 0;
     let mut tritium_loaded = 0;
 
-    loop {
-        if storage.is_zero() || resources.is_zero() {
-            break;
-        }
+    while storage != 0 && !resources.is_zero() {
         let steel_to_load = min(storage / 3, resources.steel);
         let quartz__to_load = min(storage / 3, resources.quartz);
         let tritium_to_load = min(storage / 3, resources.tritium);
@@ -484,9 +422,9 @@ fn load_resources(mut resources: ERC20s, mut storage: u128) -> ERC20s {
         steel_loaded += steel_to_load;
         quartz_loaded += quartz__to_load;
         tritium_loaded += tritium_to_load;
-    };
+    }
 
-    ERC20s { steel: steel_loaded, quartz: quartz_loaded, tritium: tritium_loaded, }
+    ERC20s { steel: steel_loaded, quartz: quartz_loaded, tritium: tritium_loaded }
 }
 
 fn min(a: u128, b: u128) -> u128 {
@@ -533,7 +471,7 @@ fn calculate_fleet_loss(time_seconds: u64) -> u32 {
             - FixedTrait::exp(
                 FixedTrait::new(_0_02, true)
                     * FixedTrait::new_unscaled(time_seconds.into(), false)
-                    / FixedTrait::new_unscaled(60, false)
+                    / FixedTrait::new_unscaled(60, false),
             )))
         .mag
         / ONE)

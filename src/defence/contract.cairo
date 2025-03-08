@@ -1,4 +1,4 @@
-use nogame::libraries::types::{DefencesCost, ERC20s, DefenceBuildType, Defences};
+use nogame::libraries::types::{DefenceBuildType, Defences, DefencesCost, ERC20s};
 
 #[starknet::interface]
 trait IDefence<TState> {
@@ -15,14 +15,17 @@ mod Defence {
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
-        DefencesCost, ERC20s, DefenceBuildType, TechLevels, E18, Defences
+        DefenceBuildType, Defences, DefencesCost, E18, ERC20s, TechLevels,
     };
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::tech::contract::ITechDispatcherTrait;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::{IERC721NoGameDispatcherTrait, IERC721NoGameDispatcher};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use starknet::{get_caller_address, ContractAddress, contract_address_const};
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
+    use openzeppelin_access::ownable::OwnableComponent;
+    use starknet::storage::{
+        Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
+    };
+    use starknet::{ContractAddress, get_caller_address};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     #[abi(embed_v0)]
@@ -32,7 +35,7 @@ mod Defence {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        defence_level: LegacyMap::<(u32, u8), u32>,
+        defence_level: Map<(u32, u8), u32>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
     }
@@ -49,11 +52,11 @@ mod Defence {
     struct DefenceSpent {
         planet_id: u32,
         quantity: u32,
-        spent: ERC20s
+        spent: ERC20s,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress,) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
         self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
@@ -61,7 +64,7 @@ mod Defence {
     #[abi(embed_v0)]
     impl DefenceImpl of super::IDefence<ContractState> {
         fn process_defence_build(
-            ref self: ContractState, component: DefenceBuildType, quantity: u32
+            ref self: ContractState, component: DefenceBuildType, quantity: u32,
         ) {
             let caller = get_caller_address();
             let game_manager = self.game_manager.read();
@@ -100,7 +103,7 @@ mod Defence {
             dockyard_level: u8,
             techs: TechLevels,
             component: DefenceBuildType,
-            quantity: u32
+            quantity: u32,
         ) -> ERC20s {
             let contracts = self.game_manager.read().get_contracts();
             let techs = contracts.tech.get_tech_levels(planet_id);
@@ -111,27 +114,28 @@ mod Defence {
                     defence::requirements::celestia(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(
-                            quantity, defence::get_defences_unit_cost().celestia
+                            quantity, defence::get_defences_unit_cost().celestia,
                         );
                     contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
                             (planet_id, Names::Defence::CELESTIA),
-                            defences_levels.celestia + quantity
+                            defences_levels.celestia + quantity,
                         );
                 },
                 DefenceBuildType::Blaster => {
                     defence::requirements::blaster(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(
-                            quantity, defence::get_defences_unit_cost().blaster
+                            quantity, defence::get_defences_unit_cost().blaster,
                         );
                     contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
-                            (planet_id, Names::Defence::BLASTER), defences_levels.blaster + quantity
+                            (planet_id, Names::Defence::BLASTER),
+                            defences_levels.blaster + quantity,
                         );
                 },
                 DefenceBuildType::Beam => {
@@ -147,26 +151,26 @@ mod Defence {
                     defence::requirements::astral(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(
-                            quantity, defence::get_defences_unit_cost().astral
+                            quantity, defence::get_defences_unit_cost().astral,
                         );
                     contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
-                            (planet_id, Names::Defence::ASTRAL), defences_levels.astral + quantity
+                            (planet_id, Names::Defence::ASTRAL), defences_levels.astral + quantity,
                         );
                 },
                 DefenceBuildType::Plasma => {
                     defence::requirements::plasma(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(
-                            quantity, defence::get_defences_unit_cost().plasma
+                            quantity, defence::get_defences_unit_cost().plasma,
                         );
                     contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
-                            (planet_id, Names::Defence::PLASMA), defences_levels.plasma + quantity
+                            (planet_id, Names::Defence::PLASMA), defences_levels.plasma + quantity,
                         );
                 },
             }
