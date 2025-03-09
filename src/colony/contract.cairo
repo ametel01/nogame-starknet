@@ -23,7 +23,7 @@ trait IColony<TState> {
     fn fleet_leaves(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
-    fn get_colony_coumpounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+    fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
     fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
     fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
 }
@@ -310,7 +310,7 @@ mod Colony {
             self.calculate_colony_production(uni_speed, planet_id, colony_id)
         }
 
-        fn get_colony_coumpounds(
+        fn get_colony_compounds(
             self: @ContractState, planet_id: u32, colony_id: u8,
         ) -> CompoundsLevels {
             CompoundsLevels {
@@ -368,7 +368,7 @@ mod Colony {
             component: ColonyUpgradeType,
             quantity: u8,
         ) {
-            let current_levels = self.get_colony_coumpounds(planet_id, colony_id);
+            let current_levels = self.get_colony_compounds(planet_id, colony_id);
             match component {
                 ColonyUpgradeType::SteelMine => {
                     self
@@ -425,7 +425,7 @@ mod Colony {
             component: ColonyBuildType,
             quantity: u32,
         ) {
-            let dockyard_level = self.get_colony_coumpounds(planet_id, colony_id).dockyard;
+            let dockyard_level = self.get_colony_compounds(planet_id, colony_id).dockyard;
             let ship_levels = self.get_colony_ships(planet_id, colony_id);
             let defence_levels = self.get_colony_defences(planet_id, colony_id);
             match component {
@@ -528,7 +528,7 @@ mod Colony {
             let time_now = get_block_timestamp();
             let last_collection_time = self.colony_resource_timer.read((planet_id, colony_id));
             let time_elapsed = time_now - last_collection_time;
-            let mines_levels = self.get_colony_coumpounds(planet_id, colony_id);
+            let mines_levels = self.get_colony_compounds(planet_id, colony_id);
             let position = self.colony_position.read((planet_id, colony_id));
             let temp = self.calculate_avg_temperature(position.orbit);
             let steel_available = compound::production::steel(mines_levels.steel)

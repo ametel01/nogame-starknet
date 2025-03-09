@@ -1,23 +1,22 @@
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost
+    Defences, DefencesCost, ERC20s, EnergyCost, ShipsCost, ShipsLevels, TechLevels, TechsCost,
 };
-use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
-use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
-
-use snforge_std::{start_prank, start_warp, CheatTarget};
+use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
+use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
+use snforge_std::{start_cheat_block_timestamp_global, start_cheat_caller_address_global};
+use starknet::ContractAddress;
 use starknet::info::get_contract_address;
 use starknet::testing::cheatcode;
-use starknet::{ContractAddress, contract_address_const};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up, prank_contracts};
+use super::utils::{ACCOUNT1, ACCOUNT2, Dispatchers, E18, HOUR, init_game, set_up};
 
 #[test]
 fn test_get_tech_levels() {
     let dsp = set_up();
     init_game(dsp);
-    prank_contracts(dsp, ACCOUNT1());
+    start_cheat_caller_address_global(ACCOUNT1());
     dsp.planet.generate_planet();
 
-    let techs = dsp.storage.get_tech_levels(1);
+    let techs = dsp.tech.get_tech_levels(1);
     assert(techs.energy == 0, 'wrong level');
     assert(techs.digital == 0, 'wrong level');
     assert(techs.beam == 0, 'wrong level');

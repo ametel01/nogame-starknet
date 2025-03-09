@@ -3,6 +3,23 @@ use starknet::{ClassHash, ContractAddress};
 
 #[starknet::interface]
 trait IGame<TState> {
+    fn initialize(
+        ref self: TState,
+        colony: ContractAddress,
+        compound: ContractAddress,
+        defence: ContractAddress,
+        dockyard: ContractAddress,
+        fleet: ContractAddress,
+        planet: ContractAddress,
+        tech: ContractAddress,
+        erc721: ContractAddress,
+        steel: ContractAddress,
+        quartz: ContractAddress,
+        tritium: ContractAddress,
+        eth: ContractAddress,
+        uni_speed: u128,
+        token_price: u128,
+    );
     fn upgrade(ref self: TState, impl_hash: ClassHash);
     fn pay_resources_erc20(self: @TState, account: ContractAddress, amounts: ERC20s);
     fn receive_resources_erc20(self: @TState, account: ContractAddress, amounts: ERC20s);
@@ -77,32 +94,47 @@ mod Game {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        erc721: ContractAddress,
-        steel: ContractAddress,
-        quartz: ContractAddress,
-        tritium: ContractAddress,
-        planet: ContractAddress,
-        compound: ContractAddress,
-        defence: ContractAddress,
-        colony: ContractAddress,
-        tech: ContractAddress,
-        eth: ContractAddress,
-    ) {
-        let caller = get_caller_address();
-        self.ownable.initializer(caller);
-        self.planet_manager.write(IPlanetDispatcher { contract_address: planet });
-        self.compound_manager.write(ICompoundDispatcher { contract_address: compound });
-        self.defence_manager.write(IDefenceDispatcher { contract_address: defence });
-        self.colony_manager.write(IColonyDispatcher { contract_address: colony });
-        self.tech_manager.write(ITechDispatcher { contract_address: tech });
+    fn constructor(ref self: ContractState, owner: ContractAddress) {
+        self.ownable.initializer(owner);
     }
 
     #[abi(embed_v0)]
     impl GameImpl of super::IGame<ContractState> {
-        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+        fn initialize(
+            ref self: ContractState,
+            colony: ContractAddress,
+            compound: ContractAddress,
+            defence: ContractAddress,
+            dockyard: ContractAddress,
+            fleet: ContractAddress,
+            planet: ContractAddress,
+            tech: ContractAddress,
+            erc721: ContractAddress,
+            steel: ContractAddress,
+            quartz: ContractAddress,
+            tritium: ContractAddress,
+            eth: ContractAddress,
+            uni_speed: u128,
+            token_price: u128,
+        ) {
             self.ownable.assert_only_owner();
+            self.planet_manager.write(IPlanetDispatcher { contract_address: planet });
+            self.compound_manager.write(ICompoundDispatcher { contract_address: compound });
+            self.defence_manager.write(IDefenceDispatcher { contract_address: defence });
+            self.dockyard_manager.write(IDockyardDispatcher { contract_address: dockyard });
+            self.fleet_manager.write(IFleetMovementsDispatcher { contract_address: fleet });
+            self.colony_manager.write(IColonyDispatcher { contract_address: colony });
+            self.tech_manager.write(ITechDispatcher { contract_address: tech });
+            self.steel.write(IERC20NoGameDispatcher { contract_address: steel });
+            self.quartz.write(IERC20NoGameDispatcher { contract_address: quartz });
+            self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
+            self.eth.write(IERC20Dispatcher { contract_address: eth });
+            self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
+            self.token_price.write(token_price);
+            self.uni_speed.write(uni_speed);
+        }
+
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
             self.upgradeable.upgrade(impl_hash);
         }
 

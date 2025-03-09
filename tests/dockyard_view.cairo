@@ -1,65 +1,65 @@
+use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::libraries::types::{
-    ERC20s, EnergyCost, TechLevels, TechsCost, ShipsLevels, ShipsCost, Defences, DefencesCost, Names
+    Defences, DefencesCost, ERC20s, EnergyCost, Names, ShipsCost, ShipsLevels, TechLevels,
+    TechsCost,
 };
-use nogame::planet::planet::{IPlanetDispatcher, IPlanetDispatcherTrait};
-use nogame::storage::storage::{IStorageDispatcher, IStorageDispatcherTrait};
+use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-
-use snforge_std::{start_prank, start_warp, CheatTarget, store, map_entry_address};
+use snforge_std::{map_entry_address, start_cheat_caller_address_global, store};
+use starknet::ContractAddress;
 use starknet::info::get_contract_address;
 use starknet::testing::cheatcode;
-use starknet::{ContractAddress, contract_address_const};
-use tests::utils::{E18, HOUR, Dispatchers, ACCOUNT1, ACCOUNT2, init_game, set_up};
+use super::utils::{ACCOUNT1, ACCOUNT2, Dispatchers, E18, HOUR, init_game, set_up};
 
 #[test]
 fn test_get_ships_level() {
     let dsp = set_up();
     init_game(dsp);
-    start_prank(CheatTarget::One(dsp.planet.contract_address), ACCOUNT1());
+    start_cheat_caller_address_global(ACCOUNT1());
     dsp.planet.generate_planet();
 
     store(
-        dsp.storage.contract_address,
+        dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::CARRIER].span(), // Providing mapping key 
+            array![1, Names::CARRIER].span() // Providing mapping key 
         ),
-        array![1800].span()
+        array![1800].span(),
     );
     store(
-        dsp.storage.contract_address,
+        dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::SCRAPER].span(), // Providing mapping key 
+            array![1, Names::SCRAPER].span() // Providing mapping key 
         ),
-        array![18].span()
+        array![18].span(),
     );
     store(
-        dsp.storage.contract_address,
+        dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::SPARROW].span(), // Providing mapping key 
+            array![1, Names::SPARROW].span() // Providing mapping key 
         ),
-        array![8].span()
+        array![8].span(),
     );
     store(
-        dsp.storage.contract_address,
+        dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::FRIGATE].span(), // Providing mapping key 
+            array![1, Names::FRIGATE].span() // Providing mapping key 
         ),
-        array![28].span()
+        array![28].span(),
     );
     store(
-        dsp.storage.contract_address,
+        dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::ARMADE].span(), // Providing mapping key 
+            array![1, Names::ARMADE].span() // Providing mapping key 
         ),
-        array![38].span()
+        array![38].span(),
     );
 
-    let ships = dsp.storage.get_ships_levels(1);
+    let ships = dsp.dockyard.get_ships_levels(1);
     assert(ships.carrier == 1800, 'wrong carrier`');
     assert(ships.scraper == 18, 'wrong scraper');
     assert(ships.sparrow == 8, 'wrong sparrow');

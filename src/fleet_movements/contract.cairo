@@ -1,4 +1,6 @@
-use nogame::libraries::types::{Debris, Defences, Fleet, Mission, PlanetPosition, SimulationResult};
+use nogame::libraries::types::{
+    Debris, Defences, Fleet, IncomingMission, Mission, PlanetPosition, SimulationResult,
+};
 
 #[starknet::interface]
 trait IFleetMovements<TState> {
@@ -18,6 +20,8 @@ trait IFleetMovements<TState> {
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
     ) -> SimulationResult;
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
+    fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
+    fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
 }
 
 #[starknet::contract]
@@ -436,6 +440,24 @@ mod FleetMovements {
             }
             arr
         }
+
+        fn get_incoming_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
+            let mut arr: Array<IncomingMission> = array![];
+            let len = self.incoming_missions_len.read(planet_id);
+            let mut i = 1;
+            while i != len {
+                let mission = self.incoming_missions.read((planet_id, i));
+                if !mission.is_zero() {
+                    arr.append(mission);
+                }
+                i += 1;
+            }
+            arr
+        }
+
+        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
+            self.active_missions.read((planet_id, mission_id))
+        }
     }
 
     #[generate_trait]
@@ -851,10 +873,6 @@ mod FleetMovements {
                 }
                 i += 1;
             }
-        }
-
-        fn get_mission_details(self: @ContractState, planet_id: u32, mission_id: usize) -> Mission {
-            self.active_missions.read((planet_id, mission_id))
         }
 
         fn set_mission(
