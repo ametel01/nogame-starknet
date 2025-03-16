@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 #[starknet::interface]
 trait IPlanet<TState> {
     fn generate_planet(ref self: TState);
-    fn collect_resources(ref self: TState, caller: ContractAddress);
+    fn collect_resources(ref self: TState, player: ContractAddress);
     fn get_current_planet_price(self: @TState) -> u128;
     fn update_planet_points(ref self: TState, planet_id: u32, spent: ERC20s, neg: bool);
     fn add_colony_planet(
@@ -145,24 +145,26 @@ mod Planet {
                 );
         }
 
-        fn collect_resources(ref self: ContractState, caller: ContractAddress) {
+        fn collect_resources(ref self: ContractState, player: ContractAddress) {
             let caller = get_caller_address();
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
             self.verify_caller(contracts, caller);
             let tokens = game_manager.get_tokens();
             let planet_id = tokens.erc721.token_of(caller).try_into().unwrap();
-            let colonies = contracts.colony.get_colonies_for_planet(planet_id);
-            let mut i = 1;
-            let colonies_len = colonies.len();
-            let mut total_production: ERC20s = Default::default();
-            while i != colonies_len {
-                let production = contracts.colony.collect_resources(i.try_into().unwrap());
-                total_production = total_production + production;
-                i += 1;
+            let colonies_len = contracts.colony.get_colonies_for_planet(planet_id).len();
+
+            if colonies_len != 0 {
+                let mut total_production: ERC20s = Default::default();
+                let mut i = 1;
+                while i != colonies_len {
+                    let production = contracts.colony.collect_resources(i.try_into().unwrap());
+                    total_production = total_production + production;
+                    i += 1;
+                }
+                self.receive_resources_erc20(player, total_production);
             }
-            self.receive_resources_erc20(caller, total_production);
-            self.collect(caller);
+            self.collect(player);
         }
 
         fn update_planet_points(ref self: ContractState, planet_id: u32, spent: ERC20s, neg: bool) {
@@ -269,8 +271,12 @@ mod Planet {
         }
 
         fn get_is_noob_protected(self: @ContractState, planet1_id: u32, planet2_id: u32) -> bool {
-            let p1_points = self.get_planet_points(planet1_id);
-            let p2_points = self.get_planet_points(planet2_id);
+            println!("get_is_noob_protected: planet1_id: {}", planet1_id);
+            println!("get_is_noob_protected: planet2_id: {}", planet2_id);
+            let p1_points = self.get_planet_points(planet1_id % 1000);
+            println!("get_is_noob_protected: p1_points: {}", p1_points);
+            let p2_points = self.get_planet_points(planet2_id % 1000);
+            println!("get_is_noob_protected: p2_points: {}", p2_points);
             if p1_points > p2_points {
                 return p1_points > p2_points * 5;
             } else {
@@ -312,18 +318,18 @@ mod Planet {
             );
         }
 
-        fn collect(ref self: ContractState, caller: ContractAddress) {
+        fn collect(ref self: ContractState, player: ContractAddress) {
             let planet_id = self
                 .game_manager
                 .read()
                 .get_tokens()
                 .erc721
-                .token_of(caller)
+                .token_of(player)
                 .try_into()
                 .unwrap();
             assert(!planet_id.is_zero(), 'planet does not exist');
             let production = self.calculate_production(planet_id);
-            self.receive_resources_erc20(caller, production);
+            self.receive_resources_erc20(player, production);
             self.resources_timer.write(planet_id, get_block_timestamp());
         }
 

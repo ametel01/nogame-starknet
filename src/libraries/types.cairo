@@ -37,7 +37,7 @@ struct Contracts {
     tech: ITechDispatcher,
 }
 
-#[derive(Copy, Default, Drop, Serde, PartialEq)]
+#[derive(Copy, Debug, Default, Drop, Serde, PartialEq)]
 struct ERC20s {
     steel: u128,
     quartz: u128,
@@ -116,7 +116,7 @@ struct CompoundsCost {
     dockyard: ERC20s,
 }
 
-#[derive(Copy, Default, Drop, Serde)]
+#[derive(Copy, Debug, Default, Drop, Serde)]
 struct TechLevels {
     energy: u8,
     digital: u8,
@@ -221,7 +221,7 @@ struct EnergyCost {
     tritium: u128,
 }
 
-#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store, Hash)]
+#[derive(Copy, Debug, Default, Drop, PartialEq, Serde, starknet::Store, Hash)]
 struct PlanetPosition {
     system: u32,
     orbit: u8,
@@ -272,7 +272,7 @@ impl DebrisAdd of Add<Debris> {
     }
 }
 
-#[derive(Default, Drop, Copy, PartialEq, Serde, starknet::Store)]
+#[derive(Default, Debug, Drop, Copy, PartialEq, Serde, starknet::Store)]
 struct Fleet {
     carrier: u32,
     scraper: u32,
@@ -342,7 +342,7 @@ impl IncomingMissionZeroable of Zeroable<IncomingMission> {
     }
 }
 
-#[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
+#[derive(Copy, Debug, Default, PartialEq, Drop, Serde, starknet::Store)]
 struct Mission {
     id: u32,
     time_start: u64,
@@ -366,10 +366,7 @@ impl MissionZeroable of Zeroable<Mission> {
         }
     }
     fn is_zero(self: Mission) -> bool {
-        self.time_start == 0
-            || self.destination == 0
-            || self.time_arrival == 0
-            || self.fleet == Zeroable::zero()
+        self.destination == 0 || self.time_arrival == 0 || self.fleet == Zeroable::zero()
     }
     fn is_non_zero(self: Mission) -> bool {
         !self.is_zero()
@@ -424,37 +421,37 @@ enum DefenceBuildType {
     Plasma,
 }
 
-mod Names {
-    const STEEL: felt252 = 1;
-    const QUARTZ: felt252 = 2;
-    const TRITIUM: felt252 = 3;
-    const ENERGY_PLANT: felt252 = 4;
-    const LAB: felt252 = 5;
-    const DOCKYARD: felt252 = 6;
-    const ENERGY_TECH: felt252 = 7;
-    const DIGITAL: felt252 = 8;
-    const BEAM_TECH: felt252 = 9;
-    const ARMOUR: felt252 = 10;
-    const ION: felt252 = 11;
-    const PLASMA_TECH: felt252 = 12;
-    const WEAPONS: felt252 = 13;
-    const SHIELD: felt252 = 14;
-    const SPACETIME: felt252 = 15;
-    const COMBUSTION: felt252 = 16;
-    const THRUST: felt252 = 17;
-    const WARP: felt252 = 18;
-    const CARRIER: felt252 = 19;
-    const SCRAPER: felt252 = 20;
-    const CELESTIA: felt252 = 21;
-    const SPARROW: felt252 = 22;
-    const FRIGATE: felt252 = 23;
-    const ARMADE: felt252 = 24;
-    const BLASTER: felt252 = 25;
-    const BEAM: felt252 = 26;
-    const ASTRAL: felt252 = 27;
-    const PLASMA: felt252 = 28;
-    const EXOCRAFT: felt252 = 29;
-}
+// mod Names {
+//     const STEEL: felt252 = 1;
+//     const QUARTZ: felt252 = 2;
+//     const TRITIUM: felt252 = 3;
+//     const ENERGY_PLANT: felt252 = 4;
+//     const LAB: felt252 = 5;
+//     const DOCKYARD: felt252 = 6;
+//     const ENERGY_TECH: felt252 = 7;
+//     const DIGITAL: felt252 = 8;
+//     const BEAM_TECH: felt252 = 9;
+//     const ARMOUR: felt252 = 10;
+//     const ION: felt252 = 11;
+//     const PLASMA_TECH: felt252 = 12;
+//     const WEAPONS: felt252 = 13;
+//     const SHIELD: felt252 = 14;
+//     const SPACETIME: felt252 = 15;
+//     const COMBUSTION: felt252 = 16;
+//     const THRUST: felt252 = 17;
+//     const WARP: felt252 = 18;
+//     const CARRIER: felt252 = 19;
+//     const SCRAPER: felt252 = 20;
+//     const CELESTIA: felt252 = 21;
+//     const SPARROW: felt252 = 22;
+//     const FRIGATE: felt252 = 23;
+//     const ARMADE: felt252 = 24;
+//     const BLASTER: felt252 = 25;
+//     const BEAM: felt252 = 26;
+//     const ASTRAL: felt252 = 27;
+//     const PLASMA: felt252 = 28;
+//     const EXOCRAFT: felt252 = 29;
+// }
 
 #[derive(Default, Drop, Copy, PartialEq, Serde)]
 struct SimulationResult {

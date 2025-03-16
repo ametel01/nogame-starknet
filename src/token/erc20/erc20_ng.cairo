@@ -30,6 +30,7 @@ mod ERC20NoGame {
 
     #[storage]
     struct Storage {
+        minter: ContractAddress,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
         #[substorage(v0)]
@@ -51,9 +52,14 @@ mod ERC20NoGame {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: ByteArray, symbol: ByteArray, owner: ContractAddress,
+        ref self: ContractState,
+        name: ByteArray,
+        symbol: ByteArray,
+        minter: ContractAddress,
+        owner: ContractAddress,
     ) {
         self.erc20.initializer(name, symbol);
+        self.minter.write(minter);
         self.ownable.initializer(owner);
     }
 
@@ -65,11 +71,13 @@ mod ERC20NoGame {
         }
 
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-            self.ownable.assert_only_owner();
+            let caller = get_caller_address();
+            assert!(caller == self.minter.read(), "ERC20NoGame: caller is not the minter");
             self.erc20.mint(recipient, amount)
         }
         fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
-            self.ownable.assert_only_owner();
+            let caller = get_caller_address();
+            assert!(caller == self.minter.read(), "ERC20NoGame: caller is not the minter");
             self.erc20.burn(account, amount);
         }
     }

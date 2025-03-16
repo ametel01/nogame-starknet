@@ -1,7 +1,7 @@
 use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
+use nogame::libraries::names::Names;
 use nogame::libraries::types::{
-    Defences, DefencesCost, ERC20s, EnergyCost, Names, ShipsCost, ShipsLevels, TechLevels,
-    TechsCost,
+    Defences, DefencesCost, ERC20s, EnergyCost, ShipsCost, ShipsLevels, TechLevels, TechsCost,
 };
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
@@ -22,7 +22,7 @@ fn test_get_ships_level() {
         dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::CARRIER].span() // Providing mapping key 
+            array![1, Names::Fleet::CARRIER.into()].span() // Providing mapping key 
         ),
         array![1800].span(),
     );
@@ -30,7 +30,7 @@ fn test_get_ships_level() {
         dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::SCRAPER].span() // Providing mapping key 
+            array![1, Names::Fleet::SCRAPER.into()].span() // Providing mapping key 
         ),
         array![18].span(),
     );
@@ -38,7 +38,7 @@ fn test_get_ships_level() {
         dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::SPARROW].span() // Providing mapping key 
+            array![1, Names::Fleet::SPARROW.into()].span() // Providing mapping key 
         ),
         array![8].span(),
     );
@@ -46,7 +46,7 @@ fn test_get_ships_level() {
         dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::FRIGATE].span() // Providing mapping key 
+            array![1, Names::Fleet::FRIGATE.into()].span() // Providing mapping key 
         ),
         array![28].span(),
     );
@@ -54,7 +54,7 @@ fn test_get_ships_level() {
         dsp.dockyard.contract_address,
         map_entry_address(
             selector!("ships_level"), // Providing variable name
-            array![1, Names::ARMADE].span() // Providing mapping key 
+            array![1, Names::Fleet::ARMADE.into()].span() // Providing mapping key 
         ),
         array![38].span(),
     );

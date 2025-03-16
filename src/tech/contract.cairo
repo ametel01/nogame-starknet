@@ -12,7 +12,8 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::libraries::types::{E18, ERC20s, Names, TechLevels, TechUpgradeType};
+    use nogame::libraries::names::Names;
+    use nogame::libraries::types::{E18, ERC20s, TechLevels, TechUpgradeType};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::tech::library as tech;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -36,7 +37,7 @@ mod Tech {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        tech_level: Map<(u32, felt252), u8>,
+        tech_level: Map<(u32, u8), u8>,
         planet_manager: IPlanetDispatcher,
         compound_manager: ICompoundDispatcher,
         #[substorage(v0)]
@@ -87,19 +88,19 @@ mod Tech {
 
         fn get_tech_levels(self: @ContractState, planet_id: u32) -> TechLevels {
             TechLevels {
-                energy: self.tech_level.read((planet_id, Names::ENERGY_TECH)),
-                digital: self.tech_level.read((planet_id, Names::DIGITAL)),
-                beam: self.tech_level.read((planet_id, Names::BEAM_TECH)),
-                armour: self.tech_level.read((planet_id, Names::ARMOUR)),
-                ion: self.tech_level.read((planet_id, Names::ION)),
-                plasma: self.tech_level.read((planet_id, Names::PLASMA_TECH)),
-                weapons: self.tech_level.read((planet_id, Names::WEAPONS)),
-                shield: self.tech_level.read((planet_id, Names::SHIELD)),
-                spacetime: self.tech_level.read((planet_id, Names::SPACETIME)),
-                combustion: self.tech_level.read((planet_id, Names::COMBUSTION)),
-                thrust: self.tech_level.read((planet_id, Names::THRUST)),
-                warp: self.tech_level.read((planet_id, Names::WARP)),
-                exocraft: self.tech_level.read((planet_id, Names::EXOCRAFT)),
+                energy: self.tech_level.read((planet_id, Names::Tech::ENERGY)),
+                digital: self.tech_level.read((planet_id, Names::Tech::DIGITAL)),
+                beam: self.tech_level.read((planet_id, Names::Tech::BEAM)),
+                armour: self.tech_level.read((planet_id, Names::Tech::ARMOUR)),
+                ion: self.tech_level.read((planet_id, Names::Tech::ION)),
+                plasma: self.tech_level.read((planet_id, Names::Tech::PLASMA)),
+                weapons: self.tech_level.read((planet_id, Names::Tech::WEAPONS)),
+                shield: self.tech_level.read((planet_id, Names::Tech::SHIELD)),
+                spacetime: self.tech_level.read((planet_id, Names::Tech::SPACETIME)),
+                combustion: self.tech_level.read((planet_id, Names::Tech::COMBUSTION)),
+                thrust: self.tech_level.read((planet_id, Names::Tech::THRUST)),
+                warp: self.tech_level.read((planet_id, Names::Tech::WARP)),
+                exocraft: self.tech_level.read((planet_id, Names::Tech::EXOCRAFT)),
             }
         }
     }
@@ -127,7 +128,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ENERGY_TECH),
+                            (planet_id, Names::Tech::ENERGY),
                             techs.energy + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -139,7 +140,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::DIGITAL),
+                            (planet_id, Names::Tech::DIGITAL),
                             techs.digital + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -151,7 +152,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::BEAM_TECH),
+                            (planet_id, Names::Tech::BEAM),
                             techs.beam + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -163,7 +164,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ARMOUR),
+                            (planet_id, Names::Tech::ARMOUR),
                             techs.armour + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -175,7 +176,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ION),
+                            (planet_id, Names::Tech::ION),
                             techs.ion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -187,7 +188,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::PLASMA_TECH),
+                            (planet_id, Names::Tech::PLASMA),
                             techs.plasma + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -199,7 +200,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::WEAPONS),
+                            (planet_id, Names::Tech::WEAPONS),
                             techs.weapons + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -211,7 +212,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::SHIELD),
+                            (planet_id, Names::Tech::SHIELD),
                             techs.shield + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -223,7 +224,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::SPACETIME),
+                            (planet_id, Names::Tech::SPACETIME),
                             techs.spacetime + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -235,7 +236,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::COMBUSTION),
+                            (planet_id, Names::Tech::COMBUSTION),
                             techs.combustion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -247,7 +248,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::THRUST),
+                            (planet_id, Names::Tech::THRUST),
                             techs.thrust + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -259,7 +260,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::WARP),
+                            (planet_id, Names::Tech::WARP),
                             techs.warp + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -271,7 +272,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::EXOCRAFT),
+                            (planet_id, Names::Tech::EXOCRAFT),
                             techs.exocraft + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },

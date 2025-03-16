@@ -1,7 +1,7 @@
 use nogame::defence::contract::{IDefenceDispatcher, IDefenceDispatcherTrait};
+use nogame::libraries::names::Names;
 use nogame::libraries::types::{
-    Defences, DefencesCost, ERC20s, EnergyCost, Names, ShipsCost, ShipsLevels, TechLevels,
-    TechsCost,
+    Defences, DefencesCost, ERC20s, EnergyCost, ShipsCost, ShipsLevels, TechLevels, TechsCost,
 };
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use snforge_std::{map_entry_address, start_cheat_caller_address_global, store};
@@ -20,7 +20,7 @@ fn test_get_defences_levels() {
         dsp.defence.contract_address,
         map_entry_address(
             selector!("defences_level"), // Providing variable name
-            array![1, Names::CELESTIA].span() // Providing mapping key 
+            array![1, Names::Defence::CELESTIA.into()].span() // Providing mapping key 
         ),
         array![1800].span(),
     );
@@ -28,7 +28,7 @@ fn test_get_defences_levels() {
         dsp.defence.contract_address,
         map_entry_address(
             selector!("defences_level"), // Providing variable name
-            array![1, Names::BLASTER].span() // Providing mapping key 
+            array![1, Names::Defence::BLASTER.into()].span() // Providing mapping key 
         ),
         array![18].span(),
     );
@@ -36,7 +36,7 @@ fn test_get_defences_levels() {
         dsp.defence.contract_address,
         map_entry_address(
             selector!("defences_level"), // Providing variable name
-            array![1, Names::BEAM].span() // Providing mapping key 
+            array![1, Names::Defence::BEAM.into()].span() // Providing mapping key 
         ),
         array![8].span(),
     );
@@ -44,7 +44,7 @@ fn test_get_defences_levels() {
         dsp.defence.contract_address,
         map_entry_address(
             selector!("defences_level"), // Providing variable name
-            array![1, Names::ASTRAL].span() // Providing mapping key 
+            array![1, Names::Defence::ASTRAL.into()].span() // Providing mapping key 
         ),
         array![28].span(),
     );
@@ -52,7 +52,7 @@ fn test_get_defences_levels() {
         dsp.defence.contract_address,
         map_entry_address(
             selector!("defences_level"), // Providing variable name
-            array![1, Names::PLASMA].span() // Providing mapping key 
+            array![1, Names::Defence::PLASMA.into()].span() // Providing mapping key 
         ),
         array![38].span(),
     );

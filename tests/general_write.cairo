@@ -7,7 +7,7 @@ use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispat
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
-    ContractClassTrait, declare, start_cheat_block_timestamp_global,
+    ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
     start_cheat_caller_address_global,
 };
 use starknet::ContractAddress;
@@ -21,7 +21,7 @@ fn test_generate() {
     init_game(dsp);
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.planet.get_current_planet_price();
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
 
     dsp.planet.generate_planet();
     assert(
@@ -35,7 +35,7 @@ fn test_generate() {
 
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.planet.get_current_planet_price();
-    start_cheat_caller_address_global(ACCOUNT2());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
     dsp.planet.generate_planet();
     assert(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
@@ -53,8 +53,10 @@ fn test_collect_resources() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
+
+    start_cheat_caller_address(dsp.planet.contract_address, dsp.compound.contract_address);
     dsp.planet.collect_resources(ACCOUNT1());
 }
 
@@ -63,7 +65,7 @@ fn test_collect() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
 }
 // #[test]

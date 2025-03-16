@@ -1,5 +1,5 @@
 use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
-use nogame::libraries::types::{CompoundsLevels, Names};
+use nogame::libraries::types::CompoundsLevels;
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use snforge_std::{start_cheat_block_timestamp, start_cheat_caller_address_global};
 use starknet::ContractAddress;

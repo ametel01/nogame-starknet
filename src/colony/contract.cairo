@@ -21,6 +21,8 @@ trait IColony<TState> {
     // fn reset_resource_timer(ref self: TState, planet_id: u32, colony_id: u8);
     fn fleet_arrives(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
     fn fleet_leaves(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
+    fn get_colony_position(self: @TState, planet_id: u32, colony_id: u8) -> PlanetPosition;
+    fn get_colony_id(self: @TState, planet_id: u32, colony_id: u8) -> u32;
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
     fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
@@ -263,6 +265,16 @@ mod Colony {
                         current_levels.armade - fleet.armade,
                     );
             }
+        }
+
+        fn get_colony_position(
+            self: @ContractState, planet_id: u32, colony_id: u8,
+        ) -> PlanetPosition {
+            self.colony_position.read((planet_id, colony_id))
+        }
+
+        fn get_colony_id(self: @ContractState, planet_id: u32, colony_id: u8) -> u32 {
+            (planet_id * 1000) + colony_id.into()
         }
 
         fn get_colonies_for_planet(
