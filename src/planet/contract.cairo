@@ -104,7 +104,7 @@ mod Planet {
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
-        self.ownable.initializer(get_caller_address());
+        self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
 
@@ -271,12 +271,8 @@ mod Planet {
         }
 
         fn get_is_noob_protected(self: @ContractState, planet1_id: u32, planet2_id: u32) -> bool {
-            println!("get_is_noob_protected: planet1_id: {}", planet1_id);
-            println!("get_is_noob_protected: planet2_id: {}", planet2_id);
             let p1_points = self.get_planet_points(planet1_id % 1000);
-            println!("get_is_noob_protected: p1_points: {}", p1_points);
             let p2_points = self.get_planet_points(planet2_id % 1000);
-            println!("get_is_noob_protected: p2_points: {}", p2_points);
             if p1_points > p2_points {
                 return p1_points > p2_points * 5;
             } else {

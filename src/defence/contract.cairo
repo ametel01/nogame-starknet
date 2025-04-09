@@ -71,11 +71,8 @@ mod Defence {
             let contracts = game_manager.get_contracts();
             contracts.planet.collect_resources(caller);
             let planet_id = contracts.planet.get_owned_planet(caller);
-            println!("planet_id: {}", planet_id);
             let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;
-            println!("dockyard_level: {}", dockyard_level);
             let techs = contracts.tech.get_tech_levels(planet_id);
-            println!("techs: {:?}", techs);
             let cost = self
                 .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
             contracts.planet.update_planet_points(planet_id, cost, false);

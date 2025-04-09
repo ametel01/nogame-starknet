@@ -15,7 +15,8 @@ use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTra
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, map_entry_address, start_cheat_block_timestamp,
-    start_cheat_caller_address, start_cheat_caller_address_global, stop_cheat_caller_address, store,
+    start_cheat_block_timestamp_global, start_cheat_caller_address,
+    start_cheat_caller_address_global, stop_cheat_caller_address, store,
 };
 use starknet::class_hash::ClassHash;
 use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
@@ -25,6 +26,7 @@ const ETH_SUPPLY: u256 = 1_000_000_000_000_000_000_000;
 const HOUR: u64 = 3_600;
 const DAY: u64 = 86_400;
 const WEEK: u64 = 604_800;
+const MONTH: u64 = 2_629_746;
 const YEAR: u64 = 31_557_600;
 const UNI_SPEED: u128 = 1;
 const TOKEN_PRICE: u128 = 1;
@@ -374,7 +376,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         ),
         array![1_000_000_000].span(),
     );
-    start_cheat_block_timestamp(dsp.planet.contract_address, get_block_timestamp() + WEEK);
+    start_cheat_block_timestamp_global(get_block_timestamp() + MONTH);
     start_cheat_caller_address(dsp.planet.contract_address, dsp.planet.contract_address);
 
     let player = dsp.erc721.owner_of(planet_id.into());

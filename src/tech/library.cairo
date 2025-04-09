@@ -1,5 +1,5 @@
+use core::num::traits::Pow;
 use core::traits::Into;
-use nogame::libraries::math::pow;
 use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
 
 fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
@@ -8,9 +8,9 @@ fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
     let mut i = current_level + quantity.into();
     while i != current_level {
         let level_cost = ERC20s {
-            steel: (base_cost.steel * pow(2, i.into() - 1)),
-            quartz: (base_cost.quartz * pow(2, i.into() - 1)),
-            tritium: (base_cost.tritium * pow(2, i.into() - 1)),
+            steel: (base_cost.steel * Pow::pow(2_u128, i.into() - 1)),
+            quartz: (base_cost.quartz * Pow::pow(2_u128, i.into() - 1)),
+            tritium: (base_cost.tritium * Pow::pow(2_u128, i.into() - 1)),
         };
         cost = cost + level_cost;
         i -= 1;

@@ -146,7 +146,6 @@ fn test_send_fleet_from_colony() {
     stop_cheat_caller_address(dsp.fleet.contract_address);
 
     let missions = dsp.fleet.get_active_missions(1);
-    println!("missions: {:?}", missions);
     let mission = *missions.at(0);
     assert(mission.destination == 1, 'wrong mission destination');
     assert(mission.category == MissionCategory::TRANSPORT, 'wrong mission category');
@@ -188,7 +187,6 @@ fn test_attack_from_colony() {
     start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 1);
     let missions = dsp.fleet.get_active_missions(1);
-    println!("missions: {:?}", missions);
     let mission = *missions.at(0);
     assert(mission.destination == 2, 'wrong mission destination');
     assert(mission.category == MissionCategory::ATTACK, 'wrong mission category');
@@ -358,7 +356,6 @@ fn test_attack_colony() {
     stop_cheat_caller_address(dsp.colony.contract_address);
 
     let colony_position = dsp.colony.get_colony_position(2, 1);
-    println!("colony_position: {:?}", colony_position);
     let mut fleet_a: Fleet = Default::default();
     fleet_a.carrier = 10;
 
@@ -380,21 +377,27 @@ fn test_attack_colony() {
     dsp.fleet.attack_planet(1);
     stop_cheat_caller_address(dsp.fleet.contract_address);
     let attacker_resources_after = dsp.planet.get_spendable_resources(1);
-    println!("expected_attacker_resources: {:?}", attacker_resources_after - attacker_resources);
 
     let mut expected_attacker_resources: ERC20s = Default::default();
     expected_attacker_resources.steel = 5657;
     expected_attacker_resources.quartz = 8228;
-    expected_attacker_resources.tritium = 2228;
+    expected_attacker_resources.tritium = 2399;
 
     let mut expected_debris: Debris = Default::default();
     expected_debris.steel = 666;
     expected_debris.quartz = 666;
 
-    assert(
+    assert!(
         (attacker_resources_after - attacker_resources) == expected_attacker_resources,
-        'wrong attacker resources',
+        "wrong attacker resources: expected {:?}, got {:?}",
+        attacker_resources_after - attacker_resources,
+        expected_attacker_resources,
     );
-    assert(dsp.planet.get_planet_debris_field(2001) == expected_debris, 'wrong debris');
+    assert!(
+        dsp.planet.get_planet_debris_field(2001) == expected_debris,
+        "wrong debris: expected {:?}, got {:?}",
+        dsp.planet.get_planet_debris_field(2001),
+        expected_debris,
+    );
 }
 

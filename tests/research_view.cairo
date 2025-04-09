@@ -3,7 +3,7 @@ use nogame::libraries::types::{
 };
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
-use snforge_std::{start_cheat_block_timestamp_global, start_cheat_caller_address_global};
+use snforge_std::{start_cheat_block_timestamp_global, start_cheat_caller_address};
 use starknet::ContractAddress;
 use starknet::info::get_contract_address;
 use starknet::testing::cheatcode;
@@ -13,7 +13,7 @@ use super::utils::{ACCOUNT1, ACCOUNT2, Dispatchers, E18, HOUR, init_game, set_up
 fn test_get_tech_levels() {
     let dsp = set_up();
     init_game(dsp);
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
 
     let techs = dsp.tech.get_tech_levels(1);

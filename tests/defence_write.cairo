@@ -10,7 +10,7 @@ use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDis
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
     ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
-    start_cheat_caller_address_global, stop_cheat_caller_address,
+    stop_cheat_caller_address,
 };
 use starknet::ContractAddress;
 use starknet::info::{get_block_timestamp, get_contract_address};
@@ -49,7 +49,6 @@ fn test_blaster_build_fails_dockyard_level() {
     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
     stop_cheat_caller_address(dsp.planet.contract_address);
-    init_storage(dsp, 1);
 
     start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
     dsp.defence.process_defence_build(DefenceBuildType::Blaster(()), 1);

@@ -15,7 +15,9 @@ use snforge_std::{
     start_cheat_caller_address, stop_cheat_caller_address,
 };
 use starknet::info::{get_block_timestamp, get_contract_address};
-use super::utils::{ACCOUNT1, ACCOUNT2, DAY, Dispatchers, YEAR, init_game, init_storage, set_up};
+use super::utils::{
+    ACCOUNT1, ACCOUNT2, DAY, Dispatchers, WEEK, YEAR, init_game, init_storage, set_up,
+};
 
 #[test]
 fn test_send_fleet_success() {
@@ -147,7 +149,7 @@ fn test_send_fleet_fails_noob_protection() {
     init_storage(dsp, 1);
     stop_cheat_caller_address(dsp.planet.contract_address);
 
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 10);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
 
@@ -160,6 +162,7 @@ fn test_send_fleet_fails_noob_protection() {
     dsp.compound.process_upgrade(CompoundUpgradeType::SteelMine(()), 1);
     stop_cheat_caller_address(dsp.compound.contract_address);
 
+    start_cheat_block_timestamp_global(starknet::get_block_timestamp() + WEEK);
     start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT2());
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 }
@@ -178,7 +181,7 @@ fn test_send_speed_modifier() {
     init_storage(dsp, 2);
     stop_cheat_caller_address(dsp.planet.contract_address);
 
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 10);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
     let p2_position = dsp.planet.get_planet_position(2);
@@ -190,6 +193,7 @@ fn test_send_speed_modifier() {
     dsp.compound.process_upgrade(CompoundUpgradeType::SteelMine(()), 1);
     stop_cheat_caller_address(dsp.compound.contract_address);
 
+    start_cheat_block_timestamp_global(starknet::get_block_timestamp() + WEEK);
     start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT2());
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 50, 0);
     let mission = dsp.fleet.get_mission_details(1, 1);
@@ -208,10 +212,10 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     dsp.planet.generate_planet();
     init_storage(dsp, 1);
     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
-    init_storage(dsp, 1);
+    init_storage(dsp, 2);
     stop_cheat_caller_address(dsp.planet.contract_address);
 
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 10);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
     let p2_position = dsp.planet.get_planet_position(2);
@@ -219,7 +223,7 @@ fn test_send_fleet_fails_not_enough_fleet_slots() {
     let mut fleet: Fleet = Default::default();
     fleet.carrier = 5;
 
-    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT2());
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
     dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 100, 0);
 }
@@ -262,7 +266,6 @@ fn test_collect_debris_success() {
     let mission = dsp.fleet.get_mission_details(1, 1);
     start_cheat_block_timestamp_global(mission.time_arrival + 1);
     dsp.fleet.attack_planet(1);
-
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 1;
     let debris = dsp.planet.get_planet_debris_field(2);
@@ -291,14 +294,15 @@ fn test_collect_debris_own_planet() {
     dsp.planet.generate_planet();
     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
     dsp.planet.generate_planet();
-    init_storage(dsp, 2);
     stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 1);
+    init_storage(dsp, 2);
 
     start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT2());
     dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
     stop_cheat_caller_address(dsp.defence.contract_address);
 
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
     dsp.dockyard.process_ship_build(ShipBuildType::Scraper(()), 1);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
 
@@ -306,9 +310,9 @@ fn test_collect_debris_own_planet() {
     dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 1);
     stop_cheat_caller_address(dsp.tech.contract_address);
 
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    init_storage(dsp, 1);
-    stop_cheat_caller_address(dsp.planet.contract_address);
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 1);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
 
     let p2_position = dsp.planet.get_planet_position(2);
 
@@ -320,6 +324,7 @@ fn test_collect_debris_own_planet() {
     let mission = dsp.fleet.get_mission_details(1, 1);
     start_cheat_block_timestamp_global(mission.time_arrival + 1);
     dsp.fleet.attack_planet(1);
+    stop_cheat_caller_address(dsp.fleet.contract_address);
 
     let mut fleet: Fleet = Default::default();
     fleet.scraper = 1;
@@ -482,14 +487,17 @@ fn test_attack_planet() {
 
     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
     dsp.planet.generate_planet();
-    init_storage(dsp, 2);
-    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-    dsp.defence.process_defence_build(DefenceBuildType::Celestia(()), 100);
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    init_storage(dsp, 1);
     stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 2);
+
+    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT2());
+    dsp.defence.process_defence_build(DefenceBuildType::Celestia(()), 100);
+    stop_cheat_caller_address(dsp.defence.contract_address);
+
+    init_storage(dsp, 1);
 
     start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
     dsp.dockyard.process_ship_build(ShipBuildType::Armade(()), 10);

@@ -38,8 +38,6 @@ mod Tech {
     struct Storage {
         game_manager: IGameDispatcher,
         tech_level: Map<(u32, u8), u8>,
-        planet_manager: IPlanetDispatcher,
-        compound_manager: ICompoundDispatcher,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
@@ -82,7 +80,7 @@ mod Tech {
             contracts.planet.collect_resources(caller);
             let planet_id = contracts.planet.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
-            self.planet_manager.read().update_planet_points(planet_id, cost, false);
+            contracts.planet.update_planet_points(planet_id, cost, false);
             self.emit(TechSpent { planet_id, quantity, spent: cost })
         }
 
@@ -114,9 +112,9 @@ mod Tech {
             component: TechUpgradeType,
             quantity: u8,
         ) -> ERC20s {
-            let lab_level = self.compound_manager.read().get_compounds_levels(planet_id).lab;
-            let techs = self.get_tech_levels(planet_id);
             let contracts = self.game_manager.read().get_contracts();
+            let lab_level = contracts.compound.get_compounds_levels(planet_id).lab;
+            let techs = self.get_tech_levels(planet_id);
             let mut cost: ERC20s = Default::default();
             let base_cost = tech::base_tech_costs();
             match component {

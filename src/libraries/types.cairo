@@ -133,7 +133,7 @@ struct TechLevels {
     exocraft: u8,
 }
 
-#[derive(Copy, Drop, Serde)]
+#[derive(Copy, Debug, Drop, Serde)]
 struct TechsCost {
     energy: ERC20s,
     digital: ERC20s,
@@ -246,7 +246,7 @@ struct Cargo {
     tritium: u128,
 }
 
-#[derive(Copy, Default, Drop, PartialEq, Serde, starknet::Store)]
+#[derive(Copy, Default, Debug, Drop, PartialEq, Serde, starknet::Store)]
 struct Debris {
     steel: u128,
     quartz: u128,
@@ -315,7 +315,7 @@ impl UnitImpl of UnitTrait {
     }
 }
 
-#[derive(Copy, Default, PartialEq, Drop, Serde, starknet::Store)]
+#[derive(Copy, Default, Debug, PartialEq, Drop, Serde, starknet::Store)]
 struct IncomingMission {
     origin: u32,
     id_at_origin: usize,

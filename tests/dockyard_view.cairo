@@ -5,7 +5,7 @@ use nogame::libraries::types::{
 };
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use snforge_std::{map_entry_address, start_cheat_caller_address_global, store};
+use snforge_std::{map_entry_address, start_cheat_caller_address, store};
 use starknet::ContractAddress;
 use starknet::info::get_contract_address;
 use starknet::testing::cheatcode;
@@ -15,7 +15,7 @@ use super::utils::{ACCOUNT1, ACCOUNT2, Dispatchers, E18, HOUR, init_game, set_up
 fn test_get_ships_level() {
     let dsp = set_up();
     init_game(dsp);
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
 
     store(
