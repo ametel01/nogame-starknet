@@ -11,11 +11,12 @@ openzeppelin_token = "1.0.0"
 openzeppelin_upgrades = "1.0.0"
 openzeppelin_security = "1.0.0"
 openzeppelin_introspection = "1.0.0"
+openzeppelin_utils = "1.0.0"
 nogame_fixed = { git = "https://github.com/ametel01/nogame-fixed.git", rev = "5317597" }
-starknet = ">=2.11.1"
+starknet = "2.11.2"
 
 [dev-dependencies]
-snforge_std = "0.38.3"
+snforge_std = "0.40.0"
 
 [tool.fmt]
 sort-module-level-items = true

@@ -7,8 +7,7 @@ use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispat
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
-    ContractClassTrait, declare, start_cheat_block_timestamp_global,
-    start_cheat_caller_address_global,
+    ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
 };
 use starknet::ContractAddress;
 use starknet::info::{get_block_timestamp, get_contract_address};
@@ -21,31 +20,81 @@ fn test_generate() {
     init_game(dsp);
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.planet.get_current_planet_price();
-    start_cheat_caller_address_global(ACCOUNT1());
+    println!("planet_price: {}", planet_price);
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
 
     dsp.planet.generate_planet();
-    assert(
+    assert!(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
-        'planet1 not paid',
+        "planet1 not paid: expected {}, got {}",
+        owner_balance_before + planet_price.into(),
+        dsp.eth.balance_of(DEPLOYER()),
     );
-    assert(dsp.erc721.balance_of(ACCOUNT1()).low == 1, 'wrong nft balance');
-    assert(dsp.steel.balance_of(ACCOUNT1()).low == 500 * E18, 'wrong steel balance');
-    assert(dsp.quartz.balance_of(ACCOUNT1()).low == 300 * E18, 'wrong quartz balance');
-    assert(dsp.tritium.balance_of(ACCOUNT1()).low == 100 * E18, 'wrong steel balance');
+    assert!(
+        dsp.erc721.balance_of(ACCOUNT1()).low == 1,
+        "wrong nft balance: expected {}, got {}",
+        1,
+        dsp.erc721.balance_of(ACCOUNT1()).low,
+    );
+    assert!(
+        dsp.steel.balance_of(ACCOUNT1()).low == 500 * E18,
+        "wrong steel balance: expected {}, got {}",
+        500 * E18,
+        dsp.steel.balance_of(ACCOUNT1()).low,
+    );
+    assert!(
+        dsp.quartz.balance_of(ACCOUNT1()).low == 300 * E18,
+        "wrong quartz balance: expected {}, got {}",
+        300 * E18,
+        dsp.quartz.balance_of(ACCOUNT1()).low,
+    );
+    assert!(
+        dsp.tritium.balance_of(ACCOUNT1()).low == 100 * E18,
+        "wrong steel balance: expected {}, got {}",
+        100 * E18,
+        dsp.tritium.balance_of(ACCOUNT1()).low,
+    );
 
     let owner_balance_before = dsp.eth.balance_of(DEPLOYER());
     let planet_price = dsp.planet.get_current_planet_price();
-    start_cheat_caller_address_global(ACCOUNT2());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
     dsp.planet.generate_planet();
-    assert(
+    assert!(
         dsp.eth.balance_of(DEPLOYER()) == owner_balance_before + planet_price.into(),
-        'planet2 not paid',
+        "planet2 not paid: expected {}, got {}",
+        owner_balance_before + planet_price.into(),
+        dsp.eth.balance_of(DEPLOYER()),
     );
-    assert(dsp.erc721.balance_of(ACCOUNT2()).low == 1, 'wrong nft balance');
-    assert(dsp.steel.balance_of(ACCOUNT2()).low == 500 * E18, 'wrong steel balance');
-    assert(dsp.quartz.balance_of(ACCOUNT2()).low == 300 * E18, 'wrong quartz balance');
-    assert(dsp.tritium.balance_of(ACCOUNT2()).low == 100 * E18, 'wrong steel balance');
-    assert(dsp.planet.get_number_of_planets() == 2, 'wrong n planets');
+    assert!(
+        dsp.erc721.balance_of(ACCOUNT2()).low == 1,
+        "wrong nft balance: expected {}, got {}",
+        1,
+        dsp.erc721.balance_of(ACCOUNT2()).low,
+    );
+    assert!(
+        dsp.steel.balance_of(ACCOUNT2()).low == 500 * E18,
+        "wrong steel balance: expected {}, got {}",
+        500 * E18,
+        dsp.steel.balance_of(ACCOUNT2()).low,
+    );
+    assert!(
+        dsp.quartz.balance_of(ACCOUNT2()).low == 300 * E18,
+        "wrong quartz balance: expected {}, got {}",
+        300 * E18,
+        dsp.quartz.balance_of(ACCOUNT2()).low,
+    );
+    assert!(
+        dsp.tritium.balance_of(ACCOUNT2()).low == 100 * E18,
+        "wrong steel balance: expected {}, got {}",
+        100 * E18,
+        dsp.tritium.balance_of(ACCOUNT2()).low,
+    );
+    assert!(
+        dsp.planet.get_number_of_planets() == 2,
+        "wrong number of planets: expected {}, got {}",
+        2,
+        dsp.planet.get_number_of_planets(),
+    );
 }
 
 #[test]
@@ -53,8 +102,10 @@ fn test_collect_resources() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
+
+    start_cheat_caller_address(dsp.planet.contract_address, dsp.compound.contract_address);
     dsp.planet.collect_resources(ACCOUNT1());
 }
 
@@ -63,7 +114,7 @@ fn test_collect() {
     let dsp = set_up();
     init_game(dsp);
 
-    start_cheat_caller_address_global(ACCOUNT1());
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
     dsp.planet.generate_planet();
 }
 // #[test]

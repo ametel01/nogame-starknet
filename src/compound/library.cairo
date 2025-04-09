@@ -1,5 +1,4 @@
 use integer::U8Div;
-use nogame::libraries::math::BitShift;
 use nogame::libraries::types::ERC20s;
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
@@ -626,7 +625,7 @@ mod cost {
 }
 
 mod production {
-    use nogame::libraries::math::BitShift;
+    use core::num::traits::Pow;
     use nogame::libraries::types::ERC20s;
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
@@ -849,8 +848,8 @@ mod production {
         let base: u256 = 10;
         let raw_production = (base
             * current_level.into()
-            * BitShift::fpow(11.into(), current_level.into())
-            / BitShift::fpow(10.into(), current_level.into()))
+            * Pow::pow(11_u256, current_level.into())
+            / Pow::pow(10_u256, current_level.into()))
             .low
             * uni_speed;
 

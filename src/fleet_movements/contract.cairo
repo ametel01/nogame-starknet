@@ -14,7 +14,7 @@ trait IFleetMovements<TState> {
     );
     fn attack_planet(ref self: TState, mission_id: usize);
     fn recall_fleet(ref self: TState, mission_id: usize);
-    fn dock_fleet(ref self: TState, mission_id: usize);
+    fn dock_fleet(ref self: TState, mission_id: usize, colony_id: u8);
     fn collect_debris(ref self: TState, mission_id: usize);
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
@@ -102,7 +102,7 @@ mod FleetMovements {
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress, game: ContractAddress) {
-        self.ownable.initializer(get_caller_address());
+        self.ownable.initializer(owner);
         self.game_manager.write(IGameDispatcher { contract_address: game });
     }
 
@@ -184,10 +184,38 @@ mod FleetMovements {
                 );
                 assert(f.scraper >= 1, 'no scrapers for collection');
                 mission.category = MissionCategory::DEBRIS;
-                self.add_active_mission(planet_id, mission);
+                let mission_id = self.add_active_mission(planet_id, mission);
+                let mut hostile_mission: IncomingMission = Default::default();
+                hostile_mission.origin = origin_id;
+                hostile_mission.id_at_origin = mission_id;
+                hostile_mission.time_arrival = mission.time_arrival;
+                hostile_mission
+                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
+                hostile_mission.destination = destination_id;
+                let is_colony = mission.destination > 1000;
+                let target_planet = if is_colony {
+                    contracts.colony.get_colony_mother_planet(mission.destination)
+                } else {
+                    mission.destination
+                };
+                self.add_incoming_mission(target_planet, hostile_mission);
             } else if mission_type == MissionCategory::TRANSPORT {
                 mission.category = MissionCategory::TRANSPORT;
-                self.add_active_mission(planet_id, mission);
+                let mission_id = self.add_active_mission(planet_id, mission);
+                let mut hostile_mission: IncomingMission = Default::default();
+                hostile_mission.origin = origin_id;
+                hostile_mission.id_at_origin = mission_id;
+                hostile_mission.time_arrival = mission.time_arrival;
+                hostile_mission
+                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
+                hostile_mission.destination = destination_id;
+                let is_colony = mission.destination > 1000;
+                let target_planet = if is_colony {
+                    contracts.colony.get_colony_mother_planet(mission.destination)
+                } else {
+                    mission.destination
+                };
+                self.add_incoming_mission(target_planet, hostile_mission);
             } else {
                 let is_inactive = time_now
                     - contracts.planet.get_last_active(destination_id) > WEEK;
@@ -198,10 +226,10 @@ mod FleetMovements {
                     );
                 }
                 mission.category = MissionCategory::ATTACK;
-                let id = self.add_active_mission(planet_id, mission);
+                let mission_id = self.add_active_mission(planet_id, mission);
                 let mut hostile_mission: IncomingMission = Default::default();
-                hostile_mission.origin = planet_id;
-                hostile_mission.id_at_origin = id;
+                hostile_mission.origin = origin_id;
+                hostile_mission.id_at_origin = mission_id;
                 hostile_mission.time_arrival = mission.time_arrival;
                 hostile_mission
                     .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
@@ -335,7 +363,7 @@ mod FleetMovements {
             contracts.planet.set_last_active(origin);
         }
 
-        fn dock_fleet(ref self: ContractState, mission_id: usize) {
+        fn dock_fleet(ref self: ContractState, mission_id: usize, colony_id: u8) {
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(get_caller_address());
             let mission = self.get_mission_details(origin, mission_id);
@@ -431,11 +459,33 @@ mod FleetMovements {
             let mut arr: Array<Mission> = array![];
             let len = self.active_missions_len.read(planet_id);
             let mut i = 1;
-            while i != len {
+            while i != len + 1 {
+                if len == 0 {
+                    break;
+                }
                 let mission = self.active_missions.read((planet_id, i));
                 if !mission.is_zero() {
                     arr.append(mission);
                 }
+                i += 1;
+            }
+
+            let planet_colonies = self
+                .game_manager
+                .read()
+                .get_contracts()
+                .colony
+                .get_colonies_for_planet(planet_id);
+            let len = planet_colonies.len();
+            let mut i = 1;
+            while i != len {
+                if len == 0 {
+                    break;
+                }
+                let (colony_id, _colony_position) = planet_colonies.at(i);
+                let adj_planet_id = planet_id * 1000 + (*colony_id).into();
+                let missions = self.active_missions.read((adj_planet_id, i));
+                arr.append(missions);
                 i += 1;
             }
             arr
@@ -445,7 +495,7 @@ mod FleetMovements {
             let mut arr: Array<IncomingMission> = array![];
             let len = self.incoming_missions_len.read(planet_id);
             let mut i = 1;
-            while i != len {
+            while i != len + 1 {
                 let mission = self.incoming_missions.read((planet_id, i));
                 if !mission.is_zero() {
                     arr.append(mission);
@@ -844,7 +894,9 @@ mod FleetMovements {
             i
         }
 
-        fn add_incoming_mission(ref self: ContractState, planet_id: u32, mission: IncomingMission) {
+        fn add_incoming_mission(
+            ref self: ContractState, planet_id: u32, mut mission: IncomingMission,
+        ) {
             let len = self.incoming_missions_len.read(planet_id);
             let mut i = 1;
             loop {
@@ -859,19 +911,37 @@ mod FleetMovements {
                     break;
                 }
                 i += 1;
-            };
+            }
         }
 
         fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
             let len = self.incoming_missions_len.read(planet_id);
             let mut i = 1;
-            while i != len {
+            let mut found = false;
+
+            // First pass: find and remove the mission
+            while i <= len {
                 let mission = self.incoming_missions.read((planet_id, i));
                 if mission.id_at_origin == id_to_remove {
                     self.incoming_missions.write((planet_id, i), Zeroable::zero());
+                    found = true;
                     break;
                 }
                 i += 1;
+            }
+
+            // If we found and removed a mission, compact the array
+            if found {
+                // Move all non-zero missions to fill the gap
+                let mut j = i;
+                while j < len {
+                    let next_mission = self.incoming_missions.read((planet_id, j + 1));
+                    self.incoming_missions.write((planet_id, j), next_mission);
+                    j += 1;
+                }
+                // Clear the last position and update length
+                self.incoming_missions.write((planet_id, len), Zeroable::zero());
+                self.incoming_missions_len.write(planet_id, len - 1);
             }
         }
 

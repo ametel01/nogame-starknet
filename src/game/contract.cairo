@@ -130,7 +130,7 @@ mod Game {
             self.tritium.write(IERC20NoGameDispatcher { contract_address: tritium });
             self.eth.write(IERC20Dispatcher { contract_address: eth });
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
-            self.token_price.write(token_price);
+            self.token_price.write(token_price * E18);
             self.uni_speed.write(uni_speed);
         }
 

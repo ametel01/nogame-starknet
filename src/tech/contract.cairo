@@ -12,7 +12,8 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::libraries::types::{E18, ERC20s, Names, TechLevels, TechUpgradeType};
+    use nogame::libraries::names::Names;
+    use nogame::libraries::types::{E18, ERC20s, TechLevels, TechUpgradeType};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::tech::library as tech;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -36,9 +37,7 @@ mod Tech {
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
-        tech_level: Map<(u32, felt252), u8>,
-        planet_manager: IPlanetDispatcher,
-        compound_manager: ICompoundDispatcher,
+        tech_level: Map<(u32, u8), u8>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
@@ -81,25 +80,25 @@ mod Tech {
             contracts.planet.collect_resources(caller);
             let planet_id = contracts.planet.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
-            self.planet_manager.read().update_planet_points(planet_id, cost, false);
+            contracts.planet.update_planet_points(planet_id, cost, false);
             self.emit(TechSpent { planet_id, quantity, spent: cost })
         }
 
         fn get_tech_levels(self: @ContractState, planet_id: u32) -> TechLevels {
             TechLevels {
-                energy: self.tech_level.read((planet_id, Names::ENERGY_TECH)),
-                digital: self.tech_level.read((planet_id, Names::DIGITAL)),
-                beam: self.tech_level.read((planet_id, Names::BEAM_TECH)),
-                armour: self.tech_level.read((planet_id, Names::ARMOUR)),
-                ion: self.tech_level.read((planet_id, Names::ION)),
-                plasma: self.tech_level.read((planet_id, Names::PLASMA_TECH)),
-                weapons: self.tech_level.read((planet_id, Names::WEAPONS)),
-                shield: self.tech_level.read((planet_id, Names::SHIELD)),
-                spacetime: self.tech_level.read((planet_id, Names::SPACETIME)),
-                combustion: self.tech_level.read((planet_id, Names::COMBUSTION)),
-                thrust: self.tech_level.read((planet_id, Names::THRUST)),
-                warp: self.tech_level.read((planet_id, Names::WARP)),
-                exocraft: self.tech_level.read((planet_id, Names::EXOCRAFT)),
+                energy: self.tech_level.read((planet_id, Names::Tech::ENERGY)),
+                digital: self.tech_level.read((planet_id, Names::Tech::DIGITAL)),
+                beam: self.tech_level.read((planet_id, Names::Tech::BEAM)),
+                armour: self.tech_level.read((planet_id, Names::Tech::ARMOUR)),
+                ion: self.tech_level.read((planet_id, Names::Tech::ION)),
+                plasma: self.tech_level.read((planet_id, Names::Tech::PLASMA)),
+                weapons: self.tech_level.read((planet_id, Names::Tech::WEAPONS)),
+                shield: self.tech_level.read((planet_id, Names::Tech::SHIELD)),
+                spacetime: self.tech_level.read((planet_id, Names::Tech::SPACETIME)),
+                combustion: self.tech_level.read((planet_id, Names::Tech::COMBUSTION)),
+                thrust: self.tech_level.read((planet_id, Names::Tech::THRUST)),
+                warp: self.tech_level.read((planet_id, Names::Tech::WARP)),
+                exocraft: self.tech_level.read((planet_id, Names::Tech::EXOCRAFT)),
             }
         }
     }
@@ -113,9 +112,9 @@ mod Tech {
             component: TechUpgradeType,
             quantity: u8,
         ) -> ERC20s {
-            let lab_level = self.compound_manager.read().get_compounds_levels(planet_id).lab;
-            let techs = self.get_tech_levels(planet_id);
             let contracts = self.game_manager.read().get_contracts();
+            let lab_level = contracts.compound.get_compounds_levels(planet_id).lab;
+            let techs = self.get_tech_levels(planet_id);
             let mut cost: ERC20s = Default::default();
             let base_cost = tech::base_tech_costs();
             match component {
@@ -127,7 +126,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ENERGY_TECH),
+                            (planet_id, Names::Tech::ENERGY),
                             techs.energy + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -139,7 +138,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::DIGITAL),
+                            (planet_id, Names::Tech::DIGITAL),
                             techs.digital + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -151,7 +150,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::BEAM_TECH),
+                            (planet_id, Names::Tech::BEAM),
                             techs.beam + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -163,7 +162,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ARMOUR),
+                            (planet_id, Names::Tech::ARMOUR),
                             techs.armour + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -175,7 +174,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::ION),
+                            (planet_id, Names::Tech::ION),
                             techs.ion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -187,7 +186,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::PLASMA_TECH),
+                            (planet_id, Names::Tech::PLASMA),
                             techs.plasma + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -199,7 +198,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::WEAPONS),
+                            (planet_id, Names::Tech::WEAPONS),
                             techs.weapons + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -211,7 +210,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::SHIELD),
+                            (planet_id, Names::Tech::SHIELD),
                             techs.shield + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -223,7 +222,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::SPACETIME),
+                            (planet_id, Names::Tech::SPACETIME),
                             techs.spacetime + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -235,7 +234,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::COMBUSTION),
+                            (planet_id, Names::Tech::COMBUSTION),
                             techs.combustion + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -247,7 +246,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::THRUST),
+                            (planet_id, Names::Tech::THRUST),
                             techs.thrust + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -259,7 +258,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::WARP),
+                            (planet_id, Names::Tech::WARP),
                             techs.warp + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
@@ -271,7 +270,7 @@ mod Tech {
                     self
                         .tech_level
                         .write(
-                            (planet_id, Names::EXOCRAFT),
+                            (planet_id, Names::Tech::EXOCRAFT),
                             techs.exocraft + quantity.try_into().expect('u32 into u8 failed'),
                         );
                 },
