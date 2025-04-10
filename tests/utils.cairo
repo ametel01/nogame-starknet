@@ -87,12 +87,15 @@ fn set_up() -> Dispatchers {
     let contract = declare("Dockyard").unwrap().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (dockyard, _) = contract.deploy(@calldata).expect('failed dockyard');
+
     let contract = declare("FleetMovements").unwrap().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (fleet, _) = contract.deploy(@calldata).expect('failed fleet');
+
     let contract = declare("Planet").unwrap().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (planet, _) = contract.deploy(@calldata).expect('failed nogame');
+
     let contract = declare("Tech").unwrap().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (tech, _) = contract.deploy(@calldata).expect('failed tech');
@@ -110,7 +113,7 @@ fn set_up() -> Dispatchers {
     let (erc721, _) = contract.deploy(@calldata).expect('failed erc721');
 
     let contract = declare("ERC20NoGame").unwrap().contract_class();
-    let name: ByteArray = "Nogame Steel";
+    let name: ByteArray = "Nogame   ";
     let symbol: ByteArray = "NGST";
     let mut calldata: Array<felt252> = array![];
     calldata.append_serde(name);
