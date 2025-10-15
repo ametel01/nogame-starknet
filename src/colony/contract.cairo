@@ -551,7 +551,7 @@ mod Colony {
             let time_elapsed = time_now - last_collection_time;
             let mines_levels = self.get_colony_compounds(planet_id, colony_id);
             let position = self.colony_position.read((planet_id, colony_id));
-            let temp = self.calculate_avg_temperature(position.orbit);
+            let temp = compound::calculate_avg_temperature(position.orbit);
             let steel_available = compound::production::steel(mines_levels.steel)
                 * uni_speed
                 * time_elapsed.into()
@@ -568,7 +568,10 @@ mod Colony {
                 * time_elapsed.into()
                 / HOUR.into();
 
-            let celestia_production = self.position_to_celestia_production(position.orbit);
+            let celestia_production: u128 = compound::position_to_celestia_production(
+                position.orbit,
+            )
+                .into();
             let celestia_production: u128 = self
                 .get_colony_defences(planet_id, colony_id)
                 .celestia
@@ -595,70 +598,6 @@ mod Colony {
             }
 
             ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available }
-        }
-
-        fn calculate_avg_temperature(self: @ContractState, orbit: u8) -> u32 {
-            if orbit == 1 {
-                return 230;
-            }
-            if orbit == 2 {
-                return 170;
-            }
-            if orbit == 3 {
-                return 120;
-            }
-            if orbit == 4 {
-                return 70;
-            }
-            if orbit == 5 {
-                return 60;
-            }
-            if orbit == 6 {
-                return 50;
-            }
-            if orbit == 7 {
-                return 40;
-            }
-            if orbit == 8 {
-                return 40;
-            }
-            if orbit == 9 {
-                return 20;
-            } else {
-                return 10;
-            }
-        }
-
-        fn position_to_celestia_production(self: @ContractState, orbit: u8) -> u128 {
-            if orbit == 1 {
-                return 48;
-            }
-            if orbit == 2 {
-                return 41;
-            }
-            if orbit == 3 {
-                return 36;
-            }
-            if orbit == 4 {
-                return 32;
-            }
-            if orbit == 5 {
-                return 27;
-            }
-            if orbit == 6 {
-                return 24;
-            }
-            if orbit == 7 {
-                return 21;
-            }
-            if orbit == 8 {
-                return 17;
-            }
-            if orbit == 9 {
-                return 14;
-            } else {
-                return 11;
-            }
         }
     }
 }
