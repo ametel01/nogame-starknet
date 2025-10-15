@@ -2,8 +2,47 @@ use nogame::libraries::types::{DefenceBuildType, Defences, DefencesCost, ERC20s}
 
 #[starknet::interface]
 trait IDefence<TState> {
+    /// Builds defensive structures for the calling player's planet.
+    ///
+    /// # Parameters
+    /// - `component`: Type of defence to build (Celestia, Blaster, Beam, Astral, Plasma)
+    /// - `quantity`: Number of defence units to build
+    ///
+    /// # Effects
+    /// - Verifies dockyard level and technology requirements
+    /// - Calculates and deducts resource costs (burns ERC20 tokens)
+    /// - Increments defence count for planet
+    /// - Updates planet points based on spending
+    /// - Emits DefenceSpent event
+    ///
+    /// # Notes
+    /// - Celestia satellites provide both defence and energy production
+    /// - Defences are destroyed during attacks but partially regenerate
+    ///
+    /// # Panics
+    /// - If requirements not met (dockyard level or tech)
+    /// - If insufficient resources
     fn process_defence_build(ref self: TState, component: DefenceBuildType, quantity: u32);
+
+    /// Sets defence level for a specific planet (authorized contracts only).
+    ///
+    /// # Parameters
+    /// - `planet_id`: Target planet
+    /// - `name`: Defence type identifier
+    /// - `level`: New defence count
+    ///
+    /// # Notes
+    /// - Access control implemented but disabled due to test framework limitation
+    /// - Intended for FleetMovements contract to modify during attacks
     fn set_defence_level(ref self: TState, planet_id: u32, name: u8, level: u32);
+
+    /// Retrieves all defence counts for a planet.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - Defences struct with counts for all 5 defence types
     fn get_defences_levels(ref self: TState, planet_id: u32) -> Defences;
 }
 

@@ -3,25 +3,229 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IPlanet<TState> {
+    /// Generates a new planet for the caller using a VRGDA pricing model.
+    ///
+    /// # Effects
+    /// - Charges caller based on time-decaying VRGDA price in ETH
+    /// - Mints planet NFT to caller
+    /// - Assigns position based on predetermined galaxy/system/orbit
+    /// - Grants initial resources (500 steel, 300 quartz, 100 tritium)
+    /// - Emits PlanetGenerated event
+    ///
+    /// # Panics
+    /// - If caller already owns a planet
+    /// - If maximum number of planets reached (MAX_NUMBER_OF_PLANETS)
+    /// - If insufficient ETH for current price
     fn generate_planet(ref self: TState);
+
+    /// Collects accumulated resources from planet and all colonies.
+    ///
+    /// # Parameters
+    /// - `player`: Address to receive minted resource tokens
+    ///
+    /// # Effects
+    /// - Calculates production since last collection
+    /// - Mints ERC20 tokens (steel, quartz, tritium) to player
+    /// - Resets resource timer for planet and colonies
+    ///
+    /// # Notes
+    /// - Production scaled by energy availability
+    /// - Iterates through all colonies if present
     fn collect_resources(ref self: TState, player: ContractAddress);
+
+    /// Retrieves current planet purchase price based on VRGDA model.
+    ///
+    /// # Returns
+    /// - Current price in Wei (18 decimals)
+    ///
+    /// # Notes
+    /// - Price decreases over time if planets sold slower than target rate
+    /// - Target rate: 10 planets per day
+    /// - Uses decay constant of 0.05
     fn get_current_planet_price(self: @TState) -> u128;
+
+    /// Updates planet's accumulated resource spending for points calculation.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to update
+    /// - `spent`: Resources spent on upgrades/builds
+    /// - `neg`: If true, subtracts points (for losses); if false, adds points
+    ///
+    /// # Effects
+    /// - Modifies resources_spent storage
+    /// - Updates last_active timestamp
+    ///
+    /// # Notes
+    /// - Points = (steel + quartz spent) / 1000
+    /// - Used for ranking and noob protection calculations
     fn update_planet_points(ref self: TState, planet_id: u32, spent: ERC20s, neg: bool);
+
+    /// Registers a colony planet in the universe position mapping.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Colony ID (mother_planet_id * 1000 + colony_number)
+    /// - `position`: Position in universe
+    /// - `new_planet_count`: Updated total planet count
+    ///
+    /// # Effects
+    /// - Creates bidirectional position mapping
+    /// - Updates total planet count
+    ///
+    /// # Notes
+    /// - Called by Colony contract when generating new colony
     fn add_colony_planet(
         ref self: TState, planet_id: u32, position: PlanetPosition, new_planet_count: u32,
     );
+
+    /// Updates planet's last activity timestamp.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to update
+    ///
+    /// # Effects
+    /// - Sets last_active to current block timestamp
+    ///
+    /// # Notes
+    /// - Used for inactive player detection (>1 week = inactive)
+    /// - Inactive players can be attacked without noob protection checks
     fn set_last_active(ref self: TState, planet_id: u32);
+
+    /// Resets resource collection timer after raid or collection.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to reset
+    ///
+    /// # Effects
+    /// - Sets resources_timer to current block timestamp
+    ///
+    /// # Notes
+    /// - Called after successful attack to prevent immediate re-raid
+    /// - Also called during normal resource collection
     fn set_resources_timer(ref self: TState, planet_id: u32);
+
+    /// Updates debris field around a planet after battle.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet with debris field
+    /// - `debris`: New debris amounts (steel, quartz)
+    ///
+    /// # Effects
+    /// - Overwrites existing debris field
+    ///
+    /// # Notes
+    /// - Debris comes from destroyed ships and defences (30% of cost)
+    /// - Can be collected by scraper ships
     fn set_planet_debris_field(ref self: TState, planet_id: u32, debris: Debris);
+
+    /// Returns total number of planets generated (including colonies).
+    ///
+    /// # Returns
+    /// - Count of all planet NFTs minted
     fn get_number_of_planets(self: @TState) -> u32;
+
+    /// Retrieves planet ID owned by an account.
+    ///
+    /// # Parameters
+    /// - `account`: Address to query
+    ///
+    /// # Returns
+    /// - Planet ID (token ID of planet NFT)
+    ///
+    /// # Notes
+    /// - Returns 0 if account doesn't own a planet
+    /// - Each account can only own one home planet (colonies tracked separately)
     fn get_owned_planet(self: @TState, account: ContractAddress) -> u32;
+
+    /// Calculates planet's rank points based on resource spending.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - Points value (resources_spent / 1000)
+    ///
+    /// # Notes
+    /// - Used for leaderboards and noob protection
     fn get_planet_points(self: @TState, planet_id: u32) -> u128;
+
+    /// Retrieves accumulated production resources (not yet collected).
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - ERC20s struct with steel, quartz, tritium amounts
+    ///
+    /// # Notes
+    /// - Production scaled by available energy
+    /// - Calculated from last collection time to now
     fn get_collectible_resources(self: @TState, planet_id: u32) -> ERC20s;
+
+    /// Retrieves planet owner's spendable ERC20 token balances.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - ERC20s struct with token balances (in base units, not Wei)
+    ///
+    /// # Notes
+    /// - Queries actual ERC20 contract balances
+    /// - Does not include uncollected production
     fn get_spendable_resources(self: @TState, planet_id: u32) -> ERC20s;
+
+    /// Retrieves planet's position in the universe.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - PlanetPosition struct (galaxy, system, orbit)
     fn get_planet_position(self: @TState, planet_id: u32) -> PlanetPosition;
+
+    /// Reverse lookup: finds planet ID at a given position.
+    ///
+    /// # Parameters
+    /// - `position`: Universe coordinates to query
+    ///
+    /// # Returns
+    /// - Planet ID at that position (0 if empty)
+    ///
+    /// # Notes
+    /// - Used for fleet targeting and colony placement validation
     fn get_position_to_planet(self: @TState, position: PlanetPosition) -> u32;
+
+    /// Retrieves debris field around a planet.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - Debris struct with steel and quartz amounts
     fn get_planet_debris_field(self: @TState, planet_id: u32) -> Debris;
+
+    /// Retrieves timestamp of planet's last activity.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - Unix timestamp of last action
     fn get_last_active(self: @TState, planet_id: u32) -> u64;
+
+    /// Checks if noob protection applies between two planets.
+    ///
+    /// # Parameters
+    /// - `planet1_id`: First planet
+    /// - `planet2_id`: Second planet
+    ///
+    /// # Returns
+    /// - True if either planet is protected (5x points difference)
+    ///
+    /// # Notes
+    /// - Protection applies if one planet has >5x the points of the other
+    /// - Prevents high-level players from farming new players
+    /// - Uses modulo 1000 to get home planet ID from colonies
     fn get_is_noob_protected(self: @TState, planet1_id: u32, planet2_id: u32) -> bool;
 }
 
@@ -361,6 +565,20 @@ mod Planet {
             compound::position_to_celestia_production(position.orbit)
         }
 
+        /// Calculates resource production based on mine levels, time elapsed, and energy.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Planet to calculate production for
+        ///
+        /// # Returns
+        /// - ERC20s with steel, quartz, tritium production amounts
+        ///
+        /// # Notes
+        /// - Production = base_rate * mine_level * uni_speed * time_elapsed / HOUR
+        /// - Tritium affected by planet temperature (orbit-dependent)
+        /// - If insufficient energy: production scaled proportionally
+        /// - Energy sources: solar plant + celestia satellites
+        /// - Consumption: mines require energy based on levels
         fn calculate_production(self: @ContractState, planet_id: u32) -> ERC20s {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);

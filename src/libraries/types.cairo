@@ -12,8 +12,16 @@ use nogame::token::erc721::interface::IERC721NoGameDispatcher;
 use openzeppelin_token::erc20::interface::IERC20Dispatcher;
 use starknet::ContractAddress;
 
+// ========================================
+// General Constants
+// ========================================
+
+/// Multiplier for 18 decimal places (Wei conversion)
 const E18: u128 = 1000000000000000000;
+
+/// Maximum number of home planets that can be generated
 const MAX_NUMBER_OF_PLANETS: u32 = 500;
+
 const ETH_ADDRESS: felt252 =
     2087021424722619777119509474943472645767659996348769578120564519014510906823;
 // const BANK_ADDRESS: felt252 =
@@ -21,9 +29,57 @@ const ETH_ADDRESS: felt252 =
 const _0_05: u128 = 922337203685477600;
 const PRICE: u128 = 221360928884514600;
 const PRECISION: u128 = 1_000_000_000_000_000_000;
+
+// ========================================
+// Time Constants
+// ========================================
+
+/// One week in seconds (used for inactive player detection)
 const WEEK: u64 = 604_800;
+
+/// One day in seconds (used for VRGDA pricing)
 const DAY: u64 = 86_400;
+
+/// One hour in seconds (used for fleet decay threshold and production calculations)
 const HOUR: u64 = 3_600;
+
+/// Fleet decay grace period: fleets idle at destination for >2 hours start decaying
+const FLEET_DECAY_THRESHOLD: u64 = 2 * HOUR; // 7200 seconds
+
+// ========================================
+// Colony Constants
+// ========================================
+
+/// Planet IDs above this threshold are colonies (not home planets)
+/// Home planets: 1-500, Colonies: >500
+const COLONY_PLANET_THRESHOLD: u32 = 500;
+
+/// Multiplier for colony ID encoding: colony_id = (home_planet_id * 1000) + colony_number
+/// Example: Colony 3 of planet 42 = 42000 + 3 = 42003
+const COLONY_ID_MULTIPLIER: u32 = 1000;
+
+// ========================================
+// Combat Constants
+// ========================================
+
+/// Percentage of destroyed ship/defence cost that becomes debris (30%)
+const DEBRIS_RATE: u128 = 30;
+
+/// Percentage of spendable resources that can be looted (50%)
+const LOOT_SPENDABLE_RATE: u128 = 50;
+
+// ========================================
+// Protection & Limits
+// ========================================
+
+/// Points difference ratio for noob protection (5x)
+/// Players with >5x points difference cannot attack each other
+const NOOB_PROTECTION_MULTIPLIER: u128 = 5;
+
+/// Starting resources granted to new planets
+const INITIAL_STEEL: u128 = 500;
+const INITIAL_QUARTZ: u128 = 300;
+const INITIAL_TRITIUM: u128 = 100;
 
 #[derive(Copy, Drop, Serde)]
 struct Contracts {

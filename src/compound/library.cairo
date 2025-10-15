@@ -7,6 +7,19 @@ const UNI_SPEED: u128 = 1;
 const _1_36: u128 = 25087571940244990000;
 const _0_004: u128 = 73786976294838210;
 
+/// Scales production based on energy availability.
+///
+/// # Parameters
+/// - `production`: Theoretical maximum production
+/// - `available`: Available energy
+/// - `required`: Required energy for full production
+///
+/// # Returns
+/// - Scaled production (full if available >= required, proportional otherwise)
+///
+/// # Notes
+/// - If insufficient energy, production = (available/required) * production
+/// - Prevents divide-by-zero by checking available > required first
 fn production_scaler(production: u128, available: u128, required: u128) -> u128 {
     if available > required {
         return production;
@@ -15,6 +28,19 @@ fn production_scaler(production: u128, available: u128, required: u128) -> u128 
     }
 }
 
+/// Determines average temperature based on orbital position.
+///
+/// # Parameters
+/// - `orbit`: Orbital slot (1-10, where 1 is closest to star)
+///
+/// # Returns
+/// - Temperature in arbitrary units (affects tritium production)
+///
+/// # Notes
+/// - Inner orbits (1-2) are hotter (170-230°)
+/// - Mid orbits (3-6) are temperate (50-120°)
+/// - Outer orbits (7-10) are cold (10-40°)
+/// - Temperature directly affects tritium synthesis efficiency
 fn calculate_avg_temperature(orbit: u8) -> u32 {
     if orbit == 1 {
         return 230;
@@ -47,6 +73,18 @@ fn calculate_avg_temperature(orbit: u8) -> u32 {
     }
 }
 
+/// Maps orbital position to solar energy production per celestia satellite.
+///
+/// # Parameters
+/// - `orbit`: Orbital slot (1-10)
+///
+/// # Returns
+/// - Energy generated per celestia unit
+///
+/// # Notes
+/// - Inner orbits (1) generate most energy (48 units per celestia)
+/// - Outer orbits (10) generate least (11 units per celestia)
+/// - Follows inverse square law approximation
 fn position_to_celestia_production(orbit: u8) -> u32 {
     if orbit == 1 {
         return 48;
@@ -109,6 +147,20 @@ mod cost {
         result.mag
     }
 
+    /// Calculates total cost to upgrade steel mine by given quantity.
+    ///
+    /// # Parameters
+    /// - `level`: Current mine level
+    /// - `quantity`: Number of levels to upgrade
+    ///
+    /// # Returns
+    /// - ERC20s with steel and quartz costs
+    ///
+    /// # Notes
+    /// - Formula: base_cost * 1.5^level (exponential growth)
+    /// - Base costs: 60 steel, 15 quartz per level
+    /// - Sums costs for each level from current to target
+    /// - Uses optimized fixed-point math with binary exponentiation
     fn steel(level: u8, quantity: u8) -> ERC20s {
         assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 
@@ -481,6 +533,20 @@ mod cost {
         Pow::pow(base, exponent)
     }
 
+    /// Calculates total cost to upgrade research lab by given quantity.
+    ///
+    /// # Parameters
+    /// - `level`: Current lab level
+    /// - `quantity`: Number of levels to upgrade
+    ///
+    /// # Returns
+    /// - ERC20s with steel, quartz, and tritium costs
+    ///
+    /// # Notes
+    /// - Formula: base_cost * 2^level (exponential doubling)
+    /// - Base costs: 200 steel, 400 quartz, 200 tritium per level
+    /// - Lab level gates technology research requirements
+    /// - Uses optimized power-of-2 calculation
     fn lab(level: u8, quantity: u8) -> ERC20s {
         assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 
@@ -508,6 +574,20 @@ mod cost {
         ERC20s { steel: total_steel, quartz: total_quartz, tritium: total_tritium }
     }
 
+    /// Calculates total cost to upgrade dockyard by given quantity.
+    ///
+    /// # Parameters
+    /// - `level`: Current dockyard level
+    /// - `quantity`: Number of levels to upgrade
+    ///
+    /// # Returns
+    /// - ERC20s with steel, quartz, and tritium costs
+    ///
+    /// # Notes
+    /// - Formula: base_cost * 2^level (exponential doubling)
+    /// - Base costs: 400 steel, 200 quartz, 100 tritium per level
+    /// - Dockyard level gates ship and defence build requirements
+    /// - Uses optimized power-of-2 calculation
     fn dockyard(level: u8, quantity: u8) -> ERC20s {
         assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 

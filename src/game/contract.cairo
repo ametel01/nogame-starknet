@@ -1,10 +1,21 @@
 use nogame::libraries::types::{Contracts, ERC20s, Tokens};
 use starknet::{ClassHash, ContractAddress};
 
-/// Legacy monolithic interface - kept for backward compatibility
-/// New code should use segregated interfaces from nogame::game::interfaces
+/// Legacy monolithic interface - kept for backward compatibility.
+/// New code should use segregated interfaces from nogame::game::interfaces.
+///
+/// This interface combines resource management, token access, universe configuration,
+/// and contract registry functions. Use the segregated interfaces (IResourceManager,
+/// ITokenProvider, IUniverseConfig, IContractRegistry) for better separation of concerns.
 #[starknet::interface]
 trait IGame<TState> {
+    /// Initializes game manager with all contract addresses and configuration.
+    /// Can only be called once by contract owner during deployment.
+    ///
+    /// # Parameters
+    /// - All game contract addresses (colony, compound, defence, etc.)
+    /// - Token addresses (ERC721 planet NFT, ERC20 resources, ETH)
+    /// - Game parameters (universe speed, token price)
     fn initialize(
         ref self: TState,
         colony: ContractAddress,

@@ -2,8 +2,43 @@ use nogame::libraries::types::{ShipBuildType, ShipsLevels};
 
 #[starknet::interface]
 trait IDockyard<TState> {
+    /// Builds ships for the calling player's planet.
+    ///
+    /// # Parameters
+    /// - `component`: Type of ship to build (Carrier, Scraper, Sparrow, Frigate, Armade)
+    /// - `quantity`: Number of ships to build
+    ///
+    /// # Effects
+    /// - Verifies dockyard level and technology requirements
+    /// - Calculates and deducts resource costs (burns ERC20 tokens)
+    /// - Increments ship count for planet
+    /// - Updates planet points based on spending
+    /// - Emits FleetSpent event
+    ///
+    /// # Panics
+    /// - If requirements not met (dockyard level or tech)
+    /// - If insufficient resources
     fn process_ship_build(ref self: TState, component: ShipBuildType, quantity: u32);
+
+    /// Sets ship level for a specific planet (authorized contracts only).
+    ///
+    /// # Parameters
+    /// - `planet_id`: Target planet
+    /// - `name`: Ship type identifier
+    /// - `level`: New ship count
+    ///
+    /// # Notes
+    /// - Access control implemented but disabled due to test framework limitation
+    /// - Intended for FleetMovements contract to modify during missions
     fn set_ship_levels(ref self: TState, planet_id: u32, name: u8, level: u32);
+
+    /// Retrieves all ship counts for a planet.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - ShipsLevels struct with counts for all 5 ship types
     fn get_ships_levels(ref self: TState, planet_id: u32) -> ShipsLevels;
 }
 

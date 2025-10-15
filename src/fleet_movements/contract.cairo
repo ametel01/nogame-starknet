@@ -4,6 +4,28 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait IFleetMovements<TState> {
+    /// Sends a fleet on a mission to a destination planet or colony.
+    ///
+    /// # Parameters
+    /// - `f`: The fleet composition (carrier, scraper, sparrow, frigate, armade counts)
+    /// - `destination`: Target position in the universe (galaxy, system, orbit)
+    /// - `mission_type`: Type of mission (ATTACK, TRANSPORT, DEBRIS collection)
+    /// - `speed_modifier`: Speed multiplier as percentage (100 = normal, 50 = half speed)
+    /// - `colony_id`: Origin colony ID (0 for home planet, 1+ for colonies)
+    ///
+    /// # Effects
+    /// - Deducts ships from origin planet/colony
+    /// - Consumes tritium fuel based on distance and speed
+    /// - Creates active mission and incoming mission records
+    /// - Updates last active timestamp
+    ///
+    /// # Panics
+    /// - If destination planet doesn't exist
+    /// - If insufficient ships at origin
+    /// - If active mission limit reached (based on digital tech)
+    /// - If insufficient tritium for fuel
+    /// - If attempting to transport to non-owned colony
+    /// - If attempting to attack own planet/colony
     fn send_fleet(
         ref self: TState,
         f: Fleet,
@@ -12,15 +34,129 @@ trait IFleetMovements<TState> {
         speed_modifier: u32,
         colony_id: u8,
     );
+
+    /// Executes an attack mission after fleet arrival at target planet.
+    ///
+    /// # Parameters
+    /// - `mission_id`: ID of the active mission to execute
+    ///
+    /// # Effects
+    /// - Simulates battle between attacker and defender fleets/defences
+    /// - Applies fleet decay if mission arrived >2 hours ago
+    /// - Updates debris field with destroyed ships/defences
+    /// - Distributes loot to attacker based on cargo capacity
+    /// - Updates defender's fleet and defence levels
+    /// - Removes mission records
+    /// - Updates planet points for both parties
+    /// - Emits BattleReport event
+    ///
+    /// # Panics
+    /// - If caller doesn't own the mission
+    /// - If mission is not an ATTACK type
+    /// - If fleet hasn't arrived yet
     fn attack_planet(ref self: TState, mission_id: usize);
+
+    /// Recalls a fleet mission before it reaches destination.
+    ///
+    /// # Parameters
+    /// - `mission_id`: ID of the mission to recall
+    ///
+    /// # Effects
+    /// - Returns fleet to origin immediately (no travel time)
+    /// - Removes mission records
+    /// - Updates last active timestamp
+    ///
+    /// # Panics
+    /// - If caller doesn't own the mission
+    /// - If mission doesn't exist
     fn recall_fleet(ref self: TState, mission_id: usize);
+
+    /// Docks a transport mission fleet at destination colony.
+    ///
+    /// # Parameters
+    /// - `mission_id`: ID of the transport mission
+    /// - `colony_id`: Destination colony ID to dock at
+    ///
+    /// # Effects
+    /// - Adds fleet to destination colony
+    /// - Removes mission records
+    /// - Updates last active timestamp
+    ///
+    /// # Panics
+    /// - If mission is not TRANSPORT type
+    /// - If caller doesn't own the mission
     fn dock_fleet(ref self: TState, mission_id: usize, colony_id: u8);
+
+    /// Collects debris from a debris field using scraper ships.
+    ///
+    /// # Parameters
+    /// - `mission_id`: ID of the debris collection mission
+    ///
+    /// # Effects
+    /// - Collects steel and quartz from debris field
+    /// - Collection limited by scraper cargo capacity
+    /// - Applies fleet decay if >2 hours since arrival
+    /// - Transfers collected resources to caller
+    /// - Returns fleet to origin
+    /// - Removes mission records
+    /// - Emits DebrisCollected event
+    ///
+    /// # Panics
+    /// - If mission is not DEBRIS type
+    /// - If fleet hasn't arrived yet
+    /// - If debris field is empty
+    /// - If fleet has no scrapers
     fn collect_debris(ref self: TState, mission_id: usize);
+
+    /// Simulates a battle without executing it (for testing/planning).
+    ///
+    /// # Parameters
+    /// - `attacker_fleet`: Attacking fleet composition
+    /// - `defender_fleet`: Defending fleet composition
+    /// - `defences`: Defender's defence structures
+    ///
+    /// # Returns
+    /// - SimulationResult containing losses for attacker/defender fleets and defences
+    ///
+    /// # Notes
+    /// - Uses default tech levels (all zero) for simulation
+    /// - Does not modify any state
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
     ) -> SimulationResult;
+
+    /// Retrieves all active missions for a planet and its colonies.
+    ///
+    /// # Parameters
+    /// - `planet_id`: ID of the planet to query
+    ///
+    /// # Returns
+    /// - Array of Mission structs including missions from all colonies
+    ///
+    /// # Notes
+    /// - Filters out zero/empty mission slots
     fn get_active_missions(self: @TState, planet_id: u32) -> Array<Mission>;
+
+    /// Retrieves details of a specific mission.
+    ///
+    /// # Parameters
+    /// - `planet_id`: ID of the planet that owns the mission
+    /// - `mission_id`: ID of the mission to query
+    ///
+    /// # Returns
+    /// - Mission struct with full details
     fn get_mission_details(self: @TState, planet_id: u32, mission_id: usize) -> Mission;
+
+    /// Retrieves all incoming hostile missions targeting a planet.
+    ///
+    /// # Parameters
+    /// - `planet_id`: ID of the planet to query
+    ///
+    /// # Returns
+    /// - Array of IncomingMission structs showing enemy fleets en route
+    ///
+    /// # Notes
+    /// - Filters out zero/empty mission slots
     fn get_incoming_missions(self: @TState, planet_id: u32) -> Array<IncomingMission>;
 }
 
@@ -38,7 +174,8 @@ mod FleetMovements {
     use nogame::libraries::fleet_ops::{FleetOperation, update_fleet_levels};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
-        Debris, Defences, E18, ERC20s, Fleet, HOUR, IncomingMission, Mission, MissionCategory,
+        COLONY_ID_MULTIPLIER, COLONY_PLANET_THRESHOLD, Debris, Defences, E18, ERC20s,
+        FLEET_DECAY_THRESHOLD, Fleet, HOUR, IncomingMission, Mission, MissionCategory,
         PlanetPosition, SimulationResult, TechLevels, WEEK, erc20_mul,
     };
     use nogame::planet::contract::IPlanetDispatcherTrait;
@@ -125,14 +262,15 @@ mod FleetMovements {
             let origin_id = if colony_id.is_zero() {
                 planet_id
             } else {
-                (planet_id * 1000) + colony_id.into()
+                (planet_id * COLONY_ID_MULTIPLIER) + colony_id.into()
             };
 
-            if destination_id > 500 && mission_type == MissionCategory::TRANSPORT {
+            if destination_id > COLONY_PLANET_THRESHOLD
+                && mission_type == MissionCategory::TRANSPORT {
                 let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
                 assert!(colony_owner == planet_id, "Fleet:E_COLONY_TRANSPORT_TARGET");
             }
-            if mission_type == MissionCategory::ATTACK && destination_id > 500 {
+            if mission_type == MissionCategory::ATTACK && destination_id > COLONY_PLANET_THRESHOLD {
                 let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
                 assert!(colony_owner != planet_id, "Fleet:E_ATTACK_OWN_COLONY");
             } else if mission_type == MissionCategory::ATTACK {
@@ -241,46 +379,84 @@ mod FleetMovements {
         }
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
+            // ========================================
+            // PHASE 1: Validation and Setup
+            // ========================================
+
             let caller = get_caller_address();
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(caller);
+
+            // Retrieve and validate the mission
             let mut mission = self.get_mission_details(origin, mission_id);
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
             assert!(mission.category == MissionCategory::ATTACK, "Fleet:E_WRONG_CATEGORY");
             assert!(mission.destination != origin, "Fleet:E_ATTACK_OWN_PLANET");
+
+            // Check if fleet has arrived
             let time_now = get_block_timestamp();
             assert!(time_now >= mission.time_arrival, "Fleet:E_ARRIVAL_PENDING");
-            let is_colony = mission.destination > 500;
+
+            // Determine if target is a colony (ID > COLONY_PLANET_THRESHOLD) or home planet
+            let is_colony = mission.destination > COLONY_PLANET_THRESHOLD;
             let colony_mother_planet = if is_colony {
                 contracts.colony.get_colony_mother_planet(mission.destination)
             } else {
                 0
             };
+            // Extract colony number from composite ID (planet_id * COLONY_ID_MULTIPLIER +
+            // colony_number)
             let colony_id: u8 = if is_colony {
-                (mission.destination - colony_mother_planet * 1000).try_into().unwrap()
+                (mission.destination - colony_mother_planet * COLONY_ID_MULTIPLIER)
+                    .try_into()
+                    .unwrap()
             } else {
                 0
             };
 
+            // ========================================
+            // PHASE 2: Prepare Battle
+            // ========================================
+
+            // Get attacker's technology levels (affects combat power)
             let mut t1 = contracts.tech.get_tech_levels(origin);
+
+            // Get defender's fleet, defences, techs, and initial celestia count
             let (defender_fleet, defences, t2, celestia_before) = self
                 .get_fleet_and_defences_before_battle(mission.destination);
 
+            // Apply fleet decay if mission has been idle >2 hours after arrival
             let time_since_arrived = time_now - mission.time_arrival;
             let mut attacker_fleet: Fleet = mission.fleet;
 
-            if time_since_arrived > (2 * HOUR) {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
+            if time_since_arrived > FLEET_DECAY_THRESHOLD {
+                // Fleet loses strength over time when not collected
+                let decay_amount = fleet::calculate_fleet_loss(
+                    time_since_arrived - FLEET_DECAY_THRESHOLD,
+                );
                 attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
+            // ========================================
+            // PHASE 3: Execute Battle Simulation
+            // ========================================
+
+            // Simulate the battle: returns surviving units for attacker (f1), defender (f2), and
+            // defences (d)
             let (f1, f2, d) = fleet::war(attacker_fleet, t1, defender_fleet, defences, t2);
 
-            // calculate debris and update field
+            // ========================================
+            // PHASE 4: Process Battle Results - Debris Field
+            // ========================================
+
+            // Calculate debris from destroyed attacker ships (30% of ship cost)
             let debris1 = fleet::get_debris(mission.fleet, f1, 0);
+            // Calculate debris from destroyed defender ships and defences
             let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
             let total_debris = debris1 + debris2;
+
+            // Update the planet's debris field (can be collected by scrapers)
             let current_debries_field = contracts
                 .planet
                 .get_planet_debris_field(mission.destination);
@@ -288,47 +464,82 @@ mod FleetMovements {
                 .planet
                 .set_planet_debris_field(mission.destination, current_debries_field + total_debris);
 
+            // ========================================
+            // PHASE 5: Update Defender's Military
+            // ========================================
+
+            // Update defender's surviving fleet and defences
             if is_colony {
+                // Colony: only update defences (fleet stored in colony contract)
                 contracts.colony.update_defences_after_attack(colony_mother_planet, colony_id, d);
             } else {
+                // Home planet: update both fleet and defences
                 self.update_defender_fleet_levels_after_attack(mission.destination, colony_id, f2);
                 self.update_defences_after_attack(mission.destination, colony_id, d);
             }
 
+            // ========================================
+            // PHASE 6: Calculate and Distribute Loot
+            // ========================================
+
+            // Calculate loot based on surviving attacker fleet's cargo capacity
             let (loot_spendable, loot_collectible) = self
                 .calculate_loot_amount(mission.destination, f1);
             let total_loot = loot_spendable + loot_collectible;
 
+            // Burn defender's ERC20 tokens (spendable loot)
             if !is_colony {
                 self.process_loot_payment(mission.destination, loot_spendable);
             }
+
+            // Mint total loot to attacker
             contracts.game.receive_resources_erc20(get_caller_address(), total_loot);
 
+            // ========================================
+            // PHASE 7: Cleanup - Reset Timers and Return Fleet
+            // ========================================
+
+            // Reset defender's resource collection timer
             if is_colony {
                 contracts.colony.set_resource_timer(colony_mother_planet, colony_id)
             } else {
                 contracts.planet.set_resources_timer(mission.destination);
             }
+
+            // Return surviving attacker fleet to origin
             self.fleet_return_planet(mission.origin, f1);
+
+            // Clear the mission from active missions
             self.set_mission(origin, mission_id, Zeroable::zero());
 
+            // Remove from defender's incoming missions list
             if is_colony {
                 self.remove_incoming_mission(colony_mother_planet, mission_id);
             } else {
                 self.remove_incoming_mission(mission.destination, mission_id);
             }
 
+            // ========================================
+            // PHASE 8: Update Planet Points and Emit Event
+            // ========================================
+
+            // Calculate losses for point system
             let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
             let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
             let defences_loss = self.calculate_defences_loss(defences, d);
 
+            // Update points: attacker loses points for ships lost, defender for ships+defences lost
             self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
             if is_colony {
                 self.update_points_after_attack(colony_mother_planet, defender_loss, defences_loss);
             } else {
                 self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
             }
+
+            // Update attacker's last active timestamp
             contracts.planet.set_last_active(origin);
+
+            // Emit comprehensive battle report for frontend/indexing
             self
                 .emit_battle_report(
                     time_now,
@@ -389,8 +600,10 @@ mod FleetMovements {
             let time_since_arrived = time_now - mission.time_arrival;
             let mut collector_fleet: Fleet = mission.fleet;
 
-            if time_since_arrived > (2 * HOUR) {
-                let decay_amount = fleet::calculate_fleet_loss(time_since_arrived - (2 * HOUR));
+            if time_since_arrived > FLEET_DECAY_THRESHOLD {
+                let decay_amount = fleet::calculate_fleet_loss(
+                    time_since_arrived - FLEET_DECAY_THRESHOLD,
+                );
                 collector_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
             }
 
@@ -517,6 +730,15 @@ mod FleetMovements {
 
     #[generate_trait]
     impl Private of PrivateTrait {
+        /// Deducts fleet from origin planet or colony when departing.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Origin planet ID (or colony ID if >1000)
+        /// - `fleet`: Fleet composition to remove
+        ///
+        /// # Notes
+        /// - Uses shared utility library for consistent fleet operations
+        /// - Handles both planet (ID < 1000) and colony (ID >= 1000) sources
         fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
@@ -526,6 +748,15 @@ mod FleetMovements {
             );
         }
 
+        /// Adds fleet back to destination planet or colony when returning.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Destination planet ID (or colony ID if >1000)
+        /// - `fleet`: Fleet composition to add
+        ///
+        /// # Notes
+        /// - Uses shared utility library for consistent fleet operations
+        /// - Handles both planet and colony destinations
         fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
@@ -535,6 +766,15 @@ mod FleetMovements {
             );
         }
 
+        /// Validates that origin has sufficient ships for the fleet composition.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Origin planet ID
+        /// - `colony_id`: Origin colony ID (0 for home planet)
+        /// - `fleet`: Requested fleet composition
+        ///
+        /// # Panics
+        /// - If any ship type has insufficient quantity
         fn check_enough_ships(self: @ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             let contracts = self.game_manager.read().get_contracts();
             if colony_id == 0 {
@@ -618,6 +858,18 @@ mod FleetMovements {
             }
         }
 
+        /// Retrieves defender's military assets before battle simulation.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Defender planet/colony ID
+        ///
+        /// # Returns
+        /// - Tuple of (fleet, defences, tech_levels, initial_celestia_count)
+        /// - Handles both planet (ID < 500) and colony (ID >= 500) targets
+        ///
+        /// # Notes
+        /// - Colony defences and techs come from mother planet
+        /// - Celestia count stored separately for debris calculation
         fn get_fleet_and_defences_before_battle(
             self: @ContractState, planet_id: u32,
         ) -> (Fleet, Defences, TechLevels, u32) {
@@ -626,9 +878,11 @@ mod FleetMovements {
             let mut defences: Defences = Default::default();
             let mut techs: TechLevels = Default::default();
             let mut celestia = 0;
-            if planet_id > 500 {
+            if planet_id > COLONY_PLANET_THRESHOLD {
                 let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
-                let colony_id: u8 = (planet_id - colony_mother_planet * 1000).try_into().unwrap();
+                let colony_id: u8 = (planet_id - colony_mother_planet * COLONY_ID_MULTIPLIER)
+                    .try_into()
+                    .unwrap();
                 defences = contracts.colony.get_colony_defences(colony_mother_planet, colony_id);
                 techs = contracts.tech.get_tech_levels(colony_mother_planet);
                 fleet = contracts.colony.get_colony_ships(colony_mother_planet, colony_id).into();
@@ -642,6 +896,21 @@ mod FleetMovements {
             (fleet, defences, techs, celestia)
         }
 
+        /// Calculates resources looted from a defeated planet based on cargo capacity.
+        ///
+        /// # Parameters
+        /// - `destination_id`: Target planet/colony ID
+        /// - `attacker_fleet`: Surviving attacker fleet after battle
+        ///
+        /// # Returns
+        /// - Tuple of (loot_spendable, loot_collectible)
+        /// - Spendable: Half of victim's ERC20 balance (taken via burn)
+        /// - Collectible: Victim's accumulated production resources
+        ///
+        /// # Notes
+        /// - Total loot limited by attacker's cargo capacity
+        /// - Prioritizes collectible resources first, then spendable
+        /// - Colony loot only includes collectible (no ERC20 balance)
         fn calculate_loot_amount(
             self: @ContractState, destination_id: u32, attacker_fleet: Fleet,
         ) -> (ERC20s, ERC20s) {
@@ -652,9 +921,11 @@ mod FleetMovements {
             let mut spendable: ERC20s = Default::default();
             let mut collectible: ERC20s = Default::default();
 
-            if destination_id > 500 {
+            if destination_id > COLONY_PLANET_THRESHOLD {
                 let mother_planet = contracts.colony.get_colony_mother_planet(destination_id);
-                let colony_id: u8 = (destination_id - mother_planet * 1000).try_into().unwrap();
+                let colony_id: u8 = (destination_id - mother_planet * COLONY_ID_MULTIPLIER)
+                    .try_into()
+                    .unwrap();
                 collectible = contracts.colony.get_colony_resources(mother_planet, colony_id);
             } else {
                 spendable = contracts.planet.get_spendable_resources(destination_id);
@@ -688,7 +959,7 @@ mod FleetMovements {
         ) {
             let contracts = self.game_manager.read().get_contracts();
             let tokens = contracts.game.get_tokens();
-            if destination_id > 500 {
+            if destination_id > COLONY_PLANET_THRESHOLD {
                 let colony_mother_planet = contracts
                     .colony
                     .get_colony_mother_planet(destination_id);
@@ -766,7 +1037,7 @@ mod FleetMovements {
             debris: Debris,
         ) {
             let contracts = self.game_manager.read().get_contracts();
-            let defender = if defender > 500 {
+            let defender = if defender > COLONY_PLANET_THRESHOLD {
                 contracts.colony.get_colony_mother_planet(defender)
             } else {
                 defender
@@ -800,6 +1071,19 @@ mod FleetMovements {
             fleet::get_fuel_consumption(fleet, distance)
         }
 
+        /// Adds a new active mission to storage using sparse array pattern.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Origin planet ID
+        /// - `mission`: Mission data to store
+        ///
+        /// # Returns
+        /// - Mission ID (1-indexed position in array)
+        ///
+        /// # Notes
+        /// - Reuses empty slots from cancelled missions before extending array
+        /// - Sets mission.id automatically before storing
+        /// - Optimized for gas efficiency with slot reuse
         fn add_active_mission(
             ref self: ContractState, planet_id: u32, mut mission: Mission,
         ) -> usize {
@@ -843,6 +1127,17 @@ mod FleetMovements {
             }
         }
 
+        /// Removes an incoming mission and compacts the array.
+        ///
+        /// # Parameters
+        /// - `planet_id`: Target planet ID
+        /// - `id_to_remove`: Mission ID at origin to remove
+        ///
+        /// # Notes
+        /// - Uses linear search to find mission by id_at_origin
+        /// - Compacts array by shifting subsequent elements forward
+        /// - Clears last slot and decrements length
+        /// - O(n) complexity but necessary for maintaining array integrity
         fn remove_incoming_mission(ref self: ContractState, planet_id: u32, id_to_remove: usize) {
             let len = self.incoming_missions_len.read(planet_id);
             let mut i = 1;

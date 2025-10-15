@@ -5,28 +5,121 @@ use nogame::libraries::types::{
 
 #[starknet::interface]
 trait IColony<TState> {
+    /// Generates a new colony for the calling player's planet.
+    ///
+    /// # Effects
+    /// - Requires Exocraft technology (max colonies = exocraft_level / 2)
+    /// - Assigns predetermined position in universe
+    /// - Creates colony ID: (planet_id * 1000) + colony_number
+    /// - Initializes resource timer
+    /// - Registers colony in Planet contract position mapping
+    /// - Emits PlanetGenerated event
+    ///
+    /// # Panics
+    /// - If max colonies already reached
+    /// - If payment required and insufficient ETH
     fn generate_colony(ref self: TState);
+
+    /// Collects accumulated resources from a colony.
+    ///
+    /// # Parameters
+    /// - `colony_id`: Colony to collect from (1-based index)
+    ///
+    /// # Returns
+    /// - ERC20s with collected steel, quartz, tritium amounts
+    ///
+    /// # Effects
+    /// - Calculates production since last collection
+    /// - Resets resource timer
+    /// - Does NOT mint tokens (handled by Planet contract)
+    ///
+    /// # Panics
+    /// - If colony doesn't exist
     fn collect_resources(ref self: TState, colony_id: u8) -> ERC20s;
+
+    /// Upgrades a compound structure on a colony.
+    ///
+    /// # Parameters
+    /// - `colony_id`: Target colony
+    /// - `name`: Structure type (SteelMine, QuartzMine, TritiumMine, EnergyPlant, Dockyard)
+    /// - `quantity`: Number of levels to upgrade
+    ///
+    /// # Effects
+    /// - Increments structure level
+    /// - Costs deducted by caller (Planet/Compound contract)
+    ///
+    /// # Panics
+    /// - If colony doesn't exist
     fn process_colony_compound_upgrade(
         ref self: TState, colony_id: u8, name: ColonyUpgradeType, quantity: u8,
     );
+
+    /// Builds ships or defences on a colony.
+    ///
+    /// # Parameters
+    /// - `colony_id`: Target colony
+    /// - `name`: Unit type (ships or defences)
+    /// - `quantity`: Number of units to build
+    ///
+    /// # Effects
+    /// - Verifies tech and dockyard requirements
+    /// - Increments unit count
+    /// - Costs deducted by caller
+    ///
+    /// # Panics
+    /// - If colony doesn't exist
+    /// - If requirements not met
     fn process_colony_unit_build(
         ref self: TState, colony_id: u8, name: ColonyBuildType, quantity: u32,
     );
+
+    /// Resets colony resource timer (authorized contracts only).
+    ///
+    /// # Parameters
+    /// - `planet_id`: Mother planet ID
+    /// - `colony_id`: Colony number
+    ///
+    /// # Notes
+    /// - Called after attacks to prevent immediate re-raid
     fn set_resource_timer(ref self: TState, planet_id: u32, colony_id: u8);
+
+    /// Sets ship count on colony (authorized contracts only).
     fn set_colony_ship(ref self: TState, planet_id: u32, colony_id: u8, name: u8, quantity: u32);
+
+    /// Sets defence count on colony (authorized contracts only).
     fn set_colony_defence(ref self: TState, planet_id: u32, colony_id: u8, name: u8, quantity: u32);
+
+    /// Retrieves accumulated resources for a colony (view only).
     fn get_colony_resources(self: @TState, planet_id: u32, colony_id: u8) -> ERC20s;
+
+    /// Updates defence levels after attack (authorized contracts only).
     fn update_defences_after_attack(ref self: TState, planet_id: u32, colony_id: u8, d: Defences);
-    // fn reset_resource_timer(ref self: TState, planet_id: u32, colony_id: u8);
+
+    /// Adds fleet to colony after arrival (authorized contracts only).
     fn fleet_arrives(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
+
+    /// Removes fleet from colony on departure (authorized contracts only).
     fn fleet_leaves(ref self: TState, planet_id: u32, colony_id: u8, fleet: Fleet);
+
+    /// Retrieves colony position in universe.
     fn get_colony_position(self: @TState, planet_id: u32, colony_id: u8) -> PlanetPosition;
+
+    /// Calculates composite colony ID from planet and colony number.
     fn get_colony_id(self: @TState, planet_id: u32, colony_id: u8) -> u32;
+
+    /// Lists all colonies owned by a planet.
     fn get_colonies_for_planet(self: @TState, planet_id: u32) -> Array<(u8, PlanetPosition)>;
+
+    /// Gets mother planet ID from colony composite ID.
     fn get_colony_mother_planet(self: @TState, colony_planet_id: u32) -> u32;
+
+    /// Retrieves colony compound levels.
     fn get_colony_compounds(self: @TState, planet_id: u32, colony_id: u8) -> CompoundsLevels;
+
+    /// Retrieves colony ship counts.
     fn get_colony_ships(self: @TState, planet_id: u32, colony_id: u8) -> ShipsLevels;
+
+    /// Retrieves colony defence counts.
     fn get_colony_defences(self: @TState, planet_id: u32, colony_id: u8) -> Defences;
 }
 

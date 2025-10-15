@@ -3,8 +3,41 @@ use starknet::ClassHash;
 
 #[starknet::interface]
 trait ITech<TState> {
+    /// Upgrades contract implementation (owner only).
+    ///
+    /// # Parameters
+    /// - `impl_hash`: New implementation class hash
     fn upgrade(ref self: TState, impl_hash: ClassHash);
+
+    /// Researches technology for the calling player's planet.
+    ///
+    /// # Parameters
+    /// - `component`: Technology to research (Energy, Digital, Beam, Armour, etc.)
+    /// - `quantity`: Number of levels to research
+    ///
+    /// # Effects
+    /// - Verifies lab level and prerequisite tech requirements
+    /// - Calculates and deducts resource costs (exponential growth)
+    /// - Increments technology level
+    /// - Updates planet points
+    /// - Emits TechSpent event
+    ///
+    /// # Panics
+    /// - If lab level insufficient
+    /// - If prerequisite technologies not researched
+    /// - If insufficient resources
     fn process_tech_upgrade(ref self: TState, component: TechUpgradeType, quantity: u8);
+
+    /// Retrieves all technology levels for a planet.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Planet to query
+    ///
+    /// # Returns
+    /// - TechLevels struct with all 13 technology levels
+    ///
+    /// # Notes
+    /// - Technologies unlock ship types, improve combat, and increase fleet speed
     fn get_tech_levels(self: @TState, planet_id: u32) -> TechLevels;
 }
 
