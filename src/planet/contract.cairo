@@ -33,6 +33,11 @@ mod Planet {
     use nogame::compound::library as compound;
     use nogame::defence::contract::IDefenceDispatcherTrait;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{
+        ITokenProviderDispatcher, ITokenProviderDispatcherTrait, IUniverseConfigDispatcher,
+        IUniverseConfigDispatcherTrait, IContractRegistryDispatcher,
+        IContractRegistryDispatcherTrait,
+    };
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::positions;
     use nogame::libraries::types::{
@@ -112,15 +117,19 @@ mod Planet {
     impl PlanetImpl of super::IPlanet<ContractState> {
         fn generate_planet(ref self: ContractState) {
             let caller = get_caller_address();
-            let game_manager = self.game_manager.read();
-            let tokens = game_manager.get_tokens();
+            // Use segregated interfaces instead of monolithic IGameDispatcher
+            let game_address = self.game_manager.read().contract_address;
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+            let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
+
+            let tokens = token_provider.get_tokens();
 
             assert!(
                 tokens.erc721.balance_of(caller).is_zero(),
                 "NoGame: caller is already a planet owner",
             );
 
-            let time_elapsed = (get_block_timestamp() - game_manager.get_universe_start_time())
+            let time_elapsed = (get_block_timestamp() - universe_config.get_universe_start_time())
                 / DAY;
             let price: u256 = self.get_planet_price(time_elapsed).into();
 
@@ -147,10 +156,14 @@ mod Planet {
 
         fn collect_resources(ref self: ContractState, player: ContractAddress) {
             let caller = get_caller_address();
-            let game_manager = self.game_manager.read();
-            let contracts = game_manager.get_contracts();
+            // Use segregated interfaces
+            let game_address = self.game_manager.read().contract_address;
+            let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+
+            let contracts = contract_registry.get_contracts();
             self.verify_caller(contracts, caller);
-            let tokens = game_manager.get_tokens();
+            let tokens = token_provider.get_tokens();
             let planet_id = tokens.erc721.token_of(caller).try_into().unwrap();
             let colonies_len = contracts.colony.get_colonies_for_planet(planet_id).len();
 
@@ -214,7 +227,10 @@ mod Planet {
         }
 
         fn get_owned_planet(self: @ContractState, account: ContractAddress) -> u32 {
-            let tokens = self.game_manager.read().get_tokens();
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+            let tokens = token_provider.get_tokens();
             tokens.erc721.token_of(account).try_into().unwrap()
         }
 
@@ -223,8 +239,11 @@ mod Planet {
         }
 
         fn get_current_planet_price(self: @ContractState) -> u128 {
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
             let time_elapsed = (get_block_timestamp()
-                - self.game_manager.read().get_universe_start_time())
+                - universe_config.get_universe_start_time())
                 / DAY;
             self.get_planet_price(time_elapsed)
         }
@@ -234,7 +253,10 @@ mod Planet {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
-            let tokens = self.game_manager.read().get_tokens();
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+            let tokens = token_provider.get_tokens();
             let planet_owner = tokens.erc721.ownerOf(planet_id.into());
             let steel = IERC20Dispatcher { contract_address: tokens.steel.contract_address }
                 .balance_of(planet_owner)
@@ -284,7 +306,10 @@ mod Planet {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
-            let token_price = self.game_manager.read().get_token_price();
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
+            let token_price = universe_config.get_token_price();
             let auction = LinearVRGDA {
                 target_price: FixedTrait::new(token_price, false),
                 decay_constant: FixedTrait::new(_0_05, true),
@@ -315,9 +340,10 @@ mod Planet {
         }
 
         fn collect(ref self: ContractState, player: ContractAddress) {
-            let planet_id = self
-                .game_manager
-                .read()
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+            let planet_id = token_provider
                 .get_tokens()
                 .erc721
                 .token_of(player)
@@ -330,7 +356,10 @@ mod Planet {
         }
 
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: ERC20s) {
-            let tokens = self.game_manager.read().get_tokens();
+            // Use segregated interface
+            let game_address = self.game_manager.read().contract_address;
+            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
+            let tokens = token_provider.get_tokens();
             tokens.steel.mint(to, (amounts.steel * E18).into());
             tokens.quartz.mint(to, (amounts.quartz * E18).into());
             tokens.tritium.mint(to, (amounts.tritium * E18).into());
@@ -345,14 +374,17 @@ mod Planet {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
-            // Cache game_manager read to avoid redundant storage access
-            let game_manager = self.game_manager.read();
-            let contracts = game_manager.get_contracts();
+            // Use segregated interfaces for better separation of concerns
+            let game_address = self.game_manager.read().contract_address;
+            let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
+            let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
+
+            let contracts = contract_registry.get_contracts();
             let mines_levels = contracts.compound.get_compounds_levels(planet_id);
             let position = self.get_planet_position(planet_id);
             // Cache temperature calculation (used only once now)
             let temp = compound::calculate_avg_temperature(position.orbit);
-            let speed = game_manager.get_uni_speed();
+            let speed = universe_config.get_uni_speed();
 
             // Calculate production values
             let steel_available = compound::production::steel(mines_levels.steel)
