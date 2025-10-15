@@ -202,7 +202,7 @@ This document outlines a comprehensive improvement plan for the NoGame Starknet 
 
 #### High Priority Issues:
 
-**2.2.1 Duplicate Ship Management Code**
+**2.2.1 Duplicate Ship Management Code** ✅ COMPLETED
 - **Location:**
   - `src/fleet_movements/contract.cairo:515-562` (fleet_leave_planet)
   - `src/fleet_movements/contract.cairo:564-611` (fleet_return_planet)
@@ -211,6 +211,15 @@ This document outlines a comprehensive improvement plan for the NoGame Starknet 
 - **Impact:** 200+ lines of nearly identical code
 - **Solution:** Extract common fleet operation utilities
 - **Estimated Reduction:** ~150 lines of code
+- **STATUS:** ✅ Completed - 2025-10-15
+  - Created new fleet operations utility library (`src/libraries/fleet_ops.cairo`)
+  - Implemented `update_fleet_levels()` function with `FleetOperation` enum (Add/Remove)
+  - Refactored `fleet_leave_planet()` and `fleet_return_planet()` in FleetMovements contract
+  - **Code Reduction:** Eliminated ~86 lines from FleetMovements contract (from ~100 lines to ~14 lines)
+  - Added ~95 lines of well-structured, reusable utility code
+  - Colony contract's `fleet_arrives` and `fleet_leaves` functions remain as called by utility library
+  - All 73 tests passing with zero breaking changes
+  - Improved maintainability and eliminated code duplication
 
 **2.2.2 Duplicate Temperature/Production Calculations**
 - **Location:**

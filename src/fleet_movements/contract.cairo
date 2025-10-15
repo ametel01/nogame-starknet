@@ -35,6 +35,7 @@ mod FleetMovements {
     use nogame::dockyard::library as dockyard;
     use nogame::fleet_movements::library as fleet;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::libraries::fleet_ops::{FleetOperation, update_fleet_levels};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
         Debris, Defences, E18, ERC20s, Fleet, HOUR, IncomingMission, Mission, MissionCategory,
@@ -519,105 +520,19 @@ mod FleetMovements {
         fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
-            if planet_id > 500 {
-                let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
-                contracts
-                    .colony
-                    .fleet_leaves(
-                        colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet,
-                    );
-            } else {
-                // Cache fleet levels read to avoid repeated storage access
-                let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
-                // Batch update ship levels to reduce storage writes
-                if fleet.carrier > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::CARRIER, fleet_levels.carrier - fleet.carrier,
-                        );
-                }
-                if fleet.scraper > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::SCRAPER, fleet_levels.scraper - fleet.scraper,
-                        );
-                }
-                if fleet.sparrow > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::SPARROW, fleet_levels.sparrow - fleet.sparrow,
-                        );
-                }
-                if fleet.frigate > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::FRIGATE, fleet_levels.frigate - fleet.frigate,
-                        );
-                }
-                if fleet.armade > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::ARMADE, fleet_levels.armade - fleet.armade,
-                        );
-                }
-            }
+            // Use shared utility to handle both planet and colony fleet updates
+            update_fleet_levels(
+                contracts.dockyard, contracts.colony, planet_id, fleet, FleetOperation::Remove,
+            );
         }
 
         fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
-            if planet_id > 500 {
-                let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
-                contracts
-                    .colony
-                    .fleet_arrives(
-                        colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet,
-                    );
-            } else {
-                // Cache fleet levels read to avoid repeated storage access
-                let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
-                // Batch update ship levels to reduce storage writes
-                if fleet.carrier > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::CARRIER, fleet_levels.carrier + fleet.carrier,
-                        );
-                }
-                if fleet.scraper > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::SCRAPER, fleet_levels.scraper + fleet.scraper,
-                        );
-                }
-                if fleet.sparrow > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::SPARROW, fleet_levels.sparrow + fleet.sparrow,
-                        );
-                }
-                if fleet.frigate > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::FRIGATE, fleet_levels.frigate + fleet.frigate,
-                        );
-                }
-                if fleet.armade > 0 {
-                    contracts
-                        .dockyard
-                        .set_ship_levels(
-                            planet_id, Names::Fleet::ARMADE, fleet_levels.armade + fleet.armade,
-                        );
-                }
-            }
+            // Use shared utility to handle both planet and colony fleet updates
+            update_fleet_levels(
+                contracts.dockyard, contracts.colony, planet_id, fleet, FleetOperation::Add,
+            );
         }
 
         fn check_enough_ships(self: @ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {

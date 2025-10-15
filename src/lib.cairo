@@ -38,6 +38,7 @@ mod game {
 
 mod libraries {
     mod auction;
+    mod fleet_ops;
     mod math;
     mod names;
     mod positions;
