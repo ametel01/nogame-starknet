@@ -37,6 +37,24 @@ trait IColony<TState> {
     /// - If colony doesn't exist
     fn collect_resources(ref self: TState, colony_id: u8) -> ERC20s;
 
+    /// Collects accumulated resources from all colonies owned by the caller.
+    ///
+    /// # Returns
+    /// - ERC20s with total collected steel, quartz, tritium amounts from all colonies
+    ///
+    /// # Effects
+    /// - Iterates through all colonies for caller's planet
+    /// - Calculates production for each colony since last collection
+    /// - Resets resource timers for all colonies
+    /// - Aggregates all resources into single return value
+    /// - Does NOT mint tokens (handled by Planet contract)
+    ///
+    /// # Notes
+    /// - Gas-efficient batch operation
+    /// - Skips empty colonies automatically
+    /// - Returns zero if player has no colonies
+    fn collect_resources_from_all_colonies(ref self: TState) -> ERC20s;
+
     /// Upgrades a compound structure on a colony.
     ///
     /// # Parameters
@@ -189,10 +207,22 @@ mod Colony {
         ReentrancyGuardEvent: ReentrancyGuardComponent::Event,
     }
 
+    /// Colony generation event emitted when a new colony is created.
+    ///
+    /// # Indexed Fields (for efficient off-chain queries)
+    /// - `account`: Colony owner address - Index for "my colonies" queries
+    /// - `id`: Colony composite ID - Index for specific colony lookup
+    ///
+    /// # Notes
+    /// - Colony ID = (mother_planet_id * 1000) + colony_number
+    /// - Enables efficient tracking of colony ownership
+    /// - Frontend can query all colonies owned by a player
     #[derive(Drop, starknet::Event)]
     struct PlanetGenerated {
+        #[key]
         id: u32,
         position: PlanetPosition,
+        #[key]
         account: ContractAddress,
     }
 
@@ -251,6 +281,49 @@ mod Colony {
             self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
 
             production
+        }
+
+        fn collect_resources_from_all_colonies(ref self: ContractState) -> ERC20s {
+            // Cache game_manager read to avoid redundant storage access
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+            let planet_id = contracts.planet.get_owned_planet(get_caller_address());
+
+            // Cache uni_speed and timestamp for all colonies
+            let uni_speed = game_manager.get_uni_speed();
+            let time_now = get_block_timestamp();
+
+            // Get count of colonies for this planet
+            let colony_count = self.planet_colonies_count.read(planet_id);
+
+            // Early exit if no colonies
+            if colony_count == 0 {
+                return Zeroable::zero();
+            }
+
+            // Accumulate resources from all colonies
+            let mut total_resources: ERC20s = Default::default();
+            let mut colony_id: u8 = 1;
+
+            while colony_id <= colony_count {
+                // Check if colony exists (position is set)
+                let colony_position = self.colony_position.read((planet_id, colony_id));
+                if !colony_position.is_zero() {
+                    // Calculate production for this colony
+                    let production = self
+                        .calculate_colony_production(uni_speed, planet_id, colony_id);
+
+                    // Aggregate resources
+                    total_resources = total_resources + production;
+
+                    // Reset resource timer for this colony
+                    self.colony_resource_timer.write((planet_id, colony_id), time_now);
+                }
+
+                colony_id += 1;
+            }
+
+            total_resources
         }
 
         fn process_colony_compound_upgrade(

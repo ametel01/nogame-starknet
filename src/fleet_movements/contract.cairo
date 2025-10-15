@@ -224,13 +224,26 @@ mod FleetMovements {
         ReentrancyGuardEvent: ReentrancyGuardComponent::Event,
     }
 
+    /// Battle report event emitted after an attack.
+    ///
+    /// # Indexed Fields (for efficient off-chain queries)
+    /// - `attacker`: Attacker planet ID - Index by attacker for "my attacks" queries
+    /// - `defender`: Defender planet ID - Index by defender for "attacks against me" queries
+    /// - `time`: Battle timestamp - Index for time-based queries
+    ///
+    /// # Notes
+    /// - Indexed fields enable efficient filtering in block explorers and indexers
+    /// - Non-indexed fields contain detailed battle information
     #[derive(Drop, starknet::Event)]
     struct BattleReport {
+        #[key]
         time: u64,
+        #[key]
         attacker: u32,
         attacker_position: PlanetPosition,
         attacker_initial_fleet: Fleet,
         attacker_fleet_loss: Fleet,
+        #[key]
         defender: u32,
         defender_position: PlanetPosition,
         defender_initial_fleet: Fleet,
@@ -241,9 +254,20 @@ mod FleetMovements {
         debris: Debris,
     }
 
+    /// Debris collection event emitted when a player collects debris.
+    ///
+    /// # Indexed Fields (for efficient off-chain queries)
+    /// - `planet_id`: Collector planet ID - Index for "my collections" queries
+    /// - `debris_field_id`: Location of debris - Index for specific location queries
+    ///
+    /// # Notes
+    /// - Enables efficient tracking of debris collection by player
+    /// - Enables tracking of debris field activity by location
     #[derive(Drop, starknet::Event)]
     struct DebrisCollected {
+        #[key]
         planet_id: u32,
+        #[key]
         debris_field_id: u32,
         amount: Debris,
     }

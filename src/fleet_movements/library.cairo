@@ -83,30 +83,53 @@ fn war(
     (attacker_fleet_struct, defender_fleet_struct, defences_struct)
 }
 
-fn unit_combat(ref unit1: Unit, ref unit2: Unit) -> (Unit, Unit) {
-    rapid_fire(ref unit1, ref unit2);
-    if unit1.weapon < unit2.shield / 100 {
-        unit2.shield = unit2.shield;
-    } else if unit1.weapon < unit2.shield {
-        unit2.shield -= unit1.weapon
-    } else if unit2.hull < unit1.weapon - unit2.shield {
-        unit2.hull = 0;
-    } else {
-        unit2.shield = 0;
-        unit2.hull -= unit1.weapon - unit2.shield;
+/// Applies damage from one unit to another, handling shields and hull.
+///
+/// # Parameters
+/// - `attacker_weapon`: Weapon power of attacking unit
+/// - `defender_shield`: Shield strength of defending unit
+/// - `defender_hull`: Hull points of defending unit
+///
+/// # Returns
+/// - Tuple of (remaining_shield, remaining_hull) after damage applied
+///
+/// # Notes
+/// - Damage < 1% of shield is completely absorbed
+/// - Shield absorbs damage first, then hull takes overflow
+#[inline(always)]
+fn apply_damage(attacker_weapon: u32, defender_shield: u32, defender_hull: u32) -> (u32, u32) {
+    // No damage if weapon power is less than 1% of shield
+    if attacker_weapon < defender_shield / 100 {
+        return (defender_shield, defender_hull);
     }
 
-    rapid_fire(ref unit2, ref unit1);
-    if unit2.weapon < unit1.shield / 100 {
-        unit1.shield = unit1.shield;
-    } else if unit2.weapon < unit1.shield {
-        unit1.shield -= unit2.weapon
-    } else if unit1.hull < unit2.weapon - unit1.shield {
-        unit1.hull = 0;
-    } else {
-        unit1.shield = 0;
-        unit1.hull -= unit2.weapon - unit1.shield;
+    // Damage absorbed by shield only
+    if attacker_weapon < defender_shield {
+        return (defender_shield - attacker_weapon, defender_hull);
     }
+
+    // Shield broken, check hull damage
+    let overflow_damage = attacker_weapon - defender_shield;
+    if defender_hull <= overflow_damage {
+        return (0, 0); // Unit destroyed
+    }
+
+    (0, defender_hull - overflow_damage)
+}
+
+fn unit_combat(ref unit1: Unit, ref unit2: Unit) -> (Unit, Unit) {
+    // Unit1 attacks Unit2
+    rapid_fire(ref unit1, ref unit2);
+    let (new_shield2, new_hull2) = apply_damage(unit1.weapon, unit2.shield, unit2.hull);
+    unit2.shield = new_shield2;
+    unit2.hull = new_hull2;
+
+    // Unit2 attacks Unit1
+    rapid_fire(ref unit2, ref unit1);
+    let (new_shield1, new_hull1) = apply_damage(unit2.weapon, unit1.shield, unit1.hull);
+    unit1.shield = new_shield1;
+    unit1.hull = new_hull1;
+
     (unit1, unit2)
 }
 
@@ -237,48 +260,35 @@ fn add_techs(ref unit: Unit, techs: TechLevels) {
     unit.hull += unit.hull * techs.armour.into() / 10;
 }
 
+/// Calculates the number of individual units from a combined unit blob.
+///
+/// # Parameters
+/// - `blob`: Combined unit with aggregated stats
+/// - `techs`: Tech levels to apply to base unit
+///
+/// # Returns
+/// - Number of individual units in the blob (hull / base_unit_hull)
+///
+/// # Notes
+/// - Uses match statement for O(1) lookup instead of if-else chain
+/// - Inlined for performance in battle simulation hot path
+#[inline(always)]
 fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
-    if blob.id == 0 {
-        let mut base_unit = CARRIER();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 1 {
-        let mut base_unit = SCRAPER();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 2 {
-        let mut base_unit = SPARROW();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 3 {
-        let mut base_unit = FRIGATE();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 4 {
-        let mut base_unit = ARMADE();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 5 {
-        let mut base_unit = CELESTIA();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 6 {
-        let mut base_unit = BLASTER();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 7 {
-        let mut base_unit = BEAM();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else if blob.id == 8 {
-        let mut base_unit = ASTRAL();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    } else {
-        let mut base_unit = PLASMA();
-        add_techs(ref base_unit, techs);
-        return blob.hull / base_unit.hull;
-    }
+    let mut base_unit = match blob.id {
+        0 => CARRIER(),
+        1 => SCRAPER(),
+        2 => SPARROW(),
+        3 => FRIGATE(),
+        4 => ARMADE(),
+        5 => CELESTIA(),
+        6 => BLASTER(),
+        7 => BEAM(),
+        8 => ASTRAL(),
+        _ => PLASMA() // id == 9
+    };
+
+    add_techs(ref base_unit, techs);
+    blob.hull / base_unit.hull
 }
 
 fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {

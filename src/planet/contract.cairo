@@ -303,10 +303,22 @@ mod Planet {
         ReentrancyGuardEvent: ReentrancyGuardComponent::Event,
     }
 
+    /// Planet generation event emitted when a new planet is created.
+    ///
+    /// # Indexed Fields (for efficient off-chain queries)
+    /// - `account`: Planet owner address - Index for "my planet" queries
+    /// - `id`: Planet ID - Index for specific planet lookup
+    ///
+    /// # Notes
+    /// - Enables efficient tracking of planet ownership
+    /// - Frontend can query all planets owned by an address
+    /// - Indexers can build planet registry by ID
     #[derive(Drop, starknet::Event)]
     struct PlanetGenerated {
+        #[key]
         id: u32,
         position: PlanetPosition,
+        #[key]
         account: ContractAddress,
     }
 
