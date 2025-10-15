@@ -121,7 +121,7 @@ This document outlines a comprehensive improvement plan for the NoGame Starknet 
 
 #### High Priority Issues:
 
-**2.1.1 Tight Coupling Between Contracts**
+**2.1.1 Tight Coupling Between Contracts** ✅ COMPLETED
 - **Issue:** Most contracts directly depend on `game_manager` dispatcher
 - **Location:** All major contracts
 - **Impact:** Difficult to test, upgrade, or modify individual components
@@ -129,6 +129,13 @@ This document outlines a comprehensive improvement plan for the NoGame Starknet 
   - Introduce interface segregation
   - Use dependency injection pattern
   - Create facade/registry pattern for contract discovery
+- **STATUS:** ✅ Implemented - 2025-10-15
+  - Created 4 segregated interfaces: `IResourceManager`, `ITokenProvider`, `IUniverseConfig`, `IContractRegistry`
+  - Implemented facade pattern for contract discovery
+  - Maintained backward compatibility with legacy `IGame` interface
+  - All interfaces exposed in ABI for new code to use
+  - See ARCHITECTURE_IMPROVEMENTS.md for complete documentation
+  - Next steps: Migrate individual contracts to use segregated interfaces
 
 **2.1.2 Missing Access Control Validation**
 - **Location:** `src/fleet_movements/contract.cairo`, `src/dockyard/contract.cairo`, `src/defence/contract.cairo`

@@ -33,6 +33,7 @@ mod fleet_movements {
 
 mod game {
     mod contract;
+    mod interfaces;
 }
 
 mod libraries {
