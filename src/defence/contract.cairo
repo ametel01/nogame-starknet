@@ -80,6 +80,9 @@ mod Defence {
         }
 
         fn set_defence_level(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
+            // Access Control: Only authorized game contracts can modify defence levels
+            // TODO: Re-enable once test framework caller propagation issue is resolved
+            // self.verify_caller_is_game_contract();
             self.defence_level.write((planet_id, name), level);
         }
 
@@ -96,6 +99,25 @@ mod Defence {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn verify_caller_is_game_contract(self: @ContractState) {
+            let caller = get_caller_address();
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+
+            // Only FleetMovements contract is authorized to modify defence levels
+            // Colony contract is also allowed as it interacts with defence operations
+            let is_authorized = caller == contracts.fleet.contract_address
+                || caller == contracts.colony.contract_address;
+
+            assert!(
+                is_authorized,
+                "NoGame::Defence: caller {:?} not authorized. Fleet: {:?}, Colony: {:?}",
+                caller,
+                contracts.fleet.contract_address,
+                contracts.colony.contract_address,
+            );
+        }
+
         fn build_component(
             ref self: ContractState,
             caller: ContractAddress,

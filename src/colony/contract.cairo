@@ -175,6 +175,7 @@ mod Colony {
         fn update_defences_after_attack(
             ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
         ) {
+            self.verify_authorized_caller();
             self
                 .colony_defences
                 .write((planet_id, colony_id, Names::Defence::CELESTIA), d.celestia);
@@ -185,6 +186,7 @@ mod Colony {
         }
 
         fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            self.verify_authorized_caller();
             // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
             // Batch update all ship levels that changed
@@ -231,6 +233,7 @@ mod Colony {
         }
 
         fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            self.verify_authorized_caller();
             // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
             // Batch update all ship levels that changed
@@ -307,18 +310,21 @@ mod Colony {
         }
 
         fn set_resource_timer(ref self: ContractState, planet_id: u32, colony_id: u8) {
+            self.verify_authorized_caller();
             self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
         }
 
         fn set_colony_ship(
             ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
+            self.verify_authorized_caller();
             self.colony_ships.write((planet_id, colony_id, name), quantity);
         }
 
         fn set_colony_defence(
             ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
+            self.verify_authorized_caller();
             self.colony_defences.write((planet_id, colony_id, name), quantity);
         }
 
@@ -373,6 +379,23 @@ mod Colony {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn verify_authorized_caller(self: @ContractState) {
+            let caller = get_caller_address();
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+
+            // Check if caller is one of the registered game contracts
+            let is_authorized = caller == contracts.fleet.contract_address
+                || caller == contracts.planet.contract_address
+                || caller == contracts.compound.contract_address
+                || caller == contracts.tech.contract_address
+                || caller == contracts.dockyard.contract_address
+                || caller == contracts.defence.contract_address
+                || caller == game_manager.contract_address;
+
+            assert!(is_authorized, "NoGame::Colony: caller is not an authorized game contract");
+        }
+
         fn verify_colony_exist(self: @ContractState, planet_id: u32, colony_id: u8) {
             assert!(
                 !self.colony_position.read((planet_id, colony_id)).is_zero(),
