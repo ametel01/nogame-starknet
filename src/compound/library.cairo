@@ -80,7 +80,7 @@ fn position_to_celestia_production(orbit: u8) -> u32 {
 }
 
 mod cost {
-    use core::num::traits::Pow;
+    use core::num::traits::{DivRem, Pow};
     use nogame::libraries::types::{ERC20s, erc20_mul};
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
@@ -98,11 +98,12 @@ mod cost {
         let mut e = exp;
 
         while e > 0 {
-            if e & 1 == 1 {
+            let (q, r) = DivRem::div_rem(e, 2);
+            if r == 1 {
                 result = result * b;
             }
             b = b * b;
-            e = e / 2;
+            e = q;
         }
 
         result.mag
