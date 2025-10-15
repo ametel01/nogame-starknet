@@ -221,15 +221,22 @@ This document outlines a comprehensive improvement plan for the NoGame Starknet 
   - All 73 tests passing with zero breaking changes
   - Improved maintainability and eliminated code duplication
 
-**2.2.2 Duplicate Temperature/Production Calculations**
+**2.2.2 Duplicate Temperature/Production Calculations** ✅ COMPLETED
 - **Location:**
   - `src/compound/library.cairo:18-48` (calculate_avg_temperature)
   - `src/compound/library.cairo:50-80` (position_to_celestia_production)
-  - `src/colony/contract.cairo:591-621` (calculate_avg_temperature)
-  - `src/colony/contract.cairo:623-653` (position_to_celestia_production)
+  - `src/colony/contract.cairo:591-621` (calculate_avg_temperature) - REMOVED
+  - `src/colony/contract.cairo:623-653` (position_to_celestia_production) - REMOVED
 - **Impact:** 80+ lines duplicated
 - **Solution:** Create shared utility library
 - **Estimated Reduction:** ~60 lines of code
+- **STATUS:** ✅ Completed - 2025-10-15
+  - Removed duplicate `calculate_avg_temperature` and `position_to_celestia_production` functions from colony contract
+  - Colony contract now uses the shared functions from `compound::library` directly (lines 588 and 605)
+  - Eliminated ~60 lines of duplicated code
+  - Improved maintainability by centralizing temperature and production calculations
+  - All 73 tests passing with zero breaking changes
+  - This optimization was previously completed and documented in section 1.3.2
 
 **2.2.3 Redundant Defence Building Logic**
 - **Location:** `src/defence/contract.cairo:112-176`
