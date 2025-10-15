@@ -3,8 +3,8 @@ name: Test
 on: [push, pull_request]
 
 env:
-  SCARB_VERSION: 2.11.3
-  SNFORGE_VERSION: 0.40.0
+  SCARB_VERSION: 2.12.2
+  SNFORGE_VERSION: 0.50.0
 
 jobs:
   check:
@@ -18,5 +18,4 @@ jobs:
         with:
           starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
       - name: Run cairo tests
-        run: 
-          snforge test
+        run: snforge test
