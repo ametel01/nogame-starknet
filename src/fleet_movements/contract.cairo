@@ -183,6 +183,7 @@ mod FleetMovements {
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
     use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_security::reentrancyguard::ReentrancyGuardComponent;
     use starknet::storage::{
         Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
@@ -194,6 +195,11 @@ mod FleetMovements {
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
+    component!(
+        path: ReentrancyGuardComponent, storage: reentrancyguard, event: ReentrancyGuardEvent,
+    );
+    impl ReentrancyGuardInternalImpl = ReentrancyGuardComponent::InternalImpl<ContractState>;
+
     #[storage]
     struct Storage {
         game_manager: IGameDispatcher,
@@ -203,6 +209,8 @@ mod FleetMovements {
         incoming_missions_len: Map<u32, usize>,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        reentrancyguard: ReentrancyGuardComponent::Storage,
     }
 
     #[event]
@@ -212,6 +220,8 @@ mod FleetMovements {
         DebrisCollected: DebrisCollected,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        ReentrancyGuardEvent: ReentrancyGuardComponent::Event,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -379,6 +389,8 @@ mod FleetMovements {
         }
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
+            self.reentrancyguard.start();
+
             // ========================================
             // PHASE 1: Validation and Setup
             // ========================================
