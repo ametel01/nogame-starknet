@@ -80,120 +80,56 @@ fn position_to_celestia_production(orbit: u8) -> u32 {
 }
 
 mod cost {
+    use core::num::traits::Pow;
     use nogame::libraries::types::{ERC20s, erc20_mul};
+    use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
+
+    // Helper function to calculate power of 1.5 using fixed-point arithmetic
+    // Uses binary exponentiation for O(log n) complexity
+    fn pow_1_5(exp: u8) -> u128 {
+        if exp == 0 {
+            return ONE;
+        }
+
+        // 1.5 in fixed-point (15/10)
+        let base = FixedTrait::new(27670116110564327424, false); // 1.5 in fixed point
+        let mut result = FixedTrait::new(ONE, false);
+        let mut b = base;
+        let mut e = exp;
+
+        while e > 0 {
+            if e & 1 == 1 {
+                result = result * b;
+            }
+            b = b * b;
+            e = e / 2;
+        }
+
+        result.mag
+    }
 
     fn steel(level: u8, quantity: u8) -> ERC20s {
         assert(!quantity.is_zero(), 'quantity can not be zero');
-        let costs: Array<ERC20s> = array![
-            ERC20s { steel: 60, quartz: 15, tritium: 0 },
-            ERC20s { steel: 90, quartz: 22, tritium: 0 },
-            ERC20s { steel: 135, quartz: 33, tritium: 0 },
-            ERC20s { steel: 202, quartz: 50, tritium: 0 },
-            ERC20s { steel: 303, quartz: 75, tritium: 0 },
-            ERC20s { steel: 455, quartz: 113, tritium: 0 },
-            ERC20s { steel: 683, quartz: 170, tritium: 0 },
-            ERC20s { steel: 1025, quartz: 256, tritium: 0 },
-            ERC20s { steel: 1537, quartz: 384, tritium: 0 },
-            ERC20s { steel: 2306, quartz: 576, tritium: 0 },
-            ERC20s { steel: 3459, quartz: 864, tritium: 0 },
-            ERC20s { steel: 5189, quartz: 1297, tritium: 0 },
-            ERC20s { steel: 7784, quartz: 1946, tritium: 0 },
-            ERC20s { steel: 11677, quartz: 2919, tritium: 0 },
-            ERC20s { steel: 17515, quartz: 4378, tritium: 0 },
-            ERC20s { steel: 26273, quartz: 6568, tritium: 0 },
-            ERC20s { steel: 39410, quartz: 9852, tritium: 0 },
-            ERC20s { steel: 59115, quartz: 14778, tritium: 0 },
-            ERC20s { steel: 88673, quartz: 22168, tritium: 0 },
-            ERC20s { steel: 133010, quartz: 33252, tritium: 0 },
-            ERC20s { steel: 199515, quartz: 49878, tritium: 0 },
-            ERC20s { steel: 299273, quartz: 74818, tritium: 0 },
-            ERC20s { steel: 448909, quartz: 112227, tritium: 0 },
-            ERC20s { steel: 673364, quartz: 168341, tritium: 0 },
-            ERC20s { steel: 1010046, quartz: 252511, tritium: 0 },
-            ERC20s { steel: 1515070, quartz: 378767, tritium: 0 },
-            ERC20s { steel: 2272605, quartz: 568151, tritium: 0 },
-            ERC20s { steel: 3408907, quartz: 852226, tritium: 0 },
-            ERC20s { steel: 5113361, quartz: 1278340, tritium: 0 },
-            ERC20s { steel: 7670042, quartz: 1917510, tritium: 0 },
-            ERC20s { steel: 11505063, quartz: 2876265, tritium: 0 },
-            ERC20s { steel: 17257595, quartz: 4314398, tritium: 0 },
-            ERC20s { steel: 25886392, quartz: 6471598, tritium: 0 },
-            ERC20s { steel: 38829589, quartz: 9707397, tritium: 0 },
-            ERC20s { steel: 58244384, quartz: 14561096, tritium: 0 },
-            ERC20s { steel: 87366576, quartz: 21841644, tritium: 0 },
-            ERC20s { steel: 131049864, quartz: 32762466, tritium: 0 },
-            ERC20s { steel: 196574796, quartz: 49143699, tritium: 0 },
-            ERC20s { steel: 294862195, quartz: 73715548, tritium: 0 },
-            ERC20s { steel: 442293292, quartz: 110573323, tritium: 0 },
-            ERC20s { steel: 663439939, quartz: 165859984, tritium: 0 },
-            ERC20s { steel: 995159908, quartz: 248789977, tritium: 0 },
-            ERC20s { steel: 1492739863, quartz: 373184965, tritium: 0 },
-            ERC20s { steel: 2239109794, quartz: 559777448, tritium: 0 },
-            ERC20s { steel: 3358664692, quartz: 839666173, tritium: 0 },
-            ERC20s { steel: 5037997038, quartz: 1259499259, tritium: 0 },
-            ERC20s { steel: 7556995558, quartz: 1889248889, tritium: 0 },
-            ERC20s { steel: 11335493337, quartz: 2833873334, tritium: 0 },
-            ERC20s { steel: 17003240005, quartz: 4250810001, tritium: 0 },
-            ERC20s { steel: 25504860008, quartz: 6376215002, tritium: 0 },
-            ERC20s { steel: 38257290012, quartz: 9564322503, tritium: 0 },
-            ERC20s { steel: 57385935019, quartz: 14346483754, tritium: 0 },
-            ERC20s { steel: 86078902528, quartz: 21519725632, tritium: 0 },
-            ERC20s { steel: 129118353793, quartz: 32279588448, tritium: 0 },
-            ERC20s { steel: 193677530690, quartz: 48419382672, tritium: 0 },
-            ERC20s { steel: 290516296035, quartz: 72629074008, tritium: 0 },
-            ERC20s { steel: 435774444052, quartz: 108943611013, tritium: 0 },
-            ERC20s { steel: 653661666078, quartz: 163415416519, tritium: 0 },
-            ERC20s { steel: 980492499118, quartz: 245123124779, tritium: 0 },
-            ERC20s { steel: 1470738748677, quartz: 367684687169, tritium: 0 },
-            ERC20s { steel: 2206108123015, quartz: 551527030753, tritium: 0 },
-            ERC20s { steel: 3309162184523, quartz: 827290546130, tritium: 0 },
-            ERC20s { steel: 4963743276785, quartz: 1240935819196, tritium: 0 },
-            ERC20s { steel: 7445614915178, quartz: 1861403728794, tritium: 0 },
-            ERC20s { steel: 11168422372768, quartz: 2792105593192, tritium: 0 },
-            ERC20s { steel: 16752633559152, quartz: 4188158389788, tritium: 0 },
-            ERC20s { steel: 25128950338728, quartz: 6282237584682, tritium: 0 },
-            ERC20s { steel: 37693425508093, quartz: 9423356377023, tritium: 0 },
-            ERC20s { steel: 56540138262140, quartz: 14135034565535, tritium: 0 },
-            ERC20s { steel: 84810207393210, quartz: 21202551848302, tritium: 0 },
-            ERC20s { steel: 127215311089815, quartz: 31803827772453, tritium: 0 },
-            ERC20s { steel: 190822966634722, quartz: 47705741658680, tritium: 0 },
-            ERC20s { steel: 286234449952084, quartz: 71558612488021, tritium: 0 },
-            ERC20s { steel: 429351674928126, quartz: 107337918732031, tritium: 0 },
-            ERC20s { steel: 644027512392189, quartz: 161006878098047, tritium: 0 },
-            ERC20s { steel: 966041268588283, quartz: 241510317147070, tritium: 0 },
-            ERC20s { steel: 1449061902882425, quartz: 362265475720606, tritium: 0 },
-            ERC20s { steel: 2173592854323638, quartz: 543398213580909, tritium: 0 },
-            ERC20s { steel: 3260389281485456, quartz: 815097320371364, tritium: 0 },
-            ERC20s { steel: 4890583922228185, quartz: 1222645980557046, tritium: 0 },
-            ERC20s { steel: 7335875883342278, quartz: 1833968970835569, tritium: 0 },
-            ERC20s { steel: 11003813825013418, quartz: 2750953456253354, tritium: 0 },
-            ERC20s { steel: 16505720737520126, quartz: 4126430184380031, tritium: 0 },
-            ERC20s { steel: 24758581106280188, quartz: 6189645276570047, tritium: 0 },
-            ERC20s { steel: 37137871659420288, quartz: 9284467914855072, tritium: 0 },
-            ERC20s { steel: 55706807489130424, quartz: 13926701872282606, tritium: 0 },
-            ERC20s { steel: 83560211233695632, quartz: 20890052808423908, tritium: 0 },
-            ERC20s { steel: 125340316850543456, quartz: 31335079212635864, tritium: 0 },
-            ERC20s { steel: 188010475275815200, quartz: 47002618818953800, tritium: 0 },
-            ERC20s { steel: 282015712913722816, quartz: 70503928228430704, tritium: 0 },
-            ERC20s { steel: 423023569370584128, quartz: 105755892342646032, tritium: 0 },
-            ERC20s { steel: 634535354055876224, quartz: 158633838513969056, tritium: 0 },
-            ERC20s { steel: 951803031083814400, quartz: 237950757770953600, tritium: 0 },
-            ERC20s { steel: 1427704546625721600, quartz: 356926136656430400, tritium: 0 },
-            ERC20s { steel: 2141556819938582528, quartz: 535389204984645632, tritium: 0 },
-            ERC20s { steel: 3212335229907873792, quartz: 803083807476968448, tritium: 0 },
-            ERC20s { steel: 4818502844861809664, quartz: 1204625711215452416, tritium: 0 },
-            ERC20s { steel: 7227754267292715008, quartz: 1806938566823178752, tritium: 0 },
-            ERC20s { steel: 10841631400939073536, quartz: 2710407850234768384, tritium: 0 },
-            ERC20s { steel: 16262447101408610304, quartz: 4065611775352152576, tritium: 0 },
-            ERC20s { steel: 24393670652112912384, quartz: 6098417663028228096, tritium: 0 },
-        ];
-        let mut sum: ERC20s = Default::default();
-        let mut i: usize = (level + quantity).into();
-        while i != level.into() {
-            sum = sum + (*costs.at(i - 1));
-            i -= 1;
+
+        // Steel mine formula: base_steel=60, base_quartz=15, growth=1.5^level
+        let base_steel: u128 = 60;
+        let base_quartz: u128 = 15;
+
+        let mut total_steel: u128 = 0;
+        let mut total_quartz: u128 = 0;
+
+        let start_level = level;
+        let end_level = level + quantity;
+        let mut current_level = start_level;
+
+        while current_level < end_level {
+            let multiplier = pow_1_5(current_level);
+            total_steel += (base_steel * multiplier) / ONE;
+            total_quartz += (base_quartz * multiplier) / ONE;
+            current_level += 1;
         }
-        sum
+
+        ERC20s { steel: total_steel, quartz: total_quartz, tritium: 0 }
     }
 
     fn quartz(level: u8, quantity: u8) -> ERC20s {
@@ -536,91 +472,66 @@ mod cost {
         }
         sum
     }
+    // Helper function to calculate 2^exp efficiently
+    // Uses built-in Pow trait for O(log n) complexity
+    fn pow_2(exp: u8) -> u128 {
+        let base: u128 = 2;
+        let exponent: u32 = exp.into();
+        Pow::pow(base, exponent)
+    }
+
     fn lab(level: u8, quantity: u8) -> ERC20s {
         assert(!quantity.is_zero(), 'quantity can not be zero');
-        let costs: Array<ERC20s> = array![
-            ERC20s { steel: 200, quartz: 400, tritium: 200 },
-            ERC20s { steel: 400, quartz: 800, tritium: 400 },
-            ERC20s { steel: 800, quartz: 1600, tritium: 800 },
-            ERC20s { steel: 1600, quartz: 3200, tritium: 1600 },
-            ERC20s { steel: 3200, quartz: 6400, tritium: 3200 },
-            ERC20s { steel: 6400, quartz: 12800, tritium: 6400 },
-            ERC20s { steel: 12800, quartz: 25600, tritium: 12800 },
-            ERC20s { steel: 25600, quartz: 51200, tritium: 25600 },
-            ERC20s { steel: 51200, quartz: 102400, tritium: 51200 },
-            ERC20s { steel: 102400, quartz: 204800, tritium: 102400 },
-            ERC20s { steel: 204800, quartz: 409600, tritium: 204800 },
-            ERC20s { steel: 409600, quartz: 819200, tritium: 409600 },
-            ERC20s { steel: 819200, quartz: 1638400, tritium: 819200 },
-            ERC20s { steel: 1638400, quartz: 3276800, tritium: 1638400 },
-            ERC20s { steel: 3276800, quartz: 6553600, tritium: 3276800 },
-            ERC20s { steel: 6553600, quartz: 13107200, tritium: 6553600 },
-            ERC20s { steel: 13107200, quartz: 26214400, tritium: 13107200 },
-            ERC20s { steel: 26214400, quartz: 52428800, tritium: 26214400 },
-            ERC20s { steel: 52428800, quartz: 104857600, tritium: 52428800 },
-            ERC20s { steel: 104857600, quartz: 209715200, tritium: 104857600 },
-            ERC20s { steel: 209715200, quartz: 419430400, tritium: 209715200 },
-            ERC20s { steel: 419430400, quartz: 838860800, tritium: 419430400 },
-            ERC20s { steel: 838860800, quartz: 1677721600, tritium: 838860800 },
-            ERC20s { steel: 1677721600, quartz: 3355443200, tritium: 1677721600 },
-            ERC20s { steel: 3355443200, quartz: 6710886400, tritium: 3355443200 },
-            ERC20s { steel: 6710886400, quartz: 13421772800, tritium: 6710886400 },
-            ERC20s { steel: 13421772800, quartz: 26843545600, tritium: 13421772800 },
-            ERC20s { steel: 26843545600, quartz: 53687091200, tritium: 26843545600 },
-            ERC20s { steel: 53687091200, quartz: 107374182400, tritium: 53687091200 },
-            ERC20s { steel: 107374182400, quartz: 214748364800, tritium: 107374182400 },
-            ERC20s { steel: 214748364800, quartz: 429496729600, tritium: 214748364800 },
-        ];
-        let mut sum: ERC20s = Default::default();
-        let mut i: usize = (level + quantity).into();
-        while i != level.into() {
-            sum = sum + (*costs.at(i - 1));
-            i -= 1;
+
+        // Lab formula: base_steel=200, base_quartz=400, base_tritium=200, growth=2^level
+        let base_steel: u128 = 200;
+        let base_quartz: u128 = 400;
+        let base_tritium: u128 = 200;
+
+        let mut total_steel: u128 = 0;
+        let mut total_quartz: u128 = 0;
+        let mut total_tritium: u128 = 0;
+
+        let start_level = level;
+        let end_level = level + quantity;
+        let mut current_level = start_level;
+
+        while current_level < end_level {
+            let multiplier = pow_2(current_level);
+            total_steel += base_steel * multiplier;
+            total_quartz += base_quartz * multiplier;
+            total_tritium += base_tritium * multiplier;
+            current_level += 1;
         }
-        sum
+
+        ERC20s { steel: total_steel, quartz: total_quartz, tritium: total_tritium }
     }
+
     fn dockyard(level: u8, quantity: u8) -> ERC20s {
         assert(!quantity.is_zero(), 'quantity can not be zero');
-        let costs: Array<ERC20s> = array![
-            ERC20s { steel: 400, quartz: 200, tritium: 100 },
-            ERC20s { steel: 800, quartz: 400, tritium: 200 },
-            ERC20s { steel: 1600, quartz: 800, tritium: 400 },
-            ERC20s { steel: 3200, quartz: 1600, tritium: 800 },
-            ERC20s { steel: 6400, quartz: 3200, tritium: 1600 },
-            ERC20s { steel: 12800, quartz: 6400, tritium: 3200 },
-            ERC20s { steel: 25600, quartz: 12800, tritium: 6400 },
-            ERC20s { steel: 51200, quartz: 25600, tritium: 12800 },
-            ERC20s { steel: 102400, quartz: 51200, tritium: 25600 },
-            ERC20s { steel: 204800, quartz: 102400, tritium: 51200 },
-            ERC20s { steel: 409600, quartz: 204800, tritium: 102400 },
-            ERC20s { steel: 819200, quartz: 409600, tritium: 204800 },
-            ERC20s { steel: 1638400, quartz: 819200, tritium: 409600 },
-            ERC20s { steel: 3276800, quartz: 1638400, tritium: 819200 },
-            ERC20s { steel: 6553600, quartz: 3276800, tritium: 1638400 },
-            ERC20s { steel: 13107200, quartz: 6553600, tritium: 3276800 },
-            ERC20s { steel: 26214400, quartz: 13107200, tritium: 6553600 },
-            ERC20s { steel: 52428800, quartz: 26214400, tritium: 13107200 },
-            ERC20s { steel: 104857600, quartz: 52428800, tritium: 26214400 },
-            ERC20s { steel: 209715200, quartz: 104857600, tritium: 52428800 },
-            ERC20s { steel: 419430400, quartz: 209715200, tritium: 104857600 },
-            ERC20s { steel: 838860800, quartz: 419430400, tritium: 209715200 },
-            ERC20s { steel: 1677721600, quartz: 838860800, tritium: 419430400 },
-            ERC20s { steel: 3355443200, quartz: 1677721600, tritium: 838860800 },
-            ERC20s { steel: 6710886400, quartz: 3355443200, tritium: 1677721600 },
-            ERC20s { steel: 13421772800, quartz: 6710886400, tritium: 3355443200 },
-            ERC20s { steel: 26843545600, quartz: 13421772800, tritium: 6710886400 },
-            ERC20s { steel: 53687091200, quartz: 26843545600, tritium: 13421772800 },
-            ERC20s { steel: 107374182400, quartz: 53687091200, tritium: 26843545600 },
-            ERC20s { steel: 214748364800, quartz: 107374182400, tritium: 53687091200 },
-            ERC20s { steel: 429496729600, quartz: 214748364800, tritium: 107374182400 },
-        ];
-        let mut sum: ERC20s = Default::default();
-        let mut i: usize = (level + quantity).into();
-        while i != level.into() {
-            sum = sum + (*costs.at(i - 1));
-            i -= 1;
+
+        // Dockyard formula: base_steel=400, base_quartz=200, base_tritium=100, growth=2^level
+        let base_steel: u128 = 400;
+        let base_quartz: u128 = 200;
+        let base_tritium: u128 = 100;
+
+        let mut total_steel: u128 = 0;
+        let mut total_quartz: u128 = 0;
+        let mut total_tritium: u128 = 0;
+
+        let start_level = level;
+        let end_level = level + quantity;
+        let mut current_level = start_level;
+
+        while current_level < end_level {
+            let multiplier = pow_2(current_level);
+            total_steel += base_steel * multiplier;
+            total_quartz += base_quartz * multiplier;
+            total_tritium += base_tritium * multiplier;
+            current_level += 1;
         }
-        sum
+
+        ERC20s { steel: total_steel, quartz: total_quartz, tritium: total_tritium }
     }
 }
 
