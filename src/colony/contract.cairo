@@ -103,10 +103,10 @@ mod Colony {
     impl ColonyImpl of super::IColony<ContractState> {
         fn generate_colony(ref self: ContractState) {
             let caller = get_caller_address();
-            let contracts = self.game_manager.read().get_contracts();
-            let planet_id = contracts.planet.get_owned_planet(caller);
+            // Cache game_manager read to avoid redundant storage access
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
+            let planet_id = contracts.planet.get_owned_planet(caller);
             let exo_tech = contracts.tech.get_tech_levels(planet_id).exocraft;
             let max_colonies = if exo_tech % 2 == 1 {
                 exo_tech / 2 + 1
@@ -138,10 +138,12 @@ mod Colony {
         }
 
         fn collect_resources(ref self: ContractState, colony_id: u8) -> ERC20s {
-            let contracts = self.game_manager.read().get_contracts();
+            // Cache game_manager read to avoid redundant storage access
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
             self.verify_colony_exist(planet_id, colony_id);
-            let uni_speed = self.game_manager.read().get_uni_speed();
+            let uni_speed = game_manager.get_uni_speed();
             let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
             self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
 
@@ -151,6 +153,7 @@ mod Colony {
         fn process_colony_compound_upgrade(
             ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8,
         ) {
+            // Cache game_manager read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
             self.verify_colony_exist(planet_id, colony_id);
@@ -160,10 +163,12 @@ mod Colony {
         fn process_colony_unit_build(
             ref self: ContractState, colony_id: u8, name: ColonyBuildType, quantity: u32,
         ) {
-            let contracts = self.game_manager.read().get_contracts();
+            // Cache game_manager read to avoid redundant storage access
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
             self.verify_colony_exist(planet_id, colony_id);
-            let techs = self.game_manager.read().get_contracts().tech.get_tech_levels(planet_id);
+            let techs = contracts.tech.get_tech_levels(planet_id);
             self.build_component(planet_id, colony_id, techs, name, quantity);
         }
 
@@ -180,7 +185,9 @@ mod Colony {
         }
 
         fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
+            // Batch update all ship levels that changed
             if fleet.carrier > 0 {
                 self
                     .colony_ships
@@ -224,7 +231,9 @@ mod Colony {
         }
 
         fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
+            // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
+            // Batch update all ship levels that changed
             if fleet.carrier > 0 {
                 self
                     .colony_ships

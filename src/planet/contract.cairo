@@ -345,12 +345,16 @@ mod Planet {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
+            // Cache game_manager read to avoid redundant storage access
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
             let mines_levels = contracts.compound.get_compounds_levels(planet_id);
             let position = self.get_planet_position(planet_id);
+            // Cache temperature calculation (used only once now)
             let temp = compound::calculate_avg_temperature(position.orbit);
             let speed = game_manager.get_uni_speed();
+
+            // Calculate production values
             let steel_available = compound::production::steel(mines_levels.steel)
                 * speed
                 * time_elapsed.into()
@@ -364,14 +368,18 @@ mod Planet {
             let tritium_available = compound::production::tritium(mines_levels.tritium, temp, speed)
                 * time_elapsed.into()
                 / HOUR.into();
+
+            // Cache energy calculations
             let energy_available = compound::production::energy(mines_levels.energy);
             let celestia_production = self.get_celestia_production(planet_id);
             let celestia_available = contracts.defence.get_defences_levels(planet_id).celestia;
+            let total_energy = energy_available
+                + (celestia_production.into() * celestia_available).into();
             let energy_required = compound::consumption::base(mines_levels.steel)
                 + compound::consumption::base(mines_levels.quartz)
                 + compound::consumption::base(mines_levels.tritium);
-            if energy_available
-                + (celestia_production.into() * celestia_available).into() < energy_required {
+
+            if total_energy < energy_required {
                 let _steel = compound::production_scaler(
                     steel_available, energy_available, energy_required,
                 );

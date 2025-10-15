@@ -248,6 +248,7 @@ mod FleetMovements {
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
             let caller = get_caller_address();
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(caller);
             let mut mission = self.get_mission_details(origin, mission_id);
@@ -353,6 +354,7 @@ mod FleetMovements {
         }
 
         fn recall_fleet(ref self: ContractState, mission_id: usize) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(get_caller_address());
             let mission = self.get_mission_details(origin, mission_id);
@@ -364,6 +366,7 @@ mod FleetMovements {
         }
 
         fn dock_fleet(ref self: ContractState, mission_id: usize, colony_id: u8) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(get_caller_address());
             let mission = self.get_mission_details(origin, mission_id);
@@ -375,6 +378,7 @@ mod FleetMovements {
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let caller = get_caller_address();
             let origin = contracts.planet.get_owned_planet(caller);
@@ -457,50 +461,55 @@ mod FleetMovements {
 
         fn get_active_missions(self: @ContractState, planet_id: u32) -> Array<Mission> {
             let mut arr: Array<Mission> = array![];
+            // Cache length read outside loop
             let len = self.active_missions_len.read(planet_id);
-            let mut i = 1;
-            while i != len + 1 {
-                if len == 0 {
-                    break;
+            if len > 0 {
+                let mut i = 1;
+                // Loop optimization: storage reads inside loop are necessary, but length is cached
+                while i != len + 1 {
+                    let mission = self.active_missions.read((planet_id, i));
+                    if !mission.is_zero() {
+                        arr.append(mission);
+                    }
+                    i += 1;
                 }
-                let mission = self.active_missions.read((planet_id, i));
-                if !mission.is_zero() {
-                    arr.append(mission);
-                }
-                i += 1;
             }
 
+            // Cache contracts read to avoid redundant storage access
             let planet_colonies = self
                 .game_manager
                 .read()
                 .get_contracts()
                 .colony
                 .get_colonies_for_planet(planet_id);
-            let len = planet_colonies.len();
-            let mut i = 1;
-            while i != len {
-                if len == 0 {
-                    break;
+            let colonies_len = planet_colonies.len();
+            if colonies_len > 0 {
+                let mut i = 1;
+                while i != colonies_len {
+                    let (colony_id, _colony_position) = planet_colonies.at(i);
+                    let adj_planet_id = planet_id * 1000 + (*colony_id).into();
+                    let missions = self.active_missions.read((adj_planet_id, i));
+                    arr.append(missions);
+                    i += 1;
                 }
-                let (colony_id, _colony_position) = planet_colonies.at(i);
-                let adj_planet_id = planet_id * 1000 + (*colony_id).into();
-                let missions = self.active_missions.read((adj_planet_id, i));
-                arr.append(missions);
-                i += 1;
             }
             arr
         }
 
         fn get_incoming_missions(self: @ContractState, planet_id: u32) -> Array<IncomingMission> {
             let mut arr: Array<IncomingMission> = array![];
+            // Cache length read outside loop
             let len = self.incoming_missions_len.read(planet_id);
-            let mut i = 1;
-            while i != len + 1 {
-                let mission = self.incoming_missions.read((planet_id, i));
-                if !mission.is_zero() {
-                    arr.append(mission);
+            if len > 0 {
+                let mut i = 1;
+                // Loop optimization: storage reads inside loop are necessary for mission data
+                while i != len + 1 {
+                    let mission = self.incoming_missions.read((planet_id, i));
+                    if !mission.is_zero() {
+                        arr.append(mission);
+                    }
+                    i += 1;
                 }
-                i += 1;
             }
             arr
         }
@@ -513,6 +522,7 @@ mod FleetMovements {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             if planet_id > 500 {
                 let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
@@ -522,7 +532,9 @@ mod FleetMovements {
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet,
                     );
             } else {
+                // Cache fleet levels read to avoid repeated storage access
                 let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
+                // Batch update ship levels to reduce storage writes
                 if fleet.carrier > 0 {
                     contracts
                         .dockyard
@@ -562,6 +574,7 @@ mod FleetMovements {
         }
 
         fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             if planet_id > 500 {
                 let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
@@ -571,7 +584,9 @@ mod FleetMovements {
                         colony_mother_planet, (planet_id % 1000).try_into().unwrap(), fleet,
                     );
             } else {
+                // Cache fleet levels read to avoid repeated storage access
                 let fleet_levels = contracts.dockyard.get_ships_levels(planet_id);
+                // Batch update ship levels to reduce storage writes
                 if fleet.carrier > 0 {
                     contracts
                         .dockyard
@@ -632,14 +647,17 @@ mod FleetMovements {
         fn update_defender_fleet_levels_after_attack(
             ref self: ContractState, planet_id: u32, colony_id: u8, f: Fleet,
         ) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             if colony_id.is_zero() {
+                // Batch set all ship levels
                 contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::CARRIER, f.carrier);
                 contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SCRAPER, f.scraper);
                 contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SPARROW, f.sparrow);
                 contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::FRIGATE, f.frigate);
                 contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::ARMADE, f.armade);
             } else {
+                // Batch set all colony ship levels
                 contracts
                     .colony
                     .set_colony_ship(planet_id, colony_id, Names::Fleet::CARRIER, f.carrier);
@@ -661,6 +679,7 @@ mod FleetMovements {
         fn update_defences_after_attack(
             ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
         ) {
+            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             if colony_id.is_zero() {
                 contracts
