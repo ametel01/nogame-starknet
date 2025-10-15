@@ -23,29 +23,29 @@ mod requirements {
     use nogame::libraries::types::TechLevels;
 
     fn carrier(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 2, 'Dockyard 2 required');
-        assert(techs.combustion >= 2, 'Combustive Engine 2 required');
+        assert!(dockyard_level >= 2_u8, "Dockyard:E_DOCKYARD_LEVEL");
+        assert!(techs.combustion >= 2_u8, "Dockyard:E_COMBUSTION_LEVEL");
     }
 
     fn sparrow(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 1, 'Dockyard 1 required');
-        assert(techs.combustion >= 1, 'Combustive Engine 1 required');
+        assert!(dockyard_level >= 1_u8, "Dockyard:E_DOCKYARD_LEVEL");
+        assert!(techs.combustion >= 1_u8, "Dockyard:E_COMBUSTION_LEVEL");
     }
 
     fn scraper(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 4, 'Dockyard 4 required');
-        assert(techs.combustion >= 6, 'Combustive Engine 6 required');
-        assert(techs.shield >= 2, 'Shield Tech 2 required');
+        assert!(dockyard_level >= 4_u8, "Dockyard:E_DOCKYARD_LEVEL");
+        assert!(techs.combustion >= 6_u8, "Dockyard:E_COMBUSTION_LEVEL");
+        assert!(techs.shield >= 2_u8, "Dockyard:E_SHIELD_LEVEL");
     }
 
     fn frigate(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 5, 'Dockyard 5 required');
-        assert(techs.ion >= 2, 'Ion Systems 2 required');
-        assert(techs.thrust >= 4, 'Thrust Propulsion 4 required');
+        assert!(dockyard_level >= 5_u8, "Dockyard:E_DOCKYARD_LEVEL");
+        assert!(techs.ion >= 2_u8, "Dockyard:E_ION_LEVEL");
+        assert!(techs.thrust >= 4_u8, "Dockyard:E_THRUST_LEVEL");
     }
 
     fn armade(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 7, 'Dockyard 7 required');
-        assert(techs.warp >= 4, 'Warp Drive 4 required');
+        assert!(dockyard_level >= 7_u8, "Dockyard:E_DOCKYARD_LEVEL");
+        assert!(techs.warp >= 4_u8, "Dockyard:E_WARP_LEVEL");
     }
 }

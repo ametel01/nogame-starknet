@@ -169,10 +169,16 @@ mod ERC721NoGame {
         }
 
         fn mint(ref self: ContractState, to: ContractAddress, token_id: u256) {
-            assert(get_caller_address() == self.minter.read(), 'ERC721 caller not minter');
+            let caller = get_caller_address();
+            let minter = self.minter.read();
+            assert!(
+                caller == minter,
+                "NoGame::Token721[E_NOT_MINTER]: caller {:?} expected {:?}",
+                caller,
+                minter,
+            );
             self.erc721.mint(to, token_id);
             self.tokens.write(to, token_id);
         }
     }
 }
-

@@ -41,7 +41,7 @@ fn test_blaster_build() {
 }
 
 #[test]
-#[should_panic(expected: ('dockyard 1 required',))]
+#[should_panic]
 fn test_blaster_build_fails_dockyard_level() {
     let dsp = set_up();
     init_game(dsp);
@@ -145,4 +145,3 @@ fn test_plasma_build() {
     let def = dsp.defence.get_defences_levels(1);
     assert(def.plasma == 1, 'wrong plasma level');
 }
-

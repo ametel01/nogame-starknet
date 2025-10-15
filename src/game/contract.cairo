@@ -126,9 +126,12 @@ mod Game {
 
         fn check_enough_resources(self: @ContractState, caller: ContractAddress, amounts: ERC20s) {
             let available: ERC20s = self.get_erc20s_available(caller);
-            assert(amounts.steel <= available.steel / E18, 'Not enough steel');
-            assert(amounts.quartz <= available.quartz / E18, 'Not enough quartz');
-            assert(amounts.tritium <= available.tritium / E18, 'Not enough tritium');
+            let available_steel = available.steel / E18;
+            assert!(amounts.steel <= available_steel, "Game:E_RESOURCES_STEEL");
+            let available_quartz = available.quartz / E18;
+            assert!(amounts.quartz <= available_quartz, "Game:E_RESOURCES_QUARTZ");
+            let available_tritium = available.tritium / E18;
+            assert!(amounts.tritium <= available_tritium, "Game:E_RESOURCES_TRITIUM");
         }
     }
 
@@ -263,4 +266,3 @@ mod Game {
         }
     }
 }
-

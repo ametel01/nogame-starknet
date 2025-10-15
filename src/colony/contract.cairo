@@ -393,7 +393,18 @@ mod Colony {
                 || caller == contracts.defence.contract_address
                 || caller == game_manager.contract_address;
 
-            assert!(is_authorized, "NoGame::Colony: caller is not an authorized game contract");
+            assert!(
+                is_authorized,
+                "NoGame::Colony[E_UNAUTHORIZED_CALLER]: caller {:?} allowed fleet {:?} planet {:?} compound {:?} tech {:?} dockyard {:?} defence {:?} manager {:?}",
+                caller,
+                contracts.fleet.contract_address,
+                contracts.planet.contract_address,
+                contracts.compound.contract_address,
+                contracts.tech.contract_address,
+                contracts.dockyard.contract_address,
+                contracts.defence.contract_address,
+                game_manager.contract_address,
+            );
         }
 
         fn verify_colony_exist(self: @ContractState, planet_id: u32, colony_id: u8) {

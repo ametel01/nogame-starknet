@@ -117,9 +117,9 @@ mod FleetMovements {
             colony_id: u8,
         ) {
             let contracts = self.game_manager.read().get_contracts();
-            let destination_id = contracts.planet.get_position_to_planet(destination);
-            assert(!destination_id.is_zero(), 'no planet at destination');
             let caller = get_caller_address();
+            let destination_id = contracts.planet.get_position_to_planet(destination);
+            assert!(!destination_id.is_zero(), "Fleet:E_DESTINATION_NOT_FOUND");
             let planet_id = contracts.planet.get_owned_planet(caller);
             let origin_id = if colony_id.is_zero() {
                 planet_id
@@ -128,20 +128,14 @@ mod FleetMovements {
             };
 
             if destination_id > 500 && mission_type == MissionCategory::TRANSPORT {
-                assert(
-                    contracts.colony.get_colony_mother_planet(destination_id) == planet_id,
-                    'not your colony',
-                );
+                let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
+                assert!(colony_owner == planet_id, "Fleet:E_COLONY_TRANSPORT_TARGET");
             }
-            if mission_type == MissionCategory::ATTACK {
-                if destination_id > 500 {
-                    assert(
-                        contracts.colony.get_colony_mother_planet(destination_id) != planet_id,
-                        'cannot attack own planet',
-                    );
-                } else {
-                    assert(destination_id != planet_id, 'cannot attack own planet');
-                }
+            if mission_type == MissionCategory::ATTACK && destination_id > 500 {
+                let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
+                assert!(colony_owner != planet_id, "Fleet:E_ATTACK_OWN_COLONY");
+            } else if mission_type == MissionCategory::ATTACK {
+                assert!(destination_id != planet_id, "Fleet:E_ATTACK_OWN_PLANET");
             }
             let time_now = get_block_timestamp();
 
@@ -158,7 +152,8 @@ mod FleetMovements {
 
             // Check numeber of mission
             let active_missions = self.get_active_missions(planet_id).len();
-            assert(active_missions < techs.digital.into() + 1, 'max active missions');
+            let max_missions = techs.digital.into() + 1;
+            assert!(active_missions < max_missions, "Fleet:E_ACTIVE_MISSIONS_LIMIT");
 
             // Pay for fuel
             let consumption = fleet::get_fuel_consumption(f, distance)
@@ -178,11 +173,9 @@ mod FleetMovements {
             mission.fleet = f;
 
             if mission_type == MissionCategory::DEBRIS {
-                assert(
-                    !contracts.planet.get_planet_debris_field(destination_id).is_zero(),
-                    'empty debris fiels',
-                );
-                assert(f.scraper >= 1, 'no scrapers for collection');
+                let debris_field = contracts.planet.get_planet_debris_field(destination_id);
+                assert!(!debris_field.is_zero(), "Fleet:E_DEBRIS_FIELD_EMPTY");
+                assert!(f.scraper >= 1, "Fleet:E_SCRAPER_REQUIRED");
                 mission.category = MissionCategory::DEBRIS;
                 let mission_id = self.add_active_mission(planet_id, mission);
                 let mut hostile_mission: IncomingMission = Default::default();
@@ -220,10 +213,10 @@ mod FleetMovements {
                 let is_inactive = time_now
                     - contracts.planet.get_last_active(destination_id) > WEEK;
                 if !is_inactive {
-                    assert(
-                        !contracts.planet.get_is_noob_protected(planet_id, destination_id),
-                        'noob protection active',
-                    );
+                    let noob_protected = contracts
+                        .planet
+                        .get_is_noob_protected(planet_id, destination_id);
+                    assert!(!noob_protected, "Fleet:E_NOOB_PROTECTION");
                 }
                 mission.category = MissionCategory::ATTACK;
                 let mission_id = self.add_active_mission(planet_id, mission);
@@ -252,11 +245,11 @@ mod FleetMovements {
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(caller);
             let mut mission = self.get_mission_details(origin, mission_id);
-            assert(!mission.is_zero(), 'the mission is empty');
-            assert(mission.category == MissionCategory::ATTACK, 'not an attack mission');
-            assert(mission.destination != origin, 'cannot attack own planet');
+            assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
+            assert!(mission.category == MissionCategory::ATTACK, "Fleet:E_WRONG_CATEGORY");
+            assert!(mission.destination != origin, "Fleet:E_ATTACK_OWN_PLANET");
             let time_now = get_block_timestamp();
-            assert(time_now >= mission.time_arrival, 'destination not reached yet');
+            assert!(time_now >= mission.time_arrival, "Fleet:E_ARRIVAL_PENDING");
             let is_colony = mission.destination > 500;
             let colony_mother_planet = if is_colony {
                 contracts.colony.get_colony_mother_planet(mission.destination)
@@ -356,9 +349,10 @@ mod FleetMovements {
         fn recall_fleet(ref self: ContractState, mission_id: usize) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
-            let origin = contracts.planet.get_owned_planet(get_caller_address());
+            let caller = get_caller_address();
+            let origin = contracts.planet.get_owned_planet(caller);
             let mission = self.get_mission_details(origin, mission_id);
-            assert(!mission.is_zero(), 'no fleet to recall');
+            assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
             self.fleet_return_planet(mission.origin, mission.fleet);
             self.set_mission(origin, mission_id, Zeroable::zero());
             self.remove_incoming_mission(mission.destination, mission_id);
@@ -368,10 +362,11 @@ mod FleetMovements {
         fn dock_fleet(ref self: ContractState, mission_id: usize, colony_id: u8) {
             // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
-            let origin = contracts.planet.get_owned_planet(get_caller_address());
+            let caller = get_caller_address();
+            let origin = contracts.planet.get_owned_planet(caller);
             let mission = self.get_mission_details(origin, mission_id);
-            assert(mission.category == MissionCategory::TRANSPORT, 'not a transport mission');
-            assert(!mission.is_zero(), 'no fleet to dock');
+            assert!(mission.category == MissionCategory::TRANSPORT, "Fleet:E_WRONG_CATEGORY");
+            assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
             self.fleet_return_planet(mission.destination, mission.fleet);
             self.set_mission(origin, mission_id, Zeroable::zero());
             contracts.planet.set_last_active(origin);
@@ -384,11 +379,11 @@ mod FleetMovements {
             let origin = contracts.planet.get_owned_planet(caller);
 
             let mission = self.get_mission_details(origin, mission_id);
-            assert(!mission.is_zero(), 'the mission is empty');
-            assert(mission.category == MissionCategory::DEBRIS, 'not a debris mission');
+            assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
+            assert!(mission.category == MissionCategory::DEBRIS, "Fleet:E_WRONG_CATEGORY");
 
             let time_now = get_block_timestamp();
-            assert(time_now >= mission.time_arrival, 'destination not reached yet');
+            assert!(time_now >= mission.time_arrival, "Fleet:E_ARRIVAL_PENDING");
 
             let time_since_arrived = time_now - mission.time_arrival;
             let mut collector_fleet: Fleet = mission.fleet;
@@ -629,18 +624,18 @@ mod FleetMovements {
             let contracts = self.game_manager.read().get_contracts();
             if colony_id == 0 {
                 let ships_levels = contracts.dockyard.get_ships_levels(planet_id);
-                assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
-                assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
-                assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
-                assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
-                assert(ships_levels.armade >= fleet.armade, 'not enough armades');
+                assert!(ships_levels.carrier >= fleet.carrier, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.scraper >= fleet.scraper, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.sparrow >= fleet.sparrow, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.frigate >= fleet.frigate, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.armade >= fleet.armade, "Fleet:E_SHIPS_INSUFFICIENT");
             } else {
                 let ships_levels = contracts.colony.get_colony_ships(planet_id, colony_id);
-                assert(ships_levels.carrier >= fleet.carrier, 'not enough carrier');
-                assert(ships_levels.scraper >= fleet.scraper, 'not enough scrapers');
-                assert(ships_levels.sparrow >= fleet.sparrow, 'not enough sparrows');
-                assert(ships_levels.frigate >= fleet.frigate, 'not enough frigates');
-                assert(ships_levels.armade >= fleet.armade, 'not enough armades');
+                assert!(ships_levels.carrier >= fleet.carrier, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.scraper >= fleet.scraper, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.sparrow >= fleet.sparrow, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.frigate >= fleet.frigate, "Fleet:E_SHIPS_INSUFFICIENT");
+                assert!(ships_levels.armade >= fleet.armade, "Fleet:E_SHIPS_INSUFFICIENT");
             }
         }
 

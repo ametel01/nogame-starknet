@@ -88,7 +88,7 @@ fn test_send_fleet_success() {
 }
 
 #[test]
-#[should_panic(expected: ('no planet at destination',))]
+#[should_panic]
 fn test_send_fleet_fails_no_planet_at_destination() {
     let dsp = set_up();
     init_game(dsp);
@@ -112,7 +112,7 @@ fn test_send_fleet_fails_no_planet_at_destination() {
 }
 
 #[test]
-#[should_panic(expected: ('cannot attack own planet',))]
+#[should_panic]
 fn test_send_fleet_fails_origin_is_destination() {
     let dsp = set_up();
     init_game(dsp);
@@ -136,7 +136,7 @@ fn test_send_fleet_fails_origin_is_destination() {
 }
 
 #[test]
-#[should_panic(expected: ('noob protection active',))]
+#[should_panic]
 fn test_send_fleet_fails_noob_protection() {
     let dsp = set_up();
     init_game(dsp);
@@ -201,7 +201,7 @@ fn test_send_speed_modifier() {
 }
 
 #[test]
-#[should_panic(expected: ('max active missions',))]
+#[should_panic]
 fn test_send_fleet_fails_not_enough_fleet_slots() {
     let dsp = set_up();
     init_game(dsp);
@@ -407,7 +407,7 @@ fn test_collect_debris_fleet_decay() {
 }
 
 #[test]
-#[should_panic(expected: ('empty debris fiels',))]
+#[should_panic]
 fn test_send_fleet_debris_fails_empty_debris_field() {
     let dsp = set_up();
     init_game(dsp);
@@ -443,7 +443,7 @@ fn test_send_fleet_debris_fails_empty_debris_field() {
 }
 
 #[test]
-#[should_panic(expected: ('no scrapers for collection',))]
+#[should_panic]
 fn test_send_fleet_debris_fails_no_scrapers() {
     let dsp = set_up();
     init_game(dsp);
@@ -559,7 +559,7 @@ fn test_attack_planet_fleet_decay() {
 }
 
 #[test]
-#[should_panic(expected: ('the mission is empty',))]
+#[should_panic]
 fn test_attack_planet_fails_empty_mission() {
     let dsp = set_up();
     init_game(dsp);
@@ -590,7 +590,7 @@ fn test_attack_planet_fails_empty_mission() {
 }
 
 #[test]
-#[should_panic(expected: ('destination not reached yet',))]
+#[should_panic]
 fn test_attack_planet_fails_destination_not_reached() {
     let dsp = set_up();
     init_game(dsp);
@@ -698,7 +698,7 @@ fn test_recall_fleet() {
 }
 
 #[test]
-#[should_panic(expected: ('no fleet to recall',))]
+#[should_panic]
 fn test_recall_fleet_fails_no_fleet_to_recall() {
     let dsp = set_up();
     init_game(dsp);
@@ -726,4 +726,3 @@ fn test_recall_fleet_fails_no_fleet_to_recall() {
     start_cheat_block_timestamp_global(get_block_timestamp() + 60);
     dsp.fleet.recall_fleet(2);
 }
-

@@ -22,30 +22,30 @@ mod requirements {
     use nogame::libraries::types::TechLevels;
 
     fn celestia(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 1, 'Dockyard 1 required');
-        assert(techs.combustion >= 1, 'Combustive Engine 1 required');
+        assert!(dockyard_level >= 1_u8, "Defence:E_DOCKYARD_LEVEL");
+        assert!(techs.combustion >= 1_u8, "Defence:E_COMBUSTION_LEVEL");
     }
 
 
     fn blaster(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 1, 'dockyard 1 required');
+        assert!(dockyard_level >= 1_u8, "Defence:E_DOCKYARD_LEVEL");
     }
 
     fn beam(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 4, 'dockyard 4 required');
-        assert(techs.energy >= 3, 'energy innovation 3 required');
-        assert(techs.beam >= 6, 'beam technology 6 required');
+        assert!(dockyard_level >= 4_u8, "Defence:E_DOCKYARD_LEVEL");
+        assert!(techs.energy >= 3_u8, "Defence:E_ENERGY_LEVEL");
+        assert!(techs.beam >= 6_u8, "Defence:E_BEAM_LEVEL");
     }
 
     fn astral(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 6, 'dockyard 6 required');
-        assert(techs.energy >= 6, 'energy innovation 6 required');
-        assert(techs.weapons >= 3, 'weapons tech 3 required');
-        assert(techs.shield >= 1, 'shield tech 1 required')
+        assert!(dockyard_level >= 6_u8, "Defence:E_DOCKYARD_LEVEL");
+        assert!(techs.energy >= 6_u8, "Defence:E_ENERGY_LEVEL");
+        assert!(techs.weapons >= 3_u8, "Defence:E_WEAPONS_LEVEL");
+        assert!(techs.shield >= 1_u8, "Defence:E_SHIELD_LEVEL");
     }
 
     fn plasma(dockyard_level: u8, techs: TechLevels) {
-        assert(dockyard_level >= 8, 'dockyard 8 required');
-        assert(techs.plasma >= 7, 'plasma engineering 7 required');
+        assert!(dockyard_level >= 8_u8, "Defence:E_DOCKYARD_LEVEL");
+        assert!(techs.plasma >= 7_u8, "Defence:E_PLASMA_LEVEL");
     }
 }

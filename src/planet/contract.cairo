@@ -123,10 +123,8 @@ mod Planet {
 
             let tokens = token_provider.get_tokens();
 
-            assert!(
-                tokens.erc721.balance_of(caller).is_zero(),
-                "NoGame: caller is already a planet owner",
-            );
+            let existing_planets = tokens.erc721.balance_of(caller);
+            assert!(existing_planets.is_zero(), "Planet:E_ALREADY_OWNER");
 
             let time_elapsed = (get_block_timestamp() - universe_config.get_universe_start_time())
                 / DAY;
@@ -135,7 +133,7 @@ mod Planet {
             tokens.eth.transfer_from(caller, self.ownable.owner(), price);
 
             let number_of_planets = self.number_of_planets.read();
-            assert(number_of_planets != MAX_NUMBER_OF_PLANETS, 'max number of planets');
+            assert!(number_of_planets != MAX_NUMBER_OF_PLANETS, "Planet:E_MAX_PLANETS");
             let token_id = number_of_planets + 1;
             let position = positions::get_planet_position(token_id);
 
@@ -333,7 +331,7 @@ mod Planet {
                     || caller == contracts.tech.contract_address
                     || caller == contracts.fleet.contract_address
                     || caller == contracts.dockyard.contract_address,
-                "NoGame::Planet: caller is not authorized to collect resources",
+                "Planet:E_UNAUTHORIZED_CALLER",
             );
         }
 
@@ -342,7 +340,7 @@ mod Planet {
             let game_address = self.game_manager.read().contract_address;
             let token_provider = ITokenProviderDispatcher { contract_address: game_address };
             let planet_id = token_provider.get_tokens().erc721.token_of(player).try_into().unwrap();
-            assert(!planet_id.is_zero(), 'planet does not exist');
+            assert!(!planet_id.is_zero(), "Planet:E_PLANET_NOT_FOUND");
             let production = self.calculate_production(planet_id);
             self.receive_resources_erc20(player, production);
             self.resources_timer.write(planet_id, get_block_timestamp());
@@ -422,4 +420,3 @@ mod Planet {
         }
     }
 }
-

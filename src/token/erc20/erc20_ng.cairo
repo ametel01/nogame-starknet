@@ -77,12 +77,24 @@ mod ERC20NoGame {
 
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             let caller = get_caller_address();
-            assert!(caller == self.minter.read(), "ERC20NoGame: caller is not the minter");
+            let minter = self.minter.read();
+            assert!(
+                caller == minter,
+                "NoGame::Token20[E_NOT_MINTER]: caller {:?} expected {:?}",
+                caller,
+                minter,
+            );
             self.erc20.mint(recipient, amount)
         }
         fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
             let caller = get_caller_address();
-            assert!(caller == self.minter.read(), "ERC20NoGame: caller is not the minter");
+            let minter = self.minter.read();
+            assert!(
+                caller == minter,
+                "NoGame::Token20[E_NOT_MINTER]: caller {:?} expected {:?}",
+                caller,
+                minter,
+            );
             self.erc20.burn(account, amount);
         }
     }

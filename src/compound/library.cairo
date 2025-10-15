@@ -110,7 +110,7 @@ mod cost {
     }
 
     fn steel(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 
         // Steel mine formula: base_steel=60, base_quartz=15, growth=1.5^level
         let base_steel: u128 = 60;
@@ -134,7 +134,7 @@ mod cost {
     }
 
     fn quartz(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 48, quartz: 24, tritium: 0 },
             ERC20s { steel: 76, quartz: 38, tritium: 0 },
@@ -248,7 +248,7 @@ mod cost {
     }
 
     fn tritium(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 225, quartz: 75, tritium: 0 },
             ERC20s { steel: 337, quartz: 112, tritium: 0 },
@@ -361,7 +361,7 @@ mod cost {
         sum
     }
     fn energy(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
         let costs: Array<ERC20s> = array![
             ERC20s { steel: 75, quartz: 30, tritium: 0 },
             ERC20s { steel: 112, quartz: 45, tritium: 0 },
@@ -482,7 +482,7 @@ mod cost {
     }
 
     fn lab(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 
         // Lab formula: base_steel=200, base_quartz=400, base_tritium=200, growth=2^level
         let base_steel: u128 = 200;
@@ -509,7 +509,7 @@ mod cost {
     }
 
     fn dockyard(level: u8, quantity: u8) -> ERC20s {
-        assert(!quantity.is_zero(), 'quantity can not be zero');
+        assert!(!quantity.is_zero(), "Compound:E_QUANTITY_ZERO");
 
         // Dockyard formula: base_steel=400, base_quartz=200, base_tritium=100, growth=2^level
         let base_steel: u128 = 400;

@@ -19,69 +19,69 @@ fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
 }
 
 fn energy_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 1, 'Lab 1 required');
+    assert!(lab_level >= 1_u8, "Tech:E_LAB_REQUIREMENT");
 }
 
 fn digital_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 1, 'Lab 1 required');
+    assert!(lab_level >= 1_u8, "Tech:E_LAB_REQUIREMENT");
 }
 
 fn beam_tech_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 1, 'Lab level 1 required');
-    assert(techs.energy >= 2, 'Energy innovation 2 required');
+    assert!(lab_level >= 1_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 2_u8, "Tech:E_ENERGY_REQUIREMENT");
 }
 
 fn armour_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 2, 'Lab 2 required');
+    assert!(lab_level >= 2_u8, "Tech:E_LAB_REQUIREMENT");
 }
 
 fn ion_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 4, 'Lab 4 required');
-    assert(techs.energy >= 4, 'Energy innovation 4 required');
-    assert(techs.beam >= 5, 'Beam tech 5 required');
+    assert!(lab_level >= 4_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 4_u8, "Tech:E_ENERGY_REQUIREMENT");
+    assert!(techs.beam >= 5_u8, "Tech:E_BEAM_REQUIREMENT");
 }
 
 fn plasma_tech_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 4, 'Lab 4 required');
-    assert(techs.energy >= 8, 'Energy innovation 8 required');
-    assert(techs.beam >= 10, 'Beam tech 10 required');
-    assert(techs.ion >= 5, 'ion systems 5 required');
+    assert!(lab_level >= 4_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 8_u8, "Tech:E_ENERGY_REQUIREMENT");
+    assert!(techs.beam >= 10_u8, "Tech:E_BEAM_REQUIREMENT");
+    assert!(techs.ion >= 5_u8, "Tech:E_ION_REQUIREMENT");
 }
 
 fn weapons_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 4, 'Lab 4 required');
+    assert!(lab_level >= 4_u8, "Tech:E_LAB_REQUIREMENT");
 }
 
 fn shield_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 6, 'Lab 6 required');
-    assert(techs.energy >= 3, 'Energy innovation 3 required')
+    assert!(lab_level >= 6_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 3_u8, "Tech:E_ENERGY_REQUIREMENT");
 }
 
 fn spacetime_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 7, 'Lab 7 required');
-    assert(techs.energy >= 5, 'Energy innovation 5 required');
-    assert(techs.shield >= 5, 'Shield tech 5 required');
+    assert!(lab_level >= 7_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 5_u8, "Tech:E_ENERGY_REQUIREMENT");
+    assert!(techs.shield >= 5_u8, "Tech:E_SHIELD_REQUIREMENT");
 }
 
 fn combustion_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 1, 'Lab 1 required');
-    assert(techs.energy >= 1, 'Energy innovation 1 required')
+    assert!(lab_level >= 1_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 1_u8, "Tech:E_ENERGY_REQUIREMENT");
 }
 
 fn thrust_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 2, 'Lab 2 required');
-    assert(techs.energy >= 1, 'Energy innovation 1 required')
+    assert!(lab_level >= 2_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 1_u8, "Tech:E_ENERGY_REQUIREMENT");
 }
 
 fn warp_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 7, 'Lab 7 required');
-    assert(techs.energy >= 5, 'Energy innovation 5 required');
-    assert(techs.spacetime >= 3, 'Spacetime Warp 3 required');
+    assert!(lab_level >= 7_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.energy >= 5_u8, "Tech:E_ENERGY_REQUIREMENT");
+    assert!(techs.spacetime >= 3_u8, "Tech:E_SPACETIME_REQUIREMENT");
 }
 
 fn exocraft_requirements_check(lab_level: u8, techs: TechLevels) {
-    assert(lab_level >= 3, 'Lab 3 required');
-    assert(techs.thrust >= 3, 'Thrust prop 3 required')
+    assert!(lab_level >= 3_u8, "Tech:E_LAB_REQUIREMENT");
+    assert!(techs.thrust >= 3_u8, "Tech:E_THRUST_REQUIREMENT");
 }
 
 fn base_tech_costs() -> TechsCost {
@@ -103,7 +103,7 @@ fn base_tech_costs() -> TechsCost {
 
 
 fn exocraft_cost(level: u8, quantity: u8) -> ERC20s {
-    assert(!quantity.is_zero(), 'quantity can not be zero');
+    assert!(!quantity.is_zero(), "Tech:E_QUANTITY_ZERO");
     let costs: Array<ERC20s> = array![
         ERC20s { steel: 4000, quartz: 8000, tritium: 4000 },
         ERC20s { steel: 7000, quartz: 14000, tritium: 7000 },
