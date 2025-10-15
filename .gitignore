@@ -26,3 +26,7 @@ scripts/sepolia/
 scripts/
 
 .vscode/
+
+snfoundry_trace/
+
+coverage/
