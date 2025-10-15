@@ -13,6 +13,10 @@ mod Compound {
     use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::compound::library as compound;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{
+        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
+        IResourceManagerDispatcherTrait,
+    };
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{CompoundUpgradeType, CompoundsLevels, E18, ERC20s, HOUR};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
@@ -77,7 +81,10 @@ mod Compound {
 
         fn process_upgrade(ref self: ContractState, component: CompoundUpgradeType, quantity: u8) {
             let caller = get_caller_address();
-            let contracts = self.game_manager.read().get_contracts();
+            // Use segregated interface for better separation of concerns
+            let game_address = self.game_manager.read().contract_address;
+            let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
+            let contracts = contract_registry.get_contracts();
             contracts.planet.collect_resources(caller);
             let planet_id = contracts.planet.get_owned_planet(caller);
             let cost = self.upgrade_component(caller, planet_id, component, quantity);
@@ -108,11 +115,13 @@ mod Compound {
         ) -> ERC20s {
             let compound_levels = self.get_compounds_levels(planet_id);
             let mut cost: ERC20s = Default::default();
-            let game_manager = self.game_manager.read();
+            // Use segregated interface for resource management
+            let game_address = self.game_manager.read().contract_address;
+            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
             match component {
                 CompoundUpgradeType::SteelMine => {
                     cost = compound::cost::steel(compound_levels.steel, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -123,7 +132,7 @@ mod Compound {
                 },
                 CompoundUpgradeType::QuartzMine => {
                     cost = compound::cost::quartz(compound_levels.quartz, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -134,7 +143,7 @@ mod Compound {
                 },
                 CompoundUpgradeType::TritiumMine => {
                     cost = compound::cost::tritium(compound_levels.tritium, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -145,7 +154,7 @@ mod Compound {
                 },
                 CompoundUpgradeType::EnergyPlant => {
                     cost = compound::cost::energy(compound_levels.energy, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -156,7 +165,7 @@ mod Compound {
                 },
                 CompoundUpgradeType::Lab => {
                     cost = compound::cost::lab(compound_levels.lab, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -166,7 +175,7 @@ mod Compound {
                 },
                 CompoundUpgradeType::Dockyard => {
                     cost = compound::cost::dockyard(compound_levels.dockyard, quantity);
-                    game_manager.check_enough_resources(caller, cost);
+                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -176,7 +185,7 @@ mod Compound {
                         );
                 },
             }
-            game_manager.pay_resources_erc20(caller, cost);
+            resource_manager.pay_resources_erc20(caller, cost);
             cost
         }
     }

@@ -34,9 +34,8 @@ mod Planet {
     use nogame::defence::contract::IDefenceDispatcherTrait;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::game::interfaces::{
-        ITokenProviderDispatcher, ITokenProviderDispatcherTrait, IUniverseConfigDispatcher,
-        IUniverseConfigDispatcherTrait, IContractRegistryDispatcher,
-        IContractRegistryDispatcherTrait,
+        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, ITokenProviderDispatcher,
+        ITokenProviderDispatcherTrait, IUniverseConfigDispatcher, IUniverseConfigDispatcherTrait,
     };
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
     use nogame::libraries::positions;
@@ -242,8 +241,7 @@ mod Planet {
             // Use segregated interface
             let game_address = self.game_manager.read().contract_address;
             let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
-            let time_elapsed = (get_block_timestamp()
-                - universe_config.get_universe_start_time())
+            let time_elapsed = (get_block_timestamp() - universe_config.get_universe_start_time())
                 / DAY;
             self.get_planet_price(time_elapsed)
         }
@@ -343,12 +341,7 @@ mod Planet {
             // Use segregated interface
             let game_address = self.game_manager.read().contract_address;
             let token_provider = ITokenProviderDispatcher { contract_address: game_address };
-            let planet_id = token_provider
-                .get_tokens()
-                .erc721
-                .token_of(player)
-                .try_into()
-                .unwrap();
+            let planet_id = token_provider.get_tokens().erc721.token_of(player).try_into().unwrap();
             assert(!planet_id.is_zero(), 'planet does not exist');
             let production = self.calculate_production(planet_id);
             self.receive_resources_erc20(player, production);
