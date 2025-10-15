@@ -138,7 +138,6 @@ mod Defence {
                         dockyard::get_ships_cost(
                             quantity, defence::get_defences_unit_cost().celestia,
                         );
-                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
@@ -152,7 +151,6 @@ mod Defence {
                         dockyard::get_ships_cost(
                             quantity, defence::get_defences_unit_cost().blaster,
                         );
-                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
@@ -164,7 +162,6 @@ mod Defence {
                     defence::requirements::beam(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(quantity, defence::get_defences_unit_cost().beam);
-                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write((planet_id, Names::Defence::BEAM), defences_levels.beam + quantity);
@@ -175,7 +172,6 @@ mod Defence {
                         dockyard::get_ships_cost(
                             quantity, defence::get_defences_unit_cost().astral,
                         );
-                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(
@@ -188,7 +184,6 @@ mod Defence {
                         dockyard::get_ships_cost(
                             quantity, defence::get_defences_unit_cost().plasma,
                         );
-                    contracts.game.check_enough_resources(caller, cost);
                     self
                         .defence_level
                         .write(

@@ -134,7 +134,6 @@ mod Dockyard {
                     dockyard::requirements::carrier(dockyard_level, techs);
                     cost =
                         dockyard::get_ships_cost(quantity, dockyard::get_ships_unit_cost().carrier);
-                    game_manager.check_enough_resources(caller, cost);
                     self
                         .ships_level
                         .write((planet_id, Names::Fleet::CARRIER), ships_levels.carrier + quantity);
