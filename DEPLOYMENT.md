@@ -189,6 +189,8 @@ katana:
 
 ## Deployment Script Usage
 
+Environment files read by the deployment script must use plain `KEY=VALUE` lines with optional matching single or double quotes around values. Keep account material in untracked local env files only.
+
 ```bash
 # Deploy to local Katana (no private key needed)
 ./scripts/deploy-starknet.sh local
