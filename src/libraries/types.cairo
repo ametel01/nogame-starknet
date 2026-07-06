@@ -9,7 +9,7 @@ use nogame::planet::contract::IPlanetDispatcher;
 use nogame::tech::contract::ITechDispatcher;
 use nogame::token::erc20::interface::IERC20NoGameDispatcher;
 use nogame::token::erc721::interface::IERC721NoGameDispatcher;
-use openzeppelin_token::erc20::interface::IERC20Dispatcher;
+use openzeppelin_interfaces::erc20::IERC20Dispatcher;
 use starknet::ContractAddress;
 
 // ========================================
@@ -565,4 +565,3 @@ struct Tokens {
     tritium: IERC20NoGameDispatcher,
     eth: IERC20Dispatcher,
 }
-

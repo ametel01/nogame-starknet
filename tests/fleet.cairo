@@ -410,5 +410,3 @@
 // //     let storage = 30_000;
 // //     let loaded = fleet::load_resources(resources, storage);
 // // }
-
-

@@ -62,4 +62,3 @@ mod token {
         mod interface;
     }
 }
-

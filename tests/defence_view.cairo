@@ -64,4 +64,3 @@ fn test_get_defences_levels() {
     assert!(def.astral == 28, "wrong astral: expected 28, got {}", def.astral);
     assert!(def.plasma == 38, "wrong plasma: expected 38, got {}", def.plasma);
 }
-

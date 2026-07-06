@@ -11,7 +11,7 @@ use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
-use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, map_entry_address, start_cheat_block_timestamp,

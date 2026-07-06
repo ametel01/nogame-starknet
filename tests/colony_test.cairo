@@ -400,4 +400,3 @@ fn test_attack_colony() {
         expected_debris,
     );
 }
-

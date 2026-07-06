@@ -71,4 +71,3 @@ fn test_get_ships_level() {
 fn test_get_celestia_available() { // TODO
     assert(0 == 0, 'todo');
 }
-

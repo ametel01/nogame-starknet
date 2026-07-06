@@ -47,5 +47,3 @@
 //     let mission = *missions.at(1);
 //     mission.print();
 // }
-
-

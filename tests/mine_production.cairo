@@ -79,4 +79,3 @@ fn production_scaler_test() {
     let scaled = compound::production_scaler(52, 20, 100);
     assert(scaled == 10, '');
 }
-

@@ -26,4 +26,3 @@ fn test_get_compounds_levels() {
     assert(compounds.lab == 10, 'wrong energy lev');
     assert(compounds.dockyard == 8, 'wrong energy lev');
 }
-

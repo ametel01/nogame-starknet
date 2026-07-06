@@ -252,8 +252,8 @@ mod Planet {
     use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
     use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
     use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin_security::reentrancyguard::ReentrancyGuardComponent;
-    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
     use starknet::storage::{
         Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,

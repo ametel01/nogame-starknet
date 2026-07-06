@@ -195,4 +195,3 @@ fn test_get_planet_points() {
         dsp.planet.get_planet_points(2),
     );
 }
-

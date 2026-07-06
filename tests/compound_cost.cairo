@@ -156,4 +156,3 @@ fn lab_cost_test() {
 fn test_compounds_multilevel_cost() {
     compound::cost::lab(8, 3);
 }
-

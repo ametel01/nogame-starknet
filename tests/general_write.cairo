@@ -5,7 +5,7 @@ use nogame::libraries::types::{
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
     ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
 };
@@ -137,5 +137,3 @@ fn test_collect() {
 //     assert(*positions.at(0).orbit == 2 && *positions.at(0).system == 156, 'wrong assertion #1');
 //     assert(*positions.at(1).orbit == 9 && *positions.at(1).system == 388, 'wrong assertion #2');
 // }
-
-

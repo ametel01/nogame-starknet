@@ -182,4 +182,3 @@ fn test_get_active_missions() {
     let mut missions = dsp.fleet.get_active_missions(1);
     assert(missions.len() == 0, 'wrong assert #27');
 }
-

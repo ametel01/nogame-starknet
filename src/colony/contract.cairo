@@ -162,8 +162,8 @@ mod Colony {
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
     use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin_security::reentrancyguard::ReentrancyGuardComponent;
-    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::storage::{
         Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };

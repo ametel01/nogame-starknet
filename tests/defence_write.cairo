@@ -7,7 +7,7 @@ use nogame::libraries::types::{
 };
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
     ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
     stop_cheat_caller_address,

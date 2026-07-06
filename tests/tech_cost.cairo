@@ -25,4 +25,3 @@ fn multilevel_tech_cost_test() {
     let cost = research::get_tech_cost(12, 13, costs.energy);
     assert(cost == expected, 'wrong assert 5');
 }
-

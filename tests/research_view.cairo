@@ -30,4 +30,3 @@ fn test_get_tech_levels() {
     assert(techs.thrust == 0, 'wrong level');
     assert(techs.warp == 0, 'wrong level');
 }
-
