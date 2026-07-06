@@ -30,7 +30,7 @@
 | 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Complete | #4, #5 |
 | 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Pending | #7 |
 | 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Pending | #4, #9 |
-| 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Pending | #10 |
+| 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Complete | #10 |
 | 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Pending | #4, #12 |
 | 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Pending | #12 |
 | 13 | [#16](https://github.com/ametel01/nogame-starknet/issues/16) | 4 | Require transport arrival before docking | Pending | #12 |
@@ -61,6 +61,8 @@
 - 2026-07-06: Issue #5 validation passed: `snforge test test_game_upgrade`, `scarb fmt --check`, `scarb build`, and `snforge test`.
 - 2026-07-06: Issue #10 drift check `git diff --stat a370d98..HEAD -- src/game/contract.cairo src/planet/contract.cairo tests` showed prerequisite Game upgrade, privileged setter, ERC721, and test/helper changes already present on current `origin/main`; plan 006 remained applicable.
 - 2026-07-06: Issue #10 validation passed: `snforge test test_game_initialize`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-06: Issue #13 drift check `git diff --stat a370d98..HEAD -- README.md DEPLOYMENT.md scripts/deploy-starknet.sh src/game/contract.cairo Scarb.toml` showed merged deployment-doc/script hardening and one-time Game initialization drift; the lifecycle spike incorporated the current one-time initialization, env persistence, and linear deploy flow.
+- 2026-07-06: Issue #13 validation passed: deployment-flow mapping `rg`, spike discoverability `rg`, and `git diff --check`; `scarb build` was not run because no code was touched.
 
 ## Update Log
 
@@ -73,3 +75,4 @@
 - 2026-07-06: Completed issue #11 by hardening deployment env parsing and `starkli` command construction without running any real deployment.
 - 2026-07-06: Completed Step 2 for issue #5 by requiring the owner for `Game.upgrade` and covering unauthorized upgrade attempts.
 - 2026-07-06: Completed Step 7 for issue #10 by making `Game.initialize` one-time, recording the initialization block timestamp as `universe_start_time`, and covering owner, non-owner, timestamp, and second-initialize behavior.
+- 2026-07-06: Completed Step 10 for issue #13 by adding the multi-universe deployment lifecycle spike, recommending redeploy-all plus a manifest follow-up before factory/registry work, and leaving `CHANGELOG.md` unchanged because the work is design-only.
