@@ -14,6 +14,7 @@ and this project adheres to semantic versioning when versions are released.
 - Add deterministic class-weighted combat targeting so cheap ship counts can dilute incoming damage without per-unit random target loops.
 - Add round-by-round shield restoration and deterministic below-70-percent explosion losses to bounded class-weighted combat.
 - Add deterministic 70% defence rebuild settlement after attacks while keeping ship losses permanent.
+- Add deterministic rapid-fire value 2 handling for frigates against sparrows without instant-kill behavior.
 
 ### Changed
 
