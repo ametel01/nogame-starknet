@@ -178,6 +178,70 @@ fn test_send_speed_modifier() {
 
 #[test]
 #[should_panic]
+fn test_send_speed_modifier_fails_zero() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    dsp.planet.generate_planet();
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    init_storage(dsp, 1);
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    init_storage(dsp, 2);
+    stop_cheat_caller_address(dsp.planet.contract_address);
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 10);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 5;
+
+    start_cheat_caller_address(dsp.compound.contract_address, ACCOUNT1());
+    dsp.compound.process_upgrade(CompoundUpgradeType::SteelMine(()), 1);
+    stop_cheat_caller_address(dsp.compound.contract_address);
+
+    start_cheat_block_timestamp_global(starknet::get_block_timestamp() + WEEK);
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT2());
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 0, 0);
+}
+
+#[test]
+#[should_panic]
+fn test_send_speed_modifier_fails_above_100() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    dsp.planet.generate_planet();
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    init_storage(dsp, 1);
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    init_storage(dsp, 2);
+    stop_cheat_caller_address(dsp.planet.contract_address);
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT2());
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 10);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 5;
+
+    start_cheat_caller_address(dsp.compound.contract_address, ACCOUNT1());
+    dsp.compound.process_upgrade(CompoundUpgradeType::SteelMine(()), 1);
+    stop_cheat_caller_address(dsp.compound.contract_address);
+
+    start_cheat_block_timestamp_global(starknet::get_block_timestamp() + WEEK);
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT2());
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::ATTACK, 101, 0);
+}
+
+#[test]
+#[should_panic]
 fn test_send_fleet_fails_not_enough_fleet_slots() {
     let dsp = set_up();
     init_game(dsp);

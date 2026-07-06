@@ -77,6 +77,7 @@ fn plan_send_mission(
     );
     let techs = contracts.tech.get_tech_levels(planet_id);
     let speed = fleet::get_fleet_speed(f, techs);
+    assert!(speed_modifier > 0 && speed_modifier <= 100, "Fleet:E_SPEED_MODIFIER");
     let travel_time = fleet::get_flight_time(speed, distance, speed_modifier);
 
     let max_missions = techs.digital.into() + 1;

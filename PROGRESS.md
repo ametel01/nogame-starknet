@@ -12,7 +12,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 - [x] Step 0: Progress and Changelog Tracking Setup
   - Create `PROGRESS.md`, confirm `CHANGELOG.md` follows Keep a Changelog structure, and record the update rules for all later steps.
-- [ ] Step 1: Bound Fleet Speed Modifiers
+- [x] Step 1: Bound Fleet Speed Modifiers
   - Reject `send_fleet` speed modifiers outside `1..=100`.
 - [ ] Step 2: Prevent Phantom Spendable Loot Grants
   - Keep spendable and collectible loot accounting separated and cargo-limited.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 3 and 4 are complete and validated. The remaining available wave items are independent implementation plans 001, 002, 006, 008, and 009; plan 005 remains blocked on a maintainer license decision.
+Steps 1, 3, and 4 are complete and validated. The remaining available wave items are independent implementation plans 002, 006, 008, and 009; plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -65,3 +65,4 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Completed Step 4 by removing stale `declare`, `deploy`, and `len` Scarb scripts that pointed to missing `scripts/sepolia/*` and `scripts/sierra_len.sh` files. Deployment docs already use `./scripts/deploy-starknet.sh`, so no deployment-doc edit was needed.
 - 2026-07-06: Validation passed for Step 4: `find scripts -maxdepth 3 -type f -print | sort`; `rg -n "scripts/sepolia|sierra_len|scarb run deploy|deploy-starknet" Scarb.toml DEPLOYMENT.md README.md`; `rg -n "declare|deploy|len|scripts/" Scarb.toml DEPLOYMENT.md scripts`; `scarb fmt --check`; `scarb build`; `snforge test` (114 passed).
 - 2026-07-06: Completed Step 3 / issue #38 on branch `codex/issue-38-battle-characterization`: replaced the commented `tests/fleet.cairo` placeholder with live characterization tests for direct battle helper matchups, zero-tech `simulate_attack`, and carrier speed/flight-time behavior. Validation passed: `snforge test fleet` (31 passed, 87 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (118 passed). Implementation commit after rebase: `60ee0ae`.
+- 2026-07-06: Completed Step 1 for issue #36 by rejecting `send_fleet` `speed_modifier` values outside `1..=100` before travel-time and fuel-cost arithmetic, preserving the public ABI, mission storage, and existing 50 percent behavior. Validation passed: `scarb build`; `snforge test test_send_speed_modifier`; `scarb fmt --check`; `snforge test`. Commit reference pending coordinator handoff.
