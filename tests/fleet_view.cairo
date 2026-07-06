@@ -21,11 +21,6 @@ fn test_is_noob_protected() {
 }
 
 #[test]
-fn test_get_mission_details() { // TODO
-    assert(0 == 0, 'todo');
-}
-
-#[test]
 fn test_get_hostile_missions() {
     let dsp = set_up_two_started_planets();
     upgrade_digital_for(dsp, ACCOUNT1(), 4);

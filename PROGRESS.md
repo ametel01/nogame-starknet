@@ -14,6 +14,7 @@
 - Tracking files are initialized before functional implementation begins.
 - Wave 1 issues #4, #5, #6, #7, and #8 are implemented on separate branches.
 - Later executors must append progress updates without overwriting existing entries.
+- Wave 5 issue #17 is implemented on `codex/issue-17-noop-tests`.
 - `CHANGELOG.md` should be updated only when a completed step ships a qualifying functional change.
 
 ## Issue Checklist
@@ -34,7 +35,7 @@
 | 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Complete | #4, #12 |
 | 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Complete | #12 |
 | 13 | [#16](https://github.com/ametel01/nogame-starknet/issues/16) | 4 | Require transport arrival before docking | Complete | #12 |
-| 14 | [#17](https://github.com/ametel01/nogame-starknet/issues/17) | 5 | Replace no-op dockyard and defence requirement tests | Pending | #9, #14 |
+| 14 | [#17](https://github.com/ametel01/nogame-starknet/issues/17) | 5 | Replace no-op dockyard and defence requirement tests | Complete | #9, #14 |
 | 15 | [#18](https://github.com/ametel01/nogame-starknet/issues/18) | 5 | Use checked ERC20s resource arithmetic | Complete | #4, #14 |
 
 ## Validation Results
@@ -77,6 +78,11 @@
 - 2026-07-06: Issue #14 validation passed: `snforge test colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 - 2026-07-06: Issue #18 drift check `git diff --stat a370d98..HEAD -- src/libraries/types.cairo src/fleet_movements/orchestration.cairo src/fleet_movements/lifecycle.cairo src/planet/contract.cairo tests` showed prior planet/test prerequisite changes; live `ERC20s` operators, loot addition, and attack resource-delta assertions still matched the plan.
 - 2026-07-06: Issue #18 validation passed: `snforge test resource_arithmetic`, `snforge test test_attack_planet_loot_amount`, `snforge test test_attack_colony`, `snforge test test_collect_resources_all_planets`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-06: Issue #17 drift check `git diff --stat a370d98..HEAD -- tests/dockyard_write.cairo tests/defence_write.cairo tests/dockyard_view.cairo tests/fleet_view.cairo src/dockyard/contract.cairo src/defence/contract.cairo` showed only prior merged production-contract drift in `src/dockyard/contract.cairo` and `src/defence/contract.cairo`; no production edits were made for this issue.
+- 2026-07-06: Issue #17 replaced dockyard and defence no-op requirement tests with concrete success and prerequisite-failure regressions, removed two remaining no-op view placeholders so the repo-wide no-op scan passes, and relied on existing `test_privileged_setters` coverage for setter access.
+- 2026-07-06: The dedicated `plans/008-replace-noop-tests.md` source file named by issue #17 was not present in this worktree or `origin/main`; execution used the GitHub issue, `plans/README.md` Plan 008 row, and current contract/test behavior.
+- 2026-07-06: Issue #17 focused validation passed: `rg -n "assert\\(0 == 0|'todo'\\)" tests` found no matches, `snforge test dockyard`, and `snforge test defence`.
+- 2026-07-06: Issue #17 final validation passed: `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -95,3 +101,4 @@
 - 2026-07-06: Completed issue #16 by requiring transport arrival before docking and covering early dock attempts with a regression test.
 - 2026-07-06: Completed issue #14 by charging and point-recording colony upgrades/builds and adding colony spend/revert regressions.
 - 2026-07-06: Completed issue #18 by making `ERC20s` operator add/sub checked for component overflow and underflow, with focused normal and panic regressions.
+- 2026-07-06: Completed issue #17 by replacing no-op dockyard and defence requirement tests with real prerequisite success/failure regressions and marking Plan 008 done.

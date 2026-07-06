@@ -1,147 +1,175 @@
-use core::testing::get_available_gas;
-use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
 use nogame::defence::contract::{IDefenceDispatcher, IDefenceDispatcherTrait};
-use nogame::libraries::types::{
-    CompoundUpgradeType, DefenceBuildType, Defences, DefencesCost, ERC20s, EnergyCost,
-    ShipBuildType, ShipsCost, ShipsLevels, TechLevels, TechsCost,
-};
-use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
-use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
-use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
-use snforge_std::{
-    ContractClassTrait, declare, start_cheat_block_timestamp_global, start_cheat_caller_address,
-    stop_cheat_caller_address,
-};
-use starknet::ContractAddress;
-use starknet::info::{get_block_timestamp, get_contract_address};
-use starknet::testing::cheatcode;
-use super::utils::{
-    ACCOUNT1, ACCOUNT2, DEPLOYER, Dispatchers, E18, HOUR, YEAR, init_game, init_storage, set_up,
-};
+use nogame::libraries::names::Names;
+use nogame::libraries::types::DefenceBuildType;
+use snforge_std::{map_entry_address, start_cheat_caller_address, stop_cheat_caller_address, store};
+use super::utils::{ACCOUNT1, Dispatchers, generate_planet_for, init_storage, set_up_game};
+
+fn set_up_defence_planet() -> Dispatchers {
+    let dsp = set_up_game();
+    generate_planet_for(dsp, ACCOUNT1());
+    init_storage(dsp, 1);
+    dsp
+}
+
+fn set_dockyard_level(dsp: Dispatchers, level: u8) {
+    store(
+        dsp.compound.contract_address,
+        map_entry_address(
+            selector!("compound_level"), array![1, Names::Compound::DOCKYARD.into()].span(),
+        ),
+        array![level.into()].span(),
+    );
+}
+
+fn set_tech_level(dsp: Dispatchers, name: u8, level: u8) {
+    store(
+        dsp.tech.contract_address,
+        map_entry_address(selector!("tech_level"), array![1, name.into()].span()),
+        array![level.into()].span(),
+    );
+}
+
+fn build_defence(dsp: Dispatchers, component: DefenceBuildType) {
+    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
+    dsp.defence.process_defence_build(component, 1);
+    stop_cheat_caller_address(dsp.defence.contract_address);
+}
 
 #[test]
 fn test_blaster_build() {
-    let dsp = set_up();
-    init_game(dsp);
+    let dsp = set_up_defence_planet();
 
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
+    build_defence(dsp, DefenceBuildType::Blaster);
 
-    init_storage(dsp, 1);
-    start_cheat_block_timestamp_global(HOUR * 2400000);
-    start_cheat_caller_address(dsp.compound.contract_address, ACCOUNT1());
-    dsp.compound.process_upgrade(CompoundUpgradeType::Dockyard(()), 1);
-    stop_cheat_caller_address(dsp.compound.contract_address);
-
-    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-    dsp.defence.process_defence_build(DefenceBuildType::Blaster(()), 10);
-    let def = dsp.defence.get_defences_levels(1);
-    assert(def.blaster == 10, 'wrong blaster level');
+    let defences = dsp.defence.get_defences_levels(1);
+    assert(defences.blaster == 1, 'wrong blaster level');
 }
 
 #[test]
 #[should_panic]
 fn test_blaster_build_fails_dockyard_level() {
-    let dsp = set_up();
-    init_game(dsp);
+    let dsp = set_up_defence_planet();
+    set_dockyard_level(dsp, 0);
 
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
+    build_defence(dsp, DefenceBuildType::Blaster);
+}
 
-    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-    dsp.defence.process_defence_build(DefenceBuildType::Blaster(()), 1);
+#[test]
+#[should_panic]
+fn test_celestia_build_fails_combustion_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::COMBUSTION, 0);
+
+    build_defence(dsp, DefenceBuildType::Celestia);
 }
 
 #[test]
 fn test_beam_build() {
-    let dsp = set_up();
-    init_game(dsp);
+    let dsp = set_up_defence_planet();
 
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
-    init_storage(dsp, 1);
+    build_defence(dsp, DefenceBuildType::Beam);
 
-    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-    dsp.defence.process_defence_build(DefenceBuildType::Beam(()), 10);
-    let def = dsp.defence.get_defences_levels(1);
-    assert(def.beam == 10, 'wrong beam level');
-}
-
-// #[test]
-// #[should_panic(expected: ('dockyard 4 required',))]
-// fn test_beam_build_fails_dockyard_level() {
-//     let dsp = set_up();
-//     init_game(dsp);
-
-//     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-//     dsp.planet.generate_planet();
-//     stop_cheat_caller_address(dsp.planet.contract_address);
-//     init_storage(dsp, 1);
-
-//     start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-//     dsp.defence.process_defence_build(DefenceBuildType::Beam(()), 2);
-// }
-
-// #[test]
-// #[should_panic(expected: ('energy innovation 3 required',))]
-// fn test_beam_build_fails_energy_tech_level() {
-//     let dsp = set_up();
-//     init_game(dsp);
-
-//     start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-//     dsp.planet.generate_planet();
-//     stop_cheat_caller_address(dsp.planet.contract_address);
-//     init_storage(dsp, 1);
-//     start_cheat_block_timestamp_global(HOUR * 2400000);
-//     start_cheat_caller_address(dsp.compound.contract_address, ACCOUNT1());
-//     dsp.compound.process_upgrade(CompoundUpgradeType::Dockyard(()), 4);
-//     stop_cheat_caller_address(dsp.compound.contract_address);
-
-//     start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-//     dsp.defence.process_defence_build(DefenceBuildType::Beam(()), 2);
-// }
-
-#[test]
-fn test_astral_build_fails_beam_tech_level() {
-    // TODO
-    assert(0 == 0, 'todo');
+    let defences = dsp.defence.get_defences_levels(1);
+    assert(defences.beam == 1, 'wrong beam level');
 }
 
 #[test]
-fn test_astral_build_fails_dockyard_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic]
+fn test_beam_build_fails_dockyard_level() {
+    let dsp = set_up_defence_planet();
+    set_dockyard_level(dsp, 3);
+
+    build_defence(dsp, DefenceBuildType::Beam);
 }
 
 #[test]
-fn test_astral_build_fails_energy_tech_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic]
+fn test_beam_build_fails_energy_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::ENERGY, 2);
+
+    build_defence(dsp, DefenceBuildType::Beam);
 }
 
 #[test]
-fn test_astral_build_fails_weapons_tech_level() { // TODO
-    assert(0 == 0, 'todo');
+#[should_panic]
+fn test_beam_build_fails_beam_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::BEAM, 5);
+
+    build_defence(dsp, DefenceBuildType::Beam);
 }
 
 #[test]
-fn test_astral_build_fails_shield_tech_level() { // TODO
-    assert(0 == 0, 'todo');
+fn test_astral_build() {
+    let dsp = set_up_defence_planet();
+
+    build_defence(dsp, DefenceBuildType::Astral);
+
+    let defences = dsp.defence.get_defences_levels(1);
+    assert(defences.astral == 1, 'wrong astral level');
+}
+
+#[test]
+#[should_panic]
+fn test_astral_build_fails_dockyard_level() {
+    let dsp = set_up_defence_planet();
+    set_dockyard_level(dsp, 5);
+
+    build_defence(dsp, DefenceBuildType::Astral);
+}
+
+#[test]
+#[should_panic]
+fn test_astral_build_fails_energy_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::ENERGY, 5);
+
+    build_defence(dsp, DefenceBuildType::Astral);
+}
+
+#[test]
+#[should_panic]
+fn test_astral_build_fails_weapons_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::WEAPONS, 2);
+
+    build_defence(dsp, DefenceBuildType::Astral);
+}
+
+#[test]
+#[should_panic]
+fn test_astral_build_fails_shield_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::SHIELD, 0);
+
+    build_defence(dsp, DefenceBuildType::Astral);
 }
 
 #[test]
 fn test_plasma_build() {
-    let dsp = set_up();
-    init_game(dsp);
+    let dsp = set_up_defence_planet();
 
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
-    init_storage(dsp, 1);
+    build_defence(dsp, DefenceBuildType::Plasma);
 
-    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT1());
-    dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
-    let def = dsp.defence.get_defences_levels(1);
-    assert(def.plasma == 1, 'wrong plasma level');
+    let defences = dsp.defence.get_defences_levels(1);
+    assert(defences.plasma == 1, 'wrong plasma level');
+}
+
+#[test]
+#[should_panic]
+fn test_plasma_build_fails_dockyard_level() {
+    let dsp = set_up_defence_planet();
+    set_dockyard_level(dsp, 7);
+
+    build_defence(dsp, DefenceBuildType::Plasma);
+}
+
+#[test]
+#[should_panic]
+fn test_plasma_build_fails_plasma_tech_level() {
+    let dsp = set_up_defence_planet();
+    set_tech_level(dsp, Names::Tech::PLASMA, 6);
+
+    build_defence(dsp, DefenceBuildType::Plasma);
 }
