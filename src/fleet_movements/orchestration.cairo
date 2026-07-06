@@ -135,9 +135,12 @@ fn plan_attack(
         defender_assets.celestia,
         time_now - mission.time_arrival,
     );
-    let (loot_spendable, loot_collectible) = calculate_loot_amount(
-        contracts, mission.destination, settlement.attacker_fleet,
-    );
+    let (loot_spendable, loot_collectible) = if settlement
+        .outcome == battle_settlement::BattleOutcome::AttackerVictory(()) {
+        calculate_loot_amount(contracts, mission.destination, settlement.attacker_fleet)
+    } else {
+        (Zeroable::zero(), Zeroable::zero())
+    };
 
     AttackMissionPlan {
         target,
