@@ -20,7 +20,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Restore focused live tests before larger battle-model changes.
 - [x] Step 4: Repair Stale Scarb Scripts
   - Remove or repair script entries that reference missing files.
-- [ ] Step 5: Resolve License Metadata Contradiction
+- [x] Step 5: Resolve License Metadata Contradiction
   - Align license metadata after maintainer selection of MIT or CC BY-NC-SA 4.0.
 - [x] Step 6: Pin GitHub Actions to Immutable SHAs
   - Pin workflow actions to commit SHAs while preserving tool versions.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, and 12 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, combat damage uses deterministic class-weighted target dilution, and surviving units now restore shields between rounds while deterministic below-70-percent explosions can remove damaged units. Plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, combat damage uses deterministic class-weighted target dilution, surviving units now restore shields between rounds while deterministic below-70-percent explosions can remove damaged units, and license metadata is aligned to MIT across Scarb.toml, README.md, and LICENSE. Plans 013 and 014 are ready for implementation with maintainer-approved rapid-fire and defence-rebuild policy decisions.
 
 ## Update Rules
 
@@ -87,3 +87,5 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Completed Step 12 / issue #48 on branch `codex/issue-48-round-shields-explosions`: `fleet::war` now restores surviving class shields between bounded battle rounds, keeps hull damage in the aggregate class hull, and applies a deterministic below-70-percent explosion approximation with whole-unit expected-loss rounding.
 - 2026-07-06: Added exact-value coverage for shield restoration preserving hull damage and deterministic explosion threshold/rounding behavior. Updated the debris collection decay fixture to collect the new exact debris field produced by the changed combat losses.
 - 2026-07-06: Validation passed for Step 12: `snforge test fleet` (44 passed, 87 filtered), `snforge test attack` (14 passed, 117 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (131 passed). Commit reference pending after rebase.
+- 2026-07-07: Completed Step 5 / issue #40 after the maintainer selected MIT. Replaced the CC BY-NC-SA license text with the MIT license, updated the README license link, confirmed Scarb package metadata already declares `license = "MIT"`, and marked plan 005 done.
+- 2026-07-07: Validation passed for Step 5: `rg -n "MIT|CC BY|Creative Commons|LICENSE/README|license" Scarb.toml README.md LICENSE plans/README.md PROGRESS.md CHANGELOG.md`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
