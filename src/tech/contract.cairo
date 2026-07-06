@@ -45,9 +45,7 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{
-        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
-    };
+    use nogame::game::interfaces::{IContractRegistryDispatcher, IContractRegistryDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{E18, ERC20s, TechLevels, TechUpgradeType};
@@ -115,12 +113,10 @@ mod Tech {
             let caller = get_caller_address();
             let game_address = self.game_manager.read().contract_address;
             let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
-            let planet = contract_registry.get_planet();
             let compound = contract_registry.get_compound();
-            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
-            let workflow = spend_upgrade::begin_planet_workflow(planet, caller);
+            let workflow = spend_upgrade::begin_planet_workflow(game_address, caller);
             let cost = self.upgrade_component(compound, workflow.planet_id, component, quantity);
-            spend_upgrade::spend_and_record(planet, resource_manager, workflow, cost);
+            spend_upgrade::spend_and_record(workflow, cost);
             self.emit(TechSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 

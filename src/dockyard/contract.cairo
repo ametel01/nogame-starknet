@@ -47,9 +47,7 @@ mod Dockyard {
     use nogame::compound::contract::ICompoundDispatcherTrait;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{
-        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
-    };
+    use nogame::game::interfaces::{IContractRegistryDispatcher, IContractRegistryDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{E18, ERC20s, ShipBuildType, ShipsCost, ShipsLevels, TechLevels};
@@ -103,17 +101,15 @@ mod Dockyard {
             let caller = get_caller_address();
             let game_address = self.game_manager.read().contract_address;
             let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
-            let planet = contract_registry.get_planet();
             let compound = contract_registry.get_compound();
             let tech = contract_registry.get_tech();
-            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
-            let workflow = spend_upgrade::begin_planet_workflow(planet, caller);
+            let workflow = spend_upgrade::begin_planet_workflow(game_address, caller);
 
             let dockyard_level = compound.get_compounds_levels(workflow.planet_id).dockyard;
             let techs = tech.get_tech_levels(workflow.planet_id);
             let cost = self
                 .build_component(workflow.planet_id, dockyard_level, techs, component, quantity);
-            spend_upgrade::spend_and_record(planet, resource_manager, workflow, cost);
+            spend_upgrade::spend_and_record(workflow, cost);
             self.emit(FleetSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 

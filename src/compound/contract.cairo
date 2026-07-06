@@ -13,9 +13,6 @@ mod Compound {
     use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::compound::library as compound;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{
-        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
-    };
     use nogame::libraries::names::Names;
     use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{CompoundUpgradeType, CompoundsLevels, E18, ERC20s, HOUR};
@@ -81,14 +78,10 @@ mod Compound {
 
         fn process_upgrade(ref self: ContractState, component: CompoundUpgradeType, quantity: u8) {
             let caller = get_caller_address();
-            // Use segregated interface for better separation of concerns
             let game_address = self.game_manager.read().contract_address;
-            let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
-            let planet = contract_registry.get_planet();
-            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
-            let workflow = spend_upgrade::begin_planet_workflow(planet, caller);
+            let workflow = spend_upgrade::begin_planet_workflow(game_address, caller);
             let cost = self.upgrade_component(workflow.planet_id, component, quantity);
-            spend_upgrade::spend_and_record(planet, resource_manager, workflow, cost);
+            spend_upgrade::spend_and_record(workflow, cost);
             self.emit(CompoundSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 
