@@ -66,8 +66,3 @@ fn test_get_ships_level() {
     assert(ships.frigate == 28, 'wrong frigate');
     assert(ships.armade == 38, 'wrong armade');
 }
-
-#[test]
-fn test_get_celestia_available() { // TODO
-    assert(0 == 0, 'todo');
-}
