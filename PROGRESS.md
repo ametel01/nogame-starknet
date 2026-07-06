@@ -54,6 +54,9 @@
 - 2026-07-06: Issue #6 validation passed: `scarb fmt --check`, `scarb build`, `snforge test test_erc721_nogame_transfers_and_approvals`, and `snforge test`.
 - 2026-07-06: Issue #9 drift check `git diff --stat a370d98..HEAD -- src/planet/contract.cairo src/dockyard/contract.cairo src/defence/contract.cairo tests` showed only prior test/helper changes and no target-contract drift.
 - 2026-07-06: Issue #9 validation passed: `snforge test test_privileged_setters`, `scarb fmt --check`, `scarb build`, and `snforge test`.
+- 2026-07-06: Issue #11 drift check `git diff --stat a370d98..HEAD -- scripts/deploy-starknet.sh .env.local.example .env.docker.example DEPLOYMENT.md` showed only prior credential hygiene docs/example env changes; the deployment script still matched plan 014.
+- 2026-07-06: Issue #11 hardened `scripts/deploy-starknet.sh` by replacing env-file execution with strict `KEY=VALUE` parsing, using private-key argument arrays, quoting `starkli` arguments, and surfacing declare/deploy/invoke failures with explicit errors.
+- 2026-07-06: Issue #11 validation passed: `bash -n scripts/deploy-starknet.sh`, deployment hardening no-match `rg`, concrete private-key no-match `rg`, docs/script `source`/`eval` no-match `rg`, strict-parser temp-file smoke test, `scarb fmt --check`, and `git diff --check`.
 
 ## Update Log
 
@@ -63,3 +66,4 @@
 - 2026-07-06: Completed Step 1 for issue #4 by gating Game resource manager mutations to registered game contracts while preserving public read-only resource queries.
 - 2026-07-06: Completed issue #6 by centralizing ERC721NoGame `token_of` transfer index updates, covering stale sender indexes, and updating the plan tracker.
 - 2026-07-06: Completed Step 6 for issue #9 by gating privileged Planet, Dockyard, and Defence setters to registered lifecycle callers while preserving Fleet and Colony flows.
+- 2026-07-06: Completed issue #11 by hardening deployment env parsing and `starkli` command construction without running any real deployment.
