@@ -500,9 +500,7 @@ fn test_attack_colony() {
     expected_attacker_resources.quartz = 8228;
     expected_attacker_resources.tritium = 2399;
 
-    let mut expected_debris: Debris = Default::default();
-    expected_debris.steel = 666;
-    expected_debris.quartz = 666;
+    let expected_debris: Debris = Default::default();
 
     assert!(
         (attacker_resources_after - attacker_resources) == expected_attacker_resources,

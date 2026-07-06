@@ -71,20 +71,146 @@ fn war(
     let mut defenders = build_ships_array(defenders, defences, d_techs);
     let mut round = 0;
     while round < MAX_BATTLE_ROUNDS && !attackers.is_empty() && !defenders.is_empty() {
-        let mut u1 = attackers.pop_front().unwrap();
-        let mut u2 = defenders.pop_front().unwrap();
-        let (u1, u2) = unit_combat(ref u1, ref u2);
-        if u1.hull > 0 {
-            attackers.append(u1);
-        }
-        if u2.hull > 0 {
-            defenders.append(u2);
-        }
+        let attacker_weapon = total_weapon_power(ref attackers);
+        let defender_weapon = total_weapon_power(ref defenders);
+        let attackers_have_frigates = has_unit_class(ref attackers, 3);
+        let defenders_have_frigates = has_unit_class(ref defenders, 3);
+
+        apply_weighted_damage(attacker_weapon, attackers_have_frigates, ref defenders, d_techs);
+        apply_weighted_damage(defender_weapon, defenders_have_frigates, ref attackers, a_techs);
         round += 1;
     }
     let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers, a_techs);
     let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref defenders, d_techs);
     (attacker_fleet_struct, defender_fleet_struct, defences_struct)
+}
+
+fn total_weapon_power(ref units: Array<Unit>) -> u32 {
+    let mut total = 0;
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let unit = units.pop_front().unwrap();
+        total += unit.weapon;
+        restored.append(unit);
+    }
+    restore_units(ref units, ref restored);
+    total
+}
+
+fn has_unit_class(ref units: Array<Unit>, unit_id: u8) -> bool {
+    let mut found = false;
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let unit = units.pop_front().unwrap();
+        if unit.id == unit_id && unit.hull > 0 {
+            found = true;
+        }
+        restored.append(unit);
+    }
+    restore_units(ref units, ref restored);
+    found
+}
+
+fn apply_weighted_damage(
+    incoming_weapon: u32,
+    attackers_have_frigates: bool,
+    ref targets: Array<Unit>,
+    techs: TechLevels,
+) {
+    if incoming_weapon == 0 || targets.is_empty() {
+        return;
+    }
+
+    let total_target_count = total_unit_count(ref targets, techs);
+    if total_target_count == 0 {
+        return;
+    }
+
+    let floor_damage = weighted_floor_damage(
+        ref targets, techs, incoming_weapon, total_target_count,
+    );
+    let remainder = incoming_weapon - floor_damage;
+    // Rounding policy: each class gets floor(weapon * count / total_count);
+    // the leftover weapon goes to the lowest unit id present for deterministic fodder bias.
+    let remainder_target_id = lowest_unit_id(ref targets, techs);
+
+    let mut damaged: Array<Unit> = array![];
+    while !targets.is_empty() {
+        let mut target = targets.pop_front().unwrap();
+        let target_count = get_number_of_units_from_blob(target, techs);
+        let mut allocated_damage = weighted_damage_for_count(
+            incoming_weapon, target_count, total_target_count,
+        );
+        if target.id == remainder_target_id {
+            allocated_damage += remainder;
+        }
+        if attackers_have_frigates && target.id == 2 && allocated_damage > 0 {
+            target.hull = 0;
+            target.shield = 0;
+        } else {
+            let (new_shield, new_hull) = apply_damage(allocated_damage, target.shield, target.hull);
+            target.shield = new_shield;
+            target.hull = new_hull;
+        }
+        if target.hull > 0 {
+            damaged.append(target);
+        }
+    }
+    restore_units(ref targets, ref damaged);
+}
+
+fn total_unit_count(ref units: Array<Unit>, techs: TechLevels) -> u32 {
+    let mut total = 0;
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let unit = units.pop_front().unwrap();
+        total += get_number_of_units_from_blob(unit, techs);
+        restored.append(unit);
+    }
+    restore_units(ref units, ref restored);
+    total
+}
+
+fn weighted_floor_damage(
+    ref targets: Array<Unit>, techs: TechLevels, incoming_weapon: u32, total_target_count: u32,
+) -> u32 {
+    let mut total = 0;
+    let mut restored: Array<Unit> = array![];
+    while !targets.is_empty() {
+        let target = targets.pop_front().unwrap();
+        let target_count = get_number_of_units_from_blob(target, techs);
+        total += weighted_damage_for_count(incoming_weapon, target_count, total_target_count);
+        restored.append(target);
+    }
+    restore_units(ref targets, ref restored);
+    total
+}
+
+fn lowest_unit_id(ref units: Array<Unit>, techs: TechLevels) -> u8 {
+    let mut lowest: u8 = 255;
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let unit = units.pop_front().unwrap();
+        if get_number_of_units_from_blob(unit, techs) > 0 && unit.id < lowest {
+            lowest = unit.id;
+        }
+        restored.append(unit);
+    }
+    restore_units(ref units, ref restored);
+    lowest
+}
+
+fn weighted_damage_for_count(
+    incoming_weapon: u32, target_count: u32, total_target_count: u32,
+) -> u32 {
+    let weighted: u128 = incoming_weapon.into() * target_count.into() / total_target_count.into();
+    weighted.try_into().expect('damage alloc failed')
+}
+
+fn restore_units(ref units: Array<Unit>, ref restored: Array<Unit>) {
+    while !restored.is_empty() {
+        units.append(restored.pop_front().unwrap());
+    }
 }
 
 /// Applies damage from one unit to another, handling shields and hull.
@@ -271,7 +397,7 @@ fn add_techs(ref unit: Unit, techs: TechLevels) {
 /// - `techs`: Tech levels to apply to base unit
 ///
 /// # Returns
-/// - Number of individual units in the blob (hull / base_unit_hull)
+/// - Number of individual units in the blob, counting partial surviving hull as one unit
 ///
 /// # Notes
 /// - Uses match statement for O(1) lookup instead of if-else chain
@@ -292,7 +418,7 @@ fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
     };
 
     add_techs(ref base_unit, techs);
-    blob.hull / base_unit.hull
+    (blob.hull + base_unit.hull - 1) / base_unit.hull
 }
 
 fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {
