@@ -14,6 +14,10 @@ and this project adheres to semantic versioning when versions are released.
 - Add deterministic class-weighted combat targeting so cheap ship counts can dilute incoming damage without per-unit random target loops.
 - Add round-by-round shield restoration and deterministic below-70-percent explosion losses to bounded class-weighted combat.
 
+### Changed
+
+- Align repository license metadata and license text to MIT.
+
 ### Security
 
 - Gate Game resource manager mutation methods so arbitrary external callers cannot mint, burn, or spend resource balances through Game.
