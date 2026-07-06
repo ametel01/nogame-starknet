@@ -5,7 +5,7 @@ use nogame::libraries::types::{ERC20s, TechLevels, TechsCost};
 fn get_tech_cost(current_level: u8, quantity: u8, base_cost: ERC20s) -> ERC20s {
     let mut cost: ERC20s = Default::default();
 
-    let mut i = current_level + quantity.into();
+    let mut i = current_level + quantity;
     while i != current_level {
         let level_cost = ERC20s {
             steel: (base_cost.steel * Pow::pow(2_u128, i.into() - 1)),

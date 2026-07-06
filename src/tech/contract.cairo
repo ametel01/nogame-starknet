@@ -160,130 +160,85 @@ mod Tech {
                     cost = tech::get_tech_cost(techs.energy, quantity, base_cost.energy);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::ENERGY),
-                            techs.energy + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::ENERGY), techs.energy + quantity);
                 },
                 TechUpgradeType::Digital => {
                     tech::digital_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.digital, quantity, base_cost.digital);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::DIGITAL),
-                            techs.digital + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::DIGITAL), techs.digital + quantity);
                 },
                 TechUpgradeType::BeamTech => {
                     tech::beam_tech_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.beam, quantity, base_cost.beam);
-                    self
-                        .tech_level
-                        .write(
-                            (planet_id, Names::Tech::BEAM),
-                            techs.beam + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                    self.tech_level.write((planet_id, Names::Tech::BEAM), techs.beam + quantity);
                 },
                 TechUpgradeType::Armour => {
                     tech::armour_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.armour, quantity, base_cost.armour);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::ARMOUR),
-                            techs.armour + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::ARMOUR), techs.armour + quantity);
                 },
                 TechUpgradeType::Ion => {
                     tech::ion_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.ion, quantity, base_cost.ion);
-                    self
-                        .tech_level
-                        .write(
-                            (planet_id, Names::Tech::ION),
-                            techs.ion + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                    self.tech_level.write((planet_id, Names::Tech::ION), techs.ion + quantity);
                 },
                 TechUpgradeType::PlasmaTech => {
                     tech::plasma_tech_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.plasma, quantity, base_cost.plasma);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::PLASMA),
-                            techs.plasma + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::PLASMA), techs.plasma + quantity);
                 },
                 TechUpgradeType::Weapons => {
                     tech::weapons_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.weapons, quantity, base_cost.weapons);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::WEAPONS),
-                            techs.weapons + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::WEAPONS), techs.weapons + quantity);
                 },
                 TechUpgradeType::Shield => {
                     tech::shield_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.shield, quantity, base_cost.shield);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::SHIELD),
-                            techs.shield + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::SHIELD), techs.shield + quantity);
                 },
                 TechUpgradeType::Spacetime => {
                     tech::spacetime_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.spacetime, quantity, base_cost.spacetime);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::SPACETIME),
-                            techs.spacetime + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::SPACETIME), techs.spacetime + quantity);
                 },
                 TechUpgradeType::Combustion => {
                     tech::combustion_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.combustion, quantity, base_cost.combustion);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::COMBUSTION),
-                            techs.combustion + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::COMBUSTION), techs.combustion + quantity);
                 },
                 TechUpgradeType::Thrust => {
                     tech::thrust_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.thrust, quantity, base_cost.thrust);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::THRUST),
-                            techs.thrust + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::THRUST), techs.thrust + quantity);
                 },
                 TechUpgradeType::Warp => {
                     tech::warp_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.warp, quantity, base_cost.warp);
-                    self
-                        .tech_level
-                        .write(
-                            (planet_id, Names::Tech::WARP),
-                            techs.warp + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                    self.tech_level.write((planet_id, Names::Tech::WARP), techs.warp + quantity);
                 },
                 TechUpgradeType::Exocraft => {
                     tech::exocraft_requirements_check(lab_level, techs);
                     cost = tech::exocraft_cost(techs.exocraft, quantity);
                     self
                         .tech_level
-                        .write(
-                            (planet_id, Names::Tech::EXOCRAFT),
-                            techs.exocraft + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Tech::EXOCRAFT), techs.exocraft + quantity);
                 },
             }
             resource_manager.spend_resources(caller, cost);

@@ -1076,14 +1076,14 @@ mod FleetMovements {
             let mut i = 1;
             loop {
                 if i > len {
-                    mission.id = i.try_into().expect('add active mission fail');
+                    mission.id = i;
                     self.active_missions.write((planet_id, i), mission);
                     self.active_missions_len.write(planet_id, i);
                     break;
                 }
                 let read_mission = self.active_missions.read((planet_id, i));
                 if read_mission.is_zero() {
-                    mission.id = i.try_into().expect('add active mission fail');
+                    mission.id = i;
                     self.active_missions.write((planet_id, i), mission);
                     break;
                 }

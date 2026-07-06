@@ -258,7 +258,7 @@ mod Colony {
                 let eth = game_manager.get_tokens().eth;
                 eth.transfer_from(caller, self.ownable.owner(), price);
             }
-            let position = positions::get_colony_position(current_count.into());
+            let position = positions::get_colony_position(current_count);
             let colony_id = self.planet_colonies_count.read(planet_id) + 1;
             let id = colony_identity::encode_colony_id(planet_id, colony_id);
             self.colony_position.write((planet_id, colony_id), position);
@@ -607,7 +607,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::STEEL),
-                            current_levels.steel + quantity.try_into().expect('u32 into u8 failed'),
+                            current_levels.steel + quantity,
                         );
                 },
                 ColonyUpgradeType::QuartzMine => {
@@ -615,8 +615,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::QUARTZ),
-                            current_levels.quartz
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            current_levels.quartz + quantity,
                         );
                 },
                 ColonyUpgradeType::TritiumMine => {
@@ -624,8 +623,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::TRITIUM),
-                            current_levels.tritium
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            current_levels.tritium + quantity,
                         );
                 },
                 ColonyUpgradeType::EnergyPlant => {
@@ -633,8 +631,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::ENERGY),
-                            current_levels.energy
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            current_levels.energy + quantity,
                         );
                 },
                 ColonyUpgradeType::Dockyard => {
@@ -642,8 +639,7 @@ mod Colony {
                         .colony_compounds
                         .write(
                             (planet_id, colony_id, Names::Compound::DOCKYARD),
-                            current_levels.dockyard
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            current_levels.dockyard + quantity,
                         );
                 },
             }

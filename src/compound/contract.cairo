@@ -124,9 +124,7 @@ mod Compound {
                     self
                         .compound_level
                         .write(
-                            (planet_id, Names::Compound::STEEL),
-                            compound_levels.steel
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            (planet_id, Names::Compound::STEEL), compound_levels.steel + quantity,
                         );
                 },
                 CompoundUpgradeType::QuartzMine => {
@@ -134,9 +132,7 @@ mod Compound {
                     self
                         .compound_level
                         .write(
-                            (planet_id, Names::Compound::QUARTZ),
-                            compound_levels.quartz
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            (planet_id, Names::Compound::QUARTZ), compound_levels.quartz + quantity,
                         );
                 },
                 CompoundUpgradeType::TritiumMine => {
@@ -145,8 +141,7 @@ mod Compound {
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::TRITIUM),
-                            compound_levels.tritium
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            compound_levels.tritium + quantity,
                         );
                 },
                 CompoundUpgradeType::EnergyPlant => {
@@ -154,19 +149,14 @@ mod Compound {
                     self
                         .compound_level
                         .write(
-                            (planet_id, Names::Compound::ENERGY),
-                            compound_levels.energy
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            (planet_id, Names::Compound::ENERGY), compound_levels.energy + quantity,
                         );
                 },
                 CompoundUpgradeType::Lab => {
                     cost = compound::cost::lab(compound_levels.lab, quantity);
                     self
                         .compound_level
-                        .write(
-                            (planet_id, Names::Compound::LAB),
-                            compound_levels.lab + quantity.try_into().expect('u32 into u8 failed'),
-                        );
+                        .write((planet_id, Names::Compound::LAB), compound_levels.lab + quantity);
                 },
                 CompoundUpgradeType::Dockyard => {
                     cost = compound::cost::dockyard(compound_levels.dockyard, quantity);
@@ -174,8 +164,7 @@ mod Compound {
                         .compound_level
                         .write(
                             (planet_id, Names::Compound::DOCKYARD),
-                            compound_levels.dockyard
-                                + quantity.try_into().expect('u32 into u8 failed'),
+                            compound_levels.dockyard + quantity,
                         );
                 },
             }

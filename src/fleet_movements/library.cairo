@@ -383,10 +383,10 @@ fn get_distance(start: PlanetPosition, end: PlanetPosition) -> u32 {
             return 1000 + 5 * dis;
         }
     } else if start.system > end.system {
-        let dis: u32 = (start.system - end.system).into();
+        let dis: u32 = start.system - end.system;
         return 2700 + 95 * dis;
     } else {
-        let dis: u32 = (end.system - start.system).into();
+        let dis: u32 = end.system - start.system;
         return 2700 + 95 * dis;
     }
 }
