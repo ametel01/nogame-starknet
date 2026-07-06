@@ -162,8 +162,8 @@ mod ResourceName {
 mod Colony {
     use nogame::colony::assets::{self, ColonyAssetState};
     use nogame::colony::positions;
-    use nogame::compound::library as compound;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
         ColonyBuildType, ColonyUpgradeType, CompoundsLevels, Defences, ERC20s, Fleet, HOUR,
@@ -320,22 +320,30 @@ mod Colony {
             ref self: ContractState, colony_id: u8, name: ColonyUpgradeType, quantity: u8,
         ) {
             // Cache game_manager read to avoid redundant storage access
-            let contracts = self.game_manager.read().get_contracts();
-            let planet_id = contracts.planet.get_owned_planet(get_caller_address());
+            let caller = get_caller_address();
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+            let planet_id = contracts.planet.get_owned_planet(caller);
             self.verify_colony_exist(planet_id, colony_id);
-            self.upgrade_component(planet_id, colony_id, name, quantity);
+            let (next_levels, cost) = self.upgrade_component(planet_id, colony_id, name, quantity);
+            self.spend_and_record_colony_cost(caller, planet_id, cost);
+            self.write_colony_compounds(planet_id, colony_id, next_levels);
         }
 
         fn process_colony_unit_build(
             ref self: ContractState, colony_id: u8, name: ColonyBuildType, quantity: u32,
         ) {
             // Cache game_manager read to avoid redundant storage access
+            let caller = get_caller_address();
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
-            let planet_id = contracts.planet.get_owned_planet(get_caller_address());
+            let planet_id = contracts.planet.get_owned_planet(caller);
             self.verify_colony_exist(planet_id, colony_id);
             let techs = contracts.tech.get_tech_levels(planet_id);
-            self.build_component(planet_id, colony_id, techs, name, quantity);
+            let (next, cost) = self.build_component(planet_id, colony_id, techs, name, quantity);
+            self.spend_and_record_colony_cost(caller, planet_id, cost);
+            self.write_colony_ships(planet_id, colony_id, next.ships);
+            self.write_colony_defences(planet_id, colony_id, next.defences);
         }
 
         fn update_defences_after_attack(
@@ -554,6 +562,17 @@ mod Colony {
                 );
         }
 
+        fn spend_and_record_colony_cost(
+            ref self: ContractState, caller: ContractAddress, planet_id: u32, cost: ERC20s,
+        ) {
+            let game_manager = self.game_manager.read();
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: game_manager.contract_address,
+            };
+            resource_manager.spend_resources(caller, cost);
+            game_manager.get_contracts().planet.update_planet_points(planet_id, cost, false);
+        }
+
         fn set_colony_ship_level(
             ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
@@ -572,14 +591,9 @@ mod Colony {
             colony_id: u8,
             component: ColonyUpgradeType,
             quantity: u8,
-        ) {
+        ) -> (CompoundsLevels, ERC20s) {
             let current_levels = self.get_colony_compounds(planet_id, colony_id);
-            self
-                .write_colony_compounds(
-                    planet_id,
-                    colony_id,
-                    assets::upgrade_compounds(current_levels, component, quantity),
-                );
+            assets::upgrade_compounds(current_levels, component, quantity)
         }
 
         fn build_component(
@@ -589,8 +603,8 @@ mod Colony {
             techs: TechLevels,
             component: ColonyBuildType,
             quantity: u32,
-        ) {
-            let next = assets::build_units(
+        ) -> (ColonyAssetState, ERC20s) {
+            assets::build_units(
                 ColonyAssetState {
                     compounds: self.get_colony_compounds(planet_id, colony_id),
                     ships: self.get_colony_ships(planet_id, colony_id),
@@ -599,9 +613,7 @@ mod Colony {
                 techs,
                 component,
                 quantity,
-            );
-            self.write_colony_ships(planet_id, colony_id, next.ships);
-            self.write_colony_defences(planet_id, colony_id, next.defences);
+            )
         }
 
         fn write_colony_compounds(

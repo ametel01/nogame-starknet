@@ -31,7 +31,7 @@
 | 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Complete | #7 |
 | 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Complete | #4, #9 |
 | 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Complete | #10 |
-| 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Pending | #4, #12 |
+| 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Complete | #4, #12 |
 | 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Complete | #12 |
 | 13 | [#16](https://github.com/ametel01/nogame-starknet/issues/16) | 4 | Require transport arrival before docking | Complete | #12 |
 | 14 | [#17](https://github.com/ametel01/nogame-starknet/issues/17) | 5 | Replace no-op dockyard and defence requirement tests | Pending | #9, #14 |
@@ -72,6 +72,9 @@
 - 2026-07-06: Issue #16 drift check `git diff --stat a370d98..HEAD -- src/fleet_movements/contract.cairo src/fleet_movements/orchestration.cairo tests/colony_test.cairo tests/fleet_write.cairo` showed only prior `tests/colony_test.cairo` drift from prerequisite work; live `dock_fleet` still matched plan 013.
 - 2026-07-06: Issue #16 requires transport missions to reach `mission.time_arrival` before `dock_fleet` returns ships, with a panic regression for early docking.
 - 2026-07-06: Issue #16 validation passed: `snforge test dock_fleet`, `snforge test test_send_fleet_to_colony`, `snforge test test_send_fleet_from_colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-06: Issue #14 drift check `git diff --stat a370d98..HEAD -- src/colony/contract.cairo src/colony/assets.cairo src/compound/library.cairo src/dockyard/library.cairo src/defence/library.cairo tests/colony_test.cairo` showed only prior issue #12 colony identity changes in the planned scope; plan 005 remained applicable.
+- 2026-07-06: Issue #14 charged real player resources and recorded planet points for colony compound upgrades, ship builds, and defence builds using existing compound, dockyard, and defence cost formulas.
+- 2026-07-06: Issue #14 validation passed: `snforge test colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -88,3 +91,4 @@
 - 2026-07-06: Completed issue #12 by fixing planet/colony resource collection identity and strengthening `test_collect_resources_all_planets` to assert all colony timers are reset.
 - 2026-07-06: Completed issue #15 by enforcing colony capacity per home planet and adding a regression proving one player's colonies do not block another player's first allowed colony.
 - 2026-07-06: Completed issue #16 by requiring transport arrival before docking and covering early dock attempts with a regression test.
+- 2026-07-06: Completed issue #14 by charging and point-recording colony upgrades/builds and adding colony spend/revert regressions.
