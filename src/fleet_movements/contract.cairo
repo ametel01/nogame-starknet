@@ -366,6 +366,7 @@ mod FleetMovements {
             let mission = self.get_mission_details(origin, mission_id);
             assert!(mission.category == MissionCategory::TRANSPORT, "Fleet:E_WRONG_CATEGORY");
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
+            assert!(get_block_timestamp() >= mission.time_arrival, "Fleet:E_ARRIVAL_PENDING");
             lifecycle::return_fleet(contracts, mission.destination, mission.fleet);
             self
                 .clear_mission(

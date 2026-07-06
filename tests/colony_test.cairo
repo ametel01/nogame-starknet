@@ -170,6 +170,38 @@ fn test_send_fleet_to_colony() {
 }
 
 #[test]
+#[should_panic]
+fn test_dock_fleet_fails_before_arrival() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 1);
+
+    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
+    dsp.colony.generate_colony();
+    stop_cheat_caller_address(dsp.colony.contract_address);
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 1);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    let mut fleet: Fleet = Default::default();
+    fleet.carrier = 1;
+
+    let mut p2_position: PlanetPosition = Default::default();
+    p2_position.system = 188;
+    p2_position.orbit = 10;
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet, p2_position, MissionCategory::TRANSPORT, 100, 0);
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    assert(starknet::get_block_timestamp() < mission.time_arrival, 'wrong mission arrival');
+    dsp.fleet.dock_fleet(1, 0);
+}
+
+#[test]
 fn test_send_fleet_from_colony() {
     let dsp: Dispatchers = set_up();
     init_game(dsp);
