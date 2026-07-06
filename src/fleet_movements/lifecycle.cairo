@@ -141,6 +141,12 @@ fn update_defender_assets(
     contracts: Contracts, destination_id: u32, plan: orchestration::AttackMissionPlan,
 ) {
     if plan.target.is_colony {
+        write_colony_fleet(
+            contracts,
+            plan.target.mother_planet_id,
+            plan.target.colony_id,
+            plan.settlement.defender_fleet,
+        );
         contracts
             .colony
             .update_defences_after_attack(
@@ -185,6 +191,14 @@ fn write_planet_fleet(contracts: Contracts, planet_id: u32, fleet: Fleet) {
     contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SPARROW, fleet.sparrow);
     contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::FRIGATE, fleet.frigate);
     contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::ARMADE, fleet.armade);
+}
+
+fn write_colony_fleet(contracts: Contracts, planet_id: u32, colony_id: u8, fleet: Fleet) {
+    contracts.colony.set_colony_ship(planet_id, colony_id, Names::Fleet::CARRIER, fleet.carrier);
+    contracts.colony.set_colony_ship(planet_id, colony_id, Names::Fleet::SCRAPER, fleet.scraper);
+    contracts.colony.set_colony_ship(planet_id, colony_id, Names::Fleet::SPARROW, fleet.sparrow);
+    contracts.colony.set_colony_ship(planet_id, colony_id, Names::Fleet::FRIGATE, fleet.frigate);
+    contracts.colony.set_colony_ship(planet_id, colony_id, Names::Fleet::ARMADE, fleet.armade);
 }
 
 fn write_planet_defences(contracts: Contracts, planet_id: u32, defences: Defences) {

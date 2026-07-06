@@ -13,6 +13,7 @@ and this project adheres to semantic versioning when versions are released.
 - Add `simulate_attack_with_techs` so clients can preview battle losses with caller-supplied attacker and defender tech levels while preserving the existing zero-tech `simulate_attack` view.
 - Add deterministic class-weighted combat targeting so cheap ship counts can dilute incoming damage without per-unit random target loops.
 - Add round-by-round shield restoration and deterministic below-70-percent explosion losses to bounded class-weighted combat.
+- Add deterministic 70% defence rebuild settlement after attacks while keeping ship losses permanent.
 
 ### Changed
 
