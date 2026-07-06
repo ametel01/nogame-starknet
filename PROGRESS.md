@@ -16,7 +16,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Reject `send_fleet` speed modifiers outside `1..=100`.
 - [ ] Step 2: Prevent Phantom Spendable Loot Grants
   - Keep spendable and collectible loot accounting separated and cargo-limited.
-- [ ] Step 3: Restore Battle Math Characterization Tests
+- [x] Step 3: Restore Battle Math Characterization Tests
   - Restore focused live tests before larger battle-model changes.
 - [x] Step 4: Repair Stale Scarb Scripts
   - Remove or repair script entries that reference missing files.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Step 4 is complete and validated. The next available wave after Step 0 contains independent implementation plans 001, 002, 003, 006, 008, and 009; plan 005 remains blocked on a maintainer license decision.
+Steps 3 and 4 are complete and validated. The remaining available wave items are independent implementation plans 001, 002, 006, 008, and 009; plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -64,3 +64,4 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Validation passed: `test -f CHANGELOG.md && rg -n "# Changelog|Keep a Changelog|## \\[Unreleased\\]" CHANGELOG.md` found the required changelog markers.
 - 2026-07-06: Completed Step 4 by removing stale `declare`, `deploy`, and `len` Scarb scripts that pointed to missing `scripts/sepolia/*` and `scripts/sierra_len.sh` files. Deployment docs already use `./scripts/deploy-starknet.sh`, so no deployment-doc edit was needed.
 - 2026-07-06: Validation passed for Step 4: `find scripts -maxdepth 3 -type f -print | sort`; `rg -n "scripts/sepolia|sierra_len|scarb run deploy|deploy-starknet" Scarb.toml DEPLOYMENT.md README.md`; `rg -n "declare|deploy|len|scripts/" Scarb.toml DEPLOYMENT.md scripts`; `scarb fmt --check`; `scarb build`; `snforge test` (114 passed).
+- 2026-07-06: Completed Step 3 / issue #38 on branch `codex/issue-38-battle-characterization`: replaced the commented `tests/fleet.cairo` placeholder with live characterization tests for direct battle helper matchups, zero-tech `simulate_attack`, and carrier speed/flight-time behavior. Validation passed: `snforge test fleet` (31 passed, 87 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (118 passed). Implementation commit after rebase: `60ee0ae`.
