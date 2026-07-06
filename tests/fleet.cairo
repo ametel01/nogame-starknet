@@ -62,6 +62,11 @@ fn test_simulate_attack_pins_zero_tech_losses() {
     let defences: Defences = Default::default();
 
     let result = dsp.fleet.simulate_attack(attackers, defenders, defences);
+    let compatibility_result = dsp
+        .fleet
+        .simulate_attack_with_techs(
+            attackers, defenders, defences, Default::default(), Default::default(),
+        );
 
     assert(result.attacker_carrier == 0, 'wrong attacker carrier');
     assert(result.attacker_scraper == 0, 'wrong attacker scraper');
@@ -69,6 +74,42 @@ fn test_simulate_attack_pins_zero_tech_losses() {
     assert(result.attacker_frigate == 0, 'wrong attacker frigate');
     assert(result.attacker_armade == 0, 'wrong attacker armade');
     assert(result.defender_carrier == 1, 'wrong defender carrier');
+    assert(result.defender_scraper == 0, 'wrong defender scraper');
+    assert(result.defender_sparrow == 0, 'wrong defender sparrow');
+    assert(result.defender_frigate == 0, 'wrong defender frigate');
+    assert(result.defender_armade == 0, 'wrong defender armade');
+    assert(result.celestia == 0, 'wrong celestia');
+    assert(result.blaster == 0, 'wrong blaster');
+    assert(result.beam == 0, 'wrong beam');
+    assert(result.astral == 0, 'wrong astral');
+    assert(result.plasma == 0, 'wrong plasma');
+    assert(result == compatibility_result, 'zero tech mismatch');
+}
+
+#[test]
+fn test_simulate_attack_with_techs_uses_asymmetric_techs() {
+    let dsp = set_up();
+    let mut attackers: Fleet = Default::default();
+    attackers.carrier = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.carrier = 3;
+    let defences: Defences = Default::default();
+    let mut attacker_techs: TechLevels = Default::default();
+    attacker_techs.weapons = 10;
+    attacker_techs.armour = 20;
+    let mut defender_techs: TechLevels = Default::default();
+    defender_techs.armour = 1;
+
+    let result = dsp
+        .fleet
+        .simulate_attack_with_techs(attackers, defenders, defences, attacker_techs, defender_techs);
+
+    assert(result.attacker_carrier == 1, 'wrong attacker carrier');
+    assert(result.attacker_scraper == 0, 'wrong attacker scraper');
+    assert(result.attacker_sparrow == 0, 'wrong attacker sparrow');
+    assert(result.attacker_frigate == 0, 'wrong attacker frigate');
+    assert(result.attacker_armade == 0, 'wrong attacker armade');
+    assert(result.defender_carrier == 2, 'wrong defender carrier');
     assert(result.defender_scraper == 0, 'wrong defender scraper');
     assert(result.defender_sparrow == 0, 'wrong defender sparrow');
     assert(result.defender_frigate == 0, 'wrong defender frigate');

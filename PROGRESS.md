@@ -24,7 +24,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Align license metadata after maintainer selection of MIT or CC BY-NC-SA 4.0.
 - [x] Step 6: Pin GitHub Actions to Immutable SHAs
   - Pin workflow actions to commit SHAs while preserving tool versions.
-- [ ] Step 7: Add Tech-Aware Battle Simulation View
+- [x] Step 7: Add Tech-Aware Battle Simulation View
   - Add a non-breaking simulator view with caller-supplied tech levels.
 - [x] Step 8: Add Multi-Universe Deployment Manifest
   - Add a tracked example manifest and deployment docs for preserving universe address sets.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, 8, and 9 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the deployment docs include a tracked example manifest for preserving universe address sets, and large-ship debris now uses frigate and armade unit costs. Plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, 7, 8, and 9 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, and large-ship debris uses frigate and armade unit costs. Plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -75,3 +75,6 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Step 8 validation passed: `python3 -m json.tool deployments/universes.example.json >/dev/null`; `rg -n "universes.example.json|UNIVERSE_ID|universe_id|manifest|GAME_ADDRESS" DEPLOYMENT.md deployments/universes.example.json`; `scarb fmt --check`; `scarb build`; `snforge test` (114 passed).
 - 2026-07-06: Completed Step 9 on `codex/issue-44-large-ship-debris`: `get_debris` now uses `costs.frigate` and `costs.armade` for destroyed frigate/armade debris instead of sparrow costs, with focused regression coverage in `tests/fleet_write.cairo`.
 - 2026-07-06: Step 9 validation passed: `scarb build`; `snforge test debris` (8 passed, 0 failed, 107 filtered out); `scarb fmt --check`; `scarb build`; `snforge test` (115 passed, 0 failed).
+- 2026-07-06: Completed Step 7 / issue #42 by adding `simulate_attack_with_techs` to `IFleetMovements` and delegating the existing `simulate_attack` compatibility view through default attacker and defender tech levels. The new view calls `battle_settlement::settle` with caller-supplied techs, `defences.celestia`, and `time_since_arrived = 0`.
+- 2026-07-06: Added simulator coverage for zero-tech compatibility and an asymmetric carrier matchup whose expected losses change if attacker or defender techs are ignored or swapped.
+- 2026-07-06: Validation passed for Step 7: `snforge test simulate` (2 passed, 120 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (122 passed). Commit reference pending after rebase.

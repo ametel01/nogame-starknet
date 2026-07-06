@@ -1,5 +1,5 @@
 use nogame::libraries::types::{
-    Debris, Defences, Fleet, IncomingMission, Mission, PlanetPosition, SimulationResult,
+    Debris, Defences, Fleet, IncomingMission, Mission, PlanetPosition, SimulationResult, TechLevels,
 };
 
 #[starknet::interface]
@@ -123,6 +123,30 @@ trait IFleetMovements<TState> {
     /// - Does not modify any state
     fn simulate_attack(
         self: @TState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
+    ) -> SimulationResult;
+
+    /// Simulates a battle with caller-supplied attacker and defender tech levels.
+    ///
+    /// # Parameters
+    /// - `attacker_fleet`: Attacking fleet composition
+    /// - `defender_fleet`: Defending fleet composition
+    /// - `defences`: Defender's defence structures
+    /// - `attacker_techs`: Attacker combat tech levels
+    /// - `defender_techs`: Defender combat tech levels
+    ///
+    /// # Returns
+    /// - SimulationResult containing losses for attacker/defender fleets and defences
+    ///
+    /// # Notes
+    /// - Does not apply arrival decay
+    /// - Does not modify any state
+    fn simulate_attack_with_techs(
+        self: @TState,
+        attacker_fleet: Fleet,
+        defender_fleet: Fleet,
+        defences: Defences,
+        attacker_techs: TechLevels,
+        defender_techs: TechLevels,
     ) -> SimulationResult;
 
     /// Retrieves all active missions for a planet and its colonies.
@@ -418,8 +442,25 @@ mod FleetMovements {
             self: @ContractState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
         ) -> SimulationResult {
             let techs: TechLevels = Default::default();
+            self.simulate_attack_with_techs(attacker_fleet, defender_fleet, defences, techs, techs)
+        }
+
+        fn simulate_attack_with_techs(
+            self: @ContractState,
+            attacker_fleet: Fleet,
+            defender_fleet: Fleet,
+            defences: Defences,
+            attacker_techs: TechLevels,
+            defender_techs: TechLevels,
+        ) -> SimulationResult {
             let settlement = battle_settlement::settle(
-                attacker_fleet, defender_fleet, defences, techs, techs, defences.celestia, 0,
+                attacker_fleet,
+                defender_fleet,
+                defences,
+                attacker_techs,
+                defender_techs,
+                defences.celestia,
+                0,
             );
             SimulationResult {
                 attacker_carrier: settlement.attacker_loss.carrier,
