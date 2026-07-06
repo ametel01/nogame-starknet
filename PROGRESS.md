@@ -32,7 +32,7 @@
 | 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Complete | #4, #9 |
 | 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Complete | #10 |
 | 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Pending | #4, #12 |
-| 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Pending | #12 |
+| 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Complete | #12 |
 | 13 | [#16](https://github.com/ametel01/nogame-starknet/issues/16) | 4 | Require transport arrival before docking | Pending | #12 |
 | 14 | [#17](https://github.com/ametel01/nogame-starknet/issues/17) | 5 | Replace no-op dockyard and defence requirement tests | Pending | #9, #14 |
 | 15 | [#18](https://github.com/ametel01/nogame-starknet/issues/18) | 5 | Use checked ERC20s resource arithmetic | Pending | #4, #14 |
@@ -66,6 +66,9 @@
 - 2026-07-06: Issue #12 drift check `git diff --stat a370d98..HEAD -- src/planet/contract.cairo src/colony/contract.cairo tests/colony_test.cairo tests/general_write.cairo` showed only prior Planet privileged-setter authorization changes in the planned contract scope; plan 004 remained applicable.
 - 2026-07-06: Issue #12 fixed resource collection identity so `Planet.collect_resources(player)` uses the player's home planet, collects every returned colony by explicit `(planet_id, colony_id)`, and calls an authorized Colony method that does not derive ownership from the immediate caller.
 - 2026-07-06: Issue #12 validation passed after rebasing on `origin/main` at `762c507`: `snforge test test_collect_resources_all_planets`, `snforge test colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-06: Issue #15 drift check `git diff --stat a370d98..HEAD -- src/colony/contract.cairo tests/colony_test.cairo tests/utils.cairo` showed prior scoped changes from issue #12; live `generate_colony` still matched plan 012's global-count capacity bug and the plan remained applicable.
+- 2026-07-06: Issue #15 fixed colony generation capacity so the max-colony assertion uses each home planet's `planet_colonies_count` while preserving global `colony_count` for placement and total tracking.
+- 2026-07-06: Issue #15 validation passed: `snforge test test_generate_colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -80,3 +83,4 @@
 - 2026-07-06: Completed Step 7 for issue #10 by making `Game.initialize` one-time, recording the initialization block timestamp as `universe_start_time`, and covering owner, non-owner, timestamp, and second-initialize behavior.
 - 2026-07-06: Completed Step 10 for issue #13 by adding the multi-universe deployment lifecycle spike, recommending redeploy-all plus a manifest follow-up before factory/registry work, and leaving `CHANGELOG.md` unchanged because the work is design-only.
 - 2026-07-06: Completed issue #12 by fixing planet/colony resource collection identity and strengthening `test_collect_resources_all_planets` to assert all colony timers are reset.
+- 2026-07-06: Completed issue #15 by enforcing colony capacity per home planet and adding a regression proving one player's colonies do not block another player's first allowed colony.

@@ -57,6 +57,37 @@ fn test_generate_colony() {
     assert(dsp.colony.get_colony_ships(1, 1).carrier == 7, 'wrong colony carrier');
     assert(dsp.colony.get_colony_defences(1, 1).blaster == 4, 'wrong colony blaster');
 }
+
+#[test]
+fn test_generate_colony_uses_planet_limit() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 1);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 2);
+
+    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
+    dsp.colony.generate_colony();
+    dsp.colony.generate_colony();
+    dsp.colony.generate_colony();
+    stop_cheat_caller_address(dsp.colony.contract_address);
+
+    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT2());
+    dsp.colony.generate_colony();
+    stop_cheat_caller_address(dsp.colony.contract_address);
+
+    let colonies = dsp.colony.get_colonies_for_planet(2);
+    assert(colonies.len() == 1, 'wrong p2 colony count');
+    assert(dsp.colony.get_colony_mother_planet(2001) == 2, 'wrong p2 mother planet');
+}
+
 #[test]
 fn test_collect_resources_all_planets() {
     let dsp: Dispatchers = set_up();
