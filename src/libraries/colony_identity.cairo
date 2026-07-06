@@ -1,3 +1,4 @@
+use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
 use nogame::libraries::types::{COLONY_ID_MULTIPLIER, COLONY_PLANET_THRESHOLD};
 
 #[derive(Copy, Drop)]
@@ -33,10 +34,25 @@ fn resolve_colony(colony_planet_id: u32, mother_planet_id: u32) -> ResolvedPlane
     }
 }
 
+fn resolve_planet(colony: IColonyDispatcher, planet_id: u32) -> ResolvedPlanetId {
+    if is_colony_id(planet_id) {
+        return resolve_colony(planet_id, colony.get_colony_mother_planet(planet_id));
+    }
+    resolve_home_planet(planet_id)
+}
+
+fn mother_planet_id(colony: IColonyDispatcher, planet_id: u32) -> u32 {
+    resolve_planet(colony, planet_id).mother_planet_id
+}
+
 fn incoming_mission_bucket(target: ResolvedPlanetId) -> u32 {
     if target.is_colony {
         target.mother_planet_id
     } else {
         target.id
     }
+}
+
+fn incoming_mission_bucket_for_planet(colony: IColonyDispatcher, planet_id: u32) -> u32 {
+    incoming_mission_bucket(resolve_planet(colony, planet_id))
 }

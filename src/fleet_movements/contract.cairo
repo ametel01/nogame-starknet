@@ -349,7 +349,11 @@ mod FleetMovements {
             lifecycle::return_fleet(contracts, mission.origin, mission.fleet);
             self
                 .clear_mission(
-                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                    origin,
+                    mission_id,
+                    colony_identity::incoming_mission_bucket_for_planet(
+                        contracts.colony, mission.destination,
+                    ),
                 );
             lifecycle::touch_origin(contracts, origin);
         }
@@ -365,7 +369,11 @@ mod FleetMovements {
             lifecycle::return_fleet(contracts, mission.destination, mission.fleet);
             self
                 .clear_mission(
-                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                    origin,
+                    mission_id,
+                    colony_identity::incoming_mission_bucket_for_planet(
+                        contracts.colony, mission.destination,
+                    ),
                 );
             lifecycle::touch_origin(contracts, origin);
         }
@@ -385,7 +393,11 @@ mod FleetMovements {
             lifecycle::apply_debris_collection_effects(contracts, caller, mission, plan);
             self
                 .clear_mission(
-                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                    origin,
+                    mission_id,
+                    colony_identity::incoming_mission_bucket_for_planet(
+                        contracts.colony, mission.destination,
+                    ),
                 );
             lifecycle::touch_origin(contracts, origin);
 
@@ -513,11 +525,7 @@ mod FleetMovements {
             debris: Debris,
         ) {
             let contracts = self.game_manager.read().get_contracts();
-            let defender = if colony_identity::is_colony_id(defender) {
-                contracts.colony.get_colony_mother_planet(defender)
-            } else {
-                defender
-            };
+            let defender = colony_identity::mother_planet_id(contracts.colony, defender);
             self
                 .emit(
                     Event::BattleReport(
@@ -574,19 +582,6 @@ mod FleetMovements {
                 i += 1;
             }
             i
-        }
-
-        fn incoming_mission_bucket(self: @ContractState, destination_id: u32) -> u32 {
-            if colony_identity::is_colony_id(destination_id) {
-                self
-                    .game_manager
-                    .read()
-                    .get_contracts()
-                    .colony
-                    .get_colony_mother_planet(destination_id)
-            } else {
-                destination_id
-            }
         }
 
         fn record_mission(

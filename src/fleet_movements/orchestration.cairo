@@ -209,12 +209,7 @@ fn battle_points(fleet: Fleet, defences: Defences) -> ERC20s {
 }
 
 fn resolve_target(contracts: Contracts, planet_id: u32) -> ResolvedPlanetId {
-    if colony_identity::is_colony_id(planet_id) {
-        let colony_owner = contracts.colony.get_colony_mother_planet(planet_id);
-        colony_identity::resolve_colony(planet_id, colony_owner)
-    } else {
-        colony_identity::resolve_home_planet(planet_id)
-    }
+    colony_identity::resolve_planet(contracts.colony, planet_id)
 }
 
 fn assert_send_target(
@@ -244,14 +239,18 @@ fn assert_enough_ships(contracts: Contracts, planet_id: u32, colony_id: u8, flee
 }
 
 fn get_defender_assets(contracts: Contracts, planet_id: u32) -> DefenderAssets {
-    if colony_identity::is_colony_id(planet_id) {
-        let mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
-        let colony_id = colony_identity::decode_colony_id(planet_id, mother_planet);
-        let defences = contracts.colony.get_colony_defences(mother_planet, colony_id);
+    let target = colony_identity::resolve_planet(contracts.colony, planet_id);
+    if target.is_colony {
+        let defences = contracts
+            .colony
+            .get_colony_defences(target.mother_planet_id, target.colony_id);
         return DefenderAssets {
-            fleet: contracts.colony.get_colony_ships(mother_planet, colony_id).into(),
+            fleet: contracts
+                .colony
+                .get_colony_ships(target.mother_planet_id, target.colony_id)
+                .into(),
             defences,
-            techs: contracts.tech.get_tech_levels(mother_planet),
+            techs: contracts.tech.get_tech_levels(target.mother_planet_id),
             celestia: defences.celestia,
         };
     }
@@ -274,10 +273,11 @@ fn calculate_loot_amount(
     let mut spendable: ERC20s = Default::default();
     let mut collectible: ERC20s = Default::default();
 
-    if colony_identity::is_colony_id(destination_id) {
-        let mother_planet = contracts.colony.get_colony_mother_planet(destination_id);
-        let colony_id = colony_identity::decode_colony_id(destination_id, mother_planet);
-        collectible = contracts.colony.get_colony_resources(mother_planet, colony_id);
+    let target = colony_identity::resolve_planet(contracts.colony, destination_id);
+    if target.is_colony {
+        collectible = contracts
+            .colony
+            .get_colony_resources(target.mother_planet_id, target.colony_id);
     } else {
         spendable = contracts.planet.get_spendable_resources(destination_id);
         collectible = contracts.planet.get_collectible_resources(destination_id);

@@ -501,11 +501,9 @@ mod Planet {
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn mother_planet_id(self: @ContractState, planet_id: u32) -> u32 {
-            if colony_identity::is_colony_id(planet_id) {
-                self.game_manager.read().get_contracts().colony.get_colony_mother_planet(planet_id)
-            } else {
-                planet_id
-            }
+            colony_identity::mother_planet_id(
+                self.game_manager.read().get_contracts().colony, planet_id,
+            )
         }
 
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {

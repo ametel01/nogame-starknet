@@ -22,8 +22,9 @@ pub fn update_fleet_levels(
     fleet: Fleet,
     operation: FleetOperation,
 ) {
-    if colony_identity::is_colony_id(planet_id) {
-        update_colony_fleet(colony, planet_id, fleet, operation);
+    let target = colony_identity::resolve_planet(colony, planet_id);
+    if target.is_colony {
+        update_colony_fleet(colony, target, fleet, operation);
     } else {
         update_planet_fleet(dockyard, planet_id, fleet, operation);
     }
@@ -74,13 +75,16 @@ fn update_planet_fleet(
 
 /// Updates fleet levels for a colony (internal helper)
 fn update_colony_fleet(
-    colony: IColonyDispatcher, adjusted_planet_id: u32, fleet: Fleet, operation: FleetOperation,
+    colony: IColonyDispatcher,
+    target: colony_identity::ResolvedPlanetId,
+    fleet: Fleet,
+    operation: FleetOperation,
 ) {
-    let colony_mother_planet = colony.get_colony_mother_planet(adjusted_planet_id);
-    let colony_id = colony_identity::decode_colony_id(adjusted_planet_id, colony_mother_planet);
-
     match operation {
-        FleetOperation::Add => colony.fleet_arrives(colony_mother_planet, colony_id, fleet),
-        FleetOperation::Remove => colony.fleet_leaves(colony_mother_planet, colony_id, fleet),
+        FleetOperation::Add => colony
+            .fleet_arrives(target.mother_planet_id, target.colony_id, fleet),
+        FleetOperation::Remove => {
+            colony.fleet_leaves(target.mother_planet_id, target.colony_id, fleet)
+        },
     }
 }
