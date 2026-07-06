@@ -2,6 +2,7 @@ use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
 use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
 use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::contract::{IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait};
+use nogame::libraries::names::Names;
 use nogame::libraries::types::{
     ColonyBuildType, ColonyUpgradeType, CompoundsLevels, DAY, Debris, Defences, ERC20s, Fleet,
     MissionCategory, PlanetPosition, ShipBuildType, ShipsLevels, TechUpgradeType,
@@ -42,6 +43,16 @@ fn test_generate_colony() {
     assert(dsp.planet.get_position_to_planet(position_a) == 1001, 'wrong assert 4');
     assert(dsp.planet.get_position_to_planet(position_b) == 1002, 'wrong assert 5');
     assert(dsp.planet.get_position_to_planet(position_c) == 1003, 'wrong assert 6');
+    assert(dsp.colony.get_colony_id(1, 2) == 1002, 'wrong colony id');
+
+    let collected = dsp.colony.collect_resources_from_all_colonies();
+    assert(collected.is_zero(), 'wrong colony collection');
+
+    start_cheat_caller_address(dsp.colony.contract_address, dsp.game.contract_address);
+    dsp.colony.set_colony_ship(1, 1, Names::Fleet::CARRIER, 7);
+    dsp.colony.set_colony_defence(1, 1, Names::Defence::BLASTER, 4);
+    assert(dsp.colony.get_colony_ships(1, 1).carrier == 7, 'wrong colony carrier');
+    assert(dsp.colony.get_colony_defences(1, 1).blaster == 4, 'wrong colony blaster');
 }
 #[test]
 fn test_collect_resources_all_planets() {

@@ -22,10 +22,10 @@ snforge_std = "0.62.1"
 [tool.fmt]
 sort-module-level-items = true
 
-# [profile.dev.cairo]
-# unstable-add-statements-code-locations-debug-info = true
-# unstable-add-statements-functions-debug-info = true
-# inlining-strategy = "avoid"
+[profile.dev.cairo]
+unstable-add-statements-code-locations-debug-info = true
+unstable-add-statements-functions-debug-info = true
+inlining-strategy = "avoid"
 
 [scripts]
 test = "snforge test"
