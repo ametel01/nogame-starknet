@@ -46,6 +46,7 @@ mod libraries {
     mod names;
     mod positions;
     mod production;
+    mod spend_upgrade;
     mod types;
 }
 

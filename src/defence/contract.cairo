@@ -52,8 +52,8 @@ mod Defence {
     use nogame::defence::library as defence;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
+    use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{
         DefenceBuildType, Defences, DefencesCost, E18, ERC20s, TechLevels,
     };
@@ -109,14 +109,16 @@ mod Defence {
             let caller = get_caller_address();
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
-            contracts.planet.collect_resources(caller);
-            let planet_id = contracts.planet.get_owned_planet(caller);
-            let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;
-            let techs = contracts.tech.get_tech_levels(planet_id);
+            let workflow = spend_upgrade::begin_planet_workflow(contracts, caller);
+            let dockyard_level = contracts
+                .compound
+                .get_compounds_levels(workflow.planet_id)
+                .dockyard;
+            let techs = contracts.tech.get_tech_levels(workflow.planet_id);
             let cost = self
-                .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
-            contracts.planet.update_planet_points(planet_id, cost, false);
-            self.emit(DefenceSpent { planet_id, quantity, spent: cost })
+                .build_component(workflow.planet_id, dockyard_level, techs, component, quantity);
+            spend_upgrade::spend_and_record(contracts, workflow, cost);
+            self.emit(DefenceSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 
         fn set_defence_level(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
@@ -160,15 +162,12 @@ mod Defence {
 
         fn build_component(
             ref self: ContractState,
-            caller: ContractAddress,
             planet_id: u32,
             dockyard_level: u8,
             techs: TechLevels,
             component: DefenceBuildType,
             quantity: u32,
         ) -> ERC20s {
-            let contracts = self.game_manager.read().get_contracts();
-            let techs = contracts.tech.get_tech_levels(planet_id);
             let defences_levels = self.get_defences_levels(planet_id);
             let mut cost: ERC20s = Default::default();
             match component {
@@ -231,10 +230,6 @@ mod Defence {
                         );
                 },
             }
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
-            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

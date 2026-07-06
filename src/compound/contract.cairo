@@ -13,11 +13,9 @@ mod Compound {
     use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
     use nogame::compound::library as compound;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{
-        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
-        IResourceManagerDispatcherTrait,
-    };
+    use nogame::game::interfaces::{IContractRegistryDispatcher, IContractRegistryDispatcherTrait};
     use nogame::libraries::names::Names;
+    use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{CompoundUpgradeType, CompoundsLevels, E18, ERC20s, HOUR};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -85,11 +83,10 @@ mod Compound {
             let game_address = self.game_manager.read().contract_address;
             let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
             let contracts = contract_registry.get_contracts();
-            contracts.planet.collect_resources(caller);
-            let planet_id = contracts.planet.get_owned_planet(caller);
-            let cost = self.upgrade_component(caller, planet_id, component, quantity);
-            contracts.planet.update_planet_points(planet_id, cost, false);
-            self.emit(CompoundSpent { planet_id: planet_id, quantity, spent: cost })
+            let workflow = spend_upgrade::begin_planet_workflow(contracts, caller);
+            let cost = self.upgrade_component(workflow.planet_id, component, quantity);
+            spend_upgrade::spend_and_record(contracts, workflow, cost);
+            self.emit(CompoundSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 
         fn get_compounds_levels(self: @ContractState, planet_id: u32) -> CompoundsLevels {
@@ -107,17 +104,10 @@ mod Compound {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn upgrade_component(
-            ref self: ContractState,
-            caller: ContractAddress,
-            planet_id: u32,
-            component: CompoundUpgradeType,
-            quantity: u8,
+            ref self: ContractState, planet_id: u32, component: CompoundUpgradeType, quantity: u8,
         ) -> ERC20s {
             let compound_levels = self.get_compounds_levels(planet_id);
             let mut cost: ERC20s = Default::default();
-            // Use segregated interface for resource management
-            let game_address = self.game_manager.read().contract_address;
-            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
             match component {
                 CompoundUpgradeType::SteelMine => {
                     cost = compound::cost::steel(compound_levels.steel, quantity);
@@ -168,7 +158,6 @@ mod Compound {
                         );
                 },
             }
-            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

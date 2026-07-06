@@ -45,8 +45,8 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
+    use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{E18, ERC20s, TechLevels, TechUpgradeType};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
     use nogame::tech::library as tech;
@@ -111,11 +111,10 @@ mod Tech {
         fn process_tech_upgrade(ref self: ContractState, component: TechUpgradeType, quantity: u8) {
             let caller = get_caller_address();
             let contracts = self.game_manager.read().get_contracts();
-            contracts.planet.collect_resources(caller);
-            let planet_id = contracts.planet.get_owned_planet(caller);
-            let cost = self.upgrade_component(caller, planet_id, component, quantity);
-            contracts.planet.update_planet_points(planet_id, cost, false);
-            self.emit(TechSpent { planet_id, quantity, spent: cost })
+            let workflow = spend_upgrade::begin_planet_workflow(contracts, caller);
+            let cost = self.upgrade_component(workflow.planet_id, component, quantity);
+            spend_upgrade::spend_and_record(contracts, workflow, cost);
+            self.emit(TechSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 
         fn get_tech_levels(self: @ContractState, planet_id: u32) -> TechLevels {
@@ -140,20 +139,13 @@ mod Tech {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn upgrade_component(
-            ref self: ContractState,
-            caller: ContractAddress,
-            planet_id: u32,
-            component: TechUpgradeType,
-            quantity: u8,
+            ref self: ContractState, planet_id: u32, component: TechUpgradeType, quantity: u8,
         ) -> ERC20s {
             let contracts = self.game_manager.read().get_contracts();
             let lab_level = contracts.compound.get_compounds_levels(planet_id).lab;
             let techs = self.get_tech_levels(planet_id);
             let mut cost: ERC20s = Default::default();
             let base_cost = tech::base_tech_costs();
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
             match component {
                 TechUpgradeType::EnergyTech => {
                     tech::energy_requirements_check(lab_level, techs);
@@ -241,7 +233,6 @@ mod Tech {
                         .write((planet_id, Names::Tech::EXOCRAFT), techs.exocraft + quantity);
                 },
             }
-            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

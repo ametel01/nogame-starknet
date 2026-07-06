@@ -47,8 +47,8 @@ mod Dockyard {
     use nogame::compound::contract::ICompoundDispatcherTrait;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
+    use nogame::libraries::spend_upgrade;
     use nogame::libraries::types::{E18, ERC20s, ShipBuildType, ShipsCost, ShipsLevels, TechLevels};
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
@@ -99,15 +99,17 @@ mod Dockyard {
         fn process_ship_build(ref self: ContractState, component: ShipBuildType, quantity: u32) {
             let caller = get_caller_address();
             let contracts = self.game_manager.read().get_contracts();
-            contracts.planet.collect_resources(caller);
-            let planet_id = contracts.planet.get_owned_planet(caller);
+            let workflow = spend_upgrade::begin_planet_workflow(contracts, caller);
 
-            let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;
-            let techs = contracts.tech.get_tech_levels(planet_id);
+            let dockyard_level = contracts
+                .compound
+                .get_compounds_levels(workflow.planet_id)
+                .dockyard;
+            let techs = contracts.tech.get_tech_levels(workflow.planet_id);
             let cost = self
-                .build_component(caller, planet_id, dockyard_level, techs, component, quantity);
-            contracts.planet.update_planet_points(planet_id, cost, false);
-            self.emit(FleetSpent { planet_id, quantity, spent: cost })
+                .build_component(workflow.planet_id, dockyard_level, techs, component, quantity);
+            spend_upgrade::spend_and_record(contracts, workflow, cost);
+            self.emit(FleetSpent { planet_id: workflow.planet_id, quantity, spent: cost })
         }
 
         fn set_ship_levels(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
@@ -152,19 +154,14 @@ mod Dockyard {
 
         fn build_component(
             ref self: ContractState,
-            caller: ContractAddress,
             planet_id: u32,
             dockyard_level: u8,
             techs: TechLevels,
             component: ShipBuildType,
             quantity: u32,
         ) -> ERC20s {
-            let contracts = self.game_manager.read().get_contracts();
-            let dockyard_level = contracts.compound.get_compounds_levels(planet_id).dockyard;
-            let techs = contracts.tech.get_tech_levels(planet_id);
             let ships_levels = self.get_ships_levels(planet_id);
             let mut cost: ERC20s = Default::default();
-            let game_manager = self.game_manager.read();
             match component {
                 ShipBuildType::Carrier => {
                     dockyard::requirements::carrier(dockyard_level, techs);
@@ -207,10 +204,6 @@ mod Dockyard {
                         .write((planet_id, Names::Fleet::ARMADE), ships_levels.armade + quantity);
                 },
             }
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: game_manager.contract_address,
-            };
-            resource_manager.spend_resources(caller, cost);
             cost
         }
     }
