@@ -2,11 +2,11 @@
 
 ## Source Documents
 
-- `/Users/alexmetelli/source/nogame-starknet/PLAN.md` - root execution contract generated from the selected plans.
-- `/Users/alexmetelli/source/nogame-starknet/plans/README.md` - primary plan index, dependency graph, status values, and repo-level verification commands.
-- `/Users/alexmetelli/source/nogame-starknet/created-issues.json` - published GitHub issue numbers and execution waves.
-- `/Users/alexmetelli/source/nogame-starknet/nogame-starknet-issues.json` - generated issue metadata, acceptance criteria, dependencies, labels, and coordination risks.
-- `/Users/alexmetelli/source/nogame-starknet/plans/001-gate-game-resource-manager.md` through `/Users/alexmetelli/source/nogame-starknet/plans/015-use-checked-resource-arithmetic.md` - source requirements for each implementation or design slice.
+- `PLAN.md` - root execution contract generated from the selected plans.
+- `plans/README.md` - primary plan index, dependency graph, status values, and repo-level verification commands.
+- `created-issues.json` - published GitHub issue numbers and execution waves.
+- `nogame-starknet-issues.json` - generated issue metadata, acceptance criteria, dependencies, labels, and coordination risks.
+- `plans/001-gate-game-resource-manager.md` through `plans/015-use-checked-resource-arithmetic.md` - source requirements for each implementation or design slice.
 
 ## Current Status
 
