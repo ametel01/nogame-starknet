@@ -27,7 +27,7 @@
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
 | 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
 | 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Complete | #4 |
-| 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Pending | #4, #5 |
+| 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Complete | #4, #5 |
 | 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Pending | #7 |
 | 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Pending | #4, #9 |
 | 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Pending | #10 |
@@ -59,6 +59,8 @@
 - 2026-07-06: Issue #11 validation passed: `bash -n scripts/deploy-starknet.sh`, deployment hardening no-match `rg`, concrete private-key no-match `rg`, docs/script `source`/`eval` no-match `rg`, strict-parser temp-file smoke test, `scarb fmt --check`, and `git diff --check`.
 - 2026-07-06: Issue #5 drift check `git diff --stat a370d98..HEAD -- src/game/contract.cairo tests/upgrade_test.cairo tests` showed prior scoped changes in `src/game/contract.cairo`, `tests/game_resource_manager_access.cairo`, `tests/test_erc721.cairo`, and `tests/utils.cairo`; plan 002 remained applicable.
 - 2026-07-06: Issue #5 validation passed: `snforge test test_game_upgrade`, `scarb fmt --check`, `scarb build`, and `snforge test`.
+- 2026-07-06: Issue #10 drift check `git diff --stat a370d98..HEAD -- src/game/contract.cairo src/planet/contract.cairo tests` showed prerequisite Game upgrade, privileged setter, ERC721, and test/helper changes already present on current `origin/main`; plan 006 remained applicable.
+- 2026-07-06: Issue #10 validation passed: `snforge test test_game_initialize`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -70,3 +72,4 @@
 - 2026-07-06: Completed Step 6 for issue #9 by gating privileged Planet, Dockyard, and Defence setters to registered lifecycle callers while preserving Fleet and Colony flows.
 - 2026-07-06: Completed issue #11 by hardening deployment env parsing and `starkli` command construction without running any real deployment.
 - 2026-07-06: Completed Step 2 for issue #5 by requiring the owner for `Game.upgrade` and covering unauthorized upgrade attempts.
+- 2026-07-06: Completed Step 7 for issue #10 by making `Game.initialize` one-time, recording the initialization block timestamp as `universe_start_time`, and covering owner, non-owner, timestamp, and second-initialize behavior.
