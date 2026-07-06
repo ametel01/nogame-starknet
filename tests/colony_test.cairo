@@ -12,7 +12,10 @@ use snforge_std::{
     map_entry_address, start_cheat_block_timestamp, start_cheat_block_timestamp_global,
     start_cheat_caller_address, stop_cheat_caller_address, store,
 };
-use super::utils::{ACCOUNT1, ACCOUNT2, Dispatchers, E18, YEAR, init_game, init_storage, set_up};
+use super::utils::{
+    ACCOUNT1, ACCOUNT2, Dispatchers, E18, YEAR, init_game, init_storage,
+    prepare_colony_carrier_fleet_for, set_up,
+};
 
 #[test]
 fn test_generate_colony() {
@@ -139,17 +142,7 @@ fn test_send_fleet_from_colony() {
     stop_cheat_caller_address(dsp.planet.contract_address);
     init_storage(dsp, 1);
 
-    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
-    dsp.colony.generate_colony();
-    stop_cheat_caller_address(dsp.colony.contract_address);
-
-    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
-    dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
-    dsp.colony.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
-    stop_cheat_caller_address(dsp.colony.contract_address);
-
-    let mut fleet: Fleet = Default::default();
-    fleet.carrier = 1;
+    let fleet = prepare_colony_carrier_fleet_for(dsp, ACCOUNT1(), 1, 2, 1);
     let mut p2_position: PlanetPosition = dsp.planet.get_planet_position(1);
 
     start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
@@ -183,16 +176,9 @@ fn test_attack_from_colony() {
     stop_cheat_caller_address(dsp.planet.contract_address);
     init_storage(dsp, 2);
 
-    let mut fleet: Fleet = Default::default();
-    fleet.carrier = 1;
-
     let p2_position = dsp.planet.get_planet_position(2);
 
-    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
-    dsp.colony.generate_colony();
-    dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
-    dsp.colony.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
-    stop_cheat_caller_address(dsp.colony.contract_address);
+    let fleet = prepare_colony_carrier_fleet_for(dsp, ACCOUNT1(), 1, 2, 1);
 
     start_cheat_block_timestamp_global(starknet::get_block_timestamp() + DAY * 7);
     start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());

@@ -5,7 +5,10 @@ use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::contract::{IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait};
 use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
 use nogame::libraries::names::Names;
-use nogame::libraries::types::{CompoundUpgradeType, ERC20s, PRICE, ShipBuildType, TechUpgradeType};
+use nogame::libraries::types::{
+    ColonyBuildType, ColonyUpgradeType, CompoundUpgradeType, Debris, ERC20s, Fleet, PRICE,
+    ShipBuildType, TechUpgradeType,
+};
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -245,10 +248,55 @@ fn set_up_two_started_planets() -> Dispatchers {
     dsp
 }
 
+fn set_up_started_planet(account: ContractAddress, planet_id: u32) -> Dispatchers {
+    let dsp = set_up_game();
+    generate_started_planet(dsp, account, planet_id);
+    dsp
+}
+
+fn starter_fleet() -> Fleet {
+    Fleet { carrier: 1, scraper: 1, sparrow: 1, frigate: 1, armade: 1 }
+}
+
+fn carrier_fleet(quantity: u32) -> Fleet {
+    Fleet { carrier: quantity, scraper: 0, sparrow: 0, frigate: 0, armade: 0 }
+}
+
 fn build_carriers_for(dsp: Dispatchers, account: ContractAddress, quantity: u32) {
     start_cheat_caller_address(dsp.dockyard.contract_address, account);
     dsp.dockyard.process_ship_build(ShipBuildType::Carrier, quantity);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
+}
+
+fn build_starter_fleet_for(dsp: Dispatchers, account: ContractAddress) -> Fleet {
+    let fleet = starter_fleet();
+    start_cheat_caller_address(dsp.dockyard.contract_address, account);
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier, fleet.carrier);
+    dsp.dockyard.process_ship_build(ShipBuildType::Scraper, fleet.scraper);
+    dsp.dockyard.process_ship_build(ShipBuildType::Sparrow, fleet.sparrow);
+    dsp.dockyard.process_ship_build(ShipBuildType::Frigate, fleet.frigate);
+    dsp.dockyard.process_ship_build(ShipBuildType::Armade, fleet.armade);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    fleet
+}
+
+fn prepare_colony_carrier_fleet_for(
+    dsp: Dispatchers, account: ContractAddress, colony_id: u8, dockyard_levels: u8, carriers: u32,
+) -> Fleet {
+    start_cheat_caller_address(dsp.colony.contract_address, account);
+    dsp.colony.generate_colony();
+    dsp
+        .colony
+        .process_colony_compound_upgrade(colony_id, ColonyUpgradeType::Dockyard, dockyard_levels);
+    dsp.colony.process_colony_unit_build(colony_id, ColonyBuildType::Carrier, carriers);
+    stop_cheat_caller_address(dsp.colony.contract_address);
+    carrier_fleet(carriers)
+}
+
+fn debris_field_ready_for(dsp: Dispatchers, planet_id: u32, debris: Debris) {
+    start_cheat_caller_address(dsp.planet.contract_address, dsp.fleet.contract_address);
+    dsp.planet.set_planet_debris_field(planet_id, debris);
+    stop_cheat_caller_address(dsp.planet.contract_address);
 }
 
 fn upgrade_digital_for(dsp: Dispatchers, account: ContractAddress, quantity: u8) {
