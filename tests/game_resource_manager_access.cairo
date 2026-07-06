@@ -31,6 +31,17 @@ fn test_game_resource_manager_rejects_direct_receive_resources_erc20() {
 }
 
 #[test]
+#[should_panic]
+fn test_game_resource_manager_rejects_direct_pay_resources_erc20() {
+    let dsp = set_up();
+    init_game(dsp);
+    let resources = ERC20s { steel: 1, quartz: 1, tritium: 1 };
+
+    start_cheat_caller_address(dsp.game.contract_address, ACCOUNT1());
+    resource_manager(dsp).pay_resources_erc20(ACCOUNT1(), resources);
+}
+
+#[test]
 fn test_game_resource_manager_keeps_read_only_queries_public() {
     let dsp = set_up();
     init_game(dsp);
