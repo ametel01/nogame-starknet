@@ -5,6 +5,7 @@ use openzeppelin_interfaces::token::erc721::{
 };
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address};
+use starknet::SyscallResultTrait;
 use super::utils::{ACCOUNT1, ACCOUNT2, ACCOUNT3, DEPLOYER};
 
 #[test]
@@ -77,7 +78,7 @@ fn test_erc721_upgradeable_constructor_and_public_abi() {
 }
 
 fn deploy_nogame_erc721() -> (IERC721NoGameDispatcher, IERC721MetadataDispatcher) {
-    let contract = declare("ERC721NoGame").unwrap().contract_class();
+    let contract = declare("ERC721NoGame").unwrap_syscall().contract_class();
     let name: ByteArray = "Nogame Planet";
     let symbol: ByteArray = "NGPL";
     let base_uri: ByteArray = "https://nogame.com/planet/";
@@ -93,7 +94,7 @@ fn deploy_nogame_erc721() -> (IERC721NoGameDispatcher, IERC721MetadataDispatcher
 }
 
 fn deploy_upgradeable_erc721() -> ERC721ABIDispatcher {
-    let contract = declare("ERC721Upgradeable").unwrap().contract_class();
+    let contract = declare("ERC721Upgradeable").unwrap_syscall().contract_class();
     let name: ByteArray = "Upgradeable Planet";
     let symbol: ByteArray = "UPL";
     let base_uri: ByteArray = "https://nogame.com/upgradeable/";

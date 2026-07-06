@@ -19,7 +19,10 @@ use snforge_std::{
     start_cheat_caller_address_global, stop_cheat_caller_address, store,
 };
 use starknet::class_hash::ClassHash;
-use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
+use starknet::{
+    ContractAddress, SyscallResultTrait, get_block_timestamp, get_caller_address,
+    get_contract_address,
+};
 
 const E18: u128 = 1_000_000_000_000_000_000;
 const ETH_SUPPLY: u256 = 1_000_000_000_000_000_000_000;
@@ -68,39 +71,39 @@ fn ACCOUNT5() -> ContractAddress {
 }
 
 fn set_up() -> Dispatchers {
-    let contract = declare("Game").unwrap().contract_class();
+    let contract = declare("Game").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into()];
     let (game, _) = contract.deploy(@calldata).expect('failed game');
 
-    let contract = declare("Colony").unwrap().contract_class();
+    let contract = declare("Colony").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (colony, _) = contract.deploy(@calldata).expect('failed colony');
 
-    let contract = declare("Compound").unwrap().contract_class();
+    let contract = declare("Compound").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (compound, _) = contract.deploy(@calldata).expect('failed compound');
 
-    let contract = declare("Defence").unwrap().contract_class();
+    let contract = declare("Defence").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (defence, _) = contract.deploy(@calldata).expect('failed defence');
 
-    let contract = declare("Dockyard").unwrap().contract_class();
+    let contract = declare("Dockyard").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (dockyard, _) = contract.deploy(@calldata).expect('failed dockyard');
-    let contract = declare("FleetMovements").unwrap().contract_class();
+    let contract = declare("FleetMovements").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (fleet, _) = contract.deploy(@calldata).expect('failed fleet');
-    let contract = declare("Planet").unwrap().contract_class();
+    let contract = declare("Planet").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (planet, _) = contract.deploy(@calldata).expect('failed nogame');
-    let contract = declare("Tech").unwrap().contract_class();
+    let contract = declare("Tech").unwrap_syscall().contract_class();
     let calldata: Array<felt252> = array![DEPLOYER().into(), game.into()];
     let (tech, _) = contract.deploy(@calldata).expect('failed tech');
 
     let name: ByteArray = "Nogame Planet";
     let symbol: ByteArray = "NGPL";
     let base_uri: ByteArray = "https://nogame.com/planet/";
-    let contract = declare("ERC721NoGame").unwrap().contract_class();
+    let contract = declare("ERC721NoGame").unwrap_syscall().contract_class();
     let mut calldata: Array<felt252> = array![];
     calldata.append_serde(name);
     calldata.append_serde(symbol);
@@ -109,7 +112,7 @@ fn set_up() -> Dispatchers {
     calldata.append_serde(DEPLOYER());
     let (erc721, _) = contract.deploy(@calldata).expect('failed erc721');
 
-    let contract = declare("ERC20NoGame").unwrap().contract_class();
+    let contract = declare("ERC20NoGame").unwrap_syscall().contract_class();
     let name: ByteArray = "Nogame Steel";
     let symbol: ByteArray = "NGST";
     let mut calldata: Array<felt252> = array![];
@@ -137,7 +140,7 @@ fn set_up() -> Dispatchers {
     calldata.append_serde(DEPLOYER());
     let (tritium, _) = contract.deploy(@calldata).expect('failed tritium');
 
-    let contract = declare("ERC20Upgradeable").unwrap().contract_class();
+    let contract = declare("ERC20Upgradeable").unwrap_syscall().contract_class();
     let name: ByteArray = "ETHER";
     let symbol: ByteArray = "ETH";
     let mut calldata: Array<felt252> = array![];
@@ -267,7 +270,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.compound.contract_address,
         map_entry_address(
             selector!("compound_level"), // Providing variable name
-            array![planet_id.into(), Names::Compound::STEEL.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Compound::STEEL.into()].span() // Providing mapping key
         ),
         array![20].span(),
     );
@@ -275,8 +278,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.compound.contract_address,
         map_entry_address(
             selector!("compound_level"), // Providing variable name
-            array![planet_id.into(), Names::Compound::QUARTZ.into()]
-                .span() // Providing mapping key 
+            array![planet_id.into(), Names::Compound::QUARTZ.into()].span() // Providing mapping key
         ),
         array![20].span(),
     );
@@ -285,7 +287,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         map_entry_address(
             selector!("compound_level"), // Providing variable name
             array![planet_id.into(), Names::Compound::TRITIUM.into()]
-                .span() // Providing mapping key 
+                .span() // Providing mapping key
         ),
         array![20].span(),
     );
@@ -293,8 +295,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.compound.contract_address,
         map_entry_address(
             selector!("compound_level"), // Providing variable name
-            array![planet_id.into(), Names::Compound::ENERGY.into()]
-                .span() // Providing mapping key 
+            array![planet_id.into(), Names::Compound::ENERGY.into()].span() // Providing mapping key
         ),
         array![30].span(),
     );
@@ -302,7 +303,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.compound.contract_address,
         map_entry_address(
             selector!("compound_level"), // Providing variable name
-            array![planet_id.into(), Names::Compound::LAB.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Compound::LAB.into()].span() // Providing mapping key
         ),
         array![10].span(),
     );
@@ -311,7 +312,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         map_entry_address(
             selector!("compound_level"), // Providing variable name
             array![planet_id.into(), Names::Compound::DOCKYARD.into()]
-                .span() // Providing mapping key 
+                .span() // Providing mapping key
         ),
         array![8].span(),
     );
@@ -319,7 +320,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::ENERGY.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::ENERGY.into()].span() // Providing mapping key
         ),
         array![8].span(),
     );
@@ -327,8 +328,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::COMBUSTION.into()]
-                .span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::COMBUSTION.into()].span() // Providing mapping key
         ),
         array![6].span(),
     );
@@ -336,7 +336,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::BEAM.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::BEAM.into()].span() // Providing mapping key
         ),
         array![10].span(),
     );
@@ -344,7 +344,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::SHIELD.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::SHIELD.into()].span() // Providing mapping key
         ),
         array![6].span(),
     );
@@ -352,7 +352,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::SPACETIME.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::SPACETIME.into()].span() // Providing mapping key
         ),
         array![3].span(),
     );
@@ -360,7 +360,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::WARP.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::WARP.into()].span() // Providing mapping key
         ),
         array![4].span(),
     );
@@ -368,7 +368,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::ION.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::ION.into()].span() // Providing mapping key
         ),
         array![5].span(),
     );
@@ -376,7 +376,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::THRUST.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::THRUST.into()].span() // Providing mapping key
         ),
         array![4].span(),
     );
@@ -384,7 +384,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::PLASMA.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::PLASMA.into()].span() // Providing mapping key
         ),
         array![8].span(),
     );
@@ -392,7 +392,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::WEAPONS.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::WEAPONS.into()].span() // Providing mapping key
         ),
         array![4].span(),
     );
@@ -400,7 +400,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.tech.contract_address,
         map_entry_address(
             selector!("tech_level"), // Providing variable name
-            array![planet_id.into(), Names::Tech::EXOCRAFT.into()].span() // Providing mapping key 
+            array![planet_id.into(), Names::Tech::EXOCRAFT.into()].span() // Providing mapping key
         ),
         array![5].span(),
     );
@@ -408,7 +408,7 @@ fn init_storage(dsp: Dispatchers, planet_id: u32) {
         dsp.planet.contract_address,
         map_entry_address(
             selector!("resources_spent"), // Providing variable name
-            array![planet_id.into()].span() // Providing mapping key 
+            array![planet_id.into()].span() // Providing mapping key
         ),
         array![1_000_000_000].span(),
     );

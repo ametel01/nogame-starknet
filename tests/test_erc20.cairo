@@ -2,6 +2,7 @@ use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispat
 use openzeppelin_interfaces::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address};
+use starknet::SyscallResultTrait;
 use super::utils::{ACCOUNT1, ACCOUNT2, ACCOUNT3, DEPLOYER, ETH_SUPPLY};
 
 #[test]
@@ -59,7 +60,7 @@ fn test_erc20_upgradeable_constructor_and_public_abi() {
 }
 
 fn deploy_nogame_erc20() -> (ERC20ABIDispatcher, IERC20NoGameDispatcher) {
-    let contract = declare("ERC20NoGame").unwrap().contract_class();
+    let contract = declare("ERC20NoGame").unwrap_syscall().contract_class();
     let name: ByteArray = "Nogame Steel";
     let symbol: ByteArray = "NGST";
     let mut calldata: Array<felt252> = array![];
@@ -73,7 +74,7 @@ fn deploy_nogame_erc20() -> (ERC20ABIDispatcher, IERC20NoGameDispatcher) {
 }
 
 fn deploy_upgradeable_erc20() -> ERC20ABIDispatcher {
-    let contract = declare("ERC20Upgradeable").unwrap().contract_class();
+    let contract = declare("ERC20Upgradeable").unwrap_syscall().contract_class();
     let name: ByteArray = "Ether";
     let symbol: ByteArray = "ETH";
     let mut calldata: Array<felt252> = array![];
