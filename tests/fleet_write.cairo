@@ -426,6 +426,25 @@ fn test_collect_debris_fleet_decay() {
 }
 
 #[test]
+fn test_get_debris_uses_large_ship_unit_costs() {
+    let mut frigate_before: Fleet = Default::default();
+    frigate_before.frigate = 1;
+    let frigate_after: Fleet = Default::default();
+
+    let frigate_debris = fleet::get_debris(frigate_before, frigate_after, 0);
+    assert(frigate_debris.steel == 20000 / 3, 'wrong frigate steel');
+    assert(frigate_debris.quartz == 7000 / 3, 'wrong frigate quartz');
+
+    let mut armade_before: Fleet = Default::default();
+    armade_before.armade = 1;
+    let armade_after: Fleet = Default::default();
+
+    let armade_debris = fleet::get_debris(armade_before, armade_after, 0);
+    assert(armade_debris.steel == 45000 / 3, 'wrong armade steel');
+    assert(armade_debris.quartz == 15000 / 3, 'wrong armade quartz');
+}
+
+#[test]
 #[should_panic]
 fn test_send_fleet_debris_fails_empty_debris_field() {
     let dsp = set_up();

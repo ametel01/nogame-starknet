@@ -397,14 +397,14 @@ fn get_debris(f_before: Fleet, f_after: Fleet, celestia: u32) -> Debris {
     let steel = ((f_before.carrier - f_after.carrier).into() * costs.carrier.steel)
         + ((f_before.scraper - f_after.scraper).into() * costs.scraper.steel)
         + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.steel)
-        + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.steel)
-        + ((f_before.armade - f_after.armade).into() * costs.sparrow.steel);
+        + ((f_before.frigate - f_after.frigate).into() * costs.frigate.steel)
+        + ((f_before.armade - f_after.armade).into() * costs.armade.steel);
 
     let quartz = ((f_before.carrier - f_after.carrier).into() * costs.carrier.quartz)
         + ((f_before.scraper - f_after.scraper).into() * costs.scraper.quartz)
         + ((f_before.sparrow - f_after.sparrow).into() * costs.sparrow.quartz)
-        + ((f_before.frigate - f_after.frigate).into() * costs.sparrow.quartz)
-        + ((f_before.armade - f_after.armade).into() * costs.sparrow.quartz)
+        + ((f_before.frigate - f_after.frigate).into() * costs.frigate.quartz)
+        + ((f_before.armade - f_after.armade).into() * costs.armade.quartz)
         + (celestia * 2000).into();
 
     debris.steel = steel / 3;

@@ -23,6 +23,7 @@ and this project adheres to semantic versioning when versions are released.
 ### Fixed
 
 - Reject invalid fleet speed modifiers before fleet mission travel-time and fuel-cost arithmetic.
+- Calculate debris from destroyed frigates and armades using their own unit costs.
 - Keep ERC721NoGame `token_of(account)` indexes consistent after snake-case, camel-case, and safe transfer variants.
 - Prevent attack loot from classifying defender spendable balances as collectible loot, so spendable resources granted to attackers are burned from defenders and remain cargo-limited.
 - Fix Planet resource collection to use the explicit player identity and include all of that player's colonies.
