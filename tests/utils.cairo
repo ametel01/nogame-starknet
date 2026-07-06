@@ -247,13 +247,13 @@ fn set_up_two_started_planets() -> Dispatchers {
 
 fn build_carriers_for(dsp: Dispatchers, account: ContractAddress, quantity: u32) {
     start_cheat_caller_address(dsp.dockyard.contract_address, account);
-    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), quantity);
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier, quantity);
     stop_cheat_caller_address(dsp.dockyard.contract_address);
 }
 
 fn upgrade_digital_for(dsp: Dispatchers, account: ContractAddress, quantity: u8) {
     start_cheat_caller_address(dsp.tech.contract_address, account);
-    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), quantity);
+    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital, quantity);
     stop_cheat_caller_address(dsp.tech.contract_address);
 }
 
