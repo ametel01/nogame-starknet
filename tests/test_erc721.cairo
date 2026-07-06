@@ -5,7 +5,7 @@ use openzeppelin_interfaces::token::erc721::{
 };
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address};
-use starknet::SyscallResultTrait;
+use starknet::{ContractAddress, SyscallResultTrait};
 use super::utils::{ACCOUNT1, ACCOUNT2, ACCOUNT3, DEPLOYER};
 
 #[test]
@@ -38,11 +38,37 @@ fn test_erc721_nogame_transfers_and_approvals() {
     erc721.transfer_from(ACCOUNT1(), ACCOUNT2(), 1);
     assert(erc721.owner_of(1) == ACCOUNT2(), 'transfer_from failed');
     assert(erc721.token_of(ACCOUNT2()) == 1, 'token_of transfer failed');
+    assert(erc721.token_of(ACCOUNT1()) == 2, 'sender index changed early');
 
     start_cheat_caller_address(erc721.contract_address, ACCOUNT1());
     erc721.transferFrom(ACCOUNT1(), ACCOUNT3(), 2);
     assert(erc721.ownerOf(2) == ACCOUNT3(), 'transferFrom failed');
     assert(erc721.token_of(ACCOUNT3()) == 2, 'token_of camel failed');
+    assert(erc721.token_of(ACCOUNT1()) == 0, 'sender stale token_of');
+}
+
+#[test]
+fn test_erc721_nogame_safe_transfers_update_token_of() {
+    let (erc721, _) = deploy_nogame_erc721();
+    let receiver1 = deploy_erc721_receiver_mock();
+    let receiver2 = deploy_erc721_receiver_mock();
+
+    start_cheat_caller_address(erc721.contract_address, DEPLOYER());
+    erc721.mint(ACCOUNT1(), 10);
+    erc721.mint(ACCOUNT1(), 11);
+
+    let data = array![];
+    start_cheat_caller_address(erc721.contract_address, ACCOUNT1());
+    erc721.safe_transfer_from(ACCOUNT1(), receiver1, 10, data.span());
+    assert(erc721.owner_of(10) == receiver1, 'safe_transfer failed');
+    assert(erc721.token_of(receiver1) == 10, 'safe token_of to failed');
+    assert(erc721.token_of(ACCOUNT1()) == 11, 'safe sender index failed');
+
+    let data = array![];
+    erc721.safeTransferFrom(ACCOUNT1(), receiver2, 11, data.span());
+    assert(erc721.ownerOf(11) == receiver2, 'safeTransfer failed');
+    assert(erc721.token_of(receiver2) == 11, 'safe camel token_of failed');
+    assert(erc721.token_of(ACCOUNT1()) == 0, 'safe sender stale index');
 }
 
 #[test]
@@ -109,4 +135,48 @@ fn deploy_upgradeable_erc721() -> ERC721ABIDispatcher {
     let (contract_address, _) = contract.deploy(@calldata).expect('failed erc721 preset');
 
     ERC721ABIDispatcher { contract_address }
+}
+
+fn deploy_erc721_receiver_mock() -> ContractAddress {
+    let contract = declare("ERC721ReceiverMock").unwrap_syscall().contract_class();
+    let calldata: Array<felt252> = array![];
+    let (contract_address, _) = contract.deploy(@calldata).expect('failed erc721 receiver');
+    contract_address
+}
+
+#[starknet::contract]
+mod ERC721ReceiverMock {
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::erc721::ERC721ReceiverComponent;
+    use starknet::ContractAddress;
+
+    component!(path: ERC721ReceiverComponent, storage: erc721_receiver, event: ERC721ReceiverEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    #[abi(embed_v0)]
+    impl ERC721ReceiverMixinImpl =
+        ERC721ReceiverComponent::ERC721ReceiverMixinImpl<ContractState>;
+    impl ERC721ReceiverInternalImpl = ERC721ReceiverComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc721_receiver: ERC721ReceiverComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC721ReceiverEvent: ERC721ReceiverComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc721_receiver.initializer();
+    }
 }

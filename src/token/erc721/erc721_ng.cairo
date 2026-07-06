@@ -95,14 +95,14 @@ mod ERC721NoGame {
             data: Span<felt252>,
         ) {
             self.erc721.safe_transfer_from(from, to, token_id, data);
-            self.tokens.write(to, token_id)
+            self.update_token_index_after_transfer(from, to, token_id);
         }
 
         fn transfer_from(
             ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256,
         ) {
             self.erc721.transfer_from(from, to, token_id);
-            self.tokens.write(to, token_id)
+            self.update_token_index_after_transfer(from, to, token_id);
         }
 
         fn approve(ref self: ContractState, to: ContractAddress, token_id: u256) {
@@ -141,13 +141,14 @@ mod ERC721NoGame {
             data: Span<felt252>,
         ) {
             self.erc721.safe_transfer_from(from, to, tokenId, data);
+            self.update_token_index_after_transfer(from, to, tokenId);
         }
 
         fn transferFrom(
             ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenId: u256,
         ) {
             self.erc721.transfer_from(from, to, tokenId);
-            self.tokens.write(to, tokenId)
+            self.update_token_index_after_transfer(from, to, tokenId);
         }
 
         fn setApprovalForAll(ref self: ContractState, operator: ContractAddress, approved: bool) {
@@ -178,6 +179,18 @@ mod ERC721NoGame {
                 minter,
             );
             self.erc721.mint(to, token_id);
+            self.tokens.write(to, token_id);
+        }
+    }
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn update_token_index_after_transfer(
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256,
+        ) {
+            if self.tokens.read(from) == token_id {
+                self.tokens.write(from, 0);
+            }
             self.tokens.write(to, token_id);
         }
     }
