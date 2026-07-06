@@ -37,6 +37,17 @@ trait IColony<TState> {
     /// - If colony doesn't exist
     fn collect_resources(ref self: TState, colony_id: u8) -> ERC20s;
 
+    /// Collects accumulated resources from an explicit planet colony.
+    ///
+    /// # Parameters
+    /// - `planet_id`: Mother planet ID
+    /// - `colony_id`: Colony number
+    ///
+    /// # Notes
+    /// - Authorized contracts only
+    /// - Does NOT derive ownership from the immediate caller
+    fn collect_resources_for_planet(ref self: TState, planet_id: u32, colony_id: u8) -> ERC20s;
+
     /// Collects accumulated resources from all colonies owned by the caller.
     ///
     /// # Returns
@@ -275,6 +286,17 @@ mod Colony {
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
+            self
+                .collect_colony_resources(
+                    planet_id, colony_id, game_manager.get_uni_speed(), get_block_timestamp(),
+                )
+        }
+
+        fn collect_resources_for_planet(
+            ref self: ContractState, planet_id: u32, colony_id: u8,
+        ) -> ERC20s {
+            self.verify_authorized_caller();
+            let game_manager = self.game_manager.read();
             self
                 .collect_colony_resources(
                     planet_id, colony_id, game_manager.get_uni_speed(), get_block_timestamp(),

@@ -378,14 +378,19 @@ mod Planet {
             let contracts = contract_registry.get_contracts();
             self.verify_caller(contracts, caller);
             let tokens = token_provider.get_tokens();
-            let planet_id = tokens.erc721.token_of(caller).try_into().unwrap();
-            let colonies_len = contracts.colony.get_colonies_for_planet(planet_id).len();
+            let planet_id = tokens.erc721.token_of(player).try_into().unwrap();
+            assert!(!planet_id.is_zero(), "Planet:E_PLANET_NOT_FOUND");
+            let colonies = contracts.colony.get_colonies_for_planet(planet_id);
+            let colonies_len = colonies.len();
 
             if colonies_len != 0 {
                 let mut total_production: ERC20s = Default::default();
-                let mut i = 1;
+                let mut i = 0;
                 while i != colonies_len {
-                    let production = contracts.colony.collect_resources(i.try_into().unwrap());
+                    let (colony_id, _) = *colonies.at(i);
+                    let production = contracts
+                        .colony
+                        .collect_resources_for_planet(planet_id, colony_id);
                     total_production = total_production + production;
                     i += 1;
                 }

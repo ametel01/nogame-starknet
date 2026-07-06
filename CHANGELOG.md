@@ -18,3 +18,4 @@ and this project adheres to semantic versioning when versions are released.
 ### Fixed
 
 - Keep ERC721NoGame `token_of(account)` indexes consistent after snake-case, camel-case, and safe transfer variants.
+- Fix Planet resource collection to use the explicit player identity and include all of that player's colonies.
