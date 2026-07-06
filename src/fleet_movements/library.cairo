@@ -6,6 +6,8 @@ use nogame::libraries::types::{
 use nogame_fixed::f128::core::{exp, sqrt};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
+const MAX_BATTLE_ROUNDS: u8 = 6;
+
 fn CARRIER() -> Unit {
     Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 10000, consumption: 10 }
 }
@@ -67,7 +69,8 @@ fn war(
 ) -> (Fleet, Fleet, Defences) {
     let mut attackers = build_ships_array(attackers, Zeroable::zero(), a_techs);
     let mut defenders = build_ships_array(defenders, defences, d_techs);
-    while !attackers.is_empty() && !defenders.is_empty() {
+    let mut round = 0;
+    while round < MAX_BATTLE_ROUNDS && !attackers.is_empty() && !defenders.is_empty() {
         let mut u1 = attackers.pop_front().unwrap();
         let mut u2 = defenders.pop_front().unwrap();
         let (u1, u2) = unit_combat(ref u1, ref u2);
@@ -77,6 +80,7 @@ fn war(
         if u2.hull > 0 {
             defenders.append(u2);
         }
+        round += 1;
     }
     let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers, a_techs);
     let (defender_fleet_struct, defences_struct) = build_fleet_struct(ref defenders, d_techs);

@@ -17,7 +17,7 @@ use snforge_std::{
 };
 use starknet::info::{get_block_timestamp, get_contract_address};
 use super::utils::{
-    ACCOUNT1, ACCOUNT2, DAY, Dispatchers, WEEK, YEAR, build_starter_fleet_for,
+    ACCOUNT1, ACCOUNT2, DAY, Dispatchers, WEEK, YEAR, build_carriers_for, build_starter_fleet_for,
     debris_field_ready_for, init_game, init_storage, set_up, set_up_two_started_planets,
 };
 
@@ -698,6 +698,90 @@ fn test_attack_planet_loot_amount() {
     assert(
         (attacker_spendable_after - attacker_spendable_before) == expected, 'wrong attacker loot',
     );
+}
+
+#[test]
+fn test_attack_planet_attacker_victory_grants_loot_after_clearing_defenders() {
+    let dsp = set_up_two_started_planets();
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    dsp.dockyard.process_ship_build(ShipBuildType::Armade(()), 1);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    build_carriers_for(dsp, ACCOUNT2(), 1);
+
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.armade = 1;
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
+
+    let attacker_spendable_before = dsp.planet.get_spendable_resources(1);
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    dsp.fleet.attack_planet(1);
+
+    let attacker_gain = dsp.planet.get_spendable_resources(1) - attacker_spendable_before;
+    let defender_fleet_after = dsp.dockyard.get_ships_levels(2);
+
+    assert(!attacker_gain.is_zero(), 'attacker victory no loot');
+    assert(defender_fleet_after.carrier == 0, 'defender carrier survived');
+}
+
+#[test]
+fn test_attack_planet_draw_grants_zero_loot() {
+    let dsp = set_up_two_started_planets();
+
+    build_carriers_for(dsp, ACCOUNT1(), 12);
+    build_carriers_for(dsp, ACCOUNT2(), 10);
+
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.carrier = 12;
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
+
+    let attacker_spendable_before = dsp.planet.get_spendable_resources(1);
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    dsp.fleet.attack_planet(1);
+
+    let attacker_gain = dsp.planet.get_spendable_resources(1) - attacker_spendable_before;
+    let attacker_fleet_after = dsp.dockyard.get_ships_levels(1);
+    let defender_fleet_after = dsp.dockyard.get_ships_levels(2);
+
+    assert(attacker_gain.is_zero(), 'draw granted loot');
+    assert(attacker_fleet_after.carrier > 0, 'draw lost attackers');
+    assert(defender_fleet_after.carrier > 0, 'draw cleared defenders');
+}
+
+#[test]
+fn test_attack_planet_defender_victory_grants_zero_loot_and_returns_no_destroyed_attackers() {
+    let dsp = set_up_two_started_planets();
+
+    build_carriers_for(dsp, ACCOUNT1(), 1);
+    start_cheat_caller_address(dsp.defence.contract_address, ACCOUNT2());
+    dsp.defence.process_defence_build(DefenceBuildType::Plasma(()), 1);
+    stop_cheat_caller_address(dsp.defence.contract_address);
+
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.carrier = 1;
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
+
+    let attacker_spendable_before = dsp.planet.get_spendable_resources(1);
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    dsp.fleet.attack_planet(1);
+
+    let attacker_gain = dsp.planet.get_spendable_resources(1) - attacker_spendable_before;
+    let attacker_fleet_after = dsp.dockyard.get_ships_levels(1);
+
+    assert(attacker_gain.is_zero(), 'defender victory granted loot');
+    assert(attacker_fleet_after.carrier == 0, 'destroyed attacker returned');
 }
 
 #[test]

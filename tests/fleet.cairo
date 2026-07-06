@@ -109,7 +109,7 @@ fn test_simulate_attack_with_techs_uses_asymmetric_techs() {
     assert(result.attacker_sparrow == 0, 'wrong attacker sparrow');
     assert(result.attacker_frigate == 0, 'wrong attacker frigate');
     assert(result.attacker_armade == 0, 'wrong attacker armade');
-    assert(result.defender_carrier == 2, 'wrong defender carrier');
+    assert(result.defender_carrier == 1, 'wrong defender carrier');
     assert(result.defender_scraper == 0, 'wrong defender scraper');
     assert(result.defender_sparrow == 0, 'wrong defender sparrow');
     assert(result.defender_frigate == 0, 'wrong defender frigate');

@@ -30,7 +30,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Add a tracked example manifest and deployment docs for preserving universe address sets.
 - [x] Step 9: Fix Large-Ship Debris Costs
   - Use frigate and armade unit costs when calculating debris from large-ship losses.
-- [ ] Step 10: Add Round-Capped Battle Draws
+- [x] Step 10: Add Round-Capped Battle Draws
   - Bound battle execution at six rounds and grant loot only on attacker victory.
 - [ ] Step 11: Add Class-Weighted Target Dilution
   - Use deterministic class counts for combat damage distribution.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, 7, 8, and 9 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, and large-ship debris uses frigate and armade unit costs. Plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, 7, 8, 9, and 10 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, and battle settlement is capped at six rounds with loot only on attacker victory. Plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -78,3 +78,6 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Completed Step 7 / issue #42 by adding `simulate_attack_with_techs` to `IFleetMovements` and delegating the existing `simulate_attack` compatibility view through default attacker and defender tech levels. The new view calls `battle_settlement::settle` with caller-supplied techs, `defences.celestia`, and `time_since_arrived = 0`.
 - 2026-07-06: Added simulator coverage for zero-tech compatibility and an asymmetric carrier matchup whose expected losses change if attacker or defender techs are ignored or swapped.
 - 2026-07-06: Validation passed for Step 7: `snforge test simulate` (2 passed, 120 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (122 passed). Commit reference pending after rebase.
+- 2026-07-06: Completed Step 10 / issue #45 on branch `codex/issue-45-round-capped-draws`: `fleet::war` now uses a named six-round cap, settlement records attacker victory, defender victory, or draw, and attack loot is calculated only for attacker victories.
+- 2026-07-06: Added attack coverage for attacker victory loot, six-round draw zero-loot behavior with surviving fleets, and defender victory zero-loot behavior with no destroyed attacker ships returned. Updated capped simulation characterization for the asymmetric carrier fixture.
+- 2026-07-06: Validation passed for Step 10: `snforge test attack` (13 passed, 113 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (126 passed). Commit reference pending after rebase.
