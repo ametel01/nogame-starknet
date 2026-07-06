@@ -167,12 +167,9 @@ mod FleetMovements {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::defence::contract::IDefenceDispatcherTrait;
     use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
-    use nogame::fleet_movements::{battle_settlement, library as fleet, orchestration};
+    use nogame::fleet_movements::{battle_settlement, library as fleet, lifecycle, orchestration};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
-    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::colony_identity;
-    use nogame::libraries::fleet_ops::{FleetOperation, update_fleet_levels};
-    use nogame::libraries::names::Names;
     use nogame::libraries::types::{
         Debris, Defences, E18, ERC20s, Fleet, HOUR, IncomingMission, Mission, MissionCategory,
         PlanetPosition, SimulationResult, TechLevels,
@@ -302,148 +299,43 @@ mod FleetMovements {
                 active_missions,
                 get_block_timestamp(),
             );
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
-            resource_manager.spend_resources(caller, plan.fuel_cost);
+            lifecycle::spend_send_fuel(contracts, caller, plan);
 
             self.record_mission(plan.planet_id, plan.incoming_bucket, plan.mission);
-            contracts.planet.set_last_active(plan.planet_id);
-            self.fleet_leave_planet(plan.origin_id, f);
+            lifecycle::finish_send_mission(contracts, plan);
         }
 
         fn attack_planet(ref self: ContractState, mission_id: usize) {
             self.reentrancyguard.start();
 
-            // ========================================
-            // PHASE 1: Validation and Setup
-            // ========================================
-
             let caller = get_caller_address();
-            // Cache contracts read to avoid redundant storage access
             let contracts = self.game_manager.read().get_contracts();
             let origin = contracts.planet.get_owned_planet(caller);
 
             let mission = self.get_mission_details(origin, mission_id);
             let time_now = get_block_timestamp();
-            let plan = orchestration::plan_attack(contracts, origin, mission, time_now);
+            let mission_lifecycle = lifecycle::plan_attack_lifecycle(
+                contracts, origin, mission, time_now,
+            );
+            lifecycle::apply_attack_effects(contracts, caller, origin, mission, mission_lifecycle);
+            self.clear_mission(origin, mission_id, mission_lifecycle.incoming_bucket);
 
-            // Update the planet's debris field (can be collected by scrapers)
-            let current_debries_field = contracts
-                .planet
-                .get_planet_debris_field(mission.destination);
-            contracts
-                .planet
-                .set_planet_debris_field(
-                    mission.destination, current_debries_field + plan.settlement.debris,
-                );
-
-            // ========================================
-            // PHASE 5: Update Defender's Military
-            // ========================================
-
-            // Update defender's surviving fleet and defences
-            if plan.target.is_colony {
-                // Colony: only update defences (fleet stored in colony contract)
-                contracts
-                    .colony
-                    .update_defences_after_attack(
-                        plan.target.mother_planet_id,
-                        plan.target.colony_id,
-                        plan.settlement.defences,
-                    );
-            } else {
-                // Home planet: update both fleet and defences
-                self
-                    .update_defender_fleet_levels_after_attack(
-                        mission.destination, plan.target.colony_id, plan.settlement.defender_fleet,
-                    );
-                self
-                    .update_defences_after_attack(
-                        mission.destination, plan.target.colony_id, plan.settlement.defences,
-                    );
-            }
-
-            // ========================================
-            // PHASE 6: Calculate and Distribute Loot
-            // ========================================
-
-            // Burn defender's ERC20 tokens (spendable loot)
-            if !plan.target.is_colony {
-                self.process_loot_payment(mission.destination, plan.loot_spendable);
-            }
-
-            // Mint total loot to attacker
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
-            resource_manager.grant_resources(get_caller_address(), plan.total_loot);
-
-            // ========================================
-            // PHASE 7: Cleanup - Reset Timers and Return Fleet
-            // ========================================
-
-            // Reset defender's resource collection timer
-            if plan.target.is_colony {
-                contracts
-                    .colony
-                    .set_resource_timer(plan.target.mother_planet_id, plan.target.colony_id)
-            } else {
-                contracts.planet.set_resources_timer(mission.destination);
-            }
-
-            // Return surviving attacker fleet to origin
-            self.fleet_return_planet(mission.origin, plan.settlement.attacker_fleet);
-
-            self
-                .clear_mission(
-                    origin, mission_id, colony_identity::incoming_mission_bucket(plan.target),
-                );
-
-            // ========================================
-            // PHASE 8: Update Planet Points and Emit Event
-            // ========================================
-
-            // Update points: attacker loses points for ships lost, defender for ships+defences lost
-            self
-                .update_points_after_attack(
-                    origin, plan.settlement.attacker_loss, Zeroable::zero(),
-                );
-            if plan.target.is_colony {
-                self
-                    .update_points_after_attack(
-                        plan.target.mother_planet_id,
-                        plan.settlement.defender_loss,
-                        plan.settlement.defences_loss,
-                    );
-            } else {
-                self
-                    .update_points_after_attack(
-                        mission.destination,
-                        plan.settlement.defender_loss,
-                        plan.settlement.defences_loss,
-                    );
-            }
-
-            // Update attacker's last active timestamp
-            contracts.planet.set_last_active(origin);
-
-            // Emit comprehensive battle report for frontend/indexing
+            let report = lifecycle::battle_report_facts(mission, mission_lifecycle);
             self
                 .emit_battle_report(
                     time_now,
                     origin,
-                    contracts.planet.get_planet_position(origin),
-                    mission.fleet,
-                    plan.settlement.attacker_loss,
+                    report.attacker_position,
+                    report.attacker_initial_fleet,
+                    report.attacker_fleet_loss,
                     mission.destination,
-                    contracts.planet.get_planet_position(mission.destination),
-                    plan.defender_assets.fleet,
-                    plan.settlement.defender_loss,
-                    plan.defender_assets.defences,
-                    plan.settlement.defences_loss,
-                    plan.total_loot,
-                    plan.settlement.debris,
+                    report.defender_position,
+                    report.defender_initial_fleet,
+                    report.defender_fleet_loss,
+                    report.initial_defences,
+                    report.defences_loss,
+                    report.loot,
+                    report.debris,
                 );
         }
 
@@ -454,12 +346,12 @@ mod FleetMovements {
             let origin = contracts.planet.get_owned_planet(caller);
             let mission = self.get_mission_details(origin, mission_id);
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
-            self.fleet_return_planet(mission.origin, mission.fleet);
+            lifecycle::return_fleet(contracts, mission.origin, mission.fleet);
             self
                 .clear_mission(
                     origin, mission_id, self.incoming_mission_bucket(mission.destination),
                 );
-            contracts.planet.set_last_active(origin);
+            lifecycle::touch_origin(contracts, origin);
         }
 
         fn dock_fleet(ref self: ContractState, mission_id: usize, colony_id: u8) {
@@ -470,12 +362,12 @@ mod FleetMovements {
             let mission = self.get_mission_details(origin, mission_id);
             assert!(mission.category == MissionCategory::TRANSPORT, "Fleet:E_WRONG_CATEGORY");
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
-            self.fleet_return_planet(mission.destination, mission.fleet);
+            lifecycle::return_fleet(contracts, mission.destination, mission.fleet);
             self
                 .clear_mission(
                     origin, mission_id, self.incoming_mission_bucket(mission.destination),
                 );
-            contracts.planet.set_last_active(origin);
+            lifecycle::touch_origin(contracts, origin);
         }
 
         fn collect_debris(ref self: ContractState, mission_id: usize) {
@@ -490,19 +382,12 @@ mod FleetMovements {
                 mission, get_block_timestamp(), debris,
             );
 
-            contracts.planet.set_planet_debris_field(mission.destination, plan.remaining_debris);
-
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
-            resource_manager.grant_resources(caller, plan.resource_grant);
-
-            self.fleet_return_planet(mission.origin, plan.collector_fleet);
+            lifecycle::apply_debris_collection_effects(contracts, caller, mission, plan);
             self
                 .clear_mission(
                     origin, mission_id, self.incoming_mission_bucket(mission.destination),
                 );
-            contracts.planet.set_last_active(origin);
+            lifecycle::touch_origin(contracts, origin);
 
             self
                 .emit(
@@ -611,135 +496,6 @@ mod FleetMovements {
 
     #[generate_trait]
     impl Private of PrivateTrait {
-        /// Deducts fleet from origin planet or colony when departing.
-        ///
-        /// # Parameters
-        /// - `planet_id`: Origin planet ID (or colony ID if >1000)
-        /// - `fleet`: Fleet composition to remove
-        ///
-        /// # Notes
-        /// - Uses shared utility library for consistent fleet operations
-        /// - Handles both planet (ID < 1000) and colony (ID >= 1000) sources
-        fn fleet_leave_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
-            // Cache contracts read to avoid redundant storage access
-            let contracts = self.game_manager.read().get_contracts();
-            // Use shared utility to handle both planet and colony fleet updates
-            update_fleet_levels(
-                contracts.dockyard, contracts.colony, planet_id, fleet, FleetOperation::Remove,
-            );
-        }
-
-        /// Adds fleet back to destination planet or colony when returning.
-        ///
-        /// # Parameters
-        /// - `planet_id`: Destination planet ID (or colony ID if >1000)
-        /// - `fleet`: Fleet composition to add
-        ///
-        /// # Notes
-        /// - Uses shared utility library for consistent fleet operations
-        /// - Handles both planet and colony destinations
-        fn fleet_return_planet(ref self: ContractState, planet_id: u32, fleet: Fleet) {
-            // Cache contracts read to avoid redundant storage access
-            let contracts = self.game_manager.read().get_contracts();
-            // Use shared utility to handle both planet and colony fleet updates
-            update_fleet_levels(
-                contracts.dockyard, contracts.colony, planet_id, fleet, FleetOperation::Add,
-            );
-        }
-
-        fn update_defender_fleet_levels_after_attack(
-            ref self: ContractState, planet_id: u32, colony_id: u8, f: Fleet,
-        ) {
-            // Cache contracts read to avoid redundant storage access
-            let contracts = self.game_manager.read().get_contracts();
-            if colony_id.is_zero() {
-                // Batch set all ship levels
-                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::CARRIER, f.carrier);
-                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SCRAPER, f.scraper);
-                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::SPARROW, f.sparrow);
-                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::FRIGATE, f.frigate);
-                contracts.dockyard.set_ship_levels(planet_id, Names::Fleet::ARMADE, f.armade);
-            } else {
-                // Batch set all colony ship levels
-                contracts
-                    .colony
-                    .set_colony_ship(planet_id, colony_id, Names::Fleet::CARRIER, f.carrier);
-                contracts
-                    .colony
-                    .set_colony_ship(planet_id, colony_id, Names::Fleet::SCRAPER, f.scraper);
-                contracts
-                    .colony
-                    .set_colony_ship(planet_id, colony_id, Names::Fleet::SPARROW, f.sparrow);
-                contracts
-                    .colony
-                    .set_colony_ship(planet_id, colony_id, Names::Fleet::FRIGATE, f.frigate);
-                contracts
-                    .colony
-                    .set_colony_ship(planet_id, colony_id, Names::Fleet::ARMADE, f.armade);
-            }
-        }
-
-        fn update_defences_after_attack(
-            ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
-        ) {
-            // Cache contracts read to avoid redundant storage access
-            let contracts = self.game_manager.read().get_contracts();
-            if colony_id.is_zero() {
-                contracts
-                    .defence
-                    .set_defence_level(planet_id, Names::Defence::CELESTIA, d.celestia);
-                contracts.defence.set_defence_level(planet_id, Names::Defence::BLASTER, d.blaster);
-                contracts.defence.set_defence_level(planet_id, Names::Defence::BEAM, d.beam);
-                contracts.defence.set_defence_level(planet_id, Names::Defence::ASTRAL, d.astral);
-                contracts.defence.set_defence_level(planet_id, Names::Defence::PLASMA, d.plasma);
-            } else {
-                contracts
-                    .colony
-                    .set_colony_defence(planet_id, colony_id, Names::Defence::CELESTIA, d.celestia);
-                contracts
-                    .colony
-                    .set_colony_defence(planet_id, colony_id, Names::Defence::BLASTER, d.blaster);
-                contracts
-                    .colony
-                    .set_colony_defence(planet_id, colony_id, Names::Defence::BEAM, d.beam);
-                contracts
-                    .colony
-                    .set_colony_defence(planet_id, colony_id, Names::Defence::ASTRAL, d.astral);
-                contracts
-                    .colony
-                    .set_colony_defence(planet_id, colony_id, Names::Defence::PLASMA, d.plasma);
-            }
-        }
-
-        fn process_loot_payment(
-            ref self: ContractState, destination_id: u32, loot_spendable: ERC20s,
-        ) {
-            let contracts = self.game_manager.read().get_contracts();
-            let resource_manager = IResourceManagerDispatcher {
-                contract_address: contracts.game.contract_address,
-            };
-            if colony_identity::is_colony_id(destination_id) {
-                let colony_mother_planet = contracts
-                    .colony
-                    .get_colony_mother_planet(destination_id);
-                resource_manager.spend_planet_resources(colony_mother_planet, loot_spendable);
-            } else {
-                resource_manager.spend_planet_resources(destination_id, loot_spendable);
-            }
-        }
-
-        fn update_points_after_attack(
-            ref self: ContractState, planet_id: u32, fleet: Fleet, defences: Defences,
-        ) {
-            let resources_points = orchestration::battle_points(fleet, defences);
-            if resources_points.is_zero() {
-                return;
-            }
-
-            let contracts = self.game_manager.read().get_contracts();
-            contracts.planet.update_planet_points(planet_id, resources_points, true);
-        }
-
         fn emit_battle_report(
             ref self: ContractState,
             time: u64,

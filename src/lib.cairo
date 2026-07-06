@@ -31,6 +31,7 @@ mod fleet_movements {
     mod battle_settlement;
     mod contract;
     mod library;
+    mod lifecycle;
     mod orchestration;
 }
 
