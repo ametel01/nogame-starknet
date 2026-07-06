@@ -23,7 +23,7 @@
 | 0 | [#3](https://github.com/ametel01/nogame-starknet/issues/3) | 0 | Initialize progress and changelog tracking for NoGame plan execution | Complete | None |
 | 1 | [#4](https://github.com/ametel01/nogame-starknet/issues/4) | 1 | Gate Game resource manager mutations | Complete | #3 |
 | 2 | [#5](https://github.com/ametel01/nogame-starknet/issues/5) | 1 | Require owner authorization for Game upgrades | Pending | #3 |
-| 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Pending | #3 |
+| 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Complete | #3 |
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
 | 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
 | 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Pending | #4 |
@@ -50,6 +50,8 @@
 - 2026-07-06: `scarb build` was not run for issue #8 because the completed work was design-only and did not touch Cairo code.
 - 2026-07-06: Plan 001 drift check passed with no scoped changes since `a370d98`.
 - 2026-07-06: Issue #4 gates passed: `scarb fmt --check`, `scarb build`, `snforge test test_game_resource_manager`, and `snforge test`.
+- 2026-07-06: Issue #6 drift check passed with no planned-file changes from `a370d98..HEAD`.
+- 2026-07-06: Issue #6 validation passed: `scarb fmt --check`, `scarb build`, `snforge test test_erc721_nogame_transfers_and_approvals`, and `snforge test`.
 
 ## Update Log
 
@@ -57,3 +59,4 @@
 - 2026-07-06: Completed Step 4 for issue #7 by cleaning deployment credential examples and updating the plan tracker.
 - 2026-07-06: Completed Step 5 for issue #8 by adding `docs/battle-simulator-spike.md`, marking plan 010 done in `plans/README.md`, and leaving `CHANGELOG.md` unchanged because no functional behavior shipped.
 - 2026-07-06: Completed Step 1 for issue #4 by gating Game resource manager mutations to registered game contracts while preserving public read-only resource queries.
+- 2026-07-06: Completed issue #6 by centralizing ERC721NoGame `token_of` transfer index updates, covering stale sender indexes, and updating the plan tracker.

@@ -10,3 +10,7 @@ and this project adheres to semantic versioning when versions are released.
 ### Security
 
 - Gate Game resource manager mutation methods so arbitrary external callers cannot mint, burn, or spend resource balances through Game.
+
+### Fixed
+
+- Keep ERC721NoGame `token_of(account)` indexes consistent after snake-case, camel-case, and safe transfer variants.
