@@ -7,6 +7,7 @@ mod planet {
 }
 
 mod colony {
+    mod assets;
     mod contract;
     mod positions;
 }

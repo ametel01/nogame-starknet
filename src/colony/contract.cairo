@@ -149,10 +149,9 @@ mod ResourceName {
 
 #[starknet::contract]
 mod Colony {
+    use nogame::colony::assets::{self, ColonyAssetState};
     use nogame::colony::positions;
     use nogame::compound::library as compound;
-    use nogame::defence::library as defence;
-    use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
@@ -353,107 +352,22 @@ mod Colony {
             ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
         ) {
             self.verify_authorized_caller();
-            self
-                .colony_defences
-                .write((planet_id, colony_id, Names::Defence::CELESTIA), d.celestia);
-            self.colony_defences.write((planet_id, colony_id, Names::Defence::BLASTER), d.blaster);
-            self.colony_defences.write((planet_id, colony_id, Names::Defence::BEAM), d.beam);
-            self.colony_defences.write((planet_id, colony_id, Names::Defence::ASTRAL), d.astral);
-            self.colony_defences.write((planet_id, colony_id, Names::Defence::PLASMA), d.plasma);
+            self.write_colony_defences(planet_id, colony_id, d);
         }
 
         fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             self.verify_authorized_caller();
-            // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
-            // Batch update all ship levels that changed
-            if fleet.carrier > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::CARRIER),
-                        current_levels.carrier + fleet.carrier,
-                    );
-            }
-            if fleet.scraper > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::SCRAPER),
-                        current_levels.scraper + fleet.scraper,
-                    );
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::SPARROW),
-                        current_levels.sparrow + fleet.sparrow,
-                    );
-            }
-            if fleet.frigate > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::FRIGATE),
-                        current_levels.frigate + fleet.frigate,
-                    );
-            }
-            if fleet.armade > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::ARMADE),
-                        current_levels.armade + fleet.armade,
-                    );
-            }
+            self.write_colony_ships(planet_id, colony_id, assets::add_fleet(current_levels, fleet));
         }
 
         fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             self.verify_authorized_caller();
-            // Cache current levels to avoid multiple storage reads
             let current_levels = self.get_colony_ships(planet_id, colony_id);
-            // Batch update all ship levels that changed
-            if fleet.carrier > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::CARRIER),
-                        current_levels.carrier - fleet.carrier,
-                    );
-            }
-            if fleet.scraper > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::SCRAPER),
-                        current_levels.scraper - fleet.scraper,
-                    );
-            }
-            if fleet.sparrow > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::SPARROW),
-                        current_levels.sparrow - fleet.sparrow,
-                    );
-            }
-            if fleet.frigate > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::FRIGATE),
-                        current_levels.frigate - fleet.frigate,
-                    );
-            }
-            if fleet.armade > 0 {
-                self
-                    .colony_ships
-                    .write(
-                        (planet_id, colony_id, Names::Fleet::ARMADE),
-                        current_levels.armade - fleet.armade,
-                    );
-            }
+            self
+                .write_colony_ships(
+                    planet_id, colony_id, assets::remove_fleet(current_levels, fleet),
+                );
         }
 
         fn get_colony_position(
@@ -601,48 +515,12 @@ mod Colony {
             quantity: u8,
         ) {
             let current_levels = self.get_colony_compounds(planet_id, colony_id);
-            match component {
-                ColonyUpgradeType::SteelMine => {
-                    self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::Compound::STEEL),
-                            current_levels.steel + quantity,
-                        );
-                },
-                ColonyUpgradeType::QuartzMine => {
-                    self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::Compound::QUARTZ),
-                            current_levels.quartz + quantity,
-                        );
-                },
-                ColonyUpgradeType::TritiumMine => {
-                    self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::Compound::TRITIUM),
-                            current_levels.tritium + quantity,
-                        );
-                },
-                ColonyUpgradeType::EnergyPlant => {
-                    self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::Compound::ENERGY),
-                            current_levels.energy + quantity,
-                        );
-                },
-                ColonyUpgradeType::Dockyard => {
-                    self
-                        .colony_compounds
-                        .write(
-                            (planet_id, colony_id, Names::Compound::DOCKYARD),
-                            current_levels.dockyard + quantity,
-                        );
-                },
-            }
+            self
+                .write_colony_compounds(
+                    planet_id,
+                    colony_id,
+                    assets::upgrade_compounds(current_levels, component, quantity),
+                );
         }
 
         fn build_component(
@@ -653,101 +531,67 @@ mod Colony {
             component: ColonyBuildType,
             quantity: u32,
         ) {
-            let dockyard_level = self.get_colony_compounds(planet_id, colony_id).dockyard;
-            let ship_levels = self.get_colony_ships(planet_id, colony_id);
-            let defence_levels = self.get_colony_defences(planet_id, colony_id);
-            match component {
-                ColonyBuildType::Carrier => {
-                    dockyard::requirements::carrier(dockyard_level, techs);
-                    self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::Fleet::CARRIER),
-                            ship_levels.carrier + quantity,
-                        );
+            let next = assets::build_units(
+                ColonyAssetState {
+                    compounds: self.get_colony_compounds(planet_id, colony_id),
+                    ships: self.get_colony_ships(planet_id, colony_id),
+                    defences: self.get_colony_defences(planet_id, colony_id),
                 },
-                ColonyBuildType::Scraper => {
-                    dockyard::requirements::scraper(dockyard_level, techs);
-                    self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::Fleet::SCRAPER),
-                            ship_levels.scraper + quantity,
-                        );
-                },
-                ColonyBuildType::Sparrow => {
-                    dockyard::requirements::sparrow(dockyard_level, techs);
-                    self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::Fleet::SPARROW),
-                            ship_levels.sparrow + quantity,
-                        );
-                },
-                ColonyBuildType::Frigate => {
-                    dockyard::requirements::frigate(dockyard_level, techs);
-                    self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::Fleet::FRIGATE),
-                            ship_levels.frigate + quantity,
-                        );
-                },
-                ColonyBuildType::Armade => {
-                    dockyard::requirements::armade(dockyard_level, techs);
-                    self
-                        .colony_ships
-                        .write(
-                            (planet_id, colony_id, Names::Fleet::ARMADE),
-                            ship_levels.armade + quantity,
-                        );
-                },
-                ColonyBuildType::Celestia => {
-                    defence::requirements::celestia(dockyard_level, techs);
-                    self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::Defence::CELESTIA),
-                            defence_levels.celestia + quantity,
-                        );
-                },
-                ColonyBuildType::Blaster => {
-                    defence::requirements::blaster(dockyard_level, techs);
-                    self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::Defence::BLASTER),
-                            defence_levels.blaster + quantity,
-                        );
-                },
-                ColonyBuildType::Beam => {
-                    defence::requirements::beam(dockyard_level, techs);
-                    self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::Defence::BEAM),
-                            defence_levels.beam + quantity,
-                        );
-                },
-                ColonyBuildType::Astral => {
-                    defence::requirements::astral(dockyard_level, techs);
-                    self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::Defence::ASTRAL),
-                            defence_levels.astral + quantity,
-                        );
-                },
-                ColonyBuildType::Plasma => {
-                    defence::requirements::plasma(dockyard_level, techs);
-                    self
-                        .colony_defences
-                        .write(
-                            (planet_id, colony_id, Names::Defence::PLASMA),
-                            defence_levels.plasma + quantity,
-                        );
-                },
-            }
+                techs,
+                component,
+                quantity,
+            );
+            self.write_colony_ships(planet_id, colony_id, next.ships);
+            self.write_colony_defences(planet_id, colony_id, next.defences);
+        }
+
+        fn write_colony_compounds(
+            ref self: ContractState, planet_id: u32, colony_id: u8, levels: CompoundsLevels,
+        ) {
+            self
+                .colony_compounds
+                .write((planet_id, colony_id, Names::Compound::STEEL), levels.steel);
+            self
+                .colony_compounds
+                .write((planet_id, colony_id, Names::Compound::QUARTZ), levels.quartz);
+            self
+                .colony_compounds
+                .write((planet_id, colony_id, Names::Compound::TRITIUM), levels.tritium);
+            self
+                .colony_compounds
+                .write((planet_id, colony_id, Names::Compound::ENERGY), levels.energy);
+            self.colony_compounds.write((planet_id, colony_id, Names::Compound::LAB), levels.lab);
+            self
+                .colony_compounds
+                .write((planet_id, colony_id, Names::Compound::DOCKYARD), levels.dockyard);
+        }
+
+        fn write_colony_ships(
+            ref self: ContractState, planet_id: u32, colony_id: u8, levels: ShipsLevels,
+        ) {
+            self.colony_ships.write((planet_id, colony_id, Names::Fleet::CARRIER), levels.carrier);
+            self.colony_ships.write((planet_id, colony_id, Names::Fleet::SCRAPER), levels.scraper);
+            self.colony_ships.write((planet_id, colony_id, Names::Fleet::SPARROW), levels.sparrow);
+            self.colony_ships.write((planet_id, colony_id, Names::Fleet::FRIGATE), levels.frigate);
+            self.colony_ships.write((planet_id, colony_id, Names::Fleet::ARMADE), levels.armade);
+        }
+
+        fn write_colony_defences(
+            ref self: ContractState, planet_id: u32, colony_id: u8, levels: Defences,
+        ) {
+            self
+                .colony_defences
+                .write((planet_id, colony_id, Names::Defence::CELESTIA), levels.celestia);
+            self
+                .colony_defences
+                .write((planet_id, colony_id, Names::Defence::BLASTER), levels.blaster);
+            self.colony_defences.write((planet_id, colony_id, Names::Defence::BEAM), levels.beam);
+            self
+                .colony_defences
+                .write((planet_id, colony_id, Names::Defence::ASTRAL), levels.astral);
+            self
+                .colony_defences
+                .write((planet_id, colony_id, Names::Defence::PLASMA), levels.plasma);
         }
 
         fn calculate_colony_production(
