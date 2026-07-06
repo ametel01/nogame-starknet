@@ -28,7 +28,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Add a non-breaking simulator view with caller-supplied tech levels.
 - [x] Step 8: Add Multi-Universe Deployment Manifest
   - Add a tracked example manifest and deployment docs for preserving universe address sets.
-- [ ] Step 9: Fix Large-Ship Debris Costs
+- [x] Step 9: Fix Large-Ship Debris Costs
   - Use frigate and armade unit costs when calculating debris from large-ship losses.
 - [ ] Step 10: Add Round-Capped Battle Draws
   - Bound battle execution at six rounds and grant loot only on attacker victory.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, and 8 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, and the deployment docs now include a tracked example manifest for preserving universe address sets across redeploy-all workflows. The remaining available wave contains independent implementation plan 009; plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, 8, and 9 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the deployment docs include a tracked example manifest for preserving universe address sets, and large-ship debris now uses frigate and armade unit costs. Plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -73,3 +73,5 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Step 6 validation passed: `rg -n "uses:" .github/workflows`, `rg -n "uses: .*@(v[0-9]|main|master)" .github/workflows` returned no matches, `yq e '.'` parsed all workflow YAML files, `scarb fmt --check`, `scarb build`, and `snforge test` passed with 114 tests.
 - 2026-07-06: Completed Step 8 by adding `deployments/universes.example.json` and documenting the redeploy-all universe manifest workflow in `DEPLOYMENT.md`; commit reference pending.
 - 2026-07-06: Step 8 validation passed: `python3 -m json.tool deployments/universes.example.json >/dev/null`; `rg -n "universes.example.json|UNIVERSE_ID|universe_id|manifest|GAME_ADDRESS" DEPLOYMENT.md deployments/universes.example.json`; `scarb fmt --check`; `scarb build`; `snforge test` (114 passed).
+- 2026-07-06: Completed Step 9 on `codex/issue-44-large-ship-debris`: `get_debris` now uses `costs.frigate` and `costs.armade` for destroyed frigate/armade debris instead of sparrow costs, with focused regression coverage in `tests/fleet_write.cairo`.
+- 2026-07-06: Step 9 validation passed: `scarb build`; `snforge test debris` (8 passed, 0 failed, 107 filtered out); `scarb fmt --check`; `scarb build`; `snforge test` (115 passed, 0 failed).
