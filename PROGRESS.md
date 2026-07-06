@@ -12,7 +12,7 @@
 
 - Step 0 is complete.
 - Tracking files are initialized before functional implementation begins.
-- Wave 1 is the next available execution wave: issues #4, #5, #6, #7, and #8.
+- Wave 1 issue #4 is implemented on `codex/issue-4-resource-manager`; issues #5, #6, #7, and #8 remain separate Wave 1 streams.
 - Later executors must append progress updates without overwriting existing entries.
 - `CHANGELOG.md` should be updated only when a completed step ships a qualifying functional change.
 
@@ -21,7 +21,7 @@
 | Step | Issue | Wave | Title | Status | Depends on |
 |------|-------|------|-------|--------|------------|
 | 0 | [#3](https://github.com/ametel01/nogame-starknet/issues/3) | 0 | Initialize progress and changelog tracking for NoGame plan execution | Complete | None |
-| 1 | [#4](https://github.com/ametel01/nogame-starknet/issues/4) | 1 | Gate Game resource manager mutations | Pending | #3 |
+| 1 | [#4](https://github.com/ametel01/nogame-starknet/issues/4) | 1 | Gate Game resource manager mutations | Complete | #3 |
 | 2 | [#5](https://github.com/ametel01/nogame-starknet/issues/5) | 1 | Require owner authorization for Game upgrades | Pending | #3 |
 | 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Pending | #3 |
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
@@ -48,9 +48,12 @@
 - 2026-07-06: `rg -n "struct SimulationResult|struct TechLevels|fn settle" src/libraries/types.cairo src/fleet_movements` found the expected simulator, tech, and settlement symbols.
 - 2026-07-06: `rg -n "battle simulator|simulate_attack" README.md docs plans` found the README roadmap item and the new battle simulator spike references.
 - 2026-07-06: `scarb build` was not run for issue #8 because the completed work was design-only and did not touch Cairo code.
+- 2026-07-06: Plan 001 drift check passed with no scoped changes since `a370d98`.
+- 2026-07-06: Issue #4 gates passed: `scarb fmt --check`, `scarb build`, `snforge test test_game_resource_manager`, and `snforge test`.
 
 ## Update Log
 
 - 2026-07-06: Completed Step 0 for issue #3 by creating root `PROGRESS.md` and `CHANGELOG.md`. Next available execution wave is Wave 1: #4, #5, #6, #7, and #8.
 - 2026-07-06: Completed Step 4 for issue #7 by cleaning deployment credential examples and updating the plan tracker.
 - 2026-07-06: Completed Step 5 for issue #8 by adding `docs/battle-simulator-spike.md`, marking plan 010 done in `plans/README.md`, and leaving `CHANGELOG.md` unchanged because no functional behavior shipped.
+- 2026-07-06: Completed Step 1 for issue #4 by gating Game resource manager mutations to registered game contracts while preserving public read-only resource queries.

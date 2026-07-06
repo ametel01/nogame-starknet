@@ -7,3 +7,6 @@ and this project adheres to semantic versioning when versions are released.
 
 ## [Unreleased]
 
+### Security
+
+- Gate Game resource manager mutation methods so arbitrary external callers cannot mint, burn, or spend resource balances through Game.

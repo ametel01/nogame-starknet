@@ -222,6 +222,7 @@ fn init_game(dsp: Dispatchers) {
     start_cheat_caller_address(dsp.steel.contract_address, dsp.planet.contract_address);
     start_cheat_caller_address(dsp.quartz.contract_address, dsp.planet.contract_address);
     start_cheat_caller_address(dsp.tritium.contract_address, dsp.planet.contract_address);
+    start_cheat_caller_address(dsp.game.contract_address, dsp.planet.contract_address);
 }
 
 fn set_up_game() -> Dispatchers {
