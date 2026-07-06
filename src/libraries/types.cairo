@@ -114,17 +114,23 @@ impl ERC20LevelsZeroable of Zeroable<ERC20s> {
 
 impl ERC20sAdd of Add<ERC20s> {
     fn add(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
-        let (steel, _) = lhs.steel.overflowing_add(rhs.steel);
-        let (quartz, _) = lhs.quartz.overflowing_add(rhs.quartz);
-        let (tritium, _) = lhs.tritium.overflowing_add(rhs.tritium);
+        let (steel, steel_overflow) = lhs.steel.overflowing_add(rhs.steel);
+        let (quartz, quartz_overflow) = lhs.quartz.overflowing_add(rhs.quartz);
+        let (tritium, tritium_overflow) = lhs.tritium.overflowing_add(rhs.tritium);
+        assert!(!steel_overflow, "ERC20s:E_ADD_OVERFLOW");
+        assert!(!quartz_overflow, "ERC20s:E_ADD_OVERFLOW");
+        assert!(!tritium_overflow, "ERC20s:E_ADD_OVERFLOW");
         ERC20s { steel: steel, quartz: quartz, tritium: tritium }
     }
 }
 impl ERC20sSub of Sub<ERC20s> {
     fn sub(lhs: ERC20s, rhs: ERC20s) -> ERC20s {
-        let (steel, _) = lhs.steel.overflowing_sub(rhs.steel);
-        let (quartz, _) = lhs.quartz.overflowing_sub(rhs.quartz);
-        let (tritium, _) = lhs.tritium.overflowing_sub(rhs.tritium);
+        let (steel, steel_underflow) = lhs.steel.overflowing_sub(rhs.steel);
+        let (quartz, quartz_underflow) = lhs.quartz.overflowing_sub(rhs.quartz);
+        let (tritium, tritium_underflow) = lhs.tritium.overflowing_sub(rhs.tritium);
+        assert!(!steel_underflow, "ERC20s:E_SUB_UNDERFLOW");
+        assert!(!quartz_underflow, "ERC20s:E_SUB_UNDERFLOW");
+        assert!(!tritium_underflow, "ERC20s:E_SUB_UNDERFLOW");
         ERC20s { steel: steel, quartz: quartz, tritium: tritium }
     }
 }
