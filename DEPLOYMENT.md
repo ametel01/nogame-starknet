@@ -138,6 +138,14 @@ After building, contract artifacts are located in:
 target/dev/nogame_*.contract_class.json
 ```
 
+## Universe Manifest
+
+The env files remain the active local pointer for the latest deployment. The deployment script writes singular keys such as `GAME_ADDRESS`, `PLANET_ADDRESS`, and token addresses, so a redeploy-all universe can overwrite the previous pointer values in `.env.local`, `.env.docker`, `.env.sepolia`, or `.env.mainnet`.
+
+Before running a new universe deployment that will overwrite those env pointers, preserve the current address set in a universe manifest based on `deployments/universes.example.json`. Append one manifest entry for the old universe before replacing the env file values, then append the new universe after deployment succeeds. Keep real account material and private keys out of the manifest.
+
+The universe manifest is the frontend and indexer handoff for multi-universe selection. Each entry should include a stable `universe_id`, the network and RPC URL, deployment metadata, `uni_speed`, `token_price`, `universe_start_time`, all gameplay contract addresses, and all token addresses. The script does not write this manifest automatically.
+
 ## Environment Configuration
 
 For local/docker Katana deployment, you'll need:
