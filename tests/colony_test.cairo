@@ -17,6 +17,14 @@ use super::utils::{
     prepare_colony_carrier_fleet_for, set_up,
 };
 
+fn assert_spendable_decreased_by(before: ERC20s, after: ERC20s, cost: ERC20s) {
+    assert(before - after == cost, 'wrong resource spend');
+}
+
+fn assert_points_increased_by(before: u128, after: u128, cost: ERC20s) {
+    assert(after == before + ((cost.steel + cost.quartz) / 1000), 'wrong point spend');
+}
+
 #[test]
 fn test_generate_colony() {
     let dsp: Dispatchers = set_up();
@@ -282,11 +290,18 @@ fn test_process_colony_compound_upgrade() {
 
     start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
     dsp.colony.generate_colony();
+    let spendable_before = dsp.planet.get_spendable_resources(1);
+    let points_before = dsp.planet.get_planet_points(1);
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::SteelMine, 1);
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::QuartzMine, 2);
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::TritiumMine, 3);
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::EnergyPlant, 4);
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 1);
+    let spendable_after = dsp.planet.get_spendable_resources(1);
+    let points_after = dsp.planet.get_planet_points(1);
+    let expected_cost = ERC20s { steel: 2260, quartz: 875, tritium: 100 };
+    assert_spendable_decreased_by(spendable_before, spendable_after, expected_cost);
+    assert_points_increased_by(points_before, points_after, expected_cost);
     let colony1_compounds = dsp.colony.get_colony_compounds(1, 1);
     assert(colony1_compounds == expected_compounds, 'wrong c1 compounds');
 
@@ -298,6 +313,28 @@ fn test_process_colony_compound_upgrade() {
     dsp.colony.process_colony_compound_upgrade(2, ColonyUpgradeType::Dockyard, 1);
     let colony2_compounds = dsp.colony.get_colony_compounds(1, 2);
     assert(colony2_compounds == expected_compounds, 'wrong c2 compounds');
+}
+
+#[test]
+#[should_panic]
+fn test_colony_upgrade_reverts_with_insufficient_resources() {
+    let dsp: Dispatchers = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    store(
+        dsp.tech.contract_address,
+        map_entry_address(
+            selector!("tech_level"), array![1.into(), Names::Tech::EXOCRAFT.into()].span(),
+        ),
+        array![1].span(),
+    );
+
+    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
+    dsp.colony.generate_colony();
+    dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 2);
 }
 
 #[test]
@@ -320,11 +357,18 @@ fn process_colony_unit_build_defences_test() {
     start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
     dsp.colony.generate_colony();
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
+    let spendable_before = dsp.planet.get_spendable_resources(1);
+    let points_before = dsp.planet.get_planet_points(1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Blaster, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Beam, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Astral, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Plasma, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Celestia, 1);
+    let spendable_after = dsp.planet.get_spendable_resources(1);
+    let points_after = dsp.planet.get_planet_points(1);
+    let expected_cost = ERC20s { steel: 78000, quartz: 69000, tritium: 32500 };
+    assert_spendable_decreased_by(spendable_before, spendable_after, expected_cost);
+    assert_points_increased_by(points_before, points_after, expected_cost);
     let actual = dsp.colony.get_colony_defences(1, 1);
     assert(actual == expected, 'wrong c1 defences');
 }
@@ -349,11 +393,18 @@ fn process_colony_unit_build_fleet_test() {
     start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT1());
     dsp.colony.generate_colony();
     dsp.colony.process_colony_compound_upgrade(1, ColonyUpgradeType::Dockyard, 8);
+    let spendable_before = dsp.planet.get_spendable_resources(1);
+    let points_before = dsp.planet.get_planet_points(1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Carrier, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Scraper, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Sparrow, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Frigate, 1);
     dsp.colony.process_colony_unit_build(1, ColonyBuildType::Armade, 1);
+    let spendable_after = dsp.planet.get_spendable_resources(1);
+    let points_after = dsp.planet.get_planet_points(1);
+    let expected_cost = ERC20s { steel: 80000, quartz: 31000, tritium: 4000 };
+    assert_spendable_decreased_by(spendable_before, spendable_after, expected_cost);
+    assert_points_increased_by(points_before, points_after, expected_cost);
     let actual = dsp.colony.get_colony_ships(1, 1);
     assert(actual == expected, 'wrong c1 ships');
 }

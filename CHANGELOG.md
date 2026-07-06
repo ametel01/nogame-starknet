@@ -12,6 +12,7 @@ and this project adheres to semantic versioning when versions are released.
 - Gate Game resource manager mutation methods so arbitrary external callers cannot mint, burn, or spend resource balances through Game.
 - Gate privileged Planet, Dockyard, and Defence state setters so external callers cannot directly mutate points, timers, debris, ship levels, or defence levels.
 - Harden deployment env-file handling so the script parses plain assignments instead of executing env-file contents and passes private keys as quoted command arguments.
+- Charge resource costs and record planet points for colony compound upgrades, ship builds, and defence builds so colony progression cannot mutate state for free.
 - Make `Game.initialize` one-time and record `universe_start_time` from the initialization block timestamp.
 - Require the owner for `Game.upgrade` so arbitrary callers cannot replace the Game implementation.
 
