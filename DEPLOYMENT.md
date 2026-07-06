@@ -92,9 +92,17 @@ version = "0.1.0"
 edition = '2023_01'
 
 [dependencies]
-openzeppelin_access = "2.0.0"
-openzeppelin_token = "2.0.0"
-openzeppelin_upgrades = "2.0.0"
+openzeppelin_access = "3.0.0"
+openzeppelin_token = "3.0.0"
+openzeppelin_upgrades = "3.0.0"
+openzeppelin_security = "3.0.0"
+openzeppelin_introspection = "3.0.0"
+openzeppelin_utils = "2.1.0"
+openzeppelin_interfaces = "2.1.0"
+starknet = "2.18.0"
+
+[dev-dependencies]
+snforge_std = "0.62.1"
 ```
 
 Contract class names for declaration:
@@ -135,10 +143,12 @@ target/dev/nogame_*.contract_class.json
 For local/docker Katana deployment, you'll need:
 
 ### Katana Account Details
+Local Katana accounts generated with a fixed seed are deterministic development accounts. Use local placeholders in tracked docs, set real values only in untracked env files, and never reuse Katana private keys on public networks.
+
 ```bash
 # Account #0
 STARKNET_ACCOUNT_ADDRESS=0x127fd5f1fe78a71f8bcd1fec63e3fe2f0486b6ecd5c86a0466c3a21fa5cfcec
-STARKNET_PRIVATE_KEY=0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912
+STARKNET_PRIVATE_KEY=<katana-private-key-0>
 STARKNET_PUBLIC_KEY=0x33246ce85ebdc292e6a5c5b4dd51fab2757be34b8ffda847ca6925edf31cb67
 ```
 
@@ -210,7 +220,7 @@ starkli invoke $PLANET_ADDRESS generate_planet \
 
 ## Common Issues
 
-1. **Build failures** - Ensure you have Scarb 2.12.2 installed
+1. **Build failures** - Ensure you have Scarb 2.19.1 and Starknet Foundry 0.62.1 installed
 2. **Declaration failures** - Check that Katana is running and accessible
 3. **Initialization failures** - Verify all contract addresses are correct
 4. **Test failures** - Run `scarb clean` and rebuild
