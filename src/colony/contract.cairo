@@ -257,9 +257,10 @@ mod Colony {
             } else {
                 exo_tech / 2
             };
-            let current_count = self.colony_count.read();
+            let global_count = self.colony_count.read();
+            let current_planet_colonies = self.planet_colonies_count.read(planet_id);
             assert!(
-                current_count < max_colonies.into(),
+                current_planet_colonies < max_colonies,
                 "NoGame: max colonies {} reached, upgrade Exocraft tech to increase max colonies",
                 max_colonies,
             );
@@ -268,12 +269,12 @@ mod Colony {
                 let eth = game_manager.get_tokens().eth;
                 eth.transfer_from(caller, self.ownable.owner(), price);
             }
-            let position = positions::get_colony_position(current_count);
-            let colony_id = self.planet_colonies_count.read(planet_id) + 1;
+            let position = positions::get_colony_position(global_count);
+            let colony_id = current_planet_colonies + 1;
             let id = colony_identity::encode_colony_id(planet_id, colony_id);
             self.colony_position.write((planet_id, colony_id), position);
             self.planet_colonies_count.write(planet_id, colony_id);
-            self.colony_count.write(current_count + 1);
+            self.colony_count.write(global_count + 1);
             let number_of_planets = contracts.planet.get_number_of_planets();
             self.colony_owner.write(id, planet_id);
             self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
