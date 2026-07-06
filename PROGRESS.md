@@ -28,8 +28,8 @@
 | 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
 | 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Complete | #4 |
 | 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Complete | #4, #5 |
-| 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Pending | #7 |
-| 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Pending | #4, #9 |
+| 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Complete | #7 |
+| 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Complete | #4, #9 |
 | 10 | [#13](https://github.com/ametel01/nogame-starknet/issues/13) | 3 | Design the multi-universe deployment lifecycle | Complete | #10 |
 | 11 | [#14](https://github.com/ametel01/nogame-starknet/issues/14) | 4 | Charge resources for colony upgrades and builds | Pending | #4, #12 |
 | 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Pending | #12 |
@@ -63,6 +63,9 @@
 - 2026-07-06: Issue #10 validation passed: `snforge test test_game_initialize`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 - 2026-07-06: Issue #13 drift check `git diff --stat a370d98..HEAD -- README.md DEPLOYMENT.md scripts/deploy-starknet.sh src/game/contract.cairo Scarb.toml` showed merged deployment-doc/script hardening and one-time Game initialization drift; the lifecycle spike incorporated the current one-time initialization, env persistence, and linear deploy flow.
 - 2026-07-06: Issue #13 validation passed: deployment-flow mapping `rg`, spike discoverability `rg`, and `git diff --check`; `scarb build` was not run because no code was touched.
+- 2026-07-06: Issue #12 drift check `git diff --stat a370d98..HEAD -- src/planet/contract.cairo src/colony/contract.cairo tests/colony_test.cairo tests/general_write.cairo` showed only prior Planet privileged-setter authorization changes in the planned contract scope; plan 004 remained applicable.
+- 2026-07-06: Issue #12 fixed resource collection identity so `Planet.collect_resources(player)` uses the player's home planet, collects every returned colony by explicit `(planet_id, colony_id)`, and calls an authorized Colony method that does not derive ownership from the immediate caller.
+- 2026-07-06: Issue #12 validation passed after rebasing on `origin/main` at `762c507`: `snforge test test_collect_resources_all_planets`, `snforge test colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -76,3 +79,4 @@
 - 2026-07-06: Completed Step 2 for issue #5 by requiring the owner for `Game.upgrade` and covering unauthorized upgrade attempts.
 - 2026-07-06: Completed Step 7 for issue #10 by making `Game.initialize` one-time, recording the initialization block timestamp as `universe_start_time`, and covering owner, non-owner, timestamp, and second-initialize behavior.
 - 2026-07-06: Completed Step 10 for issue #13 by adding the multi-universe deployment lifecycle spike, recommending redeploy-all plus a manifest follow-up before factory/registry work, and leaving `CHANGELOG.md` unchanged because the work is design-only.
+- 2026-07-06: Completed issue #12 by fixing planet/colony resource collection identity and strengthening `test_collect_resources_all_planets` to assert all colony timers are reset.

@@ -83,6 +83,9 @@ fn test_collect_resources_all_planets() {
     start_cheat_caller_address(dsp.planet.contract_address, dsp.compound.contract_address);
     dsp.planet.collect_resources(ACCOUNT1());
     let planet_spendable_after = dsp.planet.get_spendable_resources(1);
+    let colony1_collectible_after = dsp.colony.get_colony_resources(1, 1);
+    let colony2_collectible_after = dsp.colony.get_colony_resources(1, 2);
+    let colony3_collectible_after = dsp.colony.get_colony_resources(1, 3);
     assert(
         planet_spendable_after == planet_spendable
             + planet_collectible
@@ -91,6 +94,9 @@ fn test_collect_resources_all_planets() {
             + colony3_collectible,
         'wrong planet spendable',
     );
+    assert(colony1_collectible_after == Default::default(), 'wrong c1 collectible');
+    assert(colony2_collectible_after == Default::default(), 'wrong c2 collectible');
+    assert(colony3_collectible_after == Default::default(), 'wrong c3 collectible');
 }
 
 #[test]
