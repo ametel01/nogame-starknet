@@ -78,6 +78,8 @@ fn war(
 
         apply_weighted_damage(attacker_weapon, attackers_have_frigates, ref defenders, d_techs);
         apply_weighted_damage(defender_weapon, defenders_have_frigates, ref attackers, a_techs);
+        restore_round_shields(ref attackers, a_techs);
+        restore_round_shields(ref defenders, d_techs);
         round += 1;
     }
     let (attacker_fleet_struct, _) = build_fleet_struct(ref attackers, a_techs);
@@ -138,6 +140,7 @@ fn apply_weighted_damage(
     while !targets.is_empty() {
         let mut target = targets.pop_front().unwrap();
         let target_count = get_number_of_units_from_blob(target, techs);
+        let base_target = get_base_unit_with_techs(target.id, techs);
         let mut allocated_damage = weighted_damage_for_count(
             incoming_weapon, target_count, total_target_count,
         );
@@ -150,13 +153,70 @@ fn apply_weighted_damage(
         } else {
             let (new_shield, new_hull) = apply_damage(allocated_damage, target.shield, target.hull);
             target.shield = new_shield;
-            target.hull = new_hull;
+            target.hull = apply_deterministic_explosions(new_hull, base_target.hull, target_count);
         }
         if target.hull > 0 {
             damaged.append(target);
         }
     }
     restore_units(ref targets, ref damaged);
+}
+
+fn restore_round_shields(ref units: Array<Unit>, techs: TechLevels) {
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let mut unit = units.pop_front().unwrap();
+        let base_unit = get_base_unit_with_techs(unit.id, techs);
+        let unit_count = get_number_of_units_from_blob(unit, techs);
+        if unit_count > 0 {
+            unit.weapon = base_unit.weapon * unit_count;
+            unit.shield = base_unit.shield * unit_count;
+            restored.append(unit);
+        }
+    }
+    restore_units(ref units, ref restored);
+}
+
+/// Deterministic approximation of OGame's below-70-percent explosion roll.
+///
+/// Once aggregate class hull drops below 70% of the class hull that entered the
+/// damage event, expected total losses are rounded up to whole units. Normal
+/// hull depletion already accounts for whole-unit losses, so only the extra
+/// expected explosion losses are applied. No randomness or block entropy is used.
+fn apply_deterministic_explosions(
+    current_hull: u32, base_hull: u32, count_before_damage: u32,
+) -> u32 {
+    if current_hull == 0 || base_hull == 0 || count_before_damage == 0 {
+        return current_hull;
+    }
+
+    let max_hull_before: u128 = base_hull.into() * count_before_damage.into();
+    if current_hull.into() * 100 >= max_hull_before * 70 {
+        return current_hull;
+    }
+
+    let count_after_hull = units_from_hull(current_hull, base_hull);
+    let normal_losses = count_before_damage - count_after_hull;
+    let missing_hull = max_hull_before - current_hull.into();
+    let expected_total_losses: u32 = div_ceil_u128(missing_hull, base_hull.into())
+        .try_into()
+        .expect('explosion losses failed');
+
+    if expected_total_losses <= normal_losses {
+        return current_hull;
+    }
+
+    let extra_losses = expected_total_losses - normal_losses;
+    if extra_losses >= count_after_hull {
+        return 0;
+    }
+
+    let survivor_count = count_after_hull - extra_losses;
+    let survivor_max_hull = survivor_count * base_hull;
+    if current_hull > survivor_max_hull {
+        return survivor_max_hull;
+    }
+    current_hull
 }
 
 fn total_unit_count(ref units: Array<Unit>, techs: TechLevels) -> u32 {
@@ -211,6 +271,13 @@ fn restore_units(ref units: Array<Unit>, ref restored: Array<Unit>) {
     while !restored.is_empty() {
         units.append(restored.pop_front().unwrap());
     }
+}
+
+fn div_ceil_u128(numerator: u128, denominator: u128) -> u128 {
+    if numerator == 0 {
+        return 0;
+    }
+    (numerator + denominator - 1) / denominator
 }
 
 /// Applies damage from one unit to another, handling shields and hull.
@@ -404,7 +471,19 @@ fn add_techs(ref unit: Unit, techs: TechLevels) {
 /// - Inlined for performance in battle simulation hot path
 #[inline(always)]
 fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
-    let mut base_unit = match blob.id {
+    let base_unit = get_base_unit_with_techs(blob.id, techs);
+    units_from_hull(blob.hull, base_unit.hull)
+}
+
+fn units_from_hull(hull: u32, base_hull: u32) -> u32 {
+    if hull == 0 {
+        return 0;
+    }
+    (hull + base_hull - 1) / base_hull
+}
+
+fn get_base_unit_with_techs(unit_id: u8, techs: TechLevels) -> Unit {
+    let mut base_unit = match unit_id {
         0 => CARRIER(),
         1 => SCRAPER(),
         2 => SPARROW(),
@@ -418,7 +497,7 @@ fn get_number_of_units_from_blob(blob: Unit, techs: TechLevels) -> u32 {
     };
 
     add_techs(ref base_unit, techs);
-    (blob.hull + base_unit.hull - 1) / base_unit.hull
+    base_unit
 }
 
 fn get_fleet_speed(fleet: Fleet, techs: TechLevels) -> u32 {

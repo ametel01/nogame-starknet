@@ -1,6 +1,6 @@
 use nogame::fleet_movements::contract::IFleetMovementsDispatcherTrait;
 use nogame::fleet_movements::library as fleet;
-use nogame::libraries::types::{Defences, Fleet, TechLevels};
+use nogame::libraries::types::{Defences, Fleet, TechLevels, Unit};
 use super::utils::set_up;
 
 #[test]
@@ -99,6 +99,36 @@ fn test_war_class_weighting_is_deterministic() {
     let second = fleet::war(attackers, Default::default(), defenders, defences, Default::default());
 
     assert(first == second, 'weighted war drifted');
+}
+
+#[test]
+fn test_restore_round_shields_keeps_hull_damage() {
+    let mut units: Array<Unit> = array![];
+    units
+        .append(
+            Unit { id: 0, weapon: 100, shield: 0, hull: 1500, speed: 0, cargo: 0, consumption: 0 },
+        );
+
+    fleet::restore_round_shields(ref units, Default::default());
+    let restored = units.pop_front().unwrap();
+
+    assert(restored.weapon == 100, 'wrong restored weapon');
+    assert(restored.shield == 20, 'shield did not reset');
+    assert(restored.hull == 1500, 'hull damage did not persist');
+}
+
+#[test]
+fn test_deterministic_explosions_pin_exact_threshold_values() {
+    assert(fleet::apply_deterministic_explosions(700, 1000, 1) == 700, 'equal threshold exploded');
+    assert(fleet::apply_deterministic_explosions(701, 1000, 1) == 701, 'above threshold exploded');
+    assert(fleet::apply_deterministic_explosions(699, 1000, 1) == 0, 'below threshold survived');
+    assert(
+        fleet::apply_deterministic_explosions(6500, 1000, 10) == 6000,
+        'wrong rounded explosion loss',
+    );
+    assert(
+        fleet::apply_deterministic_explosions(6000, 1000, 10) == 6000, 'double counted hull losses',
+    );
 }
 
 #[test]
