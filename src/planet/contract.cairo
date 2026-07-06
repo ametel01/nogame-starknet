@@ -395,6 +395,7 @@ mod Planet {
         }
 
         fn update_planet_points(ref self: ContractState, planet_id: u32, spent: ERC20s, neg: bool) {
+            self.verify_authorized_caller();
             self.last_active.write(planet_id, get_block_timestamp());
             if neg {
                 self
@@ -419,20 +420,24 @@ mod Planet {
             position: PlanetPosition,
             new_planet_count: u32,
         ) {
+            self.verify_authorized_caller();
             self.position_to_planet.write(position, planet_id);
             self.planet_position.write(planet_id, position);
             self.number_of_planets.write(new_planet_count);
         }
 
         fn set_last_active(ref self: ContractState, planet_id: u32) {
+            self.verify_authorized_caller();
             self.last_active.write(planet_id, get_block_timestamp());
         }
 
         fn set_resources_timer(ref self: ContractState, planet_id: u32) {
+            self.verify_authorized_caller();
             self.resources_timer.write(planet_id, get_block_timestamp());
         }
 
         fn set_planet_debris_field(ref self: ContractState, planet_id: u32, debris: Debris) {
+            self.verify_authorized_caller();
             self.planet_debris_field.write(planet_id, debris);
         }
 
@@ -537,6 +542,31 @@ mod Planet {
                     || caller == contracts.fleet.contract_address
                     || caller == contracts.dockyard.contract_address,
                 "Planet:E_UNAUTHORIZED_CALLER",
+            );
+        }
+
+        fn verify_authorized_caller(self: @ContractState) {
+            let caller = get_caller_address();
+            let game_manager = self.game_manager.read();
+            let contracts = game_manager.get_contracts();
+
+            let is_authorized = caller == contracts.colony.contract_address
+                || caller == contracts.compound.contract_address
+                || caller == contracts.dockyard.contract_address
+                || caller == contracts.defence.contract_address
+                || caller == contracts.fleet.contract_address
+                || caller == contracts.tech.contract_address;
+
+            assert!(
+                is_authorized,
+                "NoGame::Planet[E_UNAUTHORIZED_CALLER]: caller {:?} allowed colony {:?} compound {:?} dockyard {:?} defence {:?} fleet {:?} tech {:?}",
+                caller,
+                contracts.colony.contract_address,
+                contracts.compound.contract_address,
+                contracts.dockyard.contract_address,
+                contracts.defence.contract_address,
+                contracts.fleet.contract_address,
+                contracts.tech.contract_address,
             );
         }
 

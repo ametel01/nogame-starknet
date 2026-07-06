@@ -28,7 +28,6 @@ trait IDockyard<TState> {
     /// - `level`: New ship count
     ///
     /// # Notes
-    /// - Access control implemented but disabled due to test framework limitation
     /// - Intended for FleetMovements contract to modify during missions
     fn set_ship_levels(ref self: TState, planet_id: u32, name: u8, level: u32);
 
@@ -114,10 +113,7 @@ mod Dockyard {
         }
 
         fn set_ship_levels(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
-            // Access Control: Only authorized game contracts can modify ship levels
-            // This prevents unauthorized external calls from manipulating game state
-            // TODO: Re-enable once test framework caller propagation issue is resolved
-            // self.verify_caller_is_game_contract();
+            self.verify_caller_is_game_contract();
             self.ships_level.write((planet_id, name), level);
         }
 
