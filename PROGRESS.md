@@ -35,7 +35,7 @@
 | 12 | [#15](https://github.com/ametel01/nogame-starknet/issues/15) | 4 | Enforce colony limits per home planet | Complete | #12 |
 | 13 | [#16](https://github.com/ametel01/nogame-starknet/issues/16) | 4 | Require transport arrival before docking | Complete | #12 |
 | 14 | [#17](https://github.com/ametel01/nogame-starknet/issues/17) | 5 | Replace no-op dockyard and defence requirement tests | Pending | #9, #14 |
-| 15 | [#18](https://github.com/ametel01/nogame-starknet/issues/18) | 5 | Use checked ERC20s resource arithmetic | Pending | #4, #14 |
+| 15 | [#18](https://github.com/ametel01/nogame-starknet/issues/18) | 5 | Use checked ERC20s resource arithmetic | Complete | #4, #14 |
 
 ## Validation Results
 
@@ -75,6 +75,8 @@
 - 2026-07-06: Issue #14 drift check `git diff --stat a370d98..HEAD -- src/colony/contract.cairo src/colony/assets.cairo src/compound/library.cairo src/dockyard/library.cairo src/defence/library.cairo tests/colony_test.cairo` showed only prior issue #12 colony identity changes in the planned scope; plan 005 remained applicable.
 - 2026-07-06: Issue #14 charged real player resources and recorded planet points for colony compound upgrades, ship builds, and defence builds using existing compound, dockyard, and defence cost formulas.
 - 2026-07-06: Issue #14 validation passed: `snforge test colony`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-06: Issue #18 drift check `git diff --stat a370d98..HEAD -- src/libraries/types.cairo src/fleet_movements/orchestration.cairo src/fleet_movements/lifecycle.cairo src/planet/contract.cairo tests` showed prior planet/test prerequisite changes; live `ERC20s` operators, loot addition, and attack resource-delta assertions still matched the plan.
+- 2026-07-06: Issue #18 validation passed: `snforge test resource_arithmetic`, `snforge test test_attack_planet_loot_amount`, `snforge test test_attack_colony`, `snforge test test_collect_resources_all_planets`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
 
 ## Update Log
 
@@ -92,3 +94,4 @@
 - 2026-07-06: Completed issue #15 by enforcing colony capacity per home planet and adding a regression proving one player's colonies do not block another player's first allowed colony.
 - 2026-07-06: Completed issue #16 by requiring transport arrival before docking and covering early dock attempts with a regression test.
 - 2026-07-06: Completed issue #14 by charging and point-recording colony upgrades/builds and adding colony spend/revert regressions.
+- 2026-07-06: Completed issue #18 by making `ERC20s` operator add/sub checked for component overflow and underflow, with focused normal and panic regressions.

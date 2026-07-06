@@ -22,3 +22,4 @@ and this project adheres to semantic versioning when versions are released.
 - Fix Planet resource collection to use the explicit player identity and include all of that player's colonies.
 - Enforce colony generation limits per home planet so one player's colonies do not block another player's first allowed colony.
 - Require transport missions to arrive before `dock_fleet` applies docking effects.
+- Make shared `ERC20s` addition and subtraction panic on component overflow or underflow instead of silently wrapping.
