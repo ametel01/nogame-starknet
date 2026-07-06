@@ -25,7 +25,7 @@
 | 2 | [#5](https://github.com/ametel01/nogame-starknet/issues/5) | 1 | Require owner authorization for Game upgrades | Pending | #3 |
 | 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Pending | #3 |
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
-| 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Pending | #3 |
+| 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
 | 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Pending | #4 |
 | 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Pending | #4, #5 |
 | 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Pending | #7 |
@@ -44,8 +44,13 @@
 - 2026-07-06: No functional changelog entry was added for the tracking-only setup.
 - 2026-07-06: Issue #7 drift check `git diff --stat a370d98..HEAD -- DEPLOYMENT.md .env.local.example .env.docker.example README.md Scarb.toml .tool-versions` produced no output; plan 009 docs cleanup remained applicable.
 - 2026-07-06: Issue #7 replaced tracked Katana private-key examples with placeholders, added local-only Katana warnings, aligned deployment versions with `Scarb.toml` and `.tool-versions`, and left `CHANGELOG.md` unchanged because the work is docs-only.
+- 2026-07-06: Plan 010 drift check passed with no diff output for `README.md`, `src/fleet_movements`, `src/libraries/types.cairo`, `tests/fleet.cairo`, and `tests/fleet_write.cairo`.
+- 2026-07-06: `rg -n "struct SimulationResult|struct TechLevels|fn settle" src/libraries/types.cairo src/fleet_movements` found the expected simulator, tech, and settlement symbols.
+- 2026-07-06: `rg -n "battle simulator|simulate_attack" README.md docs plans` found the README roadmap item and the new battle simulator spike references.
+- 2026-07-06: `scarb build` was not run for issue #8 because the completed work was design-only and did not touch Cairo code.
 
 ## Update Log
 
 - 2026-07-06: Completed Step 0 for issue #3 by creating root `PROGRESS.md` and `CHANGELOG.md`. Next available execution wave is Wave 1: #4, #5, #6, #7, and #8.
 - 2026-07-06: Completed Step 4 for issue #7 by cleaning deployment credential examples and updating the plan tracker.
+- 2026-07-06: Completed Step 5 for issue #8 by adding `docs/battle-simulator-spike.md`, marking plan 010 done in `plans/README.md`, and leaving `CHANGELOG.md` unchanged because no functional behavior shipped.
