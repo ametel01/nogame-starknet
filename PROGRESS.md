@@ -26,7 +26,7 @@
 | 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Complete | #3 |
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
 | 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
-| 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Pending | #4 |
+| 6 | [#9](https://github.com/ametel01/nogame-starknet/issues/9) | 2 | Gate privileged Planet, Dockyard, and Defence state setters | Complete | #4 |
 | 7 | [#10](https://github.com/ametel01/nogame-starknet/issues/10) | 2 | Make Game initialization one-time and timestamped | Pending | #4, #5 |
 | 8 | [#11](https://github.com/ametel01/nogame-starknet/issues/11) | 2 | Harden deployment environment file handling | Pending | #7 |
 | 9 | [#12](https://github.com/ametel01/nogame-starknet/issues/12) | 3 | Fix planet and colony resource collection identity | Pending | #4, #9 |
@@ -52,6 +52,8 @@
 - 2026-07-06: Issue #4 gates passed: `scarb fmt --check`, `scarb build`, `snforge test test_game_resource_manager`, and `snforge test`.
 - 2026-07-06: Issue #6 drift check passed with no planned-file changes from `a370d98..HEAD`.
 - 2026-07-06: Issue #6 validation passed: `scarb fmt --check`, `scarb build`, `snforge test test_erc721_nogame_transfers_and_approvals`, and `snforge test`.
+- 2026-07-06: Issue #9 drift check `git diff --stat a370d98..HEAD -- src/planet/contract.cairo src/dockyard/contract.cairo src/defence/contract.cairo tests` showed only prior test/helper changes and no target-contract drift.
+- 2026-07-06: Issue #9 validation passed: `snforge test test_privileged_setters`, `scarb fmt --check`, `scarb build`, and `snforge test`.
 
 ## Update Log
 
@@ -60,3 +62,4 @@
 - 2026-07-06: Completed Step 5 for issue #8 by adding `docs/battle-simulator-spike.md`, marking plan 010 done in `plans/README.md`, and leaving `CHANGELOG.md` unchanged because no functional behavior shipped.
 - 2026-07-06: Completed Step 1 for issue #4 by gating Game resource manager mutations to registered game contracts while preserving public read-only resource queries.
 - 2026-07-06: Completed issue #6 by centralizing ERC721NoGame `token_of` transfer index updates, covering stale sender indexes, and updating the plan tracker.
+- 2026-07-06: Completed Step 6 for issue #9 by gating privileged Planet, Dockyard, and Defence setters to registered lifecycle callers while preserving Fleet and Colony flows.

@@ -19,7 +19,8 @@ use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, map_entry_address, start_cheat_block_timestamp,
     start_cheat_block_timestamp_global, start_cheat_caller_address,
-    start_cheat_caller_address_global, stop_cheat_caller_address, store,
+    start_cheat_caller_address_global, stop_cheat_caller_address, stop_cheat_caller_address_global,
+    store,
 };
 use starknet::class_hash::ClassHash;
 use starknet::{
@@ -191,6 +192,7 @@ fn init_game(dsp: Dispatchers) {
             UNI_SPEED,
             TOKEN_PRICE,
         );
+    stop_cheat_caller_address_global();
     start_cheat_caller_address(dsp.eth.contract_address, DEPLOYER());
     dsp.eth.transfer(ACCOUNT1(), (10 * E18).into());
     dsp.eth.transfer(ACCOUNT2(), (10 * E18).into());

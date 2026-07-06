@@ -32,7 +32,6 @@ trait IDefence<TState> {
     /// - `level`: New defence count
     ///
     /// # Notes
-    /// - Access control implemented but disabled due to test framework limitation
     /// - Intended for FleetMovements contract to modify during attacks
     fn set_defence_level(ref self: TState, planet_id: u32, name: u8, level: u32);
 
@@ -122,9 +121,7 @@ mod Defence {
         }
 
         fn set_defence_level(ref self: ContractState, planet_id: u32, name: u8, level: u32) {
-            // Access Control: Only authorized game contracts can modify defence levels
-            // TODO: Re-enable once test framework caller propagation issue is resolved
-            // self.verify_caller_is_game_contract();
+            self.verify_caller_is_game_contract();
             self.defence_level.write((planet_id, name), level);
         }
 
