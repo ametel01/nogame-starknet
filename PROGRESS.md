@@ -26,7 +26,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Pin workflow actions to commit SHAs while preserving tool versions.
 - [ ] Step 7: Add Tech-Aware Battle Simulation View
   - Add a non-breaking simulator view with caller-supplied tech levels.
-- [ ] Step 8: Add Multi-Universe Deployment Manifest
+- [x] Step 8: Add Multi-Universe Deployment Manifest
   - Add a tracked example manifest and deployment docs for preserving universe address sets.
 - [ ] Step 9: Fix Large-Ship Debris Costs
   - Use frigate and armade unit costs when calculating debris from large-ship losses.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, and 6 are complete and validated. Attack loot buckets remain separated and cargo-limited, and GitHub Actions in build, format, and test workflows are pinned to immutable commit SHAs while preserving `SCARB_VERSION` and `SNFORGE_VERSION`. Remaining available wave work contains independent implementation plans 008 and 009; plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, and 8 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, and the deployment docs now include a tracked example manifest for preserving universe address sets across redeploy-all workflows. The remaining available wave contains independent implementation plan 009; plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -71,3 +71,5 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Validation passed for Step 2: `scarb fmt --check`, `scarb build`, `snforge test test_attack_planet_loot`, and `snforge test` all exited 0. Full suite result: 115 passed, 0 failed. Commit reference pending after rebase.
 - 2026-07-06: Step 6 pinned workflow actions to immutable SHAs: `actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5`, `software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd`, and `foundry-rs/setup-snfoundry@ee00ea3f026379008ca40a54448d4059233d06cc`; no Scarb or snfoundry version changes.
 - 2026-07-06: Step 6 validation passed: `rg -n "uses:" .github/workflows`, `rg -n "uses: .*@(v[0-9]|main|master)" .github/workflows` returned no matches, `yq e '.'` parsed all workflow YAML files, `scarb fmt --check`, `scarb build`, and `snforge test` passed with 114 tests.
+- 2026-07-06: Completed Step 8 by adding `deployments/universes.example.json` and documenting the redeploy-all universe manifest workflow in `DEPLOYMENT.md`; commit reference pending.
+- 2026-07-06: Step 8 validation passed: `python3 -m json.tool deployments/universes.example.json >/dev/null`; `rg -n "universes.example.json|UNIVERSE_ID|universe_id|manifest|GAME_ADDRESS" DEPLOYMENT.md deployments/universes.example.json`; `scarb fmt --check`; `scarb build`; `snforge test` (114 passed).

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "description": "Example only. Copy this shape for real deployment manifests and replace every placeholder before sharing with frontend or indexer operators.",
+  "universes": [
+    {
+      "universe_id": "local-2026-q3",
+      "network": "katana-local",
+      "deployed_at": "2026-07-01T00:00:00Z",
+      "rpc_url": "http://localhost:5050",
+      "uni_speed": 1,
+      "token_price": "1000000000000000",
+      "universe_start_time": 1782864000,
+      "contracts": {
+        "game": "0x0111111111111111111111111111111111111111111111111111111111111111",
+        "planet": "0x0222222222222222222222222222222222222222222222222222222222222222",
+        "colony": "0x0333333333333333333333333333333333333333333333333333333333333333",
+        "compound": "0x0444444444444444444444444444444444444444444444444444444444444444",
+        "defence": "0x0555555555555555555555555555555555555555555555555555555555555555",
+        "dockyard": "0x0666666666666666666666666666666666666666666666666666666666666666",
+        "fleet": "0x0777777777777777777777777777777777777777777777777777777777777777",
+        "tech": "0x0888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "tokens": {
+        "erc721": "0x0999999999999999999999999999999999999999999999999999999999999999",
+        "steel": "0x0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "quartz": "0x0bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "tritium": "0x0ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "eth": "0x0ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "universe_id": "local-2026-q4",
+      "network": "katana-local",
+      "deployed_at": "2026-10-01T00:00:00Z",
+      "rpc_url": "http://localhost:5050",
+      "uni_speed": 2,
+      "token_price": "1000000000000000",
+      "universe_start_time": 1790812800,
+      "contracts": {
+        "game": "0x0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "planet": "0x0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "colony": "0x0121212121212121212121212121212121212121212121212121212121212121",
+        "compound": "0x0232323232323232323232323232323232323232323232323232323232323232",
+        "defence": "0x0343434343434343434343434343434343434343434343434343434343434343",
+        "dockyard": "0x0454545454545454545454545454545454545454545454545454545454545454",
+        "fleet": "0x0565656565656565656565656565656565656565656565656565656565656565",
+        "tech": "0x0676767676767676767676767676767676767676767676767676767676767676"
+      },
+      "tokens": {
+        "erc721": "0x0787878787878787878787878787878787878787878787878787878787878787",
+        "steel": "0x0898989898989898989898989898989898989898989898989898989898989898",
+        "quartz": "0x09aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "tritium": "0x0abababababababababababababababababababababababababababababababa",
+        "eth": "0x0bcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    }
+  ]
+}

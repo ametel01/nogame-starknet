@@ -7,6 +7,10 @@ and this project adheres to semantic versioning when versions are released.
 
 ## [Unreleased]
 
+### Added
+
+- Add an example universe deployment manifest and redeploy-all documentation for preserving address sets across universe lifecycles.
+
 ### Security
 
 - Gate Game resource manager mutation methods so arbitrary external callers cannot mint, burn, or spend resource balances through Game.
