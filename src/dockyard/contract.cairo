@@ -47,6 +47,7 @@ mod Dockyard {
     use nogame::compound::contract::ICompoundDispatcherTrait;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{E18, ERC20s, ShipBuildType, ShipsCost, ShipsLevels, TechLevels};
     use nogame::planet::contract::IPlanetDispatcherTrait;
@@ -206,7 +207,10 @@ mod Dockyard {
                         .write((planet_id, Names::Fleet::ARMADE), ships_levels.armade + quantity);
                 },
             }
-            game_manager.pay_resources_erc20(caller, cost);
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: game_manager.contract_address,
+            };
+            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

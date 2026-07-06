@@ -55,7 +55,7 @@ mod Game {
     use nogame::planet::contract::IPlanetDispatcher;
     use nogame::tech::contract::ITechDispatcher;
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
-    use nogame::token::erc721::interface::IERC721NoGameDispatcher;
+    use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
@@ -119,6 +119,34 @@ mod Game {
     /// Resource management implementation
     #[abi(embed_v0)]
     impl ResourceManagerImpl of IResourceManager<ContractState> {
+        fn spend_resources(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
+            IResourceManager::check_enough_resources(self, account, amounts);
+            IResourceManager::pay_resources_erc20(self, account, amounts);
+        }
+
+        fn grant_resources(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
+            IResourceManager::receive_resources_erc20(self, account, amounts);
+        }
+
+        fn get_account_resources(self: @ContractState, account: ContractAddress) -> ERC20s {
+            let available = self.get_erc20s_available(account);
+            ERC20s {
+                steel: available.steel / E18,
+                quartz: available.quartz / E18,
+                tritium: available.tritium / E18,
+            }
+        }
+
+        fn get_planet_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
+            let planet_owner = self.erc721.read().ownerOf(planet_id.into());
+            IResourceManager::get_account_resources(self, planet_owner)
+        }
+
+        fn spend_planet_resources(self: @ContractState, planet_id: u32, amounts: ERC20s) {
+            let planet_owner = self.erc721.read().ownerOf(planet_id.into());
+            IResourceManager::pay_resources_erc20(self, planet_owner, amounts);
+        }
+
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
             let tokens = ITokenProvider::get_tokens(self);
             tokens.steel.burn(account, (amounts.steel * E18).into());
@@ -136,13 +164,10 @@ mod Game {
         }
 
         fn check_enough_resources(self: @ContractState, caller: ContractAddress, amounts: ERC20s) {
-            let available: ERC20s = self.get_erc20s_available(caller);
-            let available_steel = available.steel / E18;
-            assert!(amounts.steel <= available_steel, "Game:E_RESOURCES_STEEL");
-            let available_quartz = available.quartz / E18;
-            assert!(amounts.quartz <= available_quartz, "Game:E_RESOURCES_QUARTZ");
-            let available_tritium = available.tritium / E18;
-            assert!(amounts.tritium <= available_tritium, "Game:E_RESOURCES_TRITIUM");
+            let available = IResourceManager::get_account_resources(self, caller);
+            assert!(amounts.steel <= available.steel, "Game:E_RESOURCES_STEEL");
+            assert!(amounts.quartz <= available.quartz, "Game:E_RESOURCES_QUARTZ");
+            assert!(amounts.tritium <= available.tritium, "Game:E_RESOURCES_TRITIUM");
         }
     }
 

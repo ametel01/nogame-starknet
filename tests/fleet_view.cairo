@@ -1,22 +1,19 @@
 use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::contract::{IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait};
-use nogame::libraries::types::{Fleet, MissionCategory, ShipBuildType, TechUpgradeType};
+use nogame::libraries::types::{Fleet, MissionCategory};
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
-use super::utils::{ACCOUNT1, ACCOUNT2, init_game, init_storage, set_up};
+use super::utils::{
+    ACCOUNT1, ACCOUNT2, build_carriers_for, generate_planet_for, init_storage, set_up_game,
+    set_up_two_started_planets, upgrade_digital_for,
+};
 
 #[test]
 fn test_is_noob_protected() {
-    let dsp = set_up();
-    init_game(dsp);
-
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
-    dsp.planet.generate_planet();
-
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    let dsp = set_up_game();
+    generate_planet_for(dsp, ACCOUNT1());
+    generate_planet_for(dsp, ACCOUNT2());
     init_storage(dsp, 1);
 
     assert(dsp.planet.get_is_noob_protected(1, 2) == true, 'wrong noob true');
@@ -30,23 +27,9 @@ fn test_get_mission_details() { // TODO
 
 #[test]
 fn test_get_hostile_missions() {
-    let dsp = set_up();
-    init_game(dsp);
-
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
-    init_storage(dsp, 2);
-    init_storage(dsp, 1);
-    start_cheat_caller_address(dsp.tech.contract_address, ACCOUNT1());
-    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
-    stop_cheat_caller_address(dsp.tech.contract_address);
-
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
-    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
-    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    let dsp = set_up_two_started_planets();
+    upgrade_digital_for(dsp, ACCOUNT1(), 4);
+    build_carriers_for(dsp, ACCOUNT1(), 5);
 
     let p2_position = dsp.planet.get_planet_position(2);
 
@@ -102,23 +85,9 @@ fn test_get_hostile_missions() {
 
 #[test]
 fn test_get_active_missions() {
-    let dsp = set_up();
-    init_game(dsp);
-
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
-    dsp.planet.generate_planet();
-    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
-    dsp.planet.generate_planet();
-    stop_cheat_caller_address(dsp.planet.contract_address);
-    init_storage(dsp, 2);
-    init_storage(dsp, 1);
-    start_cheat_caller_address(dsp.tech.contract_address, ACCOUNT1());
-    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), 4);
-    stop_cheat_caller_address(dsp.tech.contract_address);
-
-    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
-    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), 5);
-    stop_cheat_caller_address(dsp.dockyard.contract_address);
+    let dsp = set_up_two_started_planets();
+    upgrade_digital_for(dsp, ACCOUNT1(), 4);
+    build_carriers_for(dsp, ACCOUNT1(), 5);
 
     let p2_position = dsp.planet.get_planet_position(2);
 

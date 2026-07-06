@@ -3,6 +3,7 @@
 
 use nogame::colony::contract::{IColonyDispatcher, IColonyDispatcherTrait};
 use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
+use nogame::libraries::colony_identity;
 use nogame::libraries::names::Names;
 use nogame::libraries::types::Fleet;
 
@@ -13,7 +14,7 @@ enum FleetOperation {
 }
 
 /// Updates fleet levels for a planet or colony using batch operations
-/// Handles both planet (id <= 500) and colony (id > 500) scenarios
+/// Handles both planet and colony scenarios.
 pub fn update_fleet_levels(
     dockyard: IDockyardDispatcher,
     colony: IColonyDispatcher,
@@ -21,7 +22,7 @@ pub fn update_fleet_levels(
     fleet: Fleet,
     operation: FleetOperation,
 ) {
-    if planet_id > 500 {
+    if colony_identity::is_colony_id(planet_id) {
         update_colony_fleet(colony, planet_id, fleet, operation);
     } else {
         update_planet_fleet(dockyard, planet_id, fleet, operation);
@@ -75,11 +76,9 @@ fn update_planet_fleet(
 fn update_colony_fleet(
     colony: IColonyDispatcher, adjusted_planet_id: u32, fleet: Fleet, operation: FleetOperation,
 ) {
-    // Extract colony_id from adjusted planet_id
     let colony_mother_planet = colony.get_colony_mother_planet(adjusted_planet_id);
-    let colony_id: u8 = (adjusted_planet_id % 1000).try_into().unwrap();
+    let colony_id = colony_identity::decode_colony_id(adjusted_planet_id, colony_mother_planet);
 
-    // Delegate to appropriate colony method based on operation
     match operation {
         FleetOperation::Add => colony.fleet_arrives(colony_mother_planet, colony_id, fleet),
         FleetOperation::Remove => colony.fleet_leaves(colony_mother_planet, colony_id, fleet),

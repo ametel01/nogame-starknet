@@ -5,7 +5,7 @@ use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
 use nogame::fleet_movements::contract::{IFleetMovementsDispatcher, IFleetMovementsDispatcherTrait};
 use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
 use nogame::libraries::names::Names;
-use nogame::libraries::types::{CompoundUpgradeType, ERC20s, PRICE, TechUpgradeType};
+use nogame::libraries::types::{CompoundUpgradeType, ERC20s, PRICE, ShipBuildType, TechUpgradeType};
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
 use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
@@ -216,6 +216,42 @@ fn init_game(dsp: Dispatchers) {
     start_cheat_caller_address(dsp.steel.contract_address, dsp.planet.contract_address);
     start_cheat_caller_address(dsp.quartz.contract_address, dsp.planet.contract_address);
     start_cheat_caller_address(dsp.tritium.contract_address, dsp.planet.contract_address);
+}
+
+fn set_up_game() -> Dispatchers {
+    let dsp = set_up();
+    init_game(dsp);
+    dsp
+}
+
+fn generate_planet_for(dsp: Dispatchers, account: ContractAddress) {
+    start_cheat_caller_address(dsp.planet.contract_address, account);
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+}
+
+fn generate_started_planet(dsp: Dispatchers, account: ContractAddress, planet_id: u32) {
+    generate_planet_for(dsp, account);
+    init_storage(dsp, planet_id);
+}
+
+fn set_up_two_started_planets() -> Dispatchers {
+    let dsp = set_up_game();
+    generate_started_planet(dsp, ACCOUNT1(), 1);
+    generate_started_planet(dsp, ACCOUNT2(), 2);
+    dsp
+}
+
+fn build_carriers_for(dsp: Dispatchers, account: ContractAddress, quantity: u32) {
+    start_cheat_caller_address(dsp.dockyard.contract_address, account);
+    dsp.dockyard.process_ship_build(ShipBuildType::Carrier(()), quantity);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+}
+
+fn upgrade_digital_for(dsp: Dispatchers, account: ContractAddress, quantity: u8) {
+    start_cheat_caller_address(dsp.tech.contract_address, account);
+    dsp.tech.process_tech_upgrade(TechUpgradeType::Digital(()), quantity);
+    stop_cheat_caller_address(dsp.tech.contract_address);
 }
 
 #[test]

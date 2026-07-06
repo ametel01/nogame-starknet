@@ -159,6 +159,7 @@ mod Colony {
         ColonyBuildType, ColonyUpgradeType, CompoundsLevels, Defences, ERC20s, Fleet, HOUR,
         PlanetPosition, ShipsLevels, TechLevels,
     };
+    use nogame::libraries::{colony_identity, production};
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
     use openzeppelin_access::ownable::OwnableComponent;
@@ -259,7 +260,7 @@ mod Colony {
             }
             let position = positions::get_colony_position(current_count.into());
             let colony_id = self.planet_colonies_count.read(planet_id) + 1;
-            let id = ((planet_id * 1000) + colony_id.into());
+            let id = colony_identity::encode_colony_id(planet_id, colony_id);
             self.colony_position.write((planet_id, colony_id), position);
             self.planet_colonies_count.write(planet_id, colony_id);
             self.colony_count.write(current_count + 1);
@@ -462,7 +463,7 @@ mod Colony {
         }
 
         fn get_colony_id(self: @ContractState, planet_id: u32, colony_id: u8) -> u32 {
-            (planet_id * 1000) + colony_id.into()
+            colony_identity::encode_colony_id(planet_id, colony_id)
         }
 
         fn get_colonies_for_planet(
@@ -761,53 +762,10 @@ mod Colony {
             let time_elapsed = time_now - last_collection_time;
             let mines_levels = self.get_colony_compounds(planet_id, colony_id);
             let position = self.colony_position.read((planet_id, colony_id));
-            let temp = compound::calculate_avg_temperature(position.orbit);
-            let steel_available = compound::production::steel(mines_levels.steel)
-                * uni_speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let quartz_available = compound::production::quartz(mines_levels.quartz)
-                * uni_speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let tritium_available = compound::production::tritium(
-                mines_levels.tritium, temp, uni_speed,
+            let celestia_available = self.get_colony_defences(planet_id, colony_id).celestia;
+            production::calculate_resource_production(
+                mines_levels, position, celestia_available, uni_speed, time_elapsed,
             )
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let celestia_production: u128 = compound::position_to_celestia_production(
-                position.orbit,
-            )
-                .into();
-            let celestia_production: u128 = self
-                .get_colony_defences(planet_id, colony_id)
-                .celestia
-                .into()
-                * celestia_production;
-            let energy_available = compound::production::energy(mines_levels.energy);
-            let energy_required = compound::consumption::base(mines_levels.steel)
-                + compound::consumption::base(mines_levels.quartz)
-                + compound::consumption::base(mines_levels.tritium);
-            let total_production = energy_available + celestia_production;
-
-            if total_production < energy_required {
-                let _steel = compound::production_scaler(
-                    steel_available, total_production, energy_required,
-                );
-                let _quartz = compound::production_scaler(
-                    quartz_available, total_production, energy_required,
-                );
-                let _tritium = compound::production_scaler(
-                    tritium_available, total_production, energy_required,
-                );
-
-                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium };
-            }
-
-            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available }
         }
     }
 }

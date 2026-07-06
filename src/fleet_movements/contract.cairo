@@ -169,14 +169,15 @@ mod FleetMovements {
     use nogame::defence::library as defence;
     use nogame::dockyard::contract::{IDockyardDispatcher, IDockyardDispatcherTrait};
     use nogame::dockyard::library as dockyard;
-    use nogame::fleet_movements::library as fleet;
+    use nogame::fleet_movements::{battle_settlement, library as fleet};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
+    use nogame::libraries::colony_identity;
     use nogame::libraries::fleet_ops::{FleetOperation, update_fleet_levels};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
-        COLONY_ID_MULTIPLIER, COLONY_PLANET_THRESHOLD, Debris, Defences, E18, ERC20s,
-        FLEET_DECAY_THRESHOLD, Fleet, HOUR, IncomingMission, Mission, MissionCategory,
-        PlanetPosition, SimulationResult, TechLevels, WEEK, erc20_mul,
+        Debris, Defences, E18, ERC20s, FLEET_DECAY_THRESHOLD, Fleet, HOUR, IncomingMission, Mission,
+        MissionCategory, PlanetPosition, SimulationResult, TechLevels, WEEK, erc20_mul,
     };
     use nogame::planet::contract::IPlanetDispatcherTrait;
     use nogame::tech::contract::ITechDispatcherTrait;
@@ -296,17 +297,20 @@ mod FleetMovements {
             let origin_id = if colony_id.is_zero() {
                 planet_id
             } else {
-                (planet_id * COLONY_ID_MULTIPLIER) + colony_id.into()
+                colony_identity::encode_colony_id(planet_id, colony_id)
+            };
+            let target = if colony_identity::is_colony_id(destination_id) {
+                let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
+                colony_identity::resolve_colony(destination_id, colony_owner)
+            } else {
+                colony_identity::resolve_home_planet(destination_id)
             };
 
-            if destination_id > COLONY_PLANET_THRESHOLD
-                && mission_type == MissionCategory::TRANSPORT {
-                let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
-                assert!(colony_owner == planet_id, "Fleet:E_COLONY_TRANSPORT_TARGET");
+            if target.is_colony && mission_type == MissionCategory::TRANSPORT {
+                assert!(target.mother_planet_id == planet_id, "Fleet:E_COLONY_TRANSPORT_TARGET");
             }
-            if mission_type == MissionCategory::ATTACK && destination_id > COLONY_PLANET_THRESHOLD {
-                let colony_owner = contracts.colony.get_colony_mother_planet(destination_id);
-                assert!(colony_owner != planet_id, "Fleet:E_ATTACK_OWN_COLONY");
+            if mission_type == MissionCategory::ATTACK && target.is_colony {
+                assert!(target.mother_planet_id != planet_id, "Fleet:E_ATTACK_OWN_COLONY");
             } else if mission_type == MissionCategory::ATTACK {
                 assert!(destination_id != planet_id, "Fleet:E_ATTACK_OWN_PLANET");
             }
@@ -334,8 +338,10 @@ mod FleetMovements {
                 / speed_modifier.into();
             let mut cost: ERC20s = Default::default();
             cost.tritium = consumption;
-            contracts.game.check_enough_resources(caller, cost);
-            contracts.game.pay_resources_erc20(caller, cost);
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
+            resource_manager.spend_resources(caller, cost);
 
             // Write mission
             let mut mission: Mission = Default::default();
@@ -350,38 +356,16 @@ mod FleetMovements {
                 assert!(!debris_field.is_zero(), "Fleet:E_DEBRIS_FIELD_EMPTY");
                 assert!(f.scraper >= 1, "Fleet:E_SCRAPER_REQUIRED");
                 mission.category = MissionCategory::DEBRIS;
-                let mission_id = self.add_active_mission(planet_id, mission);
-                let mut hostile_mission: IncomingMission = Default::default();
-                hostile_mission.origin = origin_id;
-                hostile_mission.id_at_origin = mission_id;
-                hostile_mission.time_arrival = mission.time_arrival;
-                hostile_mission
-                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
-                hostile_mission.destination = destination_id;
-                let is_colony = mission.destination > 1000;
-                let target_planet = if is_colony {
-                    contracts.colony.get_colony_mother_planet(mission.destination)
-                } else {
-                    mission.destination
-                };
-                self.add_incoming_mission(target_planet, hostile_mission);
+                self
+                    .record_mission(
+                        planet_id, colony_identity::incoming_mission_bucket(target), mission,
+                    );
             } else if mission_type == MissionCategory::TRANSPORT {
                 mission.category = MissionCategory::TRANSPORT;
-                let mission_id = self.add_active_mission(planet_id, mission);
-                let mut hostile_mission: IncomingMission = Default::default();
-                hostile_mission.origin = origin_id;
-                hostile_mission.id_at_origin = mission_id;
-                hostile_mission.time_arrival = mission.time_arrival;
-                hostile_mission
-                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
-                hostile_mission.destination = destination_id;
-                let is_colony = mission.destination > 1000;
-                let target_planet = if is_colony {
-                    contracts.colony.get_colony_mother_planet(mission.destination)
-                } else {
-                    mission.destination
-                };
-                self.add_incoming_mission(target_planet, hostile_mission);
+                self
+                    .record_mission(
+                        planet_id, colony_identity::incoming_mission_bucket(target), mission,
+                    );
             } else {
                 let is_inactive = time_now
                     - contracts.planet.get_last_active(destination_id) > WEEK;
@@ -392,21 +376,10 @@ mod FleetMovements {
                     assert!(!noob_protected, "Fleet:E_NOOB_PROTECTION");
                 }
                 mission.category = MissionCategory::ATTACK;
-                let mission_id = self.add_active_mission(planet_id, mission);
-                let mut hostile_mission: IncomingMission = Default::default();
-                hostile_mission.origin = origin_id;
-                hostile_mission.id_at_origin = mission_id;
-                hostile_mission.time_arrival = mission.time_arrival;
-                hostile_mission
-                    .number_of_ships = fleet::calculate_number_of_ships(f, Zeroable::zero());
-                hostile_mission.destination = destination_id;
-                let is_colony = mission.destination > 1000;
-                let target_planet = if is_colony {
-                    contracts.colony.get_colony_mother_planet(mission.destination)
-                } else {
-                    mission.destination
-                };
-                self.add_incoming_mission(target_planet, hostile_mission);
+                self
+                    .record_mission(
+                        planet_id, colony_identity::incoming_mission_bucket(target), mission,
+                    );
             }
             contracts.planet.set_last_active(planet_id);
             self.fleet_leave_planet(origin_id, f);
@@ -434,63 +407,38 @@ mod FleetMovements {
             let time_now = get_block_timestamp();
             assert!(time_now >= mission.time_arrival, "Fleet:E_ARRIVAL_PENDING");
 
-            // Determine if target is a colony (ID > COLONY_PLANET_THRESHOLD) or home planet
-            let is_colony = mission.destination > COLONY_PLANET_THRESHOLD;
-            let colony_mother_planet = if is_colony {
-                contracts.colony.get_colony_mother_planet(mission.destination)
+            let target = if colony_identity::is_colony_id(mission.destination) {
+                let colony_mother_planet = contracts
+                    .colony
+                    .get_colony_mother_planet(mission.destination);
+                colony_identity::resolve_colony(mission.destination, colony_mother_planet)
             } else {
-                0
+                colony_identity::resolve_home_planet(mission.destination)
             };
-            // Extract colony number from composite ID (planet_id * COLONY_ID_MULTIPLIER +
-            // colony_number)
-            let colony_id: u8 = if is_colony {
-                (mission.destination - colony_mother_planet * COLONY_ID_MULTIPLIER)
-                    .try_into()
-                    .unwrap()
-            } else {
-                0
-            };
+            let is_colony = target.is_colony;
+            let colony_mother_planet = target.mother_planet_id;
+            let colony_id = target.colony_id;
 
             // ========================================
             // PHASE 2: Prepare Battle
             // ========================================
 
             // Get attacker's technology levels (affects combat power)
-            let mut t1 = contracts.tech.get_tech_levels(origin);
+            let t1 = contracts.tech.get_tech_levels(origin);
 
             // Get defender's fleet, defences, techs, and initial celestia count
             let (defender_fleet, defences, t2, celestia_before) = self
                 .get_fleet_and_defences_before_battle(mission.destination);
 
-            // Apply fleet decay if mission has been idle >2 hours after arrival
-            let time_since_arrived = time_now - mission.time_arrival;
-            let mut attacker_fleet: Fleet = mission.fleet;
-
-            if time_since_arrived > FLEET_DECAY_THRESHOLD {
-                // Fleet loses strength over time when not collected
-                let decay_amount = fleet::calculate_fleet_loss(
-                    time_since_arrived - FLEET_DECAY_THRESHOLD,
-                );
-                attacker_fleet = fleet::decay_fleet(mission.fleet, decay_amount);
-            }
-
-            // ========================================
-            // PHASE 3: Execute Battle Simulation
-            // ========================================
-
-            // Simulate the battle: returns surviving units for attacker (f1), defender (f2), and
-            // defences (d)
-            let (f1, f2, d) = fleet::war(attacker_fleet, t1, defender_fleet, defences, t2);
-
-            // ========================================
-            // PHASE 4: Process Battle Results - Debris Field
-            // ========================================
-
-            // Calculate debris from destroyed attacker ships (30% of ship cost)
-            let debris1 = fleet::get_debris(mission.fleet, f1, 0);
-            // Calculate debris from destroyed defender ships and defences
-            let debris2 = fleet::get_debris(defender_fleet, f2, celestia_before - d.celestia);
-            let total_debris = debris1 + debris2;
+            let settlement = battle_settlement::settle(
+                mission.fleet,
+                defender_fleet,
+                defences,
+                t1,
+                t2,
+                celestia_before,
+                time_now - mission.time_arrival,
+            );
 
             // Update the planet's debris field (can be collected by scrapers)
             let current_debries_field = contracts
@@ -498,7 +446,9 @@ mod FleetMovements {
                 .get_planet_debris_field(mission.destination);
             contracts
                 .planet
-                .set_planet_debris_field(mission.destination, current_debries_field + total_debris);
+                .set_planet_debris_field(
+                    mission.destination, current_debries_field + settlement.debris,
+                );
 
             // ========================================
             // PHASE 5: Update Defender's Military
@@ -507,11 +457,21 @@ mod FleetMovements {
             // Update defender's surviving fleet and defences
             if is_colony {
                 // Colony: only update defences (fleet stored in colony contract)
-                contracts.colony.update_defences_after_attack(colony_mother_planet, colony_id, d);
+                contracts
+                    .colony
+                    .update_defences_after_attack(
+                        colony_mother_planet, colony_id, settlement.defences,
+                    );
             } else {
                 // Home planet: update both fleet and defences
-                self.update_defender_fleet_levels_after_attack(mission.destination, colony_id, f2);
-                self.update_defences_after_attack(mission.destination, colony_id, d);
+                self
+                    .update_defender_fleet_levels_after_attack(
+                        mission.destination, colony_id, settlement.defender_fleet,
+                    );
+                self
+                    .update_defences_after_attack(
+                        mission.destination, colony_id, settlement.defences,
+                    );
             }
 
             // ========================================
@@ -520,7 +480,7 @@ mod FleetMovements {
 
             // Calculate loot based on surviving attacker fleet's cargo capacity
             let (loot_spendable, loot_collectible) = self
-                .calculate_loot_amount(mission.destination, f1);
+                .calculate_loot_amount(mission.destination, settlement.attacker_fleet);
             let total_loot = loot_spendable + loot_collectible;
 
             // Burn defender's ERC20 tokens (spendable loot)
@@ -529,7 +489,10 @@ mod FleetMovements {
             }
 
             // Mint total loot to attacker
-            contracts.game.receive_resources_erc20(get_caller_address(), total_loot);
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
+            resource_manager.grant_resources(get_caller_address(), total_loot);
 
             // ========================================
             // PHASE 7: Cleanup - Reset Timers and Return Fleet
@@ -543,33 +506,29 @@ mod FleetMovements {
             }
 
             // Return surviving attacker fleet to origin
-            self.fleet_return_planet(mission.origin, f1);
+            self.fleet_return_planet(mission.origin, settlement.attacker_fleet);
 
-            // Clear the mission from active missions
-            self.set_mission(origin, mission_id, Zeroable::zero());
-
-            // Remove from defender's incoming missions list
-            if is_colony {
-                self.remove_incoming_mission(colony_mother_planet, mission_id);
-            } else {
-                self.remove_incoming_mission(mission.destination, mission_id);
-            }
+            self
+                .clear_mission(
+                    origin, mission_id, colony_identity::incoming_mission_bucket(target),
+                );
 
             // ========================================
             // PHASE 8: Update Planet Points and Emit Event
             // ========================================
 
-            // Calculate losses for point system
-            let attacker_loss = self.calculate_fleet_loss(mission.fleet, f1);
-            let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
-            let defences_loss = self.calculate_defences_loss(defences, d);
-
             // Update points: attacker loses points for ships lost, defender for ships+defences lost
-            self.update_points_after_attack(origin, attacker_loss, Zeroable::zero());
+            self.update_points_after_attack(origin, settlement.attacker_loss, Zeroable::zero());
             if is_colony {
-                self.update_points_after_attack(colony_mother_planet, defender_loss, defences_loss);
+                self
+                    .update_points_after_attack(
+                        colony_mother_planet, settlement.defender_loss, settlement.defences_loss,
+                    );
             } else {
-                self.update_points_after_attack(mission.destination, defender_loss, defences_loss);
+                self
+                    .update_points_after_attack(
+                        mission.destination, settlement.defender_loss, settlement.defences_loss,
+                    );
             }
 
             // Update attacker's last active timestamp
@@ -582,15 +541,15 @@ mod FleetMovements {
                     origin,
                     contracts.planet.get_planet_position(origin),
                     mission.fleet,
-                    attacker_loss,
+                    settlement.attacker_loss,
                     mission.destination,
                     contracts.planet.get_planet_position(mission.destination),
                     defender_fleet,
-                    defender_loss,
+                    settlement.defender_loss,
                     defences,
-                    defences_loss,
+                    settlement.defences_loss,
                     total_loot,
-                    total_debris,
+                    settlement.debris,
                 );
         }
 
@@ -602,8 +561,10 @@ mod FleetMovements {
             let mission = self.get_mission_details(origin, mission_id);
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
             self.fleet_return_planet(mission.origin, mission.fleet);
-            self.set_mission(origin, mission_id, Zeroable::zero());
-            self.remove_incoming_mission(mission.destination, mission_id);
+            self
+                .clear_mission(
+                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                );
             contracts.planet.set_last_active(origin);
         }
 
@@ -616,7 +577,10 @@ mod FleetMovements {
             assert!(mission.category == MissionCategory::TRANSPORT, "Fleet:E_WRONG_CATEGORY");
             assert!(!mission.is_zero(), "Fleet:E_MISSION_EMPTY");
             self.fleet_return_planet(mission.destination, mission.fleet);
-            self.set_mission(origin, mission_id, Zeroable::zero());
+            self
+                .clear_mission(
+                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                );
             contracts.planet.set_last_active(origin);
         }
 
@@ -659,10 +623,16 @@ mod FleetMovements {
                 tritium: Zeroable::zero(),
             };
 
-            contracts.game.receive_resources_erc20(caller, erc20);
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
+            resource_manager.grant_resources(caller, erc20);
 
             self.fleet_return_planet(mission.origin, collector_fleet);
-            self.set_mission(origin, mission_id, Zeroable::zero());
+            self
+                .clear_mission(
+                    origin, mission_id, self.incoming_mission_bucket(mission.destination),
+                );
             contracts.planet.set_last_active(origin);
 
             self
@@ -681,26 +651,25 @@ mod FleetMovements {
             self: @ContractState, attacker_fleet: Fleet, defender_fleet: Fleet, defences: Defences,
         ) -> SimulationResult {
             let techs: TechLevels = Default::default();
-            let (f1, f2, d) = fleet::war(attacker_fleet, techs, defender_fleet, defences, techs);
-            let attacker_loss = self.calculate_fleet_loss(attacker_fleet, f1);
-            let defender_loss = self.calculate_fleet_loss(defender_fleet, f2);
-            let defences_loss = self.calculate_defences_loss(defences, d);
+            let settlement = battle_settlement::settle(
+                attacker_fleet, defender_fleet, defences, techs, techs, defences.celestia, 0,
+            );
             SimulationResult {
-                attacker_carrier: attacker_loss.carrier,
-                attacker_scraper: attacker_loss.scraper,
-                attacker_sparrow: attacker_loss.sparrow,
-                attacker_frigate: attacker_loss.frigate,
-                attacker_armade: attacker_loss.armade,
-                defender_carrier: defender_loss.carrier,
-                defender_scraper: defender_loss.scraper,
-                defender_sparrow: defender_loss.sparrow,
-                defender_frigate: defender_loss.frigate,
-                defender_armade: defender_loss.armade,
-                celestia: defences_loss.celestia,
-                blaster: defences_loss.blaster,
-                beam: defences_loss.beam,
-                astral: defences_loss.astral,
-                plasma: defences_loss.plasma,
+                attacker_carrier: settlement.attacker_loss.carrier,
+                attacker_scraper: settlement.attacker_loss.scraper,
+                attacker_sparrow: settlement.attacker_loss.sparrow,
+                attacker_frigate: settlement.attacker_loss.frigate,
+                attacker_armade: settlement.attacker_loss.armade,
+                defender_carrier: settlement.defender_loss.carrier,
+                defender_scraper: settlement.defender_loss.scraper,
+                defender_sparrow: settlement.defender_loss.sparrow,
+                defender_frigate: settlement.defender_loss.frigate,
+                defender_armade: settlement.defender_loss.armade,
+                celestia: settlement.defences_loss.celestia,
+                blaster: settlement.defences_loss.blaster,
+                beam: settlement.defences_loss.beam,
+                astral: settlement.defences_loss.astral,
+                plasma: settlement.defences_loss.plasma,
             }
         }
 
@@ -729,12 +698,19 @@ mod FleetMovements {
                 .get_colonies_for_planet(planet_id);
             let colonies_len = planet_colonies.len();
             if colonies_len > 0 {
-                let mut i = 1;
+                let mut i = 0;
                 while i != colonies_len {
                     let (colony_id, _colony_position) = planet_colonies.at(i);
-                    let adj_planet_id = planet_id * 1000 + (*colony_id).into();
-                    let missions = self.active_missions.read((adj_planet_id, i));
-                    arr.append(missions);
+                    let adj_planet_id = colony_identity::encode_colony_id(planet_id, *colony_id);
+                    let colony_len = self.active_missions_len.read(adj_planet_id);
+                    let mut mission_id = 1;
+                    while mission_id != colony_len + 1 {
+                        let mission = self.active_missions.read((adj_planet_id, mission_id));
+                        if !mission.is_zero() {
+                            arr.append(mission);
+                        }
+                        mission_id += 1;
+                    }
                     i += 1;
                 }
             }
@@ -914,11 +890,9 @@ mod FleetMovements {
             let mut defences: Defences = Default::default();
             let mut techs: TechLevels = Default::default();
             let mut celestia = 0;
-            if planet_id > COLONY_PLANET_THRESHOLD {
+            if colony_identity::is_colony_id(planet_id) {
                 let colony_mother_planet = contracts.colony.get_colony_mother_planet(planet_id);
-                let colony_id: u8 = (planet_id - colony_mother_planet * COLONY_ID_MULTIPLIER)
-                    .try_into()
-                    .unwrap();
+                let colony_id = colony_identity::decode_colony_id(planet_id, colony_mother_planet);
                 defences = contracts.colony.get_colony_defences(colony_mother_planet, colony_id);
                 techs = contracts.tech.get_tech_levels(colony_mother_planet);
                 fleet = contracts.colony.get_colony_ships(colony_mother_planet, colony_id).into();
@@ -957,11 +931,9 @@ mod FleetMovements {
             let mut spendable: ERC20s = Default::default();
             let mut collectible: ERC20s = Default::default();
 
-            if destination_id > COLONY_PLANET_THRESHOLD {
+            if colony_identity::is_colony_id(destination_id) {
                 let mother_planet = contracts.colony.get_colony_mother_planet(destination_id);
-                let colony_id: u8 = (destination_id - mother_planet * COLONY_ID_MULTIPLIER)
-                    .try_into()
-                    .unwrap();
+                let colony_id = colony_identity::decode_colony_id(destination_id, mother_planet);
                 collectible = contracts.colony.get_colony_resources(mother_planet, colony_id);
             } else {
                 spendable = contracts.planet.get_spendable_resources(destination_id);
@@ -994,39 +966,16 @@ mod FleetMovements {
             ref self: ContractState, destination_id: u32, loot_spendable: ERC20s,
         ) {
             let contracts = self.game_manager.read().get_contracts();
-            let tokens = contracts.game.get_tokens();
-            if destination_id > COLONY_PLANET_THRESHOLD {
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
+            if colony_identity::is_colony_id(destination_id) {
                 let colony_mother_planet = contracts
                     .colony
                     .get_colony_mother_planet(destination_id);
-                let planet_owner = tokens.erc721.ownerOf(colony_mother_planet.into());
-                contracts.game.pay_resources_erc20(planet_owner, loot_spendable);
+                resource_manager.spend_planet_resources(colony_mother_planet, loot_spendable);
             } else {
-                contracts
-                    .game
-                    .pay_resources_erc20(
-                        tokens.erc721.ownerOf(destination_id.into()), loot_spendable,
-                    );
-            }
-        }
-
-        fn calculate_fleet_loss(self: @ContractState, a: Fleet, b: Fleet) -> Fleet {
-            Fleet {
-                carrier: a.carrier - b.carrier,
-                scraper: a.scraper - b.scraper,
-                sparrow: a.sparrow - b.sparrow,
-                frigate: a.frigate - b.frigate,
-                armade: a.armade - b.armade,
-            }
-        }
-
-        fn calculate_defences_loss(self: @ContractState, a: Defences, b: Defences) -> Defences {
-            Defences {
-                celestia: a.celestia - b.celestia,
-                blaster: a.blaster - b.blaster,
-                beam: a.beam - b.beam,
-                astral: a.astral - b.astral,
-                plasma: a.plasma - b.plasma,
+                resource_manager.spend_planet_resources(destination_id, loot_spendable);
             }
         }
 
@@ -1073,7 +1022,7 @@ mod FleetMovements {
             debris: Debris,
         ) {
             let contracts = self.game_manager.read().get_contracts();
-            let defender = if defender > COLONY_PLANET_THRESHOLD {
+            let defender = if colony_identity::is_colony_id(defender) {
                 contracts.colony.get_colony_mother_planet(defender)
             } else {
                 defender
@@ -1141,6 +1090,42 @@ mod FleetMovements {
                 i += 1;
             }
             i
+        }
+
+        fn incoming_mission_bucket(self: @ContractState, destination_id: u32) -> u32 {
+            if colony_identity::is_colony_id(destination_id) {
+                self
+                    .game_manager
+                    .read()
+                    .get_contracts()
+                    .colony
+                    .get_colony_mother_planet(destination_id)
+            } else {
+                destination_id
+            }
+        }
+
+        fn record_mission(
+            ref self: ContractState, origin_planet_id: u32, incoming_bucket: u32, mission: Mission,
+        ) -> usize {
+            let mission_id = self.add_active_mission(origin_planet_id, mission);
+            let mut incoming_mission: IncomingMission = Default::default();
+            incoming_mission.origin = mission.origin;
+            incoming_mission.id_at_origin = mission_id;
+            incoming_mission.time_arrival = mission.time_arrival;
+            incoming_mission
+                .number_of_ships =
+                    fleet::calculate_number_of_ships(mission.fleet, Zeroable::zero());
+            incoming_mission.destination = mission.destination;
+            self.add_incoming_mission(incoming_bucket, incoming_mission);
+            mission_id
+        }
+
+        fn clear_mission(
+            ref self: ContractState, origin_planet_id: u32, mission_id: usize, incoming_bucket: u32,
+        ) {
+            self.set_mission(origin_planet_id, mission_id, Zeroable::zero());
+            self.remove_incoming_mission(incoming_bucket, mission_id);
         }
 
         fn add_incoming_mission(

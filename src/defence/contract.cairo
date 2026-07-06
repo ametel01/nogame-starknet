@@ -52,6 +52,7 @@ mod Defence {
     use nogame::defence::library as defence;
     use nogame::dockyard::library as dockyard;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{
         DefenceBuildType, Defences, DefencesCost, E18, ERC20s, TechLevels,
@@ -230,7 +231,10 @@ mod Defence {
                         );
                 },
             }
-            contracts.game.pay_resources_erc20(caller, cost);
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
+            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

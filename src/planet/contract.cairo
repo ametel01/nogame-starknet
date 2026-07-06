@@ -238,15 +238,16 @@ mod Planet {
     use nogame::defence::contract::IDefenceDispatcherTrait;
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
     use nogame::game::interfaces::{
-        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, ITokenProviderDispatcher,
-        ITokenProviderDispatcherTrait, IUniverseConfigDispatcher, IUniverseConfigDispatcherTrait,
+        IContractRegistryDispatcher, IContractRegistryDispatcherTrait, IResourceManagerDispatcher,
+        IResourceManagerDispatcherTrait, ITokenProviderDispatcher, ITokenProviderDispatcherTrait,
+        IUniverseConfigDispatcher, IUniverseConfigDispatcherTrait,
     };
     use nogame::libraries::auction::{LinearVRGDA, LinearVRGDATrait};
-    use nogame::libraries::positions;
     use nogame::libraries::types::{
-        Contracts, DAY, Debris, E18, ERC20s, HOUR, MAX_NUMBER_OF_PLANETS, PlanetPosition, Tokens,
-        _0_05,
+        Contracts, DAY, Debris, E18, ERC20s, HOUR, MAX_NUMBER_OF_PLANETS,
+        NOOB_PROTECTION_MULTIPLIER, PlanetPosition, Tokens, _0_05,
     };
+    use nogame::libraries::{colony_identity, positions, production};
     //
     use nogame::token::erc20::interface::{IERC20NoGameDispatcher, IERC20NoGameDispatcherTrait};
     use nogame::token::erc721::interface::{IERC721NoGameDispatcher, IERC721NoGameDispatcherTrait};
@@ -465,27 +466,9 @@ mod Planet {
         }
 
         fn get_spendable_resources(self: @ContractState, planet_id: u32) -> ERC20s {
-            // Use segregated interface
             let game_address = self.game_manager.read().contract_address;
-            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
-            let tokens = token_provider.get_tokens();
-            let planet_owner = tokens.erc721.ownerOf(planet_id.into());
-            let steel = IERC20Dispatcher { contract_address: tokens.steel.contract_address }
-                .balance_of(planet_owner)
-                .try_into()
-                .unwrap()
-                / E18;
-            let quartz = IERC20Dispatcher { contract_address: tokens.quartz.contract_address }
-                .balance_of(planet_owner)
-                .try_into()
-                .unwrap()
-                / E18;
-            let tritium = IERC20Dispatcher { contract_address: tokens.tritium.contract_address }
-                .balance_of(planet_owner)
-                .try_into()
-                .unwrap()
-                / E18;
-            ERC20s { steel: steel, quartz: quartz, tritium: tritium }
+            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
+            resource_manager.get_planet_spendable_resources(planet_id)
         }
 
         fn get_planet_position(self: @ContractState, planet_id: u32) -> PlanetPosition {
@@ -505,18 +488,26 @@ mod Planet {
         }
 
         fn get_is_noob_protected(self: @ContractState, planet1_id: u32, planet2_id: u32) -> bool {
-            let p1_points = self.get_planet_points(planet1_id % 1000);
-            let p2_points = self.get_planet_points(planet2_id % 1000);
+            let p1_points = self.get_planet_points(self.mother_planet_id(planet1_id));
+            let p2_points = self.get_planet_points(self.mother_planet_id(planet2_id));
             if p1_points > p2_points {
-                return p1_points > p2_points * 5;
+                return p1_points > p2_points * NOOB_PROTECTION_MULTIPLIER;
             } else {
-                return p2_points > p1_points * 5;
+                return p2_points > p1_points * NOOB_PROTECTION_MULTIPLIER;
             }
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn mother_planet_id(self: @ContractState, planet_id: u32) -> u32 {
+            if colony_identity::is_colony_id(planet_id) {
+                self.game_manager.read().get_contracts().colony.get_colony_mother_planet(planet_id)
+            } else {
+                planet_id
+            }
+        }
+
         fn get_planet_price(self: @ContractState, time_elapsed: u64) -> u128 {
             // Use segregated interface
             let game_address = self.game_manager.read().contract_address;
@@ -563,13 +554,9 @@ mod Planet {
         }
 
         fn receive_resources_erc20(self: @ContractState, to: ContractAddress, amounts: ERC20s) {
-            // Use segregated interface
             let game_address = self.game_manager.read().contract_address;
-            let token_provider = ITokenProviderDispatcher { contract_address: game_address };
-            let tokens = token_provider.get_tokens();
-            tokens.steel.mint(to, (amounts.steel * E18).into());
-            tokens.quartz.mint(to, (amounts.quartz * E18).into());
-            tokens.tritium.mint(to, (amounts.tritium * E18).into());
+            let resource_manager = IResourceManagerDispatcher { contract_address: game_address };
+            resource_manager.grant_resources(to, amounts);
         }
 
         fn get_celestia_production(self: @ContractState, planet_id: u32) -> u32 {
@@ -595,7 +582,6 @@ mod Planet {
             let time_now = get_block_timestamp();
             let last_collection_time = self.resources_timer.read(planet_id);
             let time_elapsed = time_now - last_collection_time;
-            // Use segregated interfaces for better separation of concerns
             let game_address = self.game_manager.read().contract_address;
             let contract_registry = IContractRegistryDispatcher { contract_address: game_address };
             let universe_config = IUniverseConfigDispatcher { contract_address: game_address };
@@ -603,50 +589,11 @@ mod Planet {
             let contracts = contract_registry.get_contracts();
             let mines_levels = contracts.compound.get_compounds_levels(planet_id);
             let position = self.get_planet_position(planet_id);
-            // Cache temperature calculation (used only once now)
-            let temp = compound::calculate_avg_temperature(position.orbit);
             let speed = universe_config.get_uni_speed();
-
-            // Calculate production values
-            let steel_available = compound::production::steel(mines_levels.steel)
-                * speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let quartz_available = compound::production::quartz(mines_levels.quartz)
-                * speed
-                * time_elapsed.into()
-                / HOUR.into();
-
-            let tritium_available = compound::production::tritium(mines_levels.tritium, temp, speed)
-                * time_elapsed.into()
-                / HOUR.into();
-
-            // Cache energy calculations
-            let energy_available = compound::production::energy(mines_levels.energy);
-            let celestia_production = self.get_celestia_production(planet_id);
             let celestia_available = contracts.defence.get_defences_levels(planet_id).celestia;
-            let total_energy = energy_available
-                + (celestia_production.into() * celestia_available).into();
-            let energy_required = compound::consumption::base(mines_levels.steel)
-                + compound::consumption::base(mines_levels.quartz)
-                + compound::consumption::base(mines_levels.tritium);
-
-            if total_energy < energy_required {
-                let _steel = compound::production_scaler(
-                    steel_available, energy_available, energy_required,
-                );
-                let _quartz = compound::production_scaler(
-                    quartz_available, energy_available, energy_required,
-                );
-                let _tritium = compound::production_scaler(
-                    tritium_available, energy_available, energy_required,
-                );
-
-                return ERC20s { steel: _steel, quartz: _quartz, tritium: _tritium };
-            }
-
-            ERC20s { steel: steel_available, quartz: quartz_available, tritium: tritium_available }
+            production::calculate_resource_production(
+                mines_levels, position, celestia_available, speed, time_elapsed,
+            )
         }
     }
 }

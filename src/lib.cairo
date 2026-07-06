@@ -27,6 +27,7 @@ mod dockyard {
 }
 
 mod fleet_movements {
+    mod battle_settlement;
     mod contract;
     mod library;
 }
@@ -38,10 +39,12 @@ mod game {
 
 mod libraries {
     mod auction;
+    mod colony_identity;
     mod fleet_ops;
     mod math;
     mod names;
     mod positions;
+    mod production;
     mod types;
 }
 

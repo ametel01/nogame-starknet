@@ -121,7 +121,6 @@ mod Compound {
             match component {
                 CompoundUpgradeType::SteelMine => {
                     cost = compound::cost::steel(compound_levels.steel, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -132,7 +131,6 @@ mod Compound {
                 },
                 CompoundUpgradeType::QuartzMine => {
                     cost = compound::cost::quartz(compound_levels.quartz, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -143,7 +141,6 @@ mod Compound {
                 },
                 CompoundUpgradeType::TritiumMine => {
                     cost = compound::cost::tritium(compound_levels.tritium, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -154,7 +151,6 @@ mod Compound {
                 },
                 CompoundUpgradeType::EnergyPlant => {
                     cost = compound::cost::energy(compound_levels.energy, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -165,7 +161,6 @@ mod Compound {
                 },
                 CompoundUpgradeType::Lab => {
                     cost = compound::cost::lab(compound_levels.lab, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -175,7 +170,6 @@ mod Compound {
                 },
                 CompoundUpgradeType::Dockyard => {
                     cost = compound::cost::dockyard(compound_levels.dockyard, quantity);
-                    resource_manager.check_enough_resources(caller, cost);
                     self
                         .compound_level
                         .write(
@@ -185,7 +179,7 @@ mod Compound {
                         );
                 },
             }
-            resource_manager.pay_resources_erc20(caller, cost);
+            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

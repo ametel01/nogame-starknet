@@ -45,6 +45,7 @@ trait ITech<TState> {
 mod Tech {
     use nogame::compound::contract::{ICompoundDispatcher, ICompoundDispatcherTrait};
     use nogame::game::contract::{IGameDispatcher, IGameDispatcherTrait};
+    use nogame::game::interfaces::{IResourceManagerDispatcher, IResourceManagerDispatcherTrait};
     use nogame::libraries::names::Names;
     use nogame::libraries::types::{E18, ERC20s, TechLevels, TechUpgradeType};
     use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
@@ -150,12 +151,13 @@ mod Tech {
             let techs = self.get_tech_levels(planet_id);
             let mut cost: ERC20s = Default::default();
             let base_cost = tech::base_tech_costs();
+            let resource_manager = IResourceManagerDispatcher {
+                contract_address: contracts.game.contract_address,
+            };
             match component {
                 TechUpgradeType::EnergyTech => {
                     tech::energy_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.energy, quantity, base_cost.energy);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -166,8 +168,6 @@ mod Tech {
                 TechUpgradeType::Digital => {
                     tech::digital_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.digital, quantity, base_cost.digital);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -178,8 +178,6 @@ mod Tech {
                 TechUpgradeType::BeamTech => {
                     tech::beam_tech_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.beam, quantity, base_cost.beam);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -190,8 +188,6 @@ mod Tech {
                 TechUpgradeType::Armour => {
                     tech::armour_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.armour, quantity, base_cost.armour);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -202,8 +198,6 @@ mod Tech {
                 TechUpgradeType::Ion => {
                     tech::ion_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.ion, quantity, base_cost.ion);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -214,8 +208,6 @@ mod Tech {
                 TechUpgradeType::PlasmaTech => {
                     tech::plasma_tech_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.plasma, quantity, base_cost.plasma);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -226,8 +218,6 @@ mod Tech {
                 TechUpgradeType::Weapons => {
                     tech::weapons_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.weapons, quantity, base_cost.weapons);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -238,8 +228,6 @@ mod Tech {
                 TechUpgradeType::Shield => {
                     tech::shield_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.shield, quantity, base_cost.shield);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -250,8 +238,6 @@ mod Tech {
                 TechUpgradeType::Spacetime => {
                     tech::spacetime_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.spacetime, quantity, base_cost.spacetime);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -262,8 +248,6 @@ mod Tech {
                 TechUpgradeType::Combustion => {
                     tech::combustion_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.combustion, quantity, base_cost.combustion);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -274,8 +258,6 @@ mod Tech {
                 TechUpgradeType::Thrust => {
                     tech::thrust_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.thrust, quantity, base_cost.thrust);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -286,8 +268,6 @@ mod Tech {
                 TechUpgradeType::Warp => {
                     tech::warp_requirements_check(lab_level, techs);
                     cost = tech::get_tech_cost(techs.warp, quantity, base_cost.warp);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -298,8 +278,6 @@ mod Tech {
                 TechUpgradeType::Exocraft => {
                     tech::exocraft_requirements_check(lab_level, techs);
                     cost = tech::exocraft_cost(techs.exocraft, quantity);
-                    contracts.game.check_enough_resources(caller, cost);
-                    contracts.game.pay_resources_erc20(caller, cost);
                     self
                         .tech_level
                         .write(
@@ -308,6 +286,7 @@ mod Tech {
                         );
                 },
             }
+            resource_manager.spend_resources(caller, cost);
             cost
         }
     }

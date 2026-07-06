@@ -3,7 +3,7 @@ name: Build
 on: [push, pull_request]
 
 env:
-  SCARB_VERSION: 2.12.2
+  SCARB_VERSION: 2.19.1
 
 jobs:
   check:
