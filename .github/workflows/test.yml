@@ -10,11 +10,14 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: software-mansion/setup-scarb@v1
+      # actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      # software-mansion/setup-scarb@v1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd
         with:
           scarb-version: ${{ env.SCARB_VERSION }}
-      - uses: foundry-rs/setup-snfoundry@v4
+      # foundry-rs/setup-snfoundry@v4
+      - uses: foundry-rs/setup-snfoundry@ee00ea3f026379008ca40a54448d4059233d06cc
         with:
           starknet-foundry-version: ${{ env.SNFORGE_VERSION }}
       - name: Run cairo tests
