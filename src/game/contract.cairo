@@ -312,6 +312,7 @@ mod Game {
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.ownable.assert_only_owner();
             self.upgradeable.upgrade(impl_hash);
         }
     }

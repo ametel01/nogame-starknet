@@ -12,7 +12,7 @@
 
 - Step 0 is complete.
 - Tracking files are initialized before functional implementation begins.
-- Wave 1 issue #4 is implemented on `codex/issue-4-resource-manager`; issues #5, #6, #7, and #8 remain separate Wave 1 streams.
+- Wave 1 issues #4, #5, #6, #7, and #8 are implemented on separate branches.
 - Later executors must append progress updates without overwriting existing entries.
 - `CHANGELOG.md` should be updated only when a completed step ships a qualifying functional change.
 
@@ -22,7 +22,7 @@
 |------|-------|------|-------|--------|------------|
 | 0 | [#3](https://github.com/ametel01/nogame-starknet/issues/3) | 0 | Initialize progress and changelog tracking for NoGame plan execution | Complete | None |
 | 1 | [#4](https://github.com/ametel01/nogame-starknet/issues/4) | 1 | Gate Game resource manager mutations | Complete | #3 |
-| 2 | [#5](https://github.com/ametel01/nogame-starknet/issues/5) | 1 | Require owner authorization for Game upgrades | Pending | #3 |
+| 2 | [#5](https://github.com/ametel01/nogame-starknet/issues/5) | 1 | Require owner authorization for Game upgrades | Complete | #3 |
 | 3 | [#6](https://github.com/ametel01/nogame-starknet/issues/6) | 1 | Keep NoGame ERC721 token_of index consistent on transfers | Complete | #3 |
 | 4 | [#7](https://github.com/ametel01/nogame-starknet/issues/7) | 1 | Clean deployment docs and example credential hygiene | Complete | #3 |
 | 5 | [#8](https://github.com/ametel01/nogame-starknet/issues/8) | 1 | Design the offchain battle simulator contract and API seam | Complete | #3 |
@@ -57,6 +57,8 @@
 - 2026-07-06: Issue #11 drift check `git diff --stat a370d98..HEAD -- scripts/deploy-starknet.sh .env.local.example .env.docker.example DEPLOYMENT.md` showed only prior credential hygiene docs/example env changes; the deployment script still matched plan 014.
 - 2026-07-06: Issue #11 hardened `scripts/deploy-starknet.sh` by replacing env-file execution with strict `KEY=VALUE` parsing, using private-key argument arrays, quoting `starkli` arguments, and surfacing declare/deploy/invoke failures with explicit errors.
 - 2026-07-06: Issue #11 validation passed: `bash -n scripts/deploy-starknet.sh`, deployment hardening no-match `rg`, concrete private-key no-match `rg`, docs/script `source`/`eval` no-match `rg`, strict-parser temp-file smoke test, `scarb fmt --check`, and `git diff --check`.
+- 2026-07-06: Issue #5 drift check `git diff --stat a370d98..HEAD -- src/game/contract.cairo tests/upgrade_test.cairo tests` showed prior scoped changes in `src/game/contract.cairo`, `tests/game_resource_manager_access.cairo`, `tests/test_erc721.cairo`, and `tests/utils.cairo`; plan 002 remained applicable.
+- 2026-07-06: Issue #5 validation passed: `snforge test test_game_upgrade`, `scarb fmt --check`, `scarb build`, and `snforge test`.
 
 ## Update Log
 
@@ -67,3 +69,4 @@
 - 2026-07-06: Completed issue #6 by centralizing ERC721NoGame `token_of` transfer index updates, covering stale sender indexes, and updating the plan tracker.
 - 2026-07-06: Completed Step 6 for issue #9 by gating privileged Planet, Dockyard, and Defence setters to registered lifecycle callers while preserving Fleet and Colony flows.
 - 2026-07-06: Completed issue #11 by hardening deployment env parsing and `starkli` command construction without running any real deployment.
+- 2026-07-06: Completed Step 2 for issue #5 by requiring the owner for `Game.upgrade` and covering unauthorized upgrade attempts.
