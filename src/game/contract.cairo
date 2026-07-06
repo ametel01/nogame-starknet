@@ -120,11 +120,13 @@ mod Game {
     #[abi(embed_v0)]
     impl ResourceManagerImpl of IResourceManager<ContractState> {
         fn spend_resources(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
+            self.verify_authorized_resource_mutator();
             IResourceManager::check_enough_resources(self, account, amounts);
             IResourceManager::pay_resources_erc20(self, account, amounts);
         }
 
         fn grant_resources(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
+            self.verify_authorized_resource_mutator();
             IResourceManager::receive_resources_erc20(self, account, amounts);
         }
 
@@ -143,11 +145,13 @@ mod Game {
         }
 
         fn spend_planet_resources(self: @ContractState, planet_id: u32, amounts: ERC20s) {
+            self.verify_authorized_resource_mutator();
             let planet_owner = self.erc721.read().ownerOf(planet_id.into());
             IResourceManager::pay_resources_erc20(self, planet_owner, amounts);
         }
 
         fn pay_resources_erc20(self: @ContractState, account: ContractAddress, amounts: ERC20s) {
+            self.verify_authorized_resource_mutator();
             let tokens = ITokenProvider::get_tokens(self);
             tokens.steel.burn(account, (amounts.steel * E18).into());
             tokens.quartz.burn(account, (amounts.quartz * E18).into());
@@ -157,6 +161,7 @@ mod Game {
         fn receive_resources_erc20(
             self: @ContractState, account: ContractAddress, amounts: ERC20s,
         ) {
+            self.verify_authorized_resource_mutator();
             let tokens = ITokenProvider::get_tokens(self);
             tokens.steel.mint(account, (amounts.steel * E18).into());
             tokens.quartz.mint(account, (amounts.quartz * E18).into());
@@ -327,6 +332,20 @@ mod Game {
                 quartz: quartz.try_into().unwrap(),
                 tritium: tritium.try_into().unwrap(),
             }
+        }
+
+        fn verify_authorized_resource_mutator(self: @ContractState) {
+            let caller = get_caller_address();
+            let contracts = IContractRegistry::get_contracts(self);
+            let is_authorized = caller == contracts.planet.contract_address
+                || caller == contracts.compound.contract_address
+                || caller == contracts.defence.contract_address
+                || caller == contracts.dockyard.contract_address
+                || caller == contracts.fleet.contract_address
+                || caller == contracts.colony.contract_address
+                || caller == contracts.tech.contract_address;
+
+            assert!(is_authorized, "Game:E_UNAUTHORIZED_RESOURCE_MUTATOR");
         }
     }
 }
