@@ -275,12 +275,10 @@ mod Colony {
             let game_manager = self.game_manager.read();
             let contracts = game_manager.get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
-            self.verify_colony_exist(planet_id, colony_id);
-            let uni_speed = game_manager.get_uni_speed();
-            let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
-            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
-
-            production
+            self
+                .collect_colony_resources(
+                    planet_id, colony_id, game_manager.get_uni_speed(), get_block_timestamp(),
+                )
         }
 
         fn collect_resources_from_all_colonies(ref self: ContractState) -> ERC20s {
@@ -289,41 +287,10 @@ mod Colony {
             let contracts = game_manager.get_contracts();
             let planet_id = contracts.planet.get_owned_planet(get_caller_address());
 
-            // Cache uni_speed and timestamp for all colonies
-            let uni_speed = game_manager.get_uni_speed();
-            let time_now = get_block_timestamp();
-
-            // Get count of colonies for this planet
-            let colony_count = self.planet_colonies_count.read(planet_id);
-
-            // Early exit if no colonies
-            if colony_count == 0 {
-                return Zeroable::zero();
-            }
-
-            // Accumulate resources from all colonies
-            let mut total_resources: ERC20s = Default::default();
-            let mut colony_id: u8 = 1;
-
-            while colony_id <= colony_count {
-                // Check if colony exists (position is set)
-                let colony_position = self.colony_position.read((planet_id, colony_id));
-                if !colony_position.is_zero() {
-                    // Calculate production for this colony
-                    let production = self
-                        .calculate_colony_production(uni_speed, planet_id, colony_id);
-
-                    // Aggregate resources
-                    total_resources = total_resources + production;
-
-                    // Reset resource timer for this colony
-                    self.colony_resource_timer.write((planet_id, colony_id), time_now);
-                }
-
-                colony_id += 1;
-            }
-
-            total_resources
+            self
+                .collect_all_colony_resources(
+                    planet_id, game_manager.get_uni_speed(), get_block_timestamp(),
+                )
         }
 
         fn process_colony_compound_upgrade(
@@ -352,22 +319,17 @@ mod Colony {
             ref self: ContractState, planet_id: u32, colony_id: u8, d: Defences,
         ) {
             self.verify_authorized_caller();
-            self.write_colony_defences(planet_id, colony_id, d);
+            self.apply_defence_update(planet_id, colony_id, d);
         }
 
         fn fleet_arrives(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             self.verify_authorized_caller();
-            let current_levels = self.get_colony_ships(planet_id, colony_id);
-            self.write_colony_ships(planet_id, colony_id, assets::add_fleet(current_levels, fleet));
+            self.apply_fleet_arrival(planet_id, colony_id, fleet);
         }
 
         fn fleet_leaves(ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet) {
             self.verify_authorized_caller();
-            let current_levels = self.get_colony_ships(planet_id, colony_id);
-            self
-                .write_colony_ships(
-                    planet_id, colony_id, assets::remove_fleet(current_levels, fleet),
-                );
+            self.apply_fleet_departure(planet_id, colony_id, fleet);
         }
 
         fn get_colony_position(
@@ -402,21 +364,21 @@ mod Colony {
 
         fn set_resource_timer(ref self: ContractState, planet_id: u32, colony_id: u8) {
             self.verify_authorized_caller();
-            self.colony_resource_timer.write((planet_id, colony_id), get_block_timestamp());
+            self.reset_resource_timer(planet_id, colony_id, get_block_timestamp());
         }
 
         fn set_colony_ship(
             ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
             self.verify_authorized_caller();
-            self.colony_ships.write((planet_id, colony_id, name), quantity);
+            self.set_colony_ship_level(planet_id, colony_id, name, quantity);
         }
 
         fn set_colony_defence(
             ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
         ) {
             self.verify_authorized_caller();
-            self.colony_defences.write((planet_id, colony_id, name), quantity);
+            self.set_colony_defence_level(planet_id, colony_id, name, quantity);
         }
 
 
@@ -505,6 +467,80 @@ mod Colony {
                 colony_id,
                 planet_id,
             );
+        }
+
+        fn collect_colony_resources(
+            ref self: ContractState, planet_id: u32, colony_id: u8, uni_speed: u128, time_now: u64,
+        ) -> ERC20s {
+            self.verify_colony_exist(planet_id, colony_id);
+            let production = self.calculate_colony_production(uni_speed, planet_id, colony_id);
+            self.reset_resource_timer(planet_id, colony_id, time_now);
+            production
+        }
+
+        fn collect_all_colony_resources(
+            ref self: ContractState, planet_id: u32, uni_speed: u128, time_now: u64,
+        ) -> ERC20s {
+            let colony_count = self.planet_colonies_count.read(planet_id);
+            if colony_count == 0 {
+                return Zeroable::zero();
+            }
+
+            let mut total_resources: ERC20s = Default::default();
+            let mut colony_id: u8 = 1;
+            while colony_id <= colony_count {
+                let colony_position = self.colony_position.read((planet_id, colony_id));
+                if !colony_position.is_zero() {
+                    total_resources = total_resources
+                        + self.calculate_colony_production(uni_speed, planet_id, colony_id);
+                    self.reset_resource_timer(planet_id, colony_id, time_now);
+                }
+
+                colony_id += 1;
+            }
+
+            total_resources
+        }
+
+        fn reset_resource_timer(
+            ref self: ContractState, planet_id: u32, colony_id: u8, time_now: u64,
+        ) {
+            self.colony_resource_timer.write((planet_id, colony_id), time_now);
+        }
+
+        fn apply_defence_update(
+            ref self: ContractState, planet_id: u32, colony_id: u8, defences: Defences,
+        ) {
+            self.write_colony_defences(planet_id, colony_id, defences);
+        }
+
+        fn apply_fleet_arrival(
+            ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet,
+        ) {
+            let current_levels = self.get_colony_ships(planet_id, colony_id);
+            self.write_colony_ships(planet_id, colony_id, assets::add_fleet(current_levels, fleet));
+        }
+
+        fn apply_fleet_departure(
+            ref self: ContractState, planet_id: u32, colony_id: u8, fleet: Fleet,
+        ) {
+            let current_levels = self.get_colony_ships(planet_id, colony_id);
+            self
+                .write_colony_ships(
+                    planet_id, colony_id, assets::remove_fleet(current_levels, fleet),
+                );
+        }
+
+        fn set_colony_ship_level(
+            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
+        ) {
+            self.colony_ships.write((planet_id, colony_id, name), quantity);
+        }
+
+        fn set_colony_defence_level(
+            ref self: ContractState, planet_id: u32, colony_id: u8, name: u8, quantity: u32,
+        ) {
+            self.colony_defences.write((planet_id, colony_id, name), quantity);
         }
 
         fn upgrade_component(
