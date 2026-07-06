@@ -38,6 +38,70 @@ fn test_war_armade_clears_blaster() {
 }
 
 #[test]
+fn test_war_defender_fodder_dilutes_armade_targeting() {
+    let mut attackers: Fleet = Default::default();
+    attackers.armade = 1;
+    let mut defender_without_fodder: Fleet = Default::default();
+    defender_without_fodder.armade = 1;
+    let defences: Defences = Default::default();
+
+    let (_, defender_without_fodder_after, _) = fleet::war(
+        attackers, Default::default(), defender_without_fodder, defences, Default::default(),
+    );
+
+    let mut defender_with_fodder = defender_without_fodder;
+    defender_with_fodder.carrier = 5000;
+    let (_, defender_with_fodder_after, _) = fleet::war(
+        attackers, Default::default(), defender_with_fodder, defences, Default::default(),
+    );
+
+    assert(defender_without_fodder_after.armade == 0, 'unweighted armade survived');
+    assert(defender_with_fodder_after.armade == 1, 'fodder did not dilute');
+}
+
+#[test]
+fn test_war_attacker_fodder_dilutes_armade_targeting() {
+    let mut attacker_without_fodder: Fleet = Default::default();
+    attacker_without_fodder.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.armade = 1;
+    let defences: Defences = Default::default();
+
+    let (attacker_without_fodder_after, _, _) = fleet::war(
+        attacker_without_fodder, Default::default(), defenders, defences, Default::default(),
+    );
+
+    let mut attacker_with_fodder = attacker_without_fodder;
+    attacker_with_fodder.carrier = 5000;
+    let (attacker_with_fodder_after, _, _) = fleet::war(
+        attacker_with_fodder, Default::default(), defenders, defences, Default::default(),
+    );
+
+    assert(attacker_without_fodder_after.armade == 0, 'unweighted attacker survived');
+    assert(attacker_with_fodder_after.armade == 1, 'attacker fodder did not dilute');
+}
+
+#[test]
+fn test_war_class_weighting_is_deterministic() {
+    let mut attackers: Fleet = Default::default();
+    attackers.carrier = 7;
+    attackers.frigate = 2;
+    attackers.armade = 1;
+    let mut defenders: Fleet = Default::default();
+    defenders.carrier = 17;
+    defenders.scraper = 3;
+    defenders.armade = 1;
+    let mut defences: Defences = Default::default();
+    defences.celestia = 11;
+    defences.beam = 2;
+
+    let first = fleet::war(attackers, Default::default(), defenders, defences, Default::default());
+    let second = fleet::war(attackers, Default::default(), defenders, defences, Default::default());
+
+    assert(first == second, 'weighted war drifted');
+}
+
+#[test]
 fn test_fleet_speed_and_flight_time_characterization() {
     let mut carrier_fleet: Fleet = Default::default();
     carrier_fleet.carrier = 1;
@@ -90,7 +154,7 @@ fn test_simulate_attack_pins_zero_tech_losses() {
 fn test_simulate_attack_with_techs_uses_asymmetric_techs() {
     let dsp = set_up();
     let mut attackers: Fleet = Default::default();
-    attackers.carrier = 1;
+    attackers.carrier = 3;
     let mut defenders: Fleet = Default::default();
     defenders.carrier = 3;
     let defences: Defences = Default::default();
@@ -104,7 +168,7 @@ fn test_simulate_attack_with_techs_uses_asymmetric_techs() {
         .fleet
         .simulate_attack_with_techs(attackers, defenders, defences, attacker_techs, defender_techs);
 
-    assert(result.attacker_carrier == 1, 'wrong attacker carrier');
+    assert(result.attacker_carrier == 0, 'wrong attacker carrier');
     assert(result.attacker_scraper == 0, 'wrong attacker scraper');
     assert(result.attacker_sparrow == 0, 'wrong attacker sparrow');
     assert(result.attacker_frigate == 0, 'wrong attacker frigate');

@@ -32,7 +32,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Use frigate and armade unit costs when calculating debris from large-ship losses.
 - [x] Step 10: Add Round-Capped Battle Draws
   - Bound battle execution at six rounds and grant loot only on attacker victory.
-- [ ] Step 11: Add Class-Weighted Target Dilution
+- [x] Step 11: Add Class-Weighted Target Dilution
   - Use deterministic class counts for combat damage distribution.
 - [ ] Step 12: Add Round Shields and Deterministic Explosions
   - Restore shield reset, persistent hull damage, and deterministic explosion approximation.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, 7, 8, 9, and 10 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, and battle settlement is capped at six rounds with loot only on attacker victory. Plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, 7, 8, 9, 10, and 11 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, and combat damage now uses deterministic class-weighted target dilution. Plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -81,3 +81,6 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Completed Step 10 / issue #45 on branch `codex/issue-45-round-capped-draws`: `fleet::war` now uses a named six-round cap, settlement records attacker victory, defender victory, or draw, and attack loot is calculated only for attacker victories.
 - 2026-07-06: Added attack coverage for attacker victory loot, six-round draw zero-loot behavior with surviving fleets, and defender victory zero-loot behavior with no destroyed attacker ships returned. Updated capped simulation characterization for the asymmetric carrier fixture.
 - 2026-07-06: Validation passed for Step 10: `snforge test attack` (13 passed, 113 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (126 passed). Commit reference pending after rebase.
+- 2026-07-06: Completed Step 11 / issue #46 on branch `codex/issue-46-class-weighted-targeting`: `fleet::war` now allocates each side's aggregate weapon power across enemy classes by target class counts for each of the six capped rounds. Rounding floors each class allocation and assigns leftover damage to the lowest unit id present; partial surviving hull now counts as a surviving class unit.
+- 2026-07-06: Added fodder-dilution coverage for defender and attacker cheap-carrier screens plus deterministic repeatability coverage. Updated affected combat characterization for class-count survivor rounding.
+- 2026-07-06: Validation passed for Step 11: `snforge test fleet` (42 passed, 87 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (129 passed). Commit reference pending after rebase.
