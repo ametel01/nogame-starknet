@@ -36,14 +36,14 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Use deterministic class counts for combat damage distribution.
 - [x] Step 12: Add Round Shields and Deterministic Explosions
   - Restore shield reset, persistent hull damage, and deterministic explosion approximation.
-- [ ] Step 13: Replace Rapid-Fire Instant Kill
+- [x] Step 13: Replace Rapid-Fire Instant Kill
   - Replace hardcoded rapid-fire instant kill with bounded deterministic extra fire.
 - [x] Step 14: Add Defence Rebuild Settlement
   - Apply a named deterministic defence rebuild policy after attacks without rebuilding ships.
 
 ## Current status
 
-Steps 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, and 14 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, combat damage uses deterministic class-weighted target dilution, surviving units now restore shields between rounds while deterministic below-70-percent explosions can remove damaged units, license metadata is aligned to MIT across Scarb.toml, README.md, and LICENSE, and destroyed defences now rebuild deterministically at 70% while ships remain permanent losses. Plan 013 is ready for implementation with the maintainer-approved RF value 2 policy.
+Steps 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, and 14 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, combat damage uses deterministic class-weighted target dilution, surviving units now restore shields between rounds while deterministic below-70-percent explosions can remove damaged units, license metadata is aligned to MIT across Scarb.toml, README.md, and LICENSE, frigate-vs-sparrow rapid fire now uses a deterministic RF value 2 multiplier instead of an instant kill, and destroyed defences now rebuild deterministically at 70% while ships remain permanent losses. All tracked implementation steps are complete.
 
 ## Update Rules
 
@@ -89,6 +89,9 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Validation passed for Step 12: `snforge test fleet` (44 passed, 87 filtered), `snforge test attack` (14 passed, 117 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (131 passed). Commit reference pending after rebase.
 - 2026-07-07: Completed Step 5 / issue #40 after the maintainer selected MIT. Replaced the CC BY-NC-SA license text with the MIT license, updated the README license link, confirmed Scarb package metadata already declares `license = "MIT"`, and marked plan 005 done.
 - 2026-07-07: Validation passed for Step 5: `rg -n "MIT|CC BY|Creative Commons|LICENSE/README|license" Scarb.toml README.md LICENSE plans/README.md PROGRESS.md CHANGELOG.md`, `scarb fmt --check`, `scarb build`, `snforge test`, and `git diff --check`.
+- 2026-07-07: Completed Step 13 / issue #49 on branch `codex/issue-49-rapid-fire`: replaced the mutating rapid-fire instant kill with a pure `rapid_fire_value` lookup that returns RF value 2 for frigate against sparrow and 1 for all other current matchups.
+- 2026-07-07: Integrated rapid fire into class-weighted combat as bounded extra weapon allocation from matching attacker classes while preserving same-round firing snapshots. Added exact tests for the lookup, no pre-damage instant kill, increased RF damage, unchanged non-RF damage, and deterministic RF war results.
+- 2026-07-07: Validation passed for Step 13: `scarb fmt --check`, `scarb build`, `snforge test fleet` (49 passed), and `snforge test`.
 - 2026-07-07: Completed Step 14 / issue #47 on branch `codex/issue-47-defence-rebuild`: `battle_settlement::settle` now applies a named deterministic 70% free defence rebuild after combat, computes `defences_loss` from net permanent losses, and keeps battle outcome based on pre-rebuild combat results.
 - 2026-07-07: Added planet and colony attack coverage proving ten destroyed blasters rebuild to seven stored blasters, one carrier remains permanently destroyed, and defender point loss follows net permanent losses plus ship losses. Colony attack settlement now writes post-combat colony ships as well as post-rebuild defences.
 - 2026-07-07: Validation passed for Step 14: `scarb fmt --check`, `scarb build`, `snforge test defence` (21 passed), `snforge test attack` (16 passed), and `snforge test`.

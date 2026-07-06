@@ -102,6 +102,77 @@ fn test_war_class_weighting_is_deterministic() {
 }
 
 #[test]
+fn test_rapid_fire_value_uses_bounded_lookup() {
+    assert(fleet::rapid_fire_value(3, 2) == 2, 'wrong frigate rf');
+    assert(fleet::rapid_fire_value(3, 0) == 1, 'wrong non sparrow rf');
+    assert(fleet::rapid_fire_value(4, 2) == 1, 'wrong non frigate rf');
+}
+
+#[test]
+fn test_rapid_fire_does_not_instant_kill_before_damage() {
+    let mut frigate: Unit = Unit {
+        id: 3, weapon: 1, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+    let mut sparrow: Unit = Unit {
+        id: 2, weapon: 0, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+
+    let (_, sparrow_after) = fleet::unit_combat(ref frigate, ref sparrow);
+
+    assert(sparrow_after.hull == 998, 'rapid fire instant killed');
+}
+
+#[test]
+fn test_rapid_fire_increases_damage_for_matching_pair() {
+    let mut frigate: Unit = Unit {
+        id: 3, weapon: 100, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+    let mut carrier: Unit = Unit {
+        id: 0, weapon: 100, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+    let mut sparrow_with_rf: Unit = Unit {
+        id: 2, weapon: 0, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+    let mut sparrow_without_rf = sparrow_with_rf;
+
+    let (_, sparrow_after_rf) = fleet::unit_combat(ref frigate, ref sparrow_with_rf);
+    let (_, sparrow_after_no_rf) = fleet::unit_combat(ref carrier, ref sparrow_without_rf);
+
+    assert(sparrow_after_rf.hull == 800, 'wrong rf damage');
+    assert(sparrow_after_no_rf.hull == 900, 'wrong non rf damage');
+    assert(sparrow_after_rf.hull < sparrow_after_no_rf.hull, 'rf did not add damage');
+}
+
+#[test]
+fn test_non_rapid_fire_combat_is_unchanged() {
+    let mut attacker: Unit = Unit {
+        id: 0, weapon: 100, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+    let mut defender: Unit = Unit {
+        id: 2, weapon: 0, shield: 0, hull: 1000, speed: 0, cargo: 0, consumption: 0,
+    };
+
+    let (_, defender_after) = fleet::unit_combat(ref attacker, ref defender);
+
+    assert(defender_after.hull == 900, 'non rf damage changed');
+}
+
+#[test]
+fn test_rapid_fire_weighted_war_is_deterministic() {
+    let mut attackers: Fleet = Default::default();
+    attackers.frigate = 3;
+    let mut defenders: Fleet = Default::default();
+    defenders.sparrow = 17;
+    defenders.carrier = 5;
+    let defences: Defences = Default::default();
+
+    let first = fleet::war(attackers, Default::default(), defenders, defences, Default::default());
+    let second = fleet::war(attackers, Default::default(), defenders, defences, Default::default());
+
+    assert(first == second, 'rapid fire war drifted');
+}
+
+#[test]
 fn test_restore_round_shields_keeps_hull_damage() {
     let mut units: Array<Unit> = array![];
     units

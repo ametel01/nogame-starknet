@@ -7,6 +7,7 @@ use nogame_fixed::f128::core::{exp, sqrt};
 use nogame_fixed::f128::types::{Fixed, FixedTrait, ONE_u128 as ONE};
 
 const MAX_BATTLE_ROUNDS: u8 = 6;
+const FRIGATE_SPARROW_RAPID_FIRE: u32 = 2;
 
 fn CARRIER() -> Unit {
     Unit { id: 0, weapon: 50, shield: 10, hull: 1000, speed: 5000, cargo: 10000, consumption: 10 }
@@ -71,13 +72,11 @@ fn war(
     let mut defenders = build_ships_array(defenders, defences, d_techs);
     let mut round = 0;
     while round < MAX_BATTLE_ROUNDS && !attackers.is_empty() && !defenders.is_empty() {
-        let attacker_weapon = total_weapon_power(ref attackers);
-        let defender_weapon = total_weapon_power(ref defenders);
-        let attackers_have_frigates = has_unit_class(ref attackers, 3);
-        let defenders_have_frigates = has_unit_class(ref defenders, 3);
+        let mut attacker_shots = clone_units(ref attackers);
+        let mut defender_shots = clone_units(ref defenders);
 
-        apply_weighted_damage(attacker_weapon, attackers_have_frigates, ref defenders, d_techs);
-        apply_weighted_damage(defender_weapon, defenders_have_frigates, ref attackers, a_techs);
+        apply_weighted_damage(ref attacker_shots, ref defenders, d_techs);
+        apply_weighted_damage(ref defender_shots, ref attackers, a_techs);
         restore_round_shields(ref attackers, a_techs);
         restore_round_shields(ref defenders, d_techs);
         round += 1;
@@ -99,26 +98,8 @@ fn total_weapon_power(ref units: Array<Unit>) -> u32 {
     total
 }
 
-fn has_unit_class(ref units: Array<Unit>, unit_id: u8) -> bool {
-    let mut found = false;
-    let mut restored: Array<Unit> = array![];
-    while !units.is_empty() {
-        let unit = units.pop_front().unwrap();
-        if unit.id == unit_id && unit.hull > 0 {
-            found = true;
-        }
-        restored.append(unit);
-    }
-    restore_units(ref units, ref restored);
-    found
-}
-
-fn apply_weighted_damage(
-    incoming_weapon: u32,
-    attackers_have_frigates: bool,
-    ref targets: Array<Unit>,
-    techs: TechLevels,
-) {
+fn apply_weighted_damage(ref attackers: Array<Unit>, ref targets: Array<Unit>, techs: TechLevels) {
+    let incoming_weapon = total_weapon_power(ref attackers);
     if incoming_weapon == 0 || targets.is_empty() {
         return;
     }
@@ -147,14 +128,11 @@ fn apply_weighted_damage(
         if target.id == remainder_target_id {
             allocated_damage += remainder;
         }
-        if attackers_have_frigates && target.id == 2 && allocated_damage > 0 {
-            target.hull = 0;
-            target.shield = 0;
-        } else {
-            let (new_shield, new_hull) = apply_damage(allocated_damage, target.shield, target.hull);
-            target.shield = new_shield;
-            target.hull = apply_deterministic_explosions(new_hull, base_target.hull, target_count);
-        }
+        allocated_damage +=
+            rapid_fire_bonus_damage(ref attackers, target.id, target_count, total_target_count);
+        let (new_shield, new_hull) = apply_damage(allocated_damage, target.shield, target.hull);
+        target.shield = new_shield;
+        target.hull = apply_deterministic_explosions(new_hull, base_target.hull, target_count);
         if target.hull > 0 {
             damaged.append(target);
         }
@@ -273,6 +251,18 @@ fn restore_units(ref units: Array<Unit>, ref restored: Array<Unit>) {
     }
 }
 
+fn clone_units(ref units: Array<Unit>) -> Array<Unit> {
+    let mut cloned: Array<Unit> = array![];
+    let mut restored: Array<Unit> = array![];
+    while !units.is_empty() {
+        let unit = units.pop_front().unwrap();
+        cloned.append(unit);
+        restored.append(unit);
+    }
+    restore_units(ref units, ref restored);
+    cloned
+}
+
 fn div_ceil_u128(numerator: u128, denominator: u128) -> u128 {
     if numerator == 0 {
         return 0;
@@ -316,24 +306,46 @@ fn apply_damage(attacker_weapon: u32, defender_shield: u32, defender_hull: u32) 
 
 fn unit_combat(ref unit1: Unit, ref unit2: Unit) -> (Unit, Unit) {
     // Unit1 attacks Unit2
-    rapid_fire(ref unit1, ref unit2);
-    let (new_shield2, new_hull2) = apply_damage(unit1.weapon, unit2.shield, unit2.hull);
+    let unit1_weapon = rapid_fire_weapon(unit1.weapon, unit1.id, unit2.id);
+    let (new_shield2, new_hull2) = apply_damage(unit1_weapon, unit2.shield, unit2.hull);
     unit2.shield = new_shield2;
     unit2.hull = new_hull2;
 
     // Unit2 attacks Unit1
-    rapid_fire(ref unit2, ref unit1);
-    let (new_shield1, new_hull1) = apply_damage(unit2.weapon, unit1.shield, unit1.hull);
+    let unit2_weapon = rapid_fire_weapon(unit2.weapon, unit2.id, unit1.id);
+    let (new_shield1, new_hull1) = apply_damage(unit2_weapon, unit1.shield, unit1.hull);
     unit1.shield = new_shield1;
     unit1.hull = new_hull1;
 
     (unit1, unit2)
 }
 
-fn rapid_fire(ref unit1: Unit, ref unit2: Unit) {
-    if unit1.id == 3 && unit2.id == 2 {
-        unit2.hull = 0
+fn rapid_fire_value(attacker_id: u8, defender_id: u8) -> u32 {
+    if attacker_id == 3 && defender_id == 2 {
+        return FRIGATE_SPARROW_RAPID_FIRE;
     }
+    1
+}
+
+fn rapid_fire_weapon(weapon: u32, attacker_id: u8, defender_id: u8) -> u32 {
+    weapon * rapid_fire_value(attacker_id, defender_id)
+}
+
+fn rapid_fire_bonus_damage(
+    ref attackers: Array<Unit>, defender_id: u8, target_count: u32, total_target_count: u32,
+) -> u32 {
+    let mut bonus_weapon = 0;
+    let mut restored: Array<Unit> = array![];
+    while !attackers.is_empty() {
+        let attacker = attackers.pop_front().unwrap();
+        let rapid_fire = rapid_fire_value(attacker.id, defender_id);
+        if rapid_fire > 1 {
+            bonus_weapon += attacker.weapon * (rapid_fire - 1);
+        }
+        restored.append(attacker);
+    }
+    restore_units(ref attackers, ref restored);
+    weighted_damage_for_count(bonus_weapon, target_count, total_target_count)
 }
 
 fn build_fleet_struct(ref a: Array<Unit>, techs: TechLevels) -> (Fleet, Defences) {
