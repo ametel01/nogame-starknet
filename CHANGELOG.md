@@ -12,6 +12,7 @@ and this project adheres to semantic versioning when versions are released.
 - Add an example universe deployment manifest and redeploy-all documentation for preserving address sets across universe lifecycles.
 - Add `simulate_attack_with_techs` so clients can preview battle losses with caller-supplied attacker and defender tech levels while preserving the existing zero-tech `simulate_attack` view.
 - Add deterministic class-weighted combat targeting so cheap ship counts can dilute incoming damage without per-unit random target loops.
+- Add round-by-round shield restoration and deterministic below-70-percent explosion losses to bounded class-weighted combat.
 
 ### Security
 

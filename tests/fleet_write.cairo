@@ -418,11 +418,12 @@ fn test_collect_debris_fleet_decay() {
     assert(dsp.dockyard.get_ships_levels(1).scraper == 5, 'wrong scraper back');
 
     let resources_after = dsp.planet.get_spendable_resources(1);
-    assert(resources_after.steel == resources_before.steel + 50000, 'wrong steel collected');
-    assert(resources_after.quartz == resources_before.quartz + 50000, 'wrong quartz collected');
+    assert(resources_after.steel == resources_before.steel + debris.steel, 'wrong steel collected');
+    assert(
+        resources_after.quartz == resources_before.quartz + debris.quartz, 'wrong quartz collected',
+    );
     let debris_after_collection = dsp.planet.get_planet_debris_field(2);
-    assert(debris_after_collection.steel == debris.steel - 50000, 'wrong steel after');
-    assert(debris_after_collection.quartz == debris.quartz - 50000, 'wrong quartz after');
+    assert(debris_after_collection.is_zero(), 'wrong debris after');
 }
 
 #[test]

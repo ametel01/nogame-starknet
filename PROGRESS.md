@@ -34,7 +34,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
   - Bound battle execution at six rounds and grant loot only on attacker victory.
 - [x] Step 11: Add Class-Weighted Target Dilution
   - Use deterministic class counts for combat damage distribution.
-- [ ] Step 12: Add Round Shields and Deterministic Explosions
+- [x] Step 12: Add Round Shields and Deterministic Explosions
   - Restore shield reset, persistent hull damage, and deterministic explosion approximation.
 - [ ] Step 13: Replace Rapid-Fire Instant Kill
   - Replace hardcoded rapid-fire instant kill with bounded deterministic extra fire.
@@ -43,7 +43,7 @@ The plan goals are to execute independently reviewable slices for fleet speed bo
 
 ## Current status
 
-Steps 1, 2, 3, 4, 6, 7, 8, 9, 10, and 11 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, and combat damage now uses deterministic class-weighted target dilution. Plan 005 remains blocked on a maintainer license decision.
+Steps 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, and 12 are complete and validated. Attack loot buckets remain separated and cargo-limited, GitHub Actions are pinned to immutable commit SHAs while preserving tool versions, the battle simulator supports caller-supplied attacker and defender tech levels, the deployment docs include a tracked example manifest for preserving universe address sets, large-ship debris uses frigate and armade unit costs, battle settlement is capped at six rounds with loot only on attacker victory, combat damage uses deterministic class-weighted target dilution, and surviving units now restore shields between rounds while deterministic below-70-percent explosions can remove damaged units. Plan 005 remains blocked on a maintainer license decision.
 
 ## Update Rules
 
@@ -84,3 +84,6 @@ Changelog entries are not required for tracking-only setup, test-only coverage, 
 - 2026-07-06: Completed Step 11 / issue #46 on branch `codex/issue-46-class-weighted-targeting`: `fleet::war` now allocates each side's aggregate weapon power across enemy classes by target class counts for each of the six capped rounds. Rounding floors each class allocation and assigns leftover damage to the lowest unit id present; partial surviving hull now counts as a surviving class unit.
 - 2026-07-06: Added fodder-dilution coverage for defender and attacker cheap-carrier screens plus deterministic repeatability coverage. Updated affected combat characterization for class-count survivor rounding.
 - 2026-07-06: Validation passed for Step 11: `snforge test fleet` (42 passed, 87 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (129 passed). Commit reference pending after rebase.
+- 2026-07-06: Completed Step 12 / issue #48 on branch `codex/issue-48-round-shields-explosions`: `fleet::war` now restores surviving class shields between bounded battle rounds, keeps hull damage in the aggregate class hull, and applies a deterministic below-70-percent explosion approximation with whole-unit expected-loss rounding.
+- 2026-07-06: Added exact-value coverage for shield restoration preserving hull damage and deterministic explosion threshold/rounding behavior. Updated the debris collection decay fixture to collect the new exact debris field produced by the changed combat losses.
+- 2026-07-06: Validation passed for Step 12: `snforge test fleet` (44 passed, 87 filtered), `snforge test attack` (14 passed, 117 filtered), `scarb fmt --check`, `scarb build`, and `snforge test` (131 passed). Commit reference pending after rebase.
