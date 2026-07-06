@@ -555,6 +555,40 @@ fn test_attack_planet() {
 }
 
 #[test]
+fn test_attack_planet_rebuilds_defences_but_not_ships() {
+    let dsp = set_up_two_started_planets();
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, dsp.fleet.contract_address);
+    dsp.dockyard.set_ship_levels(1, Names::Fleet::ARMADE, 10);
+    dsp.dockyard.set_ship_levels(2, Names::Fleet::CARRIER, 1);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+
+    start_cheat_caller_address(dsp.defence.contract_address, dsp.fleet.contract_address);
+    dsp.defence.set_defence_level(2, Names::Defence::BLASTER, 10);
+    stop_cheat_caller_address(dsp.defence.contract_address);
+
+    let defender_points_before = dsp.planet.get_planet_points(2);
+    let p2_position = dsp.planet.get_planet_position(2);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.armade = 10;
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    dsp.fleet.attack_planet(1);
+    stop_cheat_caller_address(dsp.fleet.contract_address);
+
+    let defender_fleet_after = dsp.dockyard.get_ships_levels(2);
+    let defences_after = dsp.defence.get_defences_levels(2);
+    let defender_points_after = dsp.planet.get_planet_points(2);
+
+    assert(defender_fleet_after.carrier == 0, 'defender ship rebuilt');
+    assert(defences_after.blaster == 7, 'wrong rebuilt blasters');
+    assert(defender_points_before - defender_points_after == 10, 'wrong net loss points');
+}
+
+#[test]
 fn test_attack_planet_fleet_decay() {
     let dsp = set_up();
     init_game(dsp);

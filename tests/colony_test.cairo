@@ -515,3 +515,50 @@ fn test_attack_colony() {
         expected_debris,
     );
 }
+
+#[test]
+fn test_attack_colony_rebuilds_defences_but_not_ships() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    dsp.planet.generate_planet();
+    stop_cheat_caller_address(dsp.planet.contract_address);
+    init_storage(dsp, 1);
+    init_storage(dsp, 2);
+
+    start_cheat_caller_address(dsp.colony.contract_address, ACCOUNT2());
+    dsp.colony.generate_colony();
+    stop_cheat_caller_address(dsp.colony.contract_address);
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, dsp.fleet.contract_address);
+    dsp.dockyard.set_ship_levels(1, Names::Fleet::ARMADE, 10);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+
+    start_cheat_caller_address(dsp.colony.contract_address, dsp.fleet.contract_address);
+    dsp.colony.set_colony_ship(2, 1, Names::Fleet::CARRIER, 1);
+    dsp.colony.set_colony_defence(2, 1, Names::Defence::BLASTER, 10);
+    stop_cheat_caller_address(dsp.colony.contract_address);
+
+    let colony_position = dsp.colony.get_colony_position(2, 1);
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.armade = 10;
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    start_cheat_block_timestamp_global(starknet::get_block_timestamp() + DAY * 7);
+    dsp.fleet.send_fleet(fleet_a, colony_position, MissionCategory::ATTACK, 100, 0);
+    let mission = dsp.fleet.get_active_missions(1);
+    let mission = *mission.at(0);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    dsp.fleet.attack_planet(1);
+    stop_cheat_caller_address(dsp.fleet.contract_address);
+
+    let colony_fleet_after = dsp.colony.get_colony_ships(2, 1);
+    let defences_after = dsp.colony.get_colony_defences(2, 1);
+
+    assert(colony_fleet_after.carrier == 0, 'colony ship rebuilt');
+    assert(defences_after.blaster == 7, 'wrong colony rebuild');
+}

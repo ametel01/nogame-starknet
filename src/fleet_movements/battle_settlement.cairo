@@ -1,6 +1,8 @@
 use nogame::fleet_movements::library as fleet;
 use nogame::libraries::types::{Debris, Defences, FLEET_DECAY_THRESHOLD, Fleet, TechLevels};
 
+const DEFENCE_REBUILD_RATE: u128 = 70;
+
 #[derive(Copy, Drop, PartialEq)]
 enum BattleOutcome {
     AttackerVictory: (),
@@ -30,10 +32,11 @@ fn settle(
     time_since_arrived: u64,
 ) -> BattleSettlement {
     let attacker_fleet = decay_attacker_fleet(attacker_initial_fleet, time_since_arrived);
-    let (attacker_after, defender_after, defences_after) = fleet::war(
+    let (attacker_after, defender_after, defences_after_combat) = fleet::war(
         attacker_fleet, attacker_techs, defender_initial_fleet, initial_defences, defender_techs,
     );
-    let outcome = battle_outcome(attacker_after, defender_after, defences_after);
+    let outcome = battle_outcome(attacker_after, defender_after, defences_after_combat);
+    let defences_after = rebuild_defences(initial_defences, defences_after_combat);
     let attacker_loss = fleet_loss(attacker_initial_fleet, attacker_after);
     let defender_loss = fleet_loss(defender_initial_fleet, defender_after);
     let defences_loss = defences_loss(initial_defences, defences_after);
@@ -106,4 +109,21 @@ fn defences_loss(before: Defences, after: Defences) -> Defences {
         astral: before.astral - after.astral,
         plasma: before.plasma - after.plasma,
     }
+}
+
+fn rebuild_defences(before: Defences, after_combat: Defences) -> Defences {
+    Defences {
+        celestia: after_combat.celestia
+            + rebuilt_defence_count(before.celestia, after_combat.celestia),
+        blaster: after_combat.blaster + rebuilt_defence_count(before.blaster, after_combat.blaster),
+        beam: after_combat.beam + rebuilt_defence_count(before.beam, after_combat.beam),
+        astral: after_combat.astral + rebuilt_defence_count(before.astral, after_combat.astral),
+        plasma: after_combat.plasma + rebuilt_defence_count(before.plasma, after_combat.plasma),
+    }
+}
+
+/// Deterministic onchain approximation of OGame's random free defence rebuild.
+fn rebuilt_defence_count(before: u32, after_combat: u32) -> u32 {
+    let destroyed = before - after_combat;
+    (destroyed.into() * DEFENCE_REBUILD_RATE / 100).try_into().expect('defence rebuild failed')
 }
