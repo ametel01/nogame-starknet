@@ -284,24 +284,17 @@ fn calculate_loot_amount(
         collectible = contracts.planet.get_collectible_resources(destination_id);
     }
 
-    if storage < (collectible.steel + collectible.quartz + collectible.tritium) {
-        loot_collectible = fleet::load_resources(collectible + spendable, storage);
-    } else {
-        loot_collectible = fleet::load_resources(collectible, storage);
+    loot_collectible = fleet::load_resources(collectible, storage);
+    let loaded_collectible = loot_collectible.steel
+        + loot_collectible.quartz
+        + loot_collectible.tritium;
+    let remaining_storage = storage - loaded_collectible;
 
-        if !spendable.is_zero() {
-            loot_spendable.steel = spendable.steel / 2;
-            loot_spendable.quartz = spendable.quartz / 2;
-            loot_spendable.tritium = spendable.tritium / 2;
-            loot_spendable =
-                fleet::load_resources(
-                    loot_spendable,
-                    storage
-                        - (loot_collectible.steel
-                            + loot_collectible.quartz
-                            + loot_collectible.tritium),
-                );
-        }
+    if !spendable.is_zero() && remaining_storage != 0 {
+        loot_spendable.steel = spendable.steel / 2;
+        loot_spendable.quartz = spendable.quartz / 2;
+        loot_spendable.tritium = spendable.tritium / 2;
+        loot_spendable = fleet::load_resources(loot_spendable, remaining_storage);
     }
     (loot_spendable, loot_collectible)
 }

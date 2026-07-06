@@ -11,8 +11,9 @@ use nogame::libraries::types::{
 use nogame::planet::contract::{IPlanetDispatcher, IPlanetDispatcherTrait};
 use nogame::tech::contract::{ITechDispatcher, ITechDispatcherTrait};
 use snforge_std::{
-    ContractClassTrait, Event, EventSpy, declare, spy_events, start_cheat_block_timestamp_global,
-    start_cheat_caller_address, stop_cheat_caller_address,
+    ContractClassTrait, Event, EventSpy, declare, map_entry_address, spy_events,
+    start_cheat_block_timestamp_global, start_cheat_caller_address, stop_cheat_caller_address,
+    store,
 };
 use starknet::info::{get_block_timestamp, get_contract_address};
 use super::utils::{
@@ -677,6 +678,72 @@ fn test_attack_planet_loot_amount() {
 
     assert(
         (attacker_spendable_after - attacker_spendable_before) == expected, 'wrong attacker loot',
+    );
+}
+
+#[test]
+fn test_attack_planet_loot_low_cargo_does_not_mint_spendable() {
+    let dsp = set_up();
+    init_game(dsp);
+
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    dsp.planet.generate_planet();
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT2());
+    dsp.planet.generate_planet();
+    init_storage(dsp, 2);
+    set_compound_level(dsp, 2, Names::Compound::QUARTZ, 0);
+    set_compound_level(dsp, 2, Names::Compound::TRITIUM, 0);
+    start_cheat_caller_address(dsp.planet.contract_address, ACCOUNT1());
+    init_storage(dsp, 1);
+    stop_cheat_caller_address(dsp.planet.contract_address);
+
+    start_cheat_caller_address(dsp.dockyard.contract_address, ACCOUNT1());
+    dsp.dockyard.process_ship_build(ShipBuildType::Sparrow(()), 1);
+    stop_cheat_caller_address(dsp.dockyard.contract_address);
+
+    let mut fleet_a: Fleet = Default::default();
+    fleet_a.sparrow = 1;
+    let p2_position = dsp.planet.get_planet_position(2);
+
+    start_cheat_caller_address(dsp.fleet.contract_address, ACCOUNT1());
+    dsp.fleet.send_fleet(fleet_a, p2_position, MissionCategory::ATTACK, 100, 0);
+
+    let attacker_spendable_before = dsp.planet.get_spendable_resources(1);
+    let defender_spendable_before = dsp.planet.get_spendable_resources(2);
+
+    let mission = dsp.fleet.get_mission_details(1, 1);
+    start_cheat_block_timestamp_global(mission.time_arrival + 1);
+    let defender_collectible_before = dsp.planet.get_collectible_resources(2);
+    let expected_collectible_loot = fleet::load_resources(defender_collectible_before, 50);
+    dsp.fleet.attack_planet(1);
+
+    let attacker_spendable_after = dsp.planet.get_spendable_resources(1);
+    let defender_spendable_after = dsp.planet.get_spendable_resources(2);
+    let attacker_gain = attacker_spendable_after - attacker_spendable_before;
+    let defender_spendable_loss = defender_spendable_before - defender_spendable_after;
+
+    assert(
+        attacker_gain.quartz == expected_collectible_loot.quartz + defender_spendable_loss.quartz,
+        'wrong quartz loot source',
+    );
+    assert(
+        attacker_gain.tritium == expected_collectible_loot.tritium
+            + defender_spendable_loss.tritium,
+        'wrong tritium loot source',
+    );
+    assert(
+        attacker_gain.steel + attacker_gain.quartz + attacker_gain.tritium <= 50,
+        'loot exceeds cargo',
+    );
+}
+
+fn set_compound_level(dsp: Dispatchers, planet_id: u32, compound_id: u8, level: u8) {
+    store(
+        dsp.compound.contract_address,
+        map_entry_address(
+            selector!("compound_level"), array![planet_id.into(), compound_id.into()].span(),
+        ),
+        array![level.into()].span(),
     );
 }
 
