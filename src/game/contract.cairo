@@ -204,6 +204,34 @@ mod Game {
     /// Contract registry implementation (facade pattern)
     #[abi(embed_v0)]
     impl ContractRegistryImpl of IContractRegistry<ContractState> {
+        fn get_colony(self: @ContractState) -> IColonyDispatcher {
+            self.colony_manager.read()
+        }
+
+        fn get_compound(self: @ContractState) -> ICompoundDispatcher {
+            self.compound_manager.read()
+        }
+
+        fn get_defence(self: @ContractState) -> IDefenceDispatcher {
+            self.defence_manager.read()
+        }
+
+        fn get_dockyard(self: @ContractState) -> IDockyardDispatcher {
+            self.dockyard_manager.read()
+        }
+
+        fn get_fleet(self: @ContractState) -> IFleetMovementsDispatcher {
+            self.fleet_manager.read()
+        }
+
+        fn get_planet(self: @ContractState) -> IPlanetDispatcher {
+            self.planet_manager.read()
+        }
+
+        fn get_tech(self: @ContractState) -> ITechDispatcher {
+            self.tech_manager.read()
+        }
+
         fn get_contracts(self: @ContractState) -> Contracts {
             Contracts {
                 game: super::IGameDispatcher { contract_address: get_contract_address() },
