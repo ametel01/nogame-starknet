@@ -62,7 +62,9 @@ mod Game {
     use starknet::storage::{
         Map, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
     };
-    use starknet::{ClassHash, ContractAddress, get_caller_address, get_contract_address};
+    use starknet::{
+        ClassHash, ContractAddress, get_block_timestamp, get_caller_address, get_contract_address,
+    };
     use super::IGameDispatcher;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -83,6 +85,7 @@ mod Game {
         tritium: IERC20NoGameDispatcher,
         eth: IERC20Dispatcher,
         universe_start_time: u64,
+        initialized: bool,
         game_manager: IGameDispatcher,
         planet_manager: IPlanetDispatcher,
         compound_manager: ICompoundDispatcher,
@@ -295,6 +298,7 @@ mod Game {
             token_price: u128,
         ) {
             self.ownable.assert_only_owner();
+            assert!(!self.initialized.read(), "Game:E_ALREADY_INITIALIZED");
             self.planet_manager.write(IPlanetDispatcher { contract_address: planet });
             self.compound_manager.write(ICompoundDispatcher { contract_address: compound });
             self.defence_manager.write(IDefenceDispatcher { contract_address: defence });
@@ -309,6 +313,8 @@ mod Game {
             self.erc721.write(IERC721NoGameDispatcher { contract_address: erc721 });
             self.token_price.write(token_price * E18);
             self.uni_speed.write(uni_speed);
+            self.universe_start_time.write(get_block_timestamp());
+            self.initialized.write(true);
         }
 
         fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
